@@ -1,52 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  font-family: Arial;
-  font-size: 17px;
-}
-
-#myVideo {
-  position: fixed;
-  right: 0;
-  bottom: 0;
-  min-width: 100%; 
-  min-height: 100%;
-}
-
-.content {
-  position: fixed;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  color: #f1f1f1;
-  width: 100%;
-  padding: 20px;
-}
-
-#myBtn {
-  width: 200px;
-  font-size: 18px;
-  padding: 10px;
-  border: none;
-  background: #000;
-  color: #fff;
-  cursor: pointer;
-}
-
-#myBtn:hover {
-  background: #ddd;
-  color: black;
-}
-</style>
-
-	
   <meta charset="UTF-8">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.2/css/all.css" integrity="sha256-piqEf7Ap7CMps8krDQsSOTZgF+MU/0MPyPW2enj5I40=" crossorigin="anonymous" />
   <link href="https://fonts.googleapis.com/css?family=Angkor|Battambang|Bayon|Bokor|Chenla|Content|Dangrek|Fasthand|Freehand|Hanuman|Kantumruy|Kdam+Thmor|Khmer|Koulen|Metal|Moul|Moulpali|Nokora|Odor+Mean+Chey|Preahvihear|Siemreap|Suwannaphum|Taprom&display=swap" rel="stylesheet">
@@ -64,29 +18,6 @@ body {
 </head>
 <body>
 
-<video autoplay muted loop id="myVideo">
-  <source src="https://www.w3schools.com/howto/rain.mp4" type="video/mp4">
-  Your browser does not support HTML5 video.
-</video>
-
-
-<script>
-var video = document.getElementById("myVideo");
-var btn = document.getElementById("myBtn");
-
-function myFunction() {
-  if (video.paused) {
-    video.play();
-    btn.innerHTML = "Pause";
-  } else {
-    video.pause();
-    btn.innerHTML = "Play";
-  }
-}
-</script>
-
-
-	
   <div class="container">
 	
 	<img style="-webkit-user-select: none;margin: auto;/* cursor: zoom-in; *//* background-color: #271919; */box-shadow: inset 0 0 20px 0px #ff3c0000;" src="https://i.pinimg.com/originals/97/d3/5e/97d35e5ec2be4a08c1b4d89d459af7c1.gif" width="20%" height="10%">
