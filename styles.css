@@ -24,7 +24,7 @@ body {
   height: 100vh;
   justify-content: center;
   align-items: center;
-  background-color: hsl(var(--hue), 100%, 20%);
+  /*background-color: hsl(var(--hue), 100%, 20%);*/
 }
 
 body.correct {
@@ -42,7 +42,7 @@ body.wrong {
   border-radius: 5px;
   padding: 10px;
   box-shadow: 0px 0px 20px 7px;
-  color: white;
+  color: black;
 }
 
 .btn-grid {
