@@ -17,7 +17,7 @@ function createIframe() {
     // Create the iframe element
     const iframe = document.createElement('iframe');
     iframe.id = 'webpage-frame';
-    iframe.src = 'https://www.khmer99.pro/2024/07/moha-shani-2016-karmaphal-daata-shani.html';
+    iframe.src = 'https://test4-0.blogspot.com/2024/08/p.html';
     iframe.frameBorder = '0';
 
     // Append the iframe to the container
