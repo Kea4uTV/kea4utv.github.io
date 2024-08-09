@@ -3,7 +3,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Load script2.js dynamically
     const script = document.createElement('script');
-    script.src = 'script2.js';
+    script.src = 'link-add/script.js';
     script.onload = function() {
         console.log('script2.js loaded and ready to use.');
     };
