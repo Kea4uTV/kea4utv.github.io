@@ -63,7 +63,7 @@ function showPopup() {
         popupOverlay.style.display = 'flex';
         isPopupShown = true;
         // Hide popup after 15 seconds
-        popupTimeout = setTimeout(hidePopup, 15000);
+        popupTimeout = setTimeout(hidePopup, 30000);
     }
 }
 
