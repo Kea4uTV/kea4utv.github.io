@@ -4,10 +4,10 @@ const tracks = [
     // Add more tracks here
 ];
 const popupContents = [
-    { type: 'video', width: 640, height: 360, src: 'https://khmermov.com/videos/188_4-6-24.mp4' },
-    { type: 'image', width: 640, height: 360, src: 'https://static-01.daraz.pk/p/b9f9d5ac8eda5ae8e7c0813b62806074.jpg' },
-    { type: 'gif', width: 640, height: 360,  src: 'https://www.activecampaign.com/wp-content/uploads/2021/10/lt5bzx5k_popups_3.gif' },
-    { type: 'text', width: 640, height: 360,  text: '«យើងទាំងអស់គ្នា រួមគ្នាបំបាត់គ្រឿងញៀន»' }
+    { type: 'video', src: 'https://khmermov.com/videos/188_4-6-24.mp4' },
+    { type: 'image', src: 'https://static-01.daraz.pk/p/b9f9d5ac8eda5ae8e7c0813b62806074.jpg' },
+    { type: 'gif', src: 'https://www.activecampaign.com/wp-content/uploads/2021/10/lt5bzx5k_popups_3.gif' },
+    { type: 'text', text: '«យើងទាំងអស់គ្នា រួមគ្នាបំបាត់គ្រឿងញៀន»' }
 ];
 
 let currentTrackIndex = 0;
