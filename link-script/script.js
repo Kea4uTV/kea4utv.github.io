@@ -5,10 +5,10 @@ const tracks = [
 ];
 
 const popupContents = [
-    { type: 'video', src: 'https://va.media.tumblr.com/tumblr_shwlxyOcGN1az183q_720.mp4' },
+    { type: 'video', src: 'https://www.w3schools.com/html/mov_bbb.mp4' },
     { type: 'image', src: 'https://static-01.daraz.pk/p/b9f9d5ac8eda5ae8e7c0813b62806074.jpg' },
     { type: 'gif', src: 'https://www.activecampaign.com/wp-content/uploads/2021/10/lt5bzx5k_popups_3.gif' },
-    { type: 'text', text: 'This is an advertisement text. Enjoy the video!' }
+    { type: 'text', text: '«យើងទាំងអស់គ្នា រួមគ្នាបំបាត់គ្រឿងញៀន»' }
 ];
 
 let currentTrackIndex = 0;
