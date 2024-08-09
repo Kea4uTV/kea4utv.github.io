@@ -1,0 +1,55 @@
+/* CSS to make iframe fill the entire viewport */
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* Prevent scrollbars */
+}
+
+.iframe-container {
+    width: 100vw; /* 100% viewport width */
+    height: 100vh; /* 100% viewport height */
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+/* CSS for the full-screen popup notification */
+.popup {
+    display: none; /* Hidden by default */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9); /* Full-screen black background with high opacity */
+    color: white;
+    z-index: 1000;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.popup-content {
+    background-color: rgba(0, 0, 0, 0.8); /* Slightly less opaque background for the content box */
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    position: relative;
+    width: 80%; /* Adjust width as needed */
+    max-width: 500px; /* Optional: Adjust the maximum width */
+}
+
+.popup .message {
+    font-size: 24px;
+    line-height: 1.5;
+}
