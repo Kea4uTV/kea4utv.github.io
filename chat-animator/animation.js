@@ -13,8 +13,8 @@
  * New bubbles are placed with an actual position just off screen.
  */
 
-import { recording, finishedRecording } from 'recording.js';
-import {ChatMessage} from 'chatMessage.js';
+import { recording, finishedRecording } from './recording.js';
+import {ChatMessage} from './chatMessage.js';
 
 var frameNumber = 0;
 var canvas = document.getElementById("animCanvas");
