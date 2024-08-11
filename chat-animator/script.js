@@ -1,6 +1,6 @@
-import {Profile, updateProfileDiv} from 'profile.js';
-import {playAnimationFromStart, drawFrame, AnimationSettings, addAlpha} from 'animation.js';
-import {ChatMessage} from 'chatMessage.js';
+import {Profile, updateProfileDiv} from '/profile.js';
+import {playAnimationFromStart, drawFrame, AnimationSettings, addAlpha} from '/animation.js';
+import {ChatMessage} from '/chatMessage.js';
 
 // The image/name pairs that are displayed
 var chatProfiles = [];
