@@ -1,19 +1,19 @@
-import {Profile, updateProfileDiv} from '/profile.js';
-import {playAnimationFromStart, drawFrame, AnimationSettings, addAlpha} from '/animation.js';
-import {ChatMessage} from '/chatMessage.js';
+import {Profile, updateProfileDiv} from './profile.js';
+import {playAnimationFromStart, drawFrame, AnimationSettings, addAlpha} from './animation.js';
+import {ChatMessage} from './chatMessage.js';
 
 // The image/name pairs that are displayed
 var chatProfiles = [];
-chatProfiles.push(new Profile('Grump', 'char1.svg', '#218aff', true, '#ffffff'));
-chatProfiles.push(new Profile('Olivia', 'senior-transparent.svg', '#d8d8d8'));
-chatProfiles.push(new Profile('Chad', 'char2.svg'));
-chatProfiles.push(new Profile('Tischman', 'char3.svg'));
+chatProfiles.push(new Profile('Grump', './char1.svg', '#218aff', true, '#ffffff'));
+chatProfiles.push(new Profile('Olivia', './senior-transparent.svg', '#d8d8d8'));
+chatProfiles.push(new Profile('Chad', './char2.svg'));
+chatProfiles.push(new Profile('Tischman', './char3.svg'));
 
 // All chat messages, whether on screen yet or not
 var allChatMessages = [];
 allChatMessages.push(new ChatMessage("Have you heard about chat-animator?", chatProfiles[0]));
 allChatMessages.push(new ChatMessage("It makes phone chat animations like this.", chatProfiles[0]));
-allChatMessages.push(new ChatMessage("How cool 😃 ", chatProfiles[2]));
+allChatMessages.push(new ChatMessage("How cool ðŸ˜ƒ ", chatProfiles[2]));
 allChatMessages.push(new ChatMessage("You can use them anywhere for free! No attribution necessary. Even the customizable profile pictures are free for commercial use.", chatProfiles[3]));
 
 var animationSettings = new AnimationSettings();
