@@ -1,4 +1,4 @@
-import { playAnimationFromStart } from 'animation.js'
+import { playAnimationFromStart } from './animation.js'
 
 /**
  * Profile class, with the profile image, and a name
@@ -87,7 +87,7 @@ export function updateProfileDiv(divElement, profiles, setupTextEntry, deletePro
         
         const uploadIcon = document.createElement('img');
         uploadIcon.className = "uploadIcon";
-        uploadIcon.src = 'cloud.svg';
+        uploadIcon.src = './cloud.svg';
         imageDiv.appendChild(uploadIcon);
         
         
@@ -173,7 +173,7 @@ export function updateProfileDiv(divElement, profiles, setupTextEntry, deletePro
                 // Create a file input element dynamically
                 fileInput = document.createElement('input');
                 fileInput.type = 'file';
-                fileInput.accept = ''; // Accept only images
+                fileInput.accept = 'image/*'; // Accept only images
                 
                 const closureProfile = thisProfile;
                 // Handle file selection
