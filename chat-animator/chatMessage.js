@@ -1,5 +1,5 @@
-import {Profile} from 'profile.js';
-import {AnimationSettings} from 'animation.js';
+import {Profile} from './profile.js';
+import {AnimationSettings} from './animation.js';
 
 /**
  * A message string with associated profile
