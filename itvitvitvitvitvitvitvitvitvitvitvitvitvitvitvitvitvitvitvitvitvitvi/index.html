@@ -1,0 +1,857 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<script async src="i/pub-2215951726205399-ers-1.js" nonce="iFNDvptgZqxb2zbpEkfSRQ"></script><script nonce="iFNDvptgZqxb2zbpEkfSRQ">(function() {function signalGooglefcPresent() {if (!window.frames['googlefcPresent']) {if (document.body) {const iframe = document.createElement('iframe'); iframe.style = 'width: 0; height: 0; border: none; z-index: -1000; left: -1000px; top: -1000px;'; iframe.style.display = 'none'; iframe.name = 'googlefcPresent'; document.body.appendChild(iframe);} else {setTimeout(signalGooglefcPresent, 0);}}}signalGooglefcPresent();})();</script>
+</head>
+<body>
+<center><font size="2">This is the free demo result. For a full version of this website, please go to  <a href="https://www6.waybackmachinedownloader.com/website-downloader-online/scrape-all-files/">Website Downloader</a></font></center></body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+        <meta charset="utf-8">
+        <title>Convert your Photos into Video</title>
+	<link rel="canonical" href="https://convert2video.com" />
+        <meta name="DESCRIPTION" content="Create easily a video from your photos with good zooming effect. This is a free online video maker."/>
+        <meta name="KEYWORDS" content="image, video, online, free, maker"/>
+        <link href="style.css" rel="stylesheet">
+        <link href="logo.css" rel="stylesheet">
+        <link href="menu.css" rel="stylesheet">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="shortcut icon" href="favicon.ico">
+        <meta itemprop="applicationCategory" content="BusinessApplication"/>
+        <meta itemprop="applicationSuite" content="convert2video"/>
+        <meta itemprop="datePublished" content="2015-09-01">
+        <meta itemprop="image" content="https://convert2video.com/favicon.ico" >
+        <link rel="stylesheet" href="css/jquery-ui.css">
+        <link rel="stylesheet" href="css/style.css">
+        <script src="jquery-2.1.1.min.js" type="text/javascript"></script>
+        <script src="jquery.form.min.js"></script>
+        <script src="js/jquery-ui.js"></script>
+        <script type="text/javascript">
+            function fbShare(){
+                FB.getLoginStatus(function(response) {
+                  if (response.status === 'connected') {
+                    // The user is logged in and has authenticated your
+                    // app, and response.authResponse supplies
+                    // the user's ID, a valid access token, a signed
+                    // request, and the time the access token 
+                    // and signed request each expire.
+                    var uid = response.authResponse.userID;
+                    var accessToken = response.authResponse.accessToken;
+                    var url = $(document).find('#fb-root').attr('data-url');
+                    console.log(response);
+                    FB.api(
+                        "/"+uid+"/videos",
+                        "POST",
+                        {
+                            "source": url
+                        },
+                        function (response2) {
+                          if (response2 && !response2.error) {
+                            /* handle the result */
+                          }
+                          alert(response2.error.message);
+                          console.log(response2);
+                        }
+                    );
+                  } 
+                });
+            }
+            $(document).ready(function () {
+                $(".popup").hide();
+                $(".openpop").click(function (e) {
+                    e.preventDefault();
+                    $("iframe").attr("src", $(this).attr('href'));
+                    $(".links").fadeOut('slow');
+                    $(".popup").fadeIn('slow');
+                });
+                $(".close").click(function () {
+                    $(this).parent().fadeOut("slow");
+                    $(".links").fadeIn("slow");
+                    $("#progress").hide("slow");
+                });
+            });
+            $(document).ready(function () {
+                var maxImages      = 30;
+                var isManualChange = false;
+                var $sortable     = $("#sortable");
+                var picturesInput = $('#picture');
+                // Init sortable
+                $sortable.sortable().disableSelection();
+                // On picture upload
+                picturesInput.change(function () {
+                    // Return if programmatically changed
+                    if (isManualChange) {
+                        isManualChange = false;
+                        return;
+                    }
+                    $sortable.empty();
+                    if (this.files.length > maxImages) {
+                        alert("30 images max please");
+                        for (var i = maxImages; i <= this.files.length; i++) {
+                            removeImage(picturesInput[0], i);
+                            return;
+                        }
+                    }
+                    $.each(this.files, function (k, file) {
+                        readURL(file, function (e) {
+                            $sortable.append($('<li/>', {
+                                class              : 'ui-state-default',
+                                'data-currentorder': k,
+                                html               : '<img src="' + e.target.result + '"><div class="file-name" title="' + file.name + '">' + file.name + '</div><span class="remove-image">&#10006;</span>'
+                            }));
+                        });
+                    });
+                    $('#images_background').hide('slow');
+                    $('#note').hide('slow');
+                    $('.next-btn').removeClass('hidden');
+                    $('.back1-btn').removeClass('hidden');
+                    $sortable.show();
+                    //$('#Titre_text').hide('slow');
+                    $('#move-tuto').show('slow');
+                    setTimeout(function(){
+                     $('#move-tuto').hide('slow')(500);
+                    }, 8000);
+                });
+                // On remove image
+                $(document).on('click', '.remove-image', function () {
+                    var index = $(this).closest('ul').find('li').index($(this).closest('li'));
+                    $(this).closest('li').remove();
+                    removeImage(picturesInput[0], index);
+                });
+                // On stop sorting
+                $sortable.on("sortstop", function (event, ui) {
+                    var orderArr = $sortable.find('li').map(function (k, v) {
+                        return $(this).attr('data-currentorder');
+                    });
+                    $sortable.find('li').each(function (k, v) {
+                        $(this).attr('data-currentorder', k);
+                    });
+                    sortImages(picturesInput[0], orderArr);
+                });
+                $('.back1-btn').click(function () {
+                    $('.next-btn').addClass('hidden');
+                    $('.back1-btn').addClass('hidden');
+                    $sortable.hide();
+                    $('#move-tuto').hide('slow');
+                    $('#images_background').show('slow');
+                });
+                $('.next-btn').click(function () {
+                    $('#uploadaudio').show('slow');
+                    //$('#Titre_text').hide('slow');
+                    $('#without_audio').show('slow');
+                    $('.next-btn').addClass('hidden');
+                    $('.back1-btn').addClass('hidden');
+                    $('.back2-btn').removeClass('hidden');
+                    $sortable.hide();
+                    $('#move-tuto').hide('slow');
+                });                              
+                $('.back2-btn').click(function () {
+                    $('#uploadaudio').hide('slow');
+                    $('#without_audio').hide('slow');
+                    $('#createthevideo').hide('slow');
+                    $('.next-btn').removeClass('hidden');
+                    $('.back1-btn').removeClass('hidden'); //Bouton back1 s'affiche
+                    $('.back2-btn').addClass('hidden'); //Bouton back2 se cache
+                    $sortable.show();
+                });
+                function readURL(input, callback) {
+                    if (input) {
+                        var reader     = new FileReader();
+                        reader.onload  = function (e) {
+                            if (e.target.result.indexOf('data:image') > -1) {
+                                typeof callback === 'function' && callback(e);
+                            } else {
+                                // TODO: Change Error message
+                                alert("Image please");
+                            }
+                        };
+                        reader.onerror = function (e) {
+                            console.log(e);
+                        };
+                        reader.readAsDataURL(input);
+                    }
+                }
+                function removeImage(el, index) {
+                    index    = isNaN(parseInt(index)) ? 0 : parseInt(index);
+                    const dt = new DataTransfer();
+                    for (let file of el.files) {
+                        if (file !== el.files[index])
+                            dt.items.add(file);
+                    }
+                    changeFileInptManually(el, dt);
+                }
+                function sortImages(el, order) {
+                    if (!order || order.length < 1)
+                        return false;
+                    const orderedArr = new Array(el.files.length);
+                    const filesArr   = Array.from(el.files);
+                    Array.from(order).forEach(function (o, i) {
+                        orderedArr[i] = filesArr[o];
+                    });
+                    const dt = new DataTransfer();
+                    for (let file of orderedArr) {
+                        dt.items.add(file);
+                    }
+                    changeFileInptManually(el, dt);
+                }
+                function changeFileInptManually(el, dt) {
+                    isManualChange = true;
+                    el.files       = dt.files;
+                }
+                // Upload Form - Last Step
+                $('#uploadForm').submit(function (e) {
+                    if ($('#picture').val()) {
+                        e.preventDefault();
+                        $('#loader-icon').show('slow');
+                        $(this).ajaxSubmit({
+                            'url'         : 'processor.html',
+                            type          : 'post',
+                            beforeSubmit  : function () {
+                                $("#progress-bar").width('5%');
+                                $("#progress_pourcentage").show('slow');
+                                $("#createthevideo").hide('slow');
+                                $("#convert2video_Faq").hide('slow');
+                            },
+                            uploadProgress: function (event, position, total, percentComplete) {
+                                $("#progress-bar").width(percentComplete + '%');
+                                $("#progress-bar").html('<div id="progress-status">' + percentComplete + ' %</div>');
+                                if (percentComplete > 98) {
+                                    $("#progress").show('slow'); GetPourcentage();
+                                    $("#progress_pourcentage").hide('slow');
+                                }
+                            },
+                            success       : function (data) {
+                                $("#progress").hide('slow');
+                                $("#progress_pourcentage").hide('slow');
+                                $("#newgif").hide('slow');
+                                $("#results").html(data);
+                                $("#facebook").show('slow');
+                            },
+                            resetForm     : true
+                        });
+                        return false;
+                    }
+                });
+            });
+        </script>
+        <style>
+            .demoInputBox {
+                padding          : 5px;
+                border           : #F0F0F0 1px solid;
+                border-radius    : 4px;
+                background-color : #FFF;
+            }
+            #progress-bar {
+                background-color   : #EF1319;
+                height             : 30px;
+                color              : #FFFFFF;
+                width              : 0%;
+                -webkit-transition : width .3s;
+                -moz-transition    : width .3s;
+                transition         : width .3s;
+            }
+            .btnSubmit {
+                background-color : #09f;
+                border           : 0;
+                padding          : 10px 40px;
+                color            : #FFF;
+                border           : #F0F0F0 1px solid;
+                border-radius    : 4px;
+            }
+            #progress-div {
+                border        : #292929 1px solid;
+                padding       : 5px 0px;
+                margin        : 30px 0px;
+                border-radius : 4px;
+                text-align    : center;
+            }
+        </style>
+        <link id="bootstrap-styleshhet" href="ajax/libs/bootswatch/3.3.7/flatly/bootstrap.min.css" rel="stylesheet" type="text/css"/>
+<script data-ad-client="ca-pub-2215951726205399" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<script async src="i/pub-2215951726205399-ers-1.js" nonce="iFNDvptgZqxb2zbpEkfSRQ"></script><script nonce="iFNDvptgZqxb2zbpEkfSRQ">(function() {function signalGooglefcPresent() {if (!window.frames['googlefcPresent']) {if (document.body) {const iframe = document.createElement('iframe'); iframe.style = 'width: 0; height: 0; border: none; z-index: -1000; left: -1000px; top: -1000px;'; iframe.style.display = 'none'; iframe.name = 'googlefcPresent'; document.body.appendChild(iframe);} else {setTimeout(signalGooglefcPresent, 0);}}}signalGooglefcPresent();})();</script>
+</head>
+<body>
+<div id="menu_sites"></div>
+<!-- <div id="fb-root"></div>
+<script>(function (d, s, id) {
+        var js, fjs = d.getElementsByTagName(s)[0];
+        if (d.getElementById(id)) return;
+        js     = d.createElement(s);
+        js.id  = id;
+        js.src = 'https://connect.facebook.net/ar_AR/sdk.js#xfbml=1&version=v3.1';
+        fjs.parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'facebook-jssdk'));</script> -->
+<!--Menu-->
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link href='font-awesome/4.3.0/css/font-awesome.min.css' rel='stylesheet'/> <!--Important pour afficher les 3 barres pour la version mobile-->
+<script async src="i/pub-2215951726205399-ers-1.js" nonce="iFNDvptgZqxb2zbpEkfSRQ"></script><script nonce="iFNDvptgZqxb2zbpEkfSRQ">(function() {function signalGooglefcPresent() {if (!window.frames['googlefcPresent']) {if (document.body) {const iframe = document.createElement('iframe'); iframe.style = 'width: 0; height: 0; border: none; z-index: -1000; left: -1000px; top: -1000px;'; iframe.style.display = 'none'; iframe.name = 'googlefcPresent'; document.body.appendChild(iframe);} else {setTimeout(signalGooglefcPresent, 0);}}}signalGooglefcPresent();})();</script>
+</head>
+<body>
+<div style="margin:auto; text-align:center; width:100%;" class="whitetransparent">
+<a id="resp-menu" class="responsive-menu" href="#"><i class="fa fa-reorder"></i> Menu</a>    
+   <ul class="menu">
+    <li>
+     <a href="index.html" title="Convert image to video">
+     <img src="images.svg" style="height:auto; border:0;" border="0">
+     <img src="to.svg" style="height:auto; border:0;" border="0">
+     <img src="camera.svg" style="height:auto; border:0;" border="0">
+     <br />Image To Video</a>
+    </li>
+    <li>
+     <a href="Audio-to-Video.html" title="Convert Audio to video">
+     <img src="audio-file.svg" style="height:auto; border:0;">
+     <img src="to.svg" style="height:auto; border:0;">
+     <img src="camera.svg" style="height:auto; border:0;">
+     <br />Audio To Video</a>
+    </li>
+    <li>
+     <a href="https://sncoff.com/" title="Online Silence Remover">
+     <img src="sncSVGlogo.svg" style="height:auto; border:0;">
+     <br />Silence Remover</a>
+    </li>
+    <li>
+     <a href="create-a-video-slideshow.html" title="Slideshow Maker Online">
+     <img src="slideshow.svg" style="height:auto; border:0;">
+     <br />Video slideshow</a>
+    </li>
+    <li>
+     <a href="Create-Short-Preview-From-Video.html" title="Video Preview Maker">
+     <img src="polaroid.svg" style="height:auto; border:0;">
+     <br />Create Short Preview From Video</a>
+    </li>
+    <li>
+     <a href="sequence-to-video.html" title="Sequence To Video">
+     <img src="sequence-to-video/sequence.svg" style="height:auto; border:0;">
+     <br />Sequence To Video</a>
+    </li>
+    <li>
+     <a href="3d-slideshow.html" title="3D Slideshow">
+     <img src="3d-slideshow/3d.svg" style="height:auto; border:0;">
+     <br />3D Slideshow</a>
+    </li>
+    <li>
+     <a href="add-audio-into-video.html" title="Add Audio To Video">
+     <img src="addmusic.svg" style="height:auto; border:0;">
+     <br />Add Audio To Video</a>
+    </li>
+    <li>
+     <a href="add-logo-into-video.html" title="Add Logo To Video">
+     <img src="addlogo.svg" style="height:auto; border:0;">
+     <br />Add Logo To Video</a>
+    </li>
+    <li>
+     <a href="compress-video.html" title="Compress Video">
+     <img src="compress-video/compress.svg" style="height:auto; border:0;">
+     <br />Compress Video</a>
+    </li>
+    <li>
+     <a href="add-text-into-video.html" title="Add Text To Video">
+     <img src="add-text.svg" style="height:auto; border:0;">
+     <br />Add Text To Video</a>
+    </li>
+    <li>
+     <a href="trim-video-file.html" title="Trim Video File">
+     <img src="trim.svg" style="height:auto; border:0;">
+     <br />Trim Video</a>
+    </li>
+    <li>
+     <a href="trim-audio-file.html" title="Trim Audio File">
+     <img src="trim-music.svg" style="height:auto; border:0;">
+     <br />Trim Audio</a>
+    </li>
+    <li>
+     <a href="Convert-Text-into-Video.html" title="Text to Video">
+     <img src="text.svg" style="height:auto; border:0;">
+     <img src="to.svg" style="height:auto; border:0;">
+     <img src="camera.svg" style="height:auto; border:0;">
+     <br />Text to Video</a>
+    </li>
+    <li><center><a href="https://pi2x.com/" title="Upscaling Photo with Pi2X Software for Windows" class="scroll"><img src="images/Pi2XWhite.svg" style="max-size:20%;">
+     <br />Upscale Photo</a></center>
+    </li>
+    <!--
+    <li>
+     <a href="https://watereffect.net" title="Water Effect" target="_blank">
+     <img src="https://convert2video.com/water.svg" style="height:auto; border:0;">
+     <br />Water Effect</a>
+    </li>
+    <li>
+     <a href="https://lywi.com/" title="Comic Strip Maker" target="_blank">
+     <img src="https://convert2video.com/lywi.svg" style="height:auto; border:0;">
+     <br />Comic Strip Maker</a>
+    </li>
+    <li>
+     <a href="https://photozop.com/" title="Funny Collage Maker" target="_blank">
+     <img src="https://photozop.com/logo.svg" style="height:auto; border:0;">
+     <br />Funny Collage</a>
+    </li>
+    <li>
+     <a href="https://simplecollage.com/" title="Photo Collage Maker" target="_blank">
+     <img src="https://convert2video.com/collage.svg" style="height:auto; border:0;">
+     <br />Collage Maker</a>
+    </li>
+    <li>
+     <a href="https://hidebg.com/" title="Auto Blur Image Online" target="_blank">
+     <img src="https://hidebg.com/effect2_8.jpg" style="height:auto; border:0;">
+     <br />Auto Blur Image</a>
+    </li>
+    <li>
+     <a href="https://hicoloring.com/" title="Online Coloring" target="_blank">
+     <img src="https://convert2video.com/hicoloring.svg" style="height:auto; border:0;">
+     <br />Online Coloring</a>
+    </li>
+    <li>
+     <a href="https://nftart3d.com/" title="Nft 3D Art Maker" target="_blank">
+     <img src="https://img8bit.com/nft.svg" style="height:auto; border:0;">
+     <br />NFT 3D Art Maker</a>
+    </li>-->
+  </ul>
+</div>
+<script  src="menu.js"></script>
+<center><font size="2">This is the free demo result. For a full version of this website, please go to  <a href="https://www6.waybackmachinedownloader.com/website-downloader-online/scrape-all-files/">Website Downloader</a></font></center></body>
+</html>
+<!--End Menu-->
+<div style="margin:auto; text-align:center; width:100%; max-width:1100px;">
+    <div class="the-box" id="Titre_text">
+     <h1 class="xyz-text">Create Awsome Video From Your Photos <br />
+     <div style="padding:1px; margin:1px;" ><a href="index.html" title="Convert image to video"><img src="logo-white-200.png" style="height:auto; border:0;" border="0"></a></div>
+     <img src="images.svg" style="max-width:5%;height:auto; border:0;" border="0">
+      <img src="to.svg" style="max-width:5%;height:auto; border:0;" border="0">
+      <img src="camera.svg" style="max-width:5%;height:auto; border:0;" border="0">
+     </h1>
+    </div>
+    <div><hr style="border-color:#F40000; width:100%; max-width:600px; border-width:5px;"></div>
+<div style="padding:15px; margin:20px;" id="divadsense">
+<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- Voice2v.com Auto New 04 2019 -->
+<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-client="ca-pub-2215951726205399"
+     data-ad-slot="1913857053"
+     data-ad-format="auto"
+     data-full-width-responsive="true"></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+</div>
+<!-- ADS for Jiophone-->
+<div style="padding:1px; margin:1px; display:none;" id="divotherpub">
+</div>
+<!--Fin ADS for Jiophone-->
+    <img src="move-tuto.gif" id="move-tuto" style="display:none;">
+    <!--Zone upload-->
+    <form action="" method="post" enctype="multipart/form-data" id="uploadForm" name="uploadForm">
+        <input type="hidden" name="language_prefixe" id="language_prefixe" value="">
+        <!--Step 1 upload images-->
+        <div id="images_background" style="display:block;">
+            <div class="upload-btn-wrapper" id="add_images">
+                <button class="btn">
+                    Upload Images
+                    <br />
+                    <img src="add_image.svg" style="max-width:21%;height:auto; border:0;">
+                    <div style="color:#808080; font-size:9px;">30 images max</div>
+                </button>
+                <!--<span style="color:red;">Sorry, The site is in Maintenance...<br />We will be back as soon as possible.<br />Thank you :)</span>-->
+                <input type="file" name="picture[]" id="picture" accept="image/*" multiple onChange="">
+                <!--<input type="file" name="picture[]" id="picture" accept="image/x-png,image/jpeg" multiple onChange="">-->
+    <br /><br />            
+    <select name="Format" style="width:220px;">
+        <option value="youtube" selected="selected">Format: YouTube 1920x1080</option> 
+        <option value="instagram">Format: Instagram 1080x1080</option>    
+        <option value="tiktok">Format: TikTok 1080x1920</option>               
+   </select>
+            </div>
+            <iframe width="280" height="155" src="https://www.youtube.com/embed/PVX3fMmWwOg" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+        </div>
+        <p style="color:red; display:none;">Work In Progress. <br /> We Apologize For Any Inconvenience ...</p>
+        <div id="note">
+         <!--<p style="color:#ffffff; font-size:11px;">If you want that your video length will be more than 12 seconds, please use our <a href="index.html">Audio to Video Converter</a>.</p>-->
+        </div>
+        <ul id="sortable" class="clearfix"></ul>
+        <br />      
+        <button type="button" class="btn hidden next-btn"><img src="next.svg" style="max-width:21%;height:auto; border:0;"></button> 
+        <!--<button type="button" class="btn hidden back1-btn"><img src="back.svg" style="max-width:21%;height:auto; border:0;"></button> -->     
+        <!--Step 2 Audio-->
+        <div class="upload-btn-wrapper" id="uploadaudio" style="display:none;">
+            <button class="btn">
+                <img src="add_audio.svg" style="max-width:21%;height:auto; border:0;"><br />
+                Upload Audio File            
+            </button>
+            <input type="file" accept=".mp3,audio/*" name="audio[]" multiple onChange="parent.$('#createthevideo').show('slow');parent.$('#uploadaudio').hide('slow');$('#result').hide('slow');parent.openpop();">
+            <br />
+            <button type="button" class="btn" onclick="parent.$('#createthevideo').show('slow');parent.$('#uploadaudio').hide('slow');$('#result').hide('slow');">
+             <span style="color:#101010; font-size:14px;">Continue Without Audio File</span><br />
+             <img src="noaudio-black.svg" style="max-width:21%;height:auto; border:0;">
+             <img src="next.svg" style="max-width:21%;height:auto; border:0;">
+            </button>
+            <br />
+            <button type="button" class="btn hidden back2-btn"><img src="back.svg" style="max-width:11%;height:auto; border:0;"></button>
+        </div>
+        <!--Step 3 Options-->
+        <div id="createthevideo" style="display:none;">
+            <br />
+            <!--Add input text-->
+            <span id="addtextbutton">
+                <a href="#" onclick="parent.$('#addtextbutton').hide('slow');parent.$('#addtext').show('slow');"><img src="add-text.svg" style="max-width:8%;height:auto; border:0;"></a>
+            </span>
+            <div id="addtext" style="display:none;">
+                <script src="addinput/jquery.add-input-area.min.js"></script>
+                <script src="addinput/form-serialize.js"></script>
+                <script>
+                    $(function () {
+                        $('#list').addInputArea({
+                            area_del: '.del-area'
+                        });
+                    });
+                </script>
+                <script src="addinput/jquery.fontselect.js"></script>
+                <link rel="stylesheet" type="text/css" href="addinput/fontselect-default.css"/>
+                <script>
+                    $(function () {
+                        $('#font').fontselect();
+                    });
+                </script>
+                <link rel="stylesheet" type="text/css" href="addinput/select.css"/>
+                <script>
+                    $(function () {
+                        var $select = $(".1-100");
+                        for (i = 10; i <= 60; i++) {
+                            $select.append($('<option></option>').val(i).html(i))
+                        }
+                    });
+                </script>
+                <div id="list" class="upload-btn-wrapper" style="border:1px dashed #ffffff; border-radius:15px; padding:5px;margin:auto;">
+                    <p style="background:#1F2022; color:#ffffff; padding:7px; border-radius:5px;">Add Text to your Video <br />Each text will be displayed with each image</p>
+ <div id="global" style="margin:5px;" >
+  <div id="gauche">
+   <input name="Fontname_parameter" type="text" value="Lato" id="font">
+   <select name="Fontsize_parameter" class="1-100"><option value="26" selected="selected">Font Size</option></select>
+   <select name="position">
+        <option value="190">Center</option>
+        <option value="030" selected="selected">Bottom</option>            
+   </select>
+   <input name="Colour_parameter" type="color" value="#ffffff">
+   <select name="outline_shadow">
+        <option value="2" selected="selected">Shadow: Yes</option>  
+        <option value="0">Shadow: No</option>            
+   </select>
+   <select name="Background_Box" style="width:120px; display:none;">
+        <option value="0" selected="selected">Background for text: No</option>  
+        <option value="3">Background for text: Yes</option>            
+   </select>
+  </div>
+ </div>
+                    <div id="global" class="list_var">
+                        <script>
+                            function textAreaAdjust(o) {
+                                o.style.height = "1px";
+                                o.style.height = (0 + o.scrollHeight) + "px";
+                            }
+                        </script>
+                        <textarea onkeyup="textAreaAdjust(this)" placeholder="Add here your text" name="lyric_0" id="lyric_0" style="width:100%; max-width:400px; padding:5px; border: 0px; overflow:hidden; white-space: normal; text-align: justify; -moz-text-align-last: center; text-align-last: center;"></textarea>
+                        <br />
+                        <div id="gauche">
+                            <span>
+                                <input type="hidden" placeholder="Text Starting Time" id="starting_time_0" name="starting_time_0" class="timepicker" readonly>
+                            </span>
+                            <span>
+                                <input type="hidden" placeholder="Text Finishing Time" id="finishing_time_0" name="finishing_time_0" class="timepicker" readonly>
+                            </span>
+                            <select name="Text_Effect_0" style="width:210px;">
+                                <option value="1" selected="selected">Text Fade Effect</option>
+                                <option value="2">Go to right Effect</option>
+                                <option value="3">Go to left Effect</option>
+                                <option value="4">Karaoke Effect</option>
+                                <option value="5">Rotation Effect</option>
+                                <option value="6">Zoom out Effect</option>
+                                <option value="7">Zoom in Effect</option>
+                                <option value="8">Waves Effect</option>
+                                <option value="9">Per Words Effect</option>
+                            </select>
+                            <span class="del-area">
+                                <button type="button" class="list_del" style="border-radius:3px; background:#FF0000; color:#ffffff;"> X </button>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <p>
+                    <input type="button" value=" + " class="list_add" style="width:100%; max-width:200px; padding:3px; border-radius:5px; background:#2D77DE; color:#ffffff; font-size:2vw;" onclick="closeIt();">
+                </p>
+            </div>
+            <!--Fin Add input text-->
+            <br />
+            <!--Add logo-->
+            <div class="upload-btn-wrapper" id="logo">
+                <!-- Upload image -->
+                 <div class="wrap-custom-file">
+                  <input type="file" name="logo[]" id="image2" accept="image/x-png,image/jpeg" onclick="parent.$('#logo_option').show('slow');"/>
+                  <label  for="image2">
+                   <span>Add Your Logo</span>
+                   <img src="add_image.svg" style="max-width:21%;height:auto; border:0;">
+                  </label>
+                 </div>
+                 <script  src="select/index.js"></script>
+                 <link rel="stylesheet" href="select/style.css">
+                <!-- Fin Upload image -->
+            </div>
+            <div id="logo_option" style="display:none; width:100%; max-width:300px; margin:auto; font-size: 12px; padding:5px; border: 1px solid #ffffff; border-radius:15px;">
+               <span style="color:#ffffff;"> Logo Options</span>
+                <select name="logo_position">
+                    <option value="overlay=10:10">Top left</option>
+                    <option value="overlay=main_w-overlay_w-10:10">Top right</option>
+                    <option value="overlay=10:main_h-overlay_h-10">Bottom left</option>
+                    <option value="overlay=main_w-overlay_w-10:main_h-overlay_h-10" selected="selected">Bottom right</option>
+                    <option value="overlay=main_w/2-overlay_w/2:main_h/2-overlay_h/2">Center</option>
+                </select>
+                <select name="logo_width">
+                    <option value="100" selected="selected">100px</option>
+                    <option value="200">200px</option>
+                    <option value="300">300px</option>
+                    <option value="400">400px</option>
+                    <option value="500">500px</option>
+                </select>
+            </div>
+            <!--Fin Add logo-->
+            <br />
+                                <input type="hidden" name="pourcentage_folder" id="pourcentage_folder" value="The_Randomly___Number" style="color:#101010;">
+                <button class="btn" onclick="parent.$('#createthevideo').hide('slow');parent.$('#uploadaudio').hide('slow');parent.$('#newgif').show('slow');" style="color:#101010;"><!--Avec bouton getpourcentage-->
+                <!--<button class="btn" onclick="parent.$('#createthevideo').hide('slow');parent.$('#uploadaudio').hide('slow');parent.$('#newgif').show('slow');" style="color:#101010;">-->
+                    Create The Video Now <br />
+                    <img src="create_video.svg" style="max-width:21%;height:auto; border:0;">
+                    <img src="next.svg" style="max-width:21%;height:auto; border:0;">
+                </button> 
+                <br />
+                <button type="button" class="btn hidden back2-btn"><img src="back.svg" style="max-width:7%;height:auto; border:0;"></button>          
+        </div>
+        <!--Fin Step 4 Create-->
+        <!--Gif waiting pourcentage-->
+        <!--<div class="links" id="newgif" style="display:none;"><img src="76.gif"><br /></div>-->
+        <div class="links" id="progress_pourcentage" style="display:none;">
+            <div id="progress-div">
+                <p>Uploading process <br /><img src="loading.gif"></p>
+                <div id="progress-bar"></div>
+            </div>
+        </div>
+        <!--FinGif waiting pourcentage-->
+        <!--Gif waiting-->
+        <div class="links" id="progress" style="display:none;">
+            <svg width='120px' height='120px' xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid" class="uil-hourglass">
+                <rect x="0" y="0" width="100" height="100" fill="none" class="bk"></rect>
+                <g>
+                    <path fill="none" stroke="#EF1319" stroke-width="5" stroke-miterlimit="10" d="M58.4,51.7c-0.9-0.9-1.4-2-1.4-2.3s0.5-0.4,1.4-1.4 C70.8,43.8,79.8,30.5,80,15.5H70H30H20c0.2,15,9.2,28.1,21.6,32.3c0.9,0.9,1.4,1.2,1.4,1.5s-0.5,1.6-1.4,2.5 C29.2,56.1,20.2,69.5,20,85.5h10h40h10C79.8,69.5,70.8,55.9,58.4,51.7z" class="glass"></path>
+                    <clipPath id="uil-hourglass-clip1">
+                        <rect x="15" y="20" width="70" height="25" class="clip">
+                            <animate attributeName="height" from="25" to="0" dur="1s" repeatCount="indefinite" vlaues="25;0;0" keyTimes="0;0.5;1"></animate>
+                            <animate attributeName="y" from="20" to="45" dur="1s" repeatCount="indefinite" vlaues="20;45;45" keyTimes="0;0.5;1"></animate>
+                        </rect>
+                    </clipPath>
+                    <clipPath id="uil-hourglass-clip2">
+                        <rect x="15" y="55" width="70" height="25" class="clip">
+                            <animate attributeName="height" from="0" to="25" dur="1s" repeatCount="indefinite" vlaues="0;25;25" keyTimes="0;0.5;1"></animate>
+                            <animate attributeName="y" from="80" to="55" dur="1s" repeatCount="indefinite" vlaues="80;55;55" keyTimes="0;0.5;1"></animate>
+                        </rect>
+                    </clipPath>
+                    <path d="M29,23c3.1,11.4,11.3,19.5,21,19.5S67.9,34.4,71,23H29z" clip-path="url(#uil-hourglass-clip1)"
+                          fill="#EF1319" class="sand"></path>
+                    <path d="M71.6,78c-3-11.6-11.5-20-21.5-20s-18.5,8.4-21.5,20H71.6z" clip-path="url(#uil-hourglass-clip2)" fill="#EF1319" class="sand"></path>
+                    <animateTransform attributeName="transform" type="rotate" from="0 50 50" to="180 50 50" repeatCount="indefinite" dur="1s" values="0 50 50;0 50 50;180 50 50" keyTimes="0;0.7;1"></animateTransform>
+                </g>
+            </svg>
+            <p>Conversion in progress..<br />Please wait...</p>
+            <img src="76.gif"><br />
+                                    <script>
+        function randomBetween(min, max) // min and max included
+        {
+            return Math.floor(Math.random() * (max - min + 1) + min);
+        }
+        var randomNum                                       = randomBetween(1, 3453523523542353252);
+        document.getElementById('pourcentage_folder').value = randomNum;
+        function GetPourcentage() {
+            var rawFile = new XMLHttpRequest();
+            rawFile.open("GET", 'pourcentage/' + randomNum + '/pourcentage_file.txt', false);
+            rawFile.onreadystatechange = function () {
+                if (rawFile.readyState === 4) {
+                    if (rawFile.status === 200 || rawFile.status == 0) {
+                        var allText                                      = rawFile.responseText;
+                        document.getElementById("Pourcentage").innerHTML = allText;
+                    }
+                }
+            }
+            rawFile.send(null);
+            setTimeout(GetPourcentage, 500);
+            return;
+        }
+    </script>
+            <div class="Pourcentage" id="Pourcentage" style="padding:2px; color:#ffffff; background:#EF1319;"></div><!-- Pourcentage Bar Color-->
+        </div>
+        <!--Fin Gif waiting-->
+        <!--Fin Zone upload-->
+    </form>
+    <div id="results"></div>
+    <!-------------
+<div style="margin:center; padding:2px; color:#ffffff;">
+ <img src="https://convert2video.com/bt.svg" style="max-width:3%; border:0;" border="0"><br />
+ <span style="padding:2px; border:1px dashed #ffffff; color:#ffffff;">1TzdXNTenqaroMTeBKSLxbZKK4wq2J8AT</span>
+</div>
+<!----------->
+</div><div style="margin:auto; text-align:center; width:100%; margin-top:20px;" class="whitetransparent2">
+<!--=========== Voice2v Software ================-->  
+<div style="margin:auto; padding-top:10px; padding-bottom:10px;">   
+ <a href="voice2v-express.html" title="Voice2v Express Audio To Video Converter For PC">
+ <p style="color:#ffffff;">Voice2v for PC now available!</p>
+ <img src="softwares/box_150.png" alt="Voice2v Express Audio To Video Converter For PC">
+ </a>
+</div>
+<!--=========== Voice2v Software ================--> 
+<div id="facebook" style="margin:5px;">
+ <iframe src="https://www.facebook.com/plugins/like.php?href=https%3A%2F%2Fwww.facebook.com%2FConvert2video%2F&width=59&layout=box_count&action=like&size=small&share=true&height=65&appId=452375855107498" width="75" height="80" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowTransparency="true" allow="encrypted-media"></iframe><br />
+ <a href="https://twitter.com/NftArt3d?ref_src=twsrc%5Etfw" class="twitter-follow-button" data-show-count="false">Follow</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+</div>
+    <table style="margin:auto; text-align:center; width:100%; max-width:1100px; margin-top:20px;" id="convert2video_Faq">
+     <tr>
+      <td>
+        <div style="float:left; margin:15px; border: 2px dashed #ffffff; padding:7px; max-width:300px;">
+            <p style="color:#ffffff; font-size:22px;"><b>How to convert my photo into video?</b></p>
+            <hr style="border-color:#F40000; width:100%; max-width:200px; border-width:1px;">
+            <p style="color:#f9f9f9;">You have just to upload your photo and our tool will convert it automatically into video in a few seconds.</p>
+        </div>
+        <div style="float:left; margin:15px; border: 2px dashed #ffffff; padding:7px;  max-width:300px;">
+            <p style="color:#ffffff; font-size:22px;"><b>This service is it free?</b></p>
+            <hr style="border-color:#F40000; width:100%; max-width:200px; border-width:1px;">
+            <p style="color:#ffffff;">Yes, our online photo to video converter is free to use.</p>
+        </div>
+        <div style="float:left; margin:15px; border: 2px dashed #ffffff; padding:7px;  max-width:300px;">
+            <p style="color:#ffffff; font-size:22px;"><b>What happens once I've uploaded my images?</b></p>
+            <hr style="border-color:#F40000; width:100%; max-width:200px; border-width:1px;">
+            <p style="color:#ffffff;">Once your video is created, all uploaded files will be removed from the server immediately after the conversion process.</p>
+        </div>
+        <div style="float:left; margin:15px; border: 2px dashed #ffffff; padding:7px;  max-width:300px;">
+            <p style="color:#ffffff; font-size:22px;"><b>The video created is too short, why?</b></p>
+            <hr style="border-color:#F40000; width:100%; max-width:200px; border-width:1px;">
+            <p style="color:#ffffff;">If you want the final video size to match your music duration, in this case use our service <a href="Audio-to-Video.html"><b>Audio To Video</b></a>.</p>
+        </div>
+        <div style="float:left; margin:15px; border: 2px dashed #ffffff; padding:7px;  max-width:300px;">
+            <p style="color:#ffffff; font-size:22px;"><b>What video format will be created?</b></p>
+            <hr style="border-color:#F40000; width:100%; max-width:200px; border-width:1px;">
+            <p style="color:#ffffff;">The created video will be in MP4, because the most digital devices and platforms support it.</p>
+        </div>
+      </td>
+     </tr>
+    </table>
+    <div style="margin:auto; text-align:center; width:100%; max-width:1100px; margin-top:20px;">
+        <div style="margin:15px;">
+            <!--<div class="the-box"><a href="index.html"><img src="images/logo.png" alt="logo" style="width:100%; max-width:300px; border:0px;" border="0"></a></div>-->
+            <!--Language--
+             <select id="language" style="width:150px;" onchange="if (this.value) window.location.href=this.value">
+                <option value="#" Selected> Choose language </option>
+                <option value="https://convert2video.com">English</option>
+                <option value="https://convert2video.com/fr/">Fran&ccedil;ais</option>
+				<option value="https://convert2video.com/in/">हिंदी</option>
+                <option value="https://convert2video.com/th/">ภาษาไทย</option>	
+ 				<option value="https://convert2video.com/ar/">العربية</option>
+</select>            <!--End Language-->
+        </div>
+    </div>
+    <div style="background:black; color:#FA0E07; font-size:75px;">
+     <a href="index.html" title="Turn Photo Into Video"><img src="Pub1-750.png" style="max-width:40%;height:auto; border:0;" alt="Turn Photo Into Video"></a>
+    </div>
+            <h2 style="color:white; font-size:16px;">Convert2video.com </h2>
+    <div style="margin:auto; text-align:center; width:100%; max-width:1100px;">
+        <div style="margin:15px;">
+            <div class="the-box">
+             <span style="color: #ffffff; padding:5px;">Turn any Photo into Cartoon Art with <span style="color: #F2B440;"> PrimaCartoonizer.com</span></span>         
+            </div>
+        </div>
+    </div>
+    <!--Footer--> 
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<script async src="i/pub-2215951726205399-ers-1.js" nonce="iFNDvptgZqxb2zbpEkfSRQ"></script><script nonce="iFNDvptgZqxb2zbpEkfSRQ">(function() {function signalGooglefcPresent() {if (!window.frames['googlefcPresent']) {if (document.body) {const iframe = document.createElement('iframe'); iframe.style = 'width: 0; height: 0; border: none; z-index: -1000; left: -1000px; top: -1000px;'; iframe.style.display = 'none'; iframe.name = 'googlefcPresent'; document.body.appendChild(iframe);} else {setTimeout(signalGooglefcPresent, 0);}}}signalGooglefcPresent();})();</script>
+</head>
+<body>
+<div style="margin:auto; text-align:center; width:100%; max-width:1100px; margin-top:20px;">
+        <div style="margin:15px;">
+            <!-- Facebook--
+             <span id="facebook" style=" width:100%; max-width:320px; margin-top:100px;">
+             <div class="fb-like" data-href="https://www.facebook.com/convert2video/" data-layout="button_count" data-action="like" data-size="small" data-show-faces="true" data-share="true" style="width:100%; max-width:300px; padding:5px;"></div>
+             <br />
+             <!--<div style="width:100%; max-width:300px; padding:10px;  color:#ffffff; background-color:#ffffff; font-size:12px; margin-top:100px;"><font color="#808080" face="arial" size="2"></font></div>--
+             <div class="fb-comments" data-href="index.html" order_by="reverse_time" data-width="320" data-num-posts="3" style="width:100%; max-width:320px; padding:5px; background-color:#3A3D41; border:1px solid #333333;"></div>
+             </span>
+            <!-- Facebook-->
+        </div>
+        <div style="margin:15px;">
+        <!--
+        <select id="language" style="width:180px;background:#1B1C1E;color:#ffffff;" onchange="if (this.value) window.location.href=this.value">
+                <option value="#" Selected>PC/Mac Softwares</option>
+                <option value="https://secure.2checkout.com/affiliate.php?ACCOUNT=WONDERSS&AFFILIATE=12418&PATH=https%3A%2F%2Ffilmora.wondershare.com%2Fvideo-editor%2F%3FAFFILIATE%3D12418">Filmora Video Editor</option>
+                <option value="https://store.movavi.com/affiliate.php?ACCOUNT=MOVAVI&AFFILIATE=12418&PATH=https%3A%2F%2Fwww.movavi.com%2Fsuite%2F%3Fasrc%3Dmain_menu%26AFFILIATE%3D12418">Movavi Video Suite</option>
+                <option value="https://store.movavi.com/affiliate.php?ACCOUNT=MOVAVI&AFFILIATE=12418&PATH=https%3A%2F%2Fwww.movavi.com%2Fphoto-to-dvd-slideshow%2F%3Fasrc%3Dmain_menu%26AFFILIATE%3D12418">Movavi SlideShow Maker</option>
+				<option value="https://store.movavi.com/affiliate.php?ACCOUNT=MOVAVI&AFFILIATE=12418&PATH=https%3A%2F%2Fwww.movavi.com%2Fvideo-editor-plus%2F%3Fasrc%3Dmain_menu%26AFFILIATE%3D12418">Movavi Video Editor</option>
+                <option value="https://store.avs4you.com/affiliate.php?ACCOUNT=ONLMETEC&AFFILIATE=12418&PATH=https%3A%2F%2Fwww.avs4you.com%2Favs-video-editor.aspx%3FAFFILIATE%3D12418">AVS Video Editor</option>	
+ 				<option value="https://secure.2checkout.com/affiliate.php?ACCOUNT=BLAZEVI&AFFILIATE=12418&PATH=http%3A%2F%2Fwww.blazevideo.com%2Fvideo-converter%2F%3FAFFILIATE%3D12418">BlazeVideo Converter</option>
+       </select>
+       -->
+        <!--<a href="https://47557-v7es7naqdgrevbp96taj.hop.clickbank.net/" target="_blank" rel="nofollow"><span style="color:#ffffff;">Picture To Video Creator Software</span><br /><img src="https://convert2video.com/motioney230.png" border="0"></a>-->
+        <!--<a href="https://convert2video.com/buynow.htm" target="_blank"><span style="max-width:400px; background:#ffffff; padding:3px; color:#333333; border-radius:5px 5px 0 0;">Image To Video Software For PC</span><br /><img src="https://convert2video.com/icecream-slideshow-maker_250.png" border="0"></a>-->
+        <!--   
+        <a href="https://primacartoonizer.com/" title="Cartoonize Yourself"><img src="https://primacartoonizer.com/images/Facebook/Photo_Cover_800.png" alt="Cartoon Yourself Online" style="width:100%;"></a>
+        <br />
+        <a href="https://photozop.com/" title="Funny Photo Maker"><img src="https://convert2video.com/cover-photozop-com-800.jpg" alt="Funny Photo Collage Maker" style="width:100%;"></a>
+        <br />
+        <a href="https://hidebg.com/" title="Remove Background of any image"><img src="https://convert2video.com/hidebg.png" alt="Remove Background of any image" style="width:100%;"></a>
+        <!--
+        <iframe title="vimeo-player" src="https://player.vimeo.com/video/102910197" width="290" height="180" frameborder="0" allowfullscreen></iframe>
+        <br />
+        <a href="https://convert2video.com/buynow.htm" target="_blank" rel="nofollow"><span style="color:#ffffff;">Get The Image To Video SlideShow Software For PC Now</span></a>
+        </div>
+<div style="padding:15px; margin:20px;" id="divadsense2">
+</div>
+<!-- ADS for Jiophone-->
+<div style="padding:1px; margin:1px; display:none;" id="divotherpub2">
+</div>
+<!--Fin  ADS for Jiophone-->
+        <div style="margin:15px;">
+             <div id="facebook" style="margin:5px;">
+              <!--<iframe src="https://www.facebook.com/plugins/like.php?href=https%3A%2F%2Fwww.facebook.com%2Fconvert2video%2F&width=63&layout=box_count&action=like&size=small&show_faces=true&share=true&height=65&appId=452375855107498" width="63" height="65" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowTransparency="true" allow="encrypted-media"></iframe>-->
+             </div>
+             <!--Contact us messenger-->
+             <span id="contactus"><a href="#" onclick="parent.$('#messenger').show('slow');parent.$('#contactus').hide('slow');"><span style="color: #808080; padding:5px;">Contact us</span></a></span>
+             <span id="messenger" style="display:none;"><iframe src="https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2FConvert2video&tabs=messages&width=300&height=500&small_header=true&adapt_container_width=true&hide_cover=true&show_facepile=true&appId=452375855107498" width="340" height="500" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowTransparency="true" allow="encrypted-media"></iframe></span>
+            <!--Fin Contact us messenger-->
+            <br />
+            <a href="index.html" title="Convert image to video"><img src="logo-white-200.png" style="height:auto; border:0;" border="0"></a>
+            <p style="color:#808080;font-family: 'Warnes';"> Copyright &copy; Convert2video.com - <a href="policy.html"><span style="color: #808080; padding:5px;">Policy</span></a></p>
+        </div>
+<!--Kofi-->
+<!--Kofi-->
+</div>
+<center><font size="2">This is the free demo result. For a full version of this website, please go to  <a href="https://www6.waybackmachinedownloader.com/website-downloader-online/scrape-all-files/">Website Downloader</a></font></center></body>
+</html>
+<!--End Footer-->
+<!-- Go to www.addthis.com/dashboard to customize your tools -->
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-1799511-58"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'UA-1799511-58');
+</script>
+<center><font size="2">This is the free demo result. For a full version of this website, please go to  <a href="https://www6.waybackmachinedownloader.com/website-downloader-online/scrape-all-files/">Website Downloader</a></font></center></body>
+</html>
