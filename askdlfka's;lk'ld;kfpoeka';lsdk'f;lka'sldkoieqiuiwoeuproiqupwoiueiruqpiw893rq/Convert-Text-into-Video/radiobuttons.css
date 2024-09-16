@@ -1,0 +1,69 @@
+
+/* Font from Google fonts */
+
+@import url('https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,900');
+
+
+/* Color palette */
+
+$background-color: #00171F;
+$footer-color: #003459;
+$details-color: #00A7E1;
+$font-color: #FAFAFA;
+$submit-color: #00CC73;
+$submit-color-darker: #00824A;
+
+/* Form Styles */
+
+.form {
+	max-width: 220px;
+	margin: 1px auto;
+	color: #ffffff;
+}
+
+
+.form__options {
+	border: none;
+	padding: 0;
+}
+
+
+
+.form__answer {
+	display: inline-block;
+	box-sizing: border-box;
+	vertical-align: top;
+	text-align: center; 
+	border: 0px solid #ffffff;
+}
+
+label {
+	border: 1px solid rgba($font-color,.15);
+	box-sizing: border-box;
+	display: block;
+	cursor: pointer;
+	opacity: .5;
+	transition: all .5s ease-in-out;
+	&:hover, &:focus, &:active {
+		border: 1px solid rgba($font-color,.5);
+	}
+}
+
+
+
+/* Input style */
+
+input[type="radio"] {
+	opacity: 0;
+	width: 0;
+  height: 0;
+}
+
+input[type="radio"]:active ~ label {
+  opacity: 1;
+}
+
+input[type="radio"]:checked ~ label {
+  opacity: 1;
+	border: 1px solid $font-color;
+}
