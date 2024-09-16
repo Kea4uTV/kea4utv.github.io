@@ -1,0 +1,200 @@
+.video_wrapper {
+    width         : 600px;
+    max-width     : 90%;
+    background    : #1f242a;
+    padding       : 1rem;
+    border-radius : 4px;
+    margin        : 10px auto;
+    position      : relative;
+    box-shadow    : 0 5px 10px rgba(0, 0, 0, 0.3);
+}
+
+.video {
+    width  : 100%;
+    cursor : pointer;
+}
+
+.playback {
+    position      : relative;
+    margin-top    : 1rem;
+    margin-left   : 24px;
+    margin-right  : 24px;
+    height        : 20px;
+    background    : #2f3b44;
+    margin-bottom : 1rem;
+    border-radius : 1px;
+}
+
+.playback .seekable {
+    position   : absolute;
+    top        : 0;
+    bottom     : 0;
+    left       : 0;
+    right      : 0;
+    background : #ccc;
+    cursor     : pointer;
+}
+
+.playback .grabber {
+    position        : absolute;
+    top             : -4px;
+    bottom          : -4px;
+    width           : 24px;
+    border-radius   : 2px;
+    z-index         : 1;
+    box-shadow      : 0 2px 5px rgba(0, 0, 0, 0.4);
+    cursor          : pointer;
+    transition      : transform .2s ease;
+    display         : flex;
+    align-items     : center;
+    justify-content : center;
+}
+
+.playback .grabber.start {
+    background  : #a8d736;
+    left        : 0;
+    margin-left : -24px;
+}
+
+.playback .grabber.end {
+    background   : #fc4242;
+    right        : 0;
+    margin-right : -24px;
+}
+
+.playback .grabber:hover {
+    transform : scaleY(1.4);
+}
+
+.playback .grabber svg {
+    user-drag         : none;
+    -moz-user-select  : none;
+    -webkit-user-drag : none;
+}
+
+.playback .preview-progress {
+    background     : #0072cf;
+    position       : absolute;
+    left           : 0;
+    top            : 0;
+    bottom         : 0;
+    cursor         : pointer;
+    pointer-events : none;
+}
+
+.controls {
+    display         : flex;
+    justify-content : space-between;
+    text-align      : center;
+}
+
+.controls .player-controls button {
+    width  : 34px;
+    margin : 0 .125rem;
+}
+
+.controls .player-controls .play-control {
+    background     : #2f3b44;
+    border         : 0;
+    color          : #a5b0b5;
+    padding        : .5rem;
+    border-radius  : 4px;
+    cursor         : pointer;
+    font-weight    : bold;
+    text-transform : uppercase;
+    letter-spacing : .05em;
+}
+
+.controls .player-controls .play-control:hover {
+    background : #445562;
+}
+
+.controls .player-controls .seek-start {
+    background     : #2f3b44;
+    border         : 0;
+    color          : #a5b0b5;
+    padding        : .5rem;
+    border-radius  : 4px;
+    cursor         : pointer;
+    font-weight    : bold;
+    text-transform : uppercase;
+    letter-spacing : .05em;
+}
+
+.controls .player-controls .seek-start:hover {
+    background : #445562;
+}
+
+.controls .player-controls .seek-end {
+    background     : #2f3b44;
+    border         : 0;
+    color          : #a5b0b5;
+    padding        : .5rem;
+    border-radius  : 4px;
+    cursor         : pointer;
+    font-weight    : bold;
+    text-transform : uppercase;
+    letter-spacing : .05em;
+}
+
+.controls .player-controls .seek-end:hover {
+    background : #445562;
+}
+
+.controls .reset-control {
+    background     : #2f3b44;
+    border         : 0;
+    color          : #a5b0b5;
+    padding        : .5rem;
+    border-radius  : 4px;
+    cursor         : pointer;
+    font-weight    : bold;
+    text-transform : uppercase;
+    letter-spacing : .05em;
+}
+
+.controls .reset-control:hover {
+    background : #445562;
+}
+
+.trim-control {
+    background     : #0072cf;
+    border         : 0;
+    color          : #fff;
+    padding        : .5rem;
+    border-radius  : 4px;
+    cursor         : pointer;
+    font-weight    : bold;
+    text-transform : uppercase;
+    letter-spacing : .1em;
+    margin-top     : 5px
+}
+
+.trim-control:hover {
+    background : #038eff;
+}
+
+.st0 {
+    fill : rgba(0, 0, 0, .2);
+}
+
+.video-preview-inner h4 {
+    color : white;
+}
+
+.trim-range .trim-start,
+.trim-range .trim-end {
+    font-weight : bold;
+}
+
+.trim-range .trim-start input,
+.trim-range .trim-end input {
+    background : transparent;
+    border     : none;
+    width      : 30px;
+    text-align : right;
+}
+
+.trim-range {
+    color : white;
+}
