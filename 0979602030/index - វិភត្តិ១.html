@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ការបញ្ចូលពាក្យ</title>
+    <style>
+        body {
+            font-family: 'Khmer', sans-serif;
+            background-color: #f0f4f8;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        input, select, button {
+            width: 100%;
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .output {
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            white-space: pre-wrap; /* Preserve white spaces and line breaks */
+        }
+        .copy-btn {
+            background-color: #007BFF;
+        }
+        .copy-btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>ប្រព័ន្ធបញ្ចូលពាក្យ</h1>
+
+        <label for="inputWord">បញ្ចូលពាក្យ:</label>
+        <input type="text" id="inputWord" placeholder="អក្សរ">
+
+        <label for="typeSelect">ជ្រើសរើសប្រភេទ:</label>
+        <select id="typeSelect">
+            <option value="បុំលាំង">បុំលាំង</option>
+            <option value="វិភត្តិ">វិភត្តិ</option>
+            <option value="អិធ្យលាំង">អិធ្យលាំង</option>
+            <option value="នបុំសកលាំង">នបុំសកលាំង</option>
+        </select>
+
+        <button id="submitBtn">បញ្ចូល</button>
+        <button class="copy-btn" id="copyBtn">ចម្លងលទ្ធផល</button>
+
+        <div class="output" id="outputArea"></div>
+    </div>
+
+    <script>
+        document.getElementById('submitBtn').addEventListener('click', function() {
+            const inputWord = document.getElementById('inputWord').value;
+            const selectedType = document.getElementById('typeSelect').value;
+
+            let output = '';
+
+            // វិភត្តិ
+            if (selectedType === "វិភត្តិ") {
+                output = `ធ្វើដោយខ្ញុំព្រះករុណា គួនសុខគា
+                        =============================
+                          ប-សិ. រី${inputWord} |យោ. រី${inputWord}ទ
+                          ទុ- ំ. នូវ${inputWord} កាន់${inputWord} ញ៉ាំង${inputWord} អស់${inputWord} នឹង${inputWord} ចំពោះ${inputWord} |យោ. នូវ${inputWord}ទ កាន់${inputWord}ទ ញ៉ាំង${inputWord}ទ អស់${inputWord}ទ នឹង${inputWord}ទ ចំពោះ${inputWord}ទ
+                          ត-នា. ដោយ${inputWord} ដោយនូវ${inputWord} តាម${inputWord} ខាង${inputWord} គឺ${inputWord} ដែល${inputWord} ត្រូវ${inputWord} ហេតុ${inputWord} ព្រោះ${inputWord} ព្រោះតែ${inputWord} មាន${inputWord} |ហិ. ដោយ${inputWord}ទ ដោយនូវ${inputWord}ទ តាម${inputWord}ទ ខាង${inputWord}ទ គឺ${inputWord}ទ ដែល${inputWord}ទ ត្រូវ${inputWord}ទ ហេតុ${inputWord}ទ ព្រោះ${inputWord}ទ ព្រោះតែ${inputWord}ទ មាន${inputWord}ទ
+                          ច-ស. ដល់${inputWord} ដើម្បី${inputWord} បំរុង${inputWord} នឹង${inputWord} ចំពោះ${inputWord} |នំ. ដល់${inputWord}ទ ដើម្បី${inputWord}ទ បំរុង${inputWord}ទ នឹង${inputWord}ទ ចំពោះ${inputWord}ទ
+                          ប-ស្មា. អំពី${inputWord} ចាក${inputWord} ជាង${inputWord} ហេតុ${inputWord} ព្រោះ${inputWord} ព្រោះតែ${inputWord} |ហិ. អំពី${inputWord}ទ ចាក${inputWord}ទ ជាង${inputWord}ទ ហេតុ${inputWord}ទ ព្រោះ${inputWord}ទ ព្រោះតែ${inputWord}ទ
+                          ឆ-ស. នៃ${inputWord} របស់${inputWord} កាល${inputWord} កាលបើ${inputWord} កាលដែល${inputWord} ជំនុះ${inputWord} បណ្ដា${inputWord} |នំ. នៃ${inputWord}ទ របស់${inputWord}ទ កាល${inputWord}ទ កាលបើ${inputWord}ទ កាលដែល${inputWord}ទ ជំនុះ${inputWord}ទ បណ្ដា${inputWord}ទ
+                          ស-ស្មឹ. ក្នុង${inputWord} ឰដ៏${inputWord} ត្រង់${inputWord} នា${inputWord} នាកាល${inputWord} កាលបើ${inputWord} កាលដែល${inputWord} និមិត្ត${inputWord} ជំនុំ${inputWord} បណ្ដា${inputWord} លើ${inputWord} ទៀប${inputWord} ជិត${inputWord} |សុ. ក្នុង${inputWord}ទ ឰដ៏${inputWord}ទ ត្រង់${inputWord}ទ នា${inputWord}ទ នាកាល${inputWord}ទ កាលបើ${inputWord}ទ កាលដែល${inputWord}ទ និមិត្ត${inputWord}ទ ជំនុំ${inputWord}ទ បណ្ដា${inputWord}ទ លើ${inputWord}ទ ទៀប${inputWord}ទ ជិត${inputWord}ទ
+                          អា-សិ. បពិត្រ${inputWord} ម្នាល${inputWord} នែ${inputWord} ហៃ${inputWord} |យោ. បពិត្រ${inputWord}ទ ម្នាល${inputWord}ទ នែ${inputWord}ទ ហៃ${inputWord}ទ`;
+            } 
+            // បុំលាំង
+            else if (selectedType === "បុំលាំង") {
+                output = `ប. ${inputWord}ោ | ${inputWord}ា\n
+                          ទុ. ${inputWord}ំ | ${inputWord}េ\n
+                          ត. ${inputWord}េន | ${inputWord}េហិ ${inputWord}េភិ\n
+                          ច. ${inputWord}ស្ស ${inputWord}ាយ ${inputWord}ា | ${inputWord}ានំ\n
+                          ប. ${inputWord}ស្ស ${inputWord}ម្ហា ${inputWord}ា | ${inputWord}េហិ ${inputWord}េភិ\n
+                          ឆ. ${inputWord}ស្ស | ${inputWord}ានំ\n
+                          ស. ${inputWord}ស្មឹ ${inputWord}ម្ហិ ${inputWord}េ | ${inputWord}េសុ\n
+                          អា. ${inputWord}អ | ${inputWord}ា`;
+            } 
+            // អិធ្យលាំង
+            else if (selectedType === "អិធ្យលាំង") {
+                output = `ប. ${inputWord}ី | ${inputWord}នោ ${inputWord}ី\n
+                          ទុ. ${inputWord}ឹ | ${inputWord}នោ ${inputWord}ី\n
+                          ត. ${inputWord}ិនា | ${inputWord}ហិ ${inputWord}នីភិ\n
+                          ច. ${inputWord}ិស្ស ${inputWord}ីនោ | ${inputWord}នំ\n
+                          ប. ${inputWord}ិស្ស ${inputWord}ីម្ហា ${inputWord}ីនា | ${inputWord}ហិ ${inputWord}ីភិ\n
+                          ឆ. ${inputWord}ិស្ស ${inputWord}ីនោ | ${inputWord}នំ\n
+                          ស. ${inputWord}ស្មឹ ${inputWord}ីម្ហិ | ${inputWord}សុ\n
+                          អា. ${inputWord}ី | ${inputWord}នោ ${inputWord}ី`;
+            } 
+            // នបុំសកលាំង
+            else if (selectedType === "នបុំសកលាំង") {
+                output = `ប. ${inputWord}ំ | ${inputWord}ានិ ${inputWord}ា\n
+                          ទុ. ${inputWord}ំ | ${inputWord}ានិ ${inputWord}េ\n
+                          ត. ${inputWord}េន | ${inputWord}េហិ ${inputWord}េភិ\n
+                          ច. ${inputWord}ស្ស ${inputWord}ាយ ${inputWord}ត្ថំ | ${inputWord}ានំ\n
+                          ប. ${inputWord}ស្ស ${inputWord}ម្ហា ${inputWord}ា | ${inputWord}េហិ ${inputWord}េភិ\n
+                          ឆ. ${inputWord}ស្ស | ${inputWord}ានំ\n
+                          ស. ${inputWord}ស្មឹ ${inputWord}ម្ហិ ${inputWord}េ | ${inputWord}េសុ\n
+                          អា. ${inputWord}ា | ${inputWord}ានិ ${inputWord}ា`;
+            }
+
+            document.getElementById('outputArea').textContent = output;
+        });
+
+        // មុខងារចម្លង
+        document.getElementById('copyBtn').addEventListener('click', function() {
+            const outputArea = document.getElementById('outputArea');
+            navigator.clipboard.writeText(outputArea.textContent).then(() => {
+                alert('បានចម្លងលទ្ធផលទៅ clipboard!');
+            }).catch(err => {
+                alert('កំហុសក្នុងការចម្លង: ', err);
+            });
+        });
+    </script>
+
+</body>
+</html>
