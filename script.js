@@ -6,6 +6,21 @@ const answerButtonsElement = document.getElementById('answer-buttons')
 
 let shuffledQuestions, currentQuestionIndex
 
+const correctBtn = document.getElementById('correctBtn');
+const incorrectBtn = document.getElementById('incorrectBtn');
+const correctSound = document.getElementById('correctSound');
+const incorrectSound = document.getElementById('incorrectSound');
+
+correctBtn.addEventListener('click', function() {
+    correctSound.play();
+    alert("ចម្លើយត្រឹមត្រូវ!");
+});
+
+incorrectBtn.addEventListener('click', function() {
+    incorrectSound.play();
+    alert("ចម្លើយខុស!");
+});
+
 startButton.addEventListener('click', startGame)
 nextButton.addEventListener('click', () => {
   currentQuestionIndex++
