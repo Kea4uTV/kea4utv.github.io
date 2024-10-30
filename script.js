@@ -6,18 +6,18 @@ const answerButtonsElement = document.getElementById('answer-buttons')
 
 let shuffledQuestions, currentQuestionIndex
 
-const correctBtn = document.getElementById('correctBtn');
-const incorrectBtn = document.getElementById('incorrectBtn');
-const correctSound = document.getElementById('correctSound');
-const incorrectSound = document.getElementById('incorrectSound');
+const correct = document.getElementById('correct');
+const wrong = document.getElementById('wrong');
+const correct = document.getElementById('correct');
+const wrong = document.getElementById('wrong');
 
-correctBtn.addEventListener('click', function() {
-    correctSound.play();
+correct.addEventListener('click', function() {
+    correct.play();
     alert("ចម្លើយត្រឹមត្រូវ!");
 });
 
-incorrectBtn.addEventListener('click', function() {
-    incorrectSound.play();
+wrong.addEventListener('click', function() {
+    wrong.play();
     alert("ចម្លើយខុស!");
 });
 
