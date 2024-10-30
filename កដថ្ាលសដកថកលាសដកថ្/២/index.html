@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>Quiz</title>
+</head>
+<body>
+
+<div class="quiz-container">
+    <h1 id="question">សំណួរ៖ តើអ្វីគឺគ្រឿងផ្សំដ៏សំខាន់នៅក្នុងទឹក?</h1>
+    <button onclick="checkAnswer(true)">ទឹកដោះគោ</button>
+    <button onclick="checkAnswer(false)">ទឹកអាំង</button>
+    <button onclick="checkAnswer(false)">ទឹកប្រេង</button>
+    <button onclick="checkAnswer(false)">ទឹកខ្មេះ</button>
+</div>
+
+<div id="popup" class="popup">
+    <div class="popup-content">
+        <span class="close" onclick="closePopup()">&times;</span>
+        <p id="popup-message"></p>
+    </div>
+</div>
+
+<audio id="correct-sound" src="correct.mp3"></audio>
+<audio id="incorrect-sound" src="https://downloads.tuxfamily.org/pdsounds/sounds/burp.mp3"></audio>
+
+<script src="script.js"></script>
+</body>
+</html>
