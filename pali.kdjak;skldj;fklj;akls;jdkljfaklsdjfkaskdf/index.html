@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ការបញ្ចូលពាក្យ</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <div class="container">
+        <h1>ប្រព័ន្ធបញ្ចូលពាក្យបាលី វិភត្តិ នឹង ការន្ដ</h1>
+
+        <label for="inputWord">បញ្ចូលពាក្យ:</label>
+        <input type="text" id="inputWord" placeholder="អក្សរ">
+
+        <label for="typeSelect">ជ្រើសរើសប្រភេទ:</label>
+        <select id="typeSelect">
+            <option value="វិភត្តិ">វិភត្តិ</option>
+            <option value="អ-ការន្ដ បុំលិង្គ">អ-ការន្ដ បុំលិង្គ</option>
+            <option value="ឥ-ការន្ដ បុំលិង្គ">ឥ-ការន្ដ បុំលិង្គ</option>
+            <option value="ឦ-ការន្ដ បុំលិង្គ">ឦ-ការន្ដ បុំលិង្គ</option>
+            <option value="ឧ-ការន្ដ បុំលិង្គ">ឧ-ការន្ដ បុំលិង្គ</option>
+            <option value="ឩ-ការន្ដ បុំលិង្គ">ឩ-ការន្ដ បុំលិង្គ</option>
+            <option value="អា-ការន្ដ ឥត្ថីលិង្គ">អា-ការន្ដ ឥត្ថីលិង្គ</option>
+            <option value="ឥ-ការន្ដ ឥត្ថីលិង្គ">ឥ-ការន្ដ ឥត្ថីលិង្គ</option>
+            <option value="ឦ-ការន្ដ ឥត្ថីលិង្គ">ឦ-ការន្ដ ឥត្ថីលិង្គ</option>
+            <option value="ឧ-ការន្ដ ឥត្ថីលិង្គ">ឧ-ការន្ដ ឥត្ថីលិង្គ</option>
+            <option value="ឩ-ការន្ដ ឥត្ថីលិង្គ">ឩ-ការន្ដ ឥត្ថីលិង្គ</option>
+            <option value="អ-ការន្ដ នបុំសកលិង្គ">អ-ការន្ដ នបុំសកលិង្គ</option>
+            <option value="ឥ-ការន្ដ នបុំសកលិង្គ">ឥ-ការន្ដ នបុំសកលិង្គ</option>
+            <option value="ឧ-ការន្ដ នបុំសកលិង្គ">ឧ-ការន្ដ នបុំសកលិង្គ</option>
+        </select>
+
+        <button id="submitBtn">បញ្ចូល</button>
+        <button class="copy-btn" id="copyBtn">ចម្លងលទ្ធផល</button>
+
+        <div class="output" id="outputArea"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
