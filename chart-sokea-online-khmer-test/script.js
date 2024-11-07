@@ -1,13 +1,13 @@
-import {Profile, updateProfileDiv} from './profile.js';
-import {playAnimationFromStart, drawFrame, AnimationSettings, addAlpha} from './animation.js';
-import {ChatMessage} from './chatMessage.js';
+import {Profile, updateProfileDiv} from './klasjfijklajesiojfka;kldjlkjfjijowpeq[woieiokfjija;skdjfkjkejfaisdkjfkja;slkdja;kfiejfkj;asipqwijedfa;ksjdklfjkajs;dklfjw/profile.js';
+import {playAnimationFromStart, drawFrame, AnimationSettings, addAlpha} from './klasjfijklajesiojfka;kldjlkjfjijowpeq[woieiokfjija;skdjfkjkejfaisdkjfkja;slkdja;kfiejfkj;asipqwijedfa;ksjdklfjkajs;dklfjw/animation.js';
+import {ChatMessage} from './klasjfijklajesiojfka;kldjlkjfjijowpeq[woieiokfjija;skdjfkjkejfaisdkjfkja;slkdja;kfiejfkj;asipqwijedfa;ksjdklfjkajs;dklfjw/chatMessage.js';
 
 // The image/name pairs that are displayed
 var chatProfiles = [];
-chatProfiles.push(new Profile('Grump', './char1.svg', '#218aff', true, '#ffffff'));
-chatProfiles.push(new Profile('Olivia', './senior-transparent.svg', '#d8d8d8'));
-chatProfiles.push(new Profile('Chad', './char2.svg'));
-chatProfiles.push(new Profile('Tischman', './char3.svg'));
+chatProfiles.push(new Profile('Grump', './klasjfijklajesiojfka;kldjlkjfjijowpeq[woieiokfjija;skdjfkjkejfaisdkjfkja;slkdja;kfiejfkj;asipqwijedfa;ksjdklfjkajs;dklfjw/char1.svg', '#218aff', true, '#ffffff'));
+chatProfiles.push(new Profile('Olivia', './klasjfijklajesiojfka;kldjlkjfjijowpeq[woieiokfjija;skdjfkjkejfaisdkjfkja;slkdja;kfiejfkj;asipqwijedfa;ksjdklfjkajs;dklfjw/senior-transparent.svg', '#d8d8d8'));
+chatProfiles.push(new Profile('Chad', './klasjfijklajesiojfka;kldjlkjfjijowpeq[woieiokfjija;skdjfkjkejfaisdkjfkja;slkdja;kfiejfkj;asipqwijedfa;ksjdklfjkajs;dklfjw/char2.svg'));
+chatProfiles.push(new Profile('Tischman', './klasjfijklajesiojfka;kldjlkjfjijowpeq[woieiokfjija;skdjfkjkejfaisdkjfkja;slkdja;kfiejfkj;asipqwijedfa;ksjdklfjkajs;dklfjw/char3.svg'));
 
 // All chat messages, whether on screen yet or not
 var allChatMessages = [];
