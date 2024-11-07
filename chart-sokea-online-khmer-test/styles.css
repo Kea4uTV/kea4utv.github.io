@@ -1,0 +1,44 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+}
+
+.post-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+h1 {
+    color: #333;
+    font-size: 24px;
+    text-align: center;
+}
+
+.video-embed {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.post-content {
+    font-size: 18px;
+    line-height: 1.6;
+}
+
+button {
+    padding: 10px 20px;
+    background-color: #4267B2; /* Facebook Blue */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #365899; /* Darker Facebook Blue */
+}
