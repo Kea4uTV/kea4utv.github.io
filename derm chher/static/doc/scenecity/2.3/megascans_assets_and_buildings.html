@@ -1,0 +1,325 @@
+<!doctype html>
+<html class="no-js" lang="en">
+  <head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="../../../../static/doc/scenecity/2.3/search.html" /><link rel="prev" title="Installating, updating, removing the addon" href="../../../../static/doc/scenecity/2.3/installation.html" />
+    <!-- Generated with Sphinx 6.2.1 and Furo 2023.03.27 -->
+        <title>Creating Megascans buildings - SceneCity 2.3.x documentation</title>
+	<link rel="canonical" href="https://www.cgchan.com/static/doc/scenecity/2.3/megascans_assets_and_buildings.html" />
+      <link rel="stylesheet" type="text/css" href="../../../../static/doc/scenecity/2.3/_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../static/doc/scenecity/2.3/_static/styles/furo.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../static/doc/scenecity/2.3/_static/styles/furo-extensions.css" />
+<style>
+  body {
+    --color-code-background: #f8f8f8;
+  --color-code-foreground: black;
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+      }
+    }
+  }
+</style></head>
+  <body>
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../../../static/doc/scenecity/2.3/index.html"><div class="brand">SceneCity 2.3.x documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../../../static/doc/scenecity/2.3/index.html">
+  <span class="sidebar-brand-text">SceneCity 2.3.x documentation</span>
+</a><form class="sidebar-search-container" method="get" action="../../../../static/doc/scenecity/2.3/search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../static/doc/scenecity/2.3/installation.html">Installating, updating, removing the addon</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Creating Megascans buildings</a></li>
+</ul>
+</div>
+</div>
+      </div>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          <section id="creating-megascans-buildings">
+<h1>Creating Megascans buildings<a class="headerlink" href="#creating-megascans-buildings" title="Permalink to this heading">#</a></h1>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>You need to have the <a class="reference external" href="https://quixel.com/bridge">Quixel Bridge</a> program installed and to download the Megascans assets from it and NOT from the <a class="reference external" href="https://quixel.com/megascans/home/">Megascans website</a> or using any other method. <strong>SceneCity DOES NOT INCLUDE any Megascans assets</strong>, but uses those you’ve downloaded using Quixel Bridge.</p>
+</div>
+<img alt="_images/demo.jpg" src="../../../../static/doc/scenecity/2.3/_images/demo.jpg" />
+<div class="video_wrapper" style="">
+<iframe allowfullscreen="true" src="https://www.youtube.com/embed/TzLvBrp25I0" style="border: 0; height: 345px; width: 560px">
+</iframe></div><p>Megascans assets are very high quality and versatile, however they are not the easiest to use because they consist of so many mesh LODs, materials and textures. They are often tedious to import and setup. There is Bridge, but it’s not always up to date with Blender, and even when it’s not buggy you still import assets one by one. No longer with the help of SceneCity. It’s not a generic replacement for Bridge, but you can make exploiting some specific Megascans assets in Blender very easy, as described below.</p>
+<p>There are two features in this category:</p>
+<ul class="simple">
+<li><p>You can import all the assets of a Megascans building very quickly</p></li>
+<li><p>You can use those assets to create procedural buildings</p></li>
+</ul>
+<section id="importing-megascans-buildings-assets">
+<h2>Importing Megascans buildings assets<a class="headerlink" href="#importing-megascans-buildings-assets" title="Permalink to this heading">#</a></h2>
+<p>What is a Megascans building? One of their named collections of modular building parts. For example <a class="reference external" href="https://quixel.com/megascans/collections?category=environment&amp;category=urban&amp;category=neo-baroque-modular-building">Neo-Baroque Modular Building</a> <em>(&lt;= have a look but do not download from this link, download using</em> <a class="reference external" href="https://quixel.com/bridge">Quixel Bridge</a> <em>)</em>.</p>
+<p>You can import them with SceneCity :</p>
+<section id="select-a-building">
+<h3>1 - Select a building<a class="headerlink" href="#select-a-building" title="Permalink to this heading">#</a></h3>
+<p>In the N-panel of a 3d viewport =&gt; <code class="docutils literal notranslate"><span class="pre">SceneCity</span> <span class="pre">2</span></code> tab, find the <code class="docutils literal notranslate"><span class="pre">Select</span> <span class="pre">a</span> <span class="pre">Megascans</span> <span class="pre">Building</span></code> panel, and select a building. For now not all of the Megascans buildings are available, more will be added update after update.</p>
+<img alt="_images/1.jpg" src="../../../../static/doc/scenecity/2.3/_images/1.jpg" />
+</section>
+<section id="check-what-assets-are-needed">
+<h3>2 - Check what assets are needed<a class="headerlink" href="#check-what-assets-are-needed" title="Permalink to this heading">#</a></h3>
+<p>In the <code class="docutils literal notranslate"><span class="pre">Manage</span> <span class="pre">The</span> <span class="pre">Selected</span> <span class="pre">Megascans</span> <span class="pre">Building's</span> <span class="pre">Assets</span></code> panel, click on the first button. Look at exactly which Megascans assets are needed, so you can download them with Quixel Bridge. The message displayed also tells you what file formats and which textures channels you need to download.</p>
+<img alt="_images/2.jpg" src="../../../../static/doc/scenecity/2.3/_images/2.jpg" />
+</section>
+<section id="download-the-assets-using-quixel-bridge">
+<h3>3 - Download the assets using Quixel Bridge<a class="headerlink" href="#download-the-assets-using-quixel-bridge" title="Permalink to this heading">#</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>You MUST download the assets using Bridge’s interface, and you must NOT download zip files and extract them manually. SceneCity expects the specific folder and files structure that Bridge creates when it downloads assets for you.</p>
+</div>
+<img alt="_images/Bridge.jpg" src="../../../../static/doc/scenecity/2.3/_images/Bridge.jpg" />
+</section>
+<section id="let-scenecity-scan-your-assets">
+<h3>4 - Let SceneCity scan your assets<a class="headerlink" href="#let-scenecity-scan-your-assets" title="Permalink to this heading">#</a></h3>
+<p>Click on the second button. SceneCity will scan your Megascans files and let you know what you are missing. You can make SceneCity check again at any time, if you’ve downloaded new assets since the last time you clicked on the button.</p>
+<img alt="_images/3.jpg" src="../../../../static/doc/scenecity/2.3/_images/3.jpg" />
+</section>
+<section id="import-the-meshes">
+<h3>5 - Import the meshes<a class="headerlink" href="#import-the-meshes" title="Permalink to this heading">#</a></h3>
+<p>Now you can import in the currently opened .blend file any mesh LOD and any texture resolution that you need, for the WHOLE building, and that’s a lot of assets. When all the meshes for a given LOD are imported, they are conveniently named, spaced out in the 3d scene, and organized into objects collections. They don’t have any material applied on them for now, as materials come in many versions as well. You’ll apply specific materials when you generate the buildings.</p>
+<p>You can also toggle their visibility in the viewport and in the outliner, to keep your file clean and organized.</p>
+<p>If you have missing assets you need to download for a specific LOD, a button for that LOD will let you know which ones.</p>
+<img alt="_images/4.jpg" src="../../../../static/doc/scenecity/2.3/_images/4.jpg" />
+<img alt="_images/5.jpg" src="../../../../static/doc/scenecity/2.3/_images/5.jpg" />
+</section>
+<section id="import-the-materials">
+<h3>6 - Import the materials<a class="headerlink" href="#import-the-materials" title="Permalink to this heading">#</a></h3>
+<p>Now it’s time to import the materials. For each LOD of the building, you have several texture resolutions. Click on the ones you want, and all the materials and textures will be imported. Again, if you have missing files, you can know which ones by clicking on the corresponding buttons.</p>
+<img alt="_images/6.jpg" src="../../../../static/doc/scenecity/2.3/_images/6.jpg" />
+<img alt="_images/7.jpg" src="../../../../static/doc/scenecity/2.3/_images/7.jpg" />
+<p>Your assets are ready now. You can use them to assemble buildings manually, you’ve just saved a lot of time importing and setting up all the assets via SceneCity. And you can use SceneCity to assemble buildings procedurally.</p>
+</section>
+</section>
+<section id="generating-megascans-procedural-buildings">
+<h2>Generating Megascans procedural buildings<a class="headerlink" href="#generating-megascans-procedural-buildings" title="Permalink to this heading">#</a></h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You need to have completed the steps above to follow this part.</p>
+</div>
+<ol class="arabic simple">
+<li><p>In the N-panel of a 3d viewport =&gt; <code class="docutils literal notranslate"><span class="pre">SceneCity</span> <span class="pre">2</span></code> tab, find the <code class="docutils literal notranslate"><span class="pre">Create</span> <span class="pre">New</span> <span class="pre">Megascans</span> <span class="pre">Buildings</span></code> panel.</p></li>
+</ol>
+<img alt="_images/8.jpg" src="../../../../static/doc/scenecity/2.3/_images/8.jpg" />
+<ol class="arabic simple" start="2">
+<li><dl class="simple">
+<dt>Set the parameters for the building :</dt><dd><ul class="simple">
+<li><p>a LOD among those you imported</p></li>
+<li><p>a texture resolution for the materials you imported for that LOD</p></li>
+<li><p>the floor size on the horizontal plane, the buildings have a rectangular floor shape (for now)</p></li>
+<li><p>the number of loors</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p>Click on the button and a new building will appear, all its modular parts instanced as objects that you can select and modify. They are nicely named and organized, and the whole building is in an objects collection so you can instanciate it very easily.</p></li>
+</ol>
+<img alt="_images/9.jpg" src="../../../../static/doc/scenecity/2.3/_images/9.jpg" />
+<img alt="_images/15.jpg" src="../../../../static/doc/scenecity/2.3/_images/15.jpg" />
+<img alt="_images/10.jpg" src="../../../../static/doc/scenecity/2.3/_images/10.jpg" />
+<img alt="_images/13.jpg" src="../../../../static/doc/scenecity/2.3/_images/13.jpg" />
+<img alt="_images/14.jpg" src="../../../../static/doc/scenecity/2.3/_images/14.jpg" />
+<img alt="_images/11.jpg" src="../../../../static/doc/scenecity/2.3/_images/11.jpg" />
+<img alt="_images/12.jpg" src="../../../../static/doc/scenecity/2.3/_images/12.jpg" />
+</section>
+</section>
+        </article>
+      </div>
+      <footer>
+        <div class="related-pages">
+          <a class="prev-page" href="../../../../static/doc/scenecity/2.3/installation.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                <div class="title">Installating, updating, removing the addon</div>
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2023, Arnaud Couturier
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me/">@pradyunsg</a>'s
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+          </div>
+          <div class="right-details">
+          </div>
+        </div>
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Creating Megascans buildings</a><ul>
+<li><a class="reference internal" href="#importing-megascans-buildings-assets">Importing Megascans buildings assets</a><ul>
+<li><a class="reference internal" href="#select-a-building">1 - Select a building</a></li>
+<li><a class="reference internal" href="#check-what-assets-are-needed">2 - Check what assets are needed</a></li>
+<li><a class="reference internal" href="#download-the-assets-using-quixel-bridge">3 - Download the assets using Quixel Bridge</a></li>
+<li><a class="reference internal" href="#let-scenecity-scan-your-assets">4 - Let SceneCity scan your assets</a></li>
+<li><a class="reference internal" href="#import-the-meshes">5 - Import the meshes</a></li>
+<li><a class="reference internal" href="#import-the-materials">6 - Import the materials</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#generating-megascans-procedural-buildings">Generating Megascans procedural buildings</a></li>
+</ul>
+</li>
+</ul>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div><script data-url_root="./" id="documentation_options" src="../../../../static/doc/scenecity/2.3/_static/documentation_options.js"></script>
+    <script src="../../../../static/doc/scenecity/2.3/_static/doctools.js"></script>
+    <script src="../../../../static/doc/scenecity/2.3/_static/sphinx_highlight.js"></script>
+    <script src="../../../../static/doc/scenecity/2.3/_static/scripts/furo.js"></script>
+    </body>
+</html>
