@@ -1,0 +1,595 @@
+
+<!DOCTYPE html>
+<html class="no-js" lang="en" dir="ltr">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+	<meta http-equiv="x-ua-compatible" content="ie=edge"/>
+	<link rel="stylesheet" type="text/css" href="../npm/slick-carousel-1.8.1/slick/slick.css"/>
+	<link href="https://fonts.googleapis.com/css?family=Open+Sans|Poiret+One|Comfortaa:300" rel="stylesheet">
+	<link rel='stylesheet' href='../static/store/css/main.css'/>
+	<style>
+		body {
+			background-color: #fff;
+			color: #444;
+		}
+		input[type='text'] {
+			background-color: #ddd;
+		}
+		#slideshow div {
+			background-position: center;
+			background-repeat: no-repeat;
+			background-size: cover;
+		}
+		#titre_au_dessus_slideshow h1, titre_au_dessus_slideshow h2 {
+			line-height: 1;
+		}
+		#titre_au_dessus_slideshow div {
+			position: relative;
+			top: 70px;
+			max-width: 500px;
+			min-width: 100px;
+			height: 100px;
+			padding: 10px;
+			margin: auto;
+			background-color: hsla(200, 0%, 25%, 1);
+			border-radius: 10px 10px 10px 10px;
+			/*box-shadow: hsla(0,0%,00%,.5) 0 3px 3px;*/
+			border: solid #aaa 1px;
+			border-top: none;
+			transition-duration: .25s;
+			cursor: default;
+		}
+		#city_workflow_table td {
+			vertical-align: top;
+		}
+		hr {
+			margin-top: 4rem;
+			border-color: hsla(0, 0%, 0%, .25);
+		}
+		.slide_text_overlay span {
+			border-bottom: 0px solid #e5b217;
+			font-size: 2em;
+		}
+	</style>
+	<title>SceneCity: 3D city generator addon for Blender 3.4+</title>
+	<link rel="canonical" href="https://www.cgchan.com/store/scenecity.html" />
+	<meta name="description" content="Quickly create 3d cities, buildings, and roads for your artistic or scientific projects"/>
+		<link rel='shortcut icon' href='../static/store/img/favicon.gif' type='image/gif'/>
+	<!--script src='https://cdn.jsdelivr.net/foundation/5.5.3/js/vendor/modernizr.js'></script-->
+	<!-- google analytics -->
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-VJEX0FKGL2"></script>
+	<script type='text/javascript'>
+		// Old
+		// var _gaq = _gaq || [];
+		// _gaq.push(['_setAccount', 'UA-39546177-1']);
+		// _gaq.push(['_setDomainName', 'cgchan.com']);
+		// _gaq.push(['_trackPageview']);
+		// (function () {
+		// 	var ga = document.createElement('script');
+		// 	ga.type = 'text/javascript';
+		// 	ga.async = true;
+		// 	ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+		// 	var s = document.getElementsByTagName('script')[0];
+		// 	s.parentNode.insertBefore(ga, s);
+		// })();
+		// New V4
+		window.dataLayer = window.dataLayer || [];
+		function gtag(){dataLayer.push(arguments);}
+		gtag('js', new Date());
+		gtag('config', 'G-VJEX0FKGL2');
+	</script>
+</head>
+<body>
+<div id="site_header">
+	<div class="page_width">
+		<div id="menu_site">
+			<div style="; margin-right:auto;">
+				<img style="height:3em" src="../static/store/img/website_logo_grey.png" alt="">
+			</div>
+			<div><a href='../store/scenecity.html'>SceneCity</a></div>
+			<div><a href='../sceneskies.html'>SceneSkies</a></div>
+			<div><a href='../cantree_index.html'>CanTree</a></div>
+			<!--div><a href='/news'>What's new</a></div-->
+		</div>
+	</div>
+</div>
+<div id='page_body'>
+	<div id="slideshow_container">
+		<!--div id="slideshow_overlay">
+			<h1 style='font-size:3em; width:100%; font-family:impact,Sans-Serif; margin:0; padding:0;  margin-bottom: 7rem'>
+				<span id='titre_scene' style='color:#333; '>Scene</span><span id='titre_city' style='color:#e5b217;'>City</span>
+			</h1>
+		</div-->
+		<div class="slide fadeInOut1" style='background-image: url("../static/store/img/scenecity/banner4.jpg"); background-position: center bottom;'>
+			<div class="slide_text_overlay" style="color:#fff; top:11em;">
+				<span>Generate procedural buildings from your Megascans assets</span>
+			</div>
+		</div>
+		<div class="slide fadeInOut2" style='background-image: url("../static/store/img/scenecity/banner3.jpg"); background-position: 50% 25%;'>
+			<div class="slide_text_overlay" style="color:#fff;">
+				<span>Create large cityscapes quickly and efficiently</span>
+			</div>
+		</div>
+		<div class="slide fadeInOut3" style='background-image: url("../static/store/img/scenecity/banner2.jpg"); background-position: 50% 65%;'>
+			<div class="slide_text_overlay" style="color:#fff; top:13em;">
+				<span>Export to external software and renderers</span>
+			</div>
+		</div>
+		<div class="slide fadeInOut4" style='background-image: url("../static/store/img/scenecity/slideshow1_80.jpg");'>
+			<!--div class="slide_text_overlay" style="color:#fff;">
+				<span>Mix procedural and hand-made assets</span>
+			</div-->
+		</div>
+	</div>
+	<div class='page_width' style="max-width: 1100px">
+		<div style='text-align:center'>
+			<h1 style='font-size:6em; width:100%; font-family:impact,Sans-Serif; margin:0; padding:0'>
+				<span id='titre_scene' style='color:#333; '>Scene</span><span id='titre_city' style='color:#e5b217;'>City</span>
+			</h1>
+			<h2 style='font-size:2.25em; font-weight:normal; width:100%; letter-spacing:normal; margin:0; padding:0'>
+				City generator addon for <a href='https://www.blender.org/'>Blender</a>
+			</h2>
+		</div>
+		<div class='my_row' style='margin-top: 1em'>
+			<div class='my_column medium_6'>
+				<p>
+					Generate large road networks and mass-place tens of thousands of buildings. Mix both procedural and hand-made assets. Use the included
+					assets or use your own. </p>
+				<p style="font-size: large">
+					<a href='../static/doc/scenecity/2.html'>Documentation for version 2 (currently in development)</a></p>
+				<p style="font-size: large">
+					<a href='../scenecitydoc-sub/index.html'>Documentation for version 1</a></p>                </p>
+			</div>
+			<div class='my_column medium_6' style="text-align:center;">
+				<a href='https://gum.co/scenecity/' target='_blank_' id='button_buy' class='button centered_block medium_button'
+						style="background-color: hsla(45, 70%, 50%, 1);">Buy Now
+					<div style="font-size: x-small;">on Gumroad</div>
+				</a>
+				<div style="margin-top: .5em; margin-bottom: .5em;">
+					<strong style="font-size:large;">$39</strong></div>
+				<div>Blender 3.4+</div>
+				<div>Windows, Linux, Mac Intel</div>
+			</div>
+		</div>
+	</div>
+	<div class='page_width' style='text-align:center;'>
+		<h2 class='espace_haut_et_bas'>Procedural buildings (<span style="color:red">New in v2</span>)</h2>
+		<div class='my_row'>
+			<div class="my_column medium_9" style="padding:.5em;">
+				<img style='width:100%;' src='..../static/store/img/scenecity/banner4.jpg' alt="Megascans procedural buildings"/>
+			</div>
+			<div class="my_column medium_3" style="padding:.5em;">
+				<div class='texte_lisible'>
+					<!--p>
+						Use the power of procedural building generation to create new buildings quickly, perfect for city prototyping and adding visual
+						complexity in no time. Mass-place the generated buildings as they are, or manually work further on them, they're regular Blender meshes
+						and objects. </p-->
+					<p>Generate buildings procedurally very easily from your Megascans assets.</p>
+					<ul>
+						<li><p> Import all the assets needed in a few clicks (you must have downloaded them already with Quixel Bridge), for any mesh LOD and
+							texture resolution you want.</p></li>
+						<li><p>Set some parameters for your buildings such as their floor size and number of floors, and generate as many as you need with a
+							click.</p></li>
+					</ul>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class='page_width' style='text-align:center;'>
+		<h2 style='padding-top:1rem;'>Making a full 3d city BY HAND takes a lot of time</h2>
+		<div class='texte_lisible'>
+			<p>
+				Creating a city is hard. </p>
+			<p>
+				Traditionally it must be constructed by hand in a 3d application by an artist. While this approach gives the artist full control, it requires
+				skill and a LOT of time to complete an entire city. Don't even mention if later you want to change its layout. </p>
+			<p>
+				One can use tricks, shortcuts, and other Blender features such as particles, or random mesh extrusions to accelerate the work, it remains
+				tedious nonetheless. And the results aren't always as great as our vision. Simply because there is a lot to do, and Blender is 'only' a generic
+				3d application, not a specialized city builder. </p>
+			<p>
+				But with SceneCity, you add specific city building capabilities to Blender! </p>
+		</div>
+		<div class='my_row' style='margin-top: 1em'>
+			<div class='my_column medium_4' style="padding-right:.25em;">
+				<img style="max-width:100%" src='../static/store/img/scenecity/2.jpg'/>
+			</div>
+			<div class='my_column medium_4' style="padding-left:.25em;">
+				<img style="max-width:100%" src='../static/store/img/scenecity/overview3.jpg'/>
+			</div>
+			<div class='my_column medium_4' style="padding-left:.25em;">
+				<img style="max-width:100%" src='../static/store/img/scenecity/3_1.jpg'/>
+			</div>
+		</div>
+		<hr/>
+		<h2>Flexible node-based workflow <span style="font-size: medium">(in version 1)</span></h2>
+		<img style='max-width:100%;' src='../static/store/img/scenecity/node_workflow.jpg'/>
+		<div class='texte_lisible'>
+			<p>Plug pieces of functionality together to reach your desired goals. You describe your cities conceptually with nodes within graphs, and those can
+				be as small or as large as you want.</p>
+			<p>Some nodes place buildings, others create road networks, and others generate procedural facade textures. More will be added giving you even more
+				possibilities with every new version.</p>
+		</div>
+		<hr/>
+		<h2>SceneCity eases the workflow drastically!</h2>
+		<img style='max-width:100%;' src='../static/store/img/scenecity/log37.jpg'/>
+		<div class='texte_lisible'>
+			<p>
+				Time is precious. You cannot place each and every piece of a city by hand, there are hundreds of them, if not thousands. Instead let SceneCity
+				do the boring work for you (like instancing and positioning objects), while you keep the fun creative part (like modeling and animating). </p>
+			<p>
+				Describe the city you want in SceneCity using parameters, such as city size, what buildings to use, where to place them etc... the whole city is
+				then created in a matter of seconds or few minutes, ready for you to play with, like adding cars, pedestrians, changing whatever you want, and
+				rendering still images or animations. </p>
+			<p>
+				Changing something is as easy as changing a parameter value, then recreating the city. Thanks to Blender, and depending on which instantiation
+				method you choose, you can even modify a city without recreating it. Modifying the model of a building automatically changes all instances of
+				that building everywhere it appears in the city. </p>
+		</div>
+		<hr/>
+		<h2 class='espace_haut_et_bas'>Get started quickly with included roads and buildings libraries <span style="font-size: medium">(in version 1)</span>
+		</h2>
+		<div class='texte_lisible'>
+			<p>
+				SceneCity comes batteries included: props, roads and buildings. Load them in a click, and generate a city. It's that simple. Once included in
+				your scene, they're just standard Blender meshes, objects and materials, so you can study them, modify them, or delete them. </p>
+			<p>
+				You can also use your own assets. </p>
+		</div>
+		<img style='width:100%;' src='../static/store/img/scenecity/5.jpg'/>
+		<div class='texte_lisible' style='text-align:center;'>
+			New-York-style buildings, mostly offices: small, medium and tall. And two-lane road portions with poles.
+		</div>
+		<!--div class='my_row'>
+			<div class='my_column medium_4'>
+				<p>
+					SceneCity comes batteries included: props, roads and buildings. Load them in a click, and generate a city.
+					It's that simple. Once included in your scene, they're just standard Blender meshes, objects and materials, so you can study them,
+					modify them, or delete them.
+				</p>
+				<p>
+					You can pack all of them in the .blend file if needed, they're not 'linked' but 'appended' to your scene, in Blender's
+					terms. This is useful if you need to carry everything in a single .blend file, or for rendering on farms.
+				</p>
+			</div>
+			<div class='my_column medium_8'>
+				<img src='http://cgchan.com/assets/img/scenecity/5.jpg'/>
+			</div>
+		</div-->
+		<!--hr/>
+		<h2 class='espace_haut_et_bas'>Use your own assets</h2>
+		<div class='texte_lisible'>
+			<p>
+				A default library is great to get started quickly and to have a nice visual quality from the start, but we're artists right? We like to create
+				and design our own stuff.
+			</p>
+			<p>
+				That's why you're not limited to the included libraries for your cities. You can mix, or use your own exclusively very easily. Tell SceneCity to
+				use any mesh or group of objects with just a checkbox in the mesh's or object's options. Done. Next time you generate the city, it will be used.
+			</p>
+		</div>
+		<img style='width:100%;' src='/static/store/img/scenecity/city_custom_buildings2.jpg'/>
+		<div class='texte_lisible'>
+			<p>
+				For instance, this polluted city was made from scratch in the record time of 20 minutes, render time excluded, mostly modeling the assets.
+				Notice how, from such low-poly texture-less assets, the city is large, complex and intricate.
+			</p>
+		</div>
+		<img style='max-height:300px; max-width:100%;' src='/static/store/img/scenecity/custom_buildings.png'/>
+		<img style='max-height:200px; max-width:100%;' src='/static/store/img/scenecity/custom_roads.png'/>
+		<div class='texte_lisible'>
+			<p>
+				The very simple buildings and road portions, hand-modeled for this example city. Yours can be as complex and detailed as you need.
+			</p>
+		</div-->
+		<hr/>
+		<h2 class='espace_haut_et_bas'>Grow your road networks <span style="font-size: medium">(in version 1)</span></h2>
+		<div class='texte_lisible'>
+			<p>
+				Turn a few road portions into large networks easily. Creating huge networks becomes virtually free, both time-wise and effort-wise. </p>
+			<p>
+				There are two types of roads you can use, depending on your needs. You can mix both also. </p>
+		</div>
+		<div class='my_row'>
+			<div class="my_column medium_6" style="padding:.5em;">
+				<img style='width:100%;' src='../static/store/img/scenecity/roads_type_curves.jpg'/>
+				<h4 class='espace_haut_et_bas'>Curves-based roads</h4>
+				<div class='texte_lisible'>
+					<p>
+						Repeat your own road portion(s) meshe(s) along curves. This type of roads gives nice curves and very complex-looking, intricate
+						networks. However it does not test for intersections and collisions with other roads and buildings, and does not support crossings. </p>
+				</div>
+			</div>
+			<div class="my_column medium_6" style="padding:.5em;">
+				<img style='width:100%;' src='../static/store/img/scenecity/roads_type_grid.jpg'/>
+				<h4 class='espace_haut_et_bas'>Grid-based roads</h4>
+				<div class='texte_lisible'>
+					<p>
+						Assemble straight portions, T-crossing portions and X-crossing portions together on a grid like the pieces of a giant brick game. This
+						type of network is precise and will not overlap with other roads and buildings. However curved roads are not supported, though you can
+						model your portions to be curved to a certain point. </p>
+				</div>
+			</div>
+		</div>
+		<hr/>
+		<h2 class='espace_haut_et_bas'>Mass-place your buildings <span style="font-size: medium">(in version 1)</span></h2>
+		<div class='texte_lisible'>
+			<p>
+				Place tens or hundreds of thousands of buildings in your city. </p>
+			<p>
+				There are also two different methods to place your buildings, depending on your needs </p>
+		</div>
+		<div class='my_row'>
+			<div class="my_column medium_6" style="padding:.5em;">
+				<img style='width:100%;' src='../static/store/img/scenecity/buildings_layout_scatter.jpg'/>
+				<h4 class='espace_haut_et_bas'>Scatter layout</h4>
+				<div class='texte_lisible'>
+					<p>
+						Place the buildings randomly. Vary their size, and their density according to maps that can be procedural or image-based. Easy, fast,
+						and looks very intricate and complex from far away. The buildings will overlap. You can put them on your terrains. </p>
+				</div>
+			</div>
+			<div class="my_column medium_6" style="padding:.5em;">
+				<img style='width:100%;' src='../static/store/img/scenecity/buildings_layout_grid.jpg'/>
+				<h4 class='espace_haut_et_bas'>Grid-based layout</h4>
+				<div class='texte_lisible'>
+					<p>
+						The buildings are placed precisely on a grid like the pieces of a giant brick game. They will not overlap with other roads and
+						buildings. Define different districts, such as residential, commercial and industrial for example. </p>
+				</div>
+			</div>
+		</div>
+		<hr/>
+		<h2 class='espace_haut_et_bas'>Absolute, rock-solid, no questions asked, money-back guarantee</h2>
+		<div class='texte_lisible'>
+			<p>
+				If, for any reason, you are not satisfied with the powerful and unique city-building features you find in this addon, you may receive your money
+				back within 30 days of your purchase. </p>
+			<p>I have been designing this addon for years and helping hundreds of users create cities for their projects, so I know for a fact that it does the
+				job. I also constantly update and improve SceneCity, month after month, so you get more features in time for the same price. That's why I can
+				offer a guarantee like this.</p>
+			<div style="text-align:center">
+				<img src="../static/store/img/scenecity/satisfaction_guarantee.jpg" alt="" style="">
+			</div>
+		</div>
+		<hr/>
+		<h2 class='espace_haut_et_bas'>Efficient export to Unity <span style="font-size: medium">(in version 1)</span></h2>
+		<img src="../static/store/img/scenecity/unity viewport.jpg" alt="" style="display:block; max-width:100%;">
+		<div class='texte_lisible'>
+			<p>
+				Export entire cities to Unity for realtime rendering and navigation. First you must have all your assets already in Unity: models, materials,
+				prefabs for buildings, roads, and props (the included assets are pre-exported in a Unity package, you just have to import it into your Unity
+				projects). </p>
+			<p>
+				Then generate your city from Blender, and export it using the specific node for it. The output is a text file describing your city. From Unity
+				open the SceneCity loader window, load the exported file, set all corresponding assets, and with the click of a button, your entire city is
+				re-created in Unity, down to every prop object. </p>
+			<p>
+				This method is a lot more efficient than exporting the entire city directly with FBX because you keep the control on your prefabs for the
+				buildings, roads and props. Use any prefab and modify them anytime after the city is imported. That includes complex objects with scripts,
+				objects hierarchies, nested prefabs, physics setups, sound sources, LOD, and all other Unity prefab features. </p>
+		</div>
+		<!--div class='my_row'>
+			<div class='my_column medium-6'>
+				<img src='http://cgchan.com/assets/img/buildings surface.gif'/>
+			</div>
+			<div class='my_column medium-6'>
+				<h4 style='text-align:left;'>Prepare the city area</h4>
+				<div class='texte_lisible'>
+					<p>
+						First you need to have a road network ready (see above).
+					</p>
+				</div>
+			</div>
+		</div>
+		<br/>
+		<br/-->
+		<!--div class='my_row grid-padding-x'>
+			<div class='my_column medium_6' style="padding:.5em;">
+			</div>
+			<div class='my_column medium_6'>
+				<h4 style='text-align:left;'>Prepare your distribution textures (optional)</h4>
+				<div class='texte_lisible'>
+					<p>
+						You can use a Blender texture (image-based, procedural, mixed, as you wish), to specify where to place the buildings: white for high
+						probability, black for low.
+					</p>
+					<p>
+						Skip this step to simply place them randomly with equal probabilities on the whole city surface.
+					</p>
+				</div>
+			</div>
+		</div>
+		<br/> <br/>
+		<div class='my_row grid-padding-x'>
+			<div class='my_column medium_6' style="padding:.5em;">
+			</div>
+			<div class='my_column medium_6'>
+				<h4 style='text-align:left;'>Instanciate your buildings in the scene</h4>
+				<div class='texte_lisible'>
+					<p>
+						Hit the button, and the buildings are placed for you, differently each time.
+					</p>
+					<p>
+						Once placed, they can be moved around, modified or deleted just like any Blender object. You can keep modifying the city by hand for the
+						specific needs of your scene.
+					</p>
+					<p>
+						You can now have fun with your city!
+					</p>
+				</div>
+			</div>
+		</div-->
+		<!--img width='600px' src='https://lh3.googleusercontent.com/-Jw9nekA6afg/Vi7CT1SQfnI/AAAAAAABVps/0Gne3FbeEbM/s2000-Ic42/5.jpg'/-->
+		<!--hr/>
+		<h2 class='espace_haut_et_bas'>Awesome skies for your cities</h2>
+		<div class='my_row' style='max-width:100%;'>
+			<div class='my_column medium_6' style="padding-right:.5em;">
+				<img style='width:100%;' src='/static/store/img/scenecity/sceneskies1.jpg'>
+			</div>
+			<div class='my_column medium_6' style="padding-left:.5em;">
+				<img style='width:100%;' src='/static/store/img/scenecity/sceneskies2.jpg'>
+			</div>
+		</div>
+		<div class='texte_lisible'>
+			<p>
+				Your cities need beautiful skies for the best backgrounds and lighting! Use SceneSkies for this, my Blender addon and HDRI collections.
+			</p>
+			<p>
+				The skies give realistic lighting extremely easily (basically in one click) AND they react properly with color grading and exposure settings in
+				Blender. The sun is as bright as the sun in real life (thousand times stronger than a car's headlights), giving sharp and strong shadows under
+				clear weather conditions.
+			</p>
+			<p>
+				<a href='../sceneskies.html'>Learn more about SceneSkies</a>
+			</p>
+		</div-->
+		<!--hr/>
+		<h2 class='espace_haut_et_bas'>Work with terrains</h2>
+		<div class='my_row' style='max-width:100%;'>
+			<div class='my_column medium_6' style="padding-right:.5em;">
+				<img style='width:100%;' src='/static/store/img/scenecity/city_on_terrain.jpg'/>
+			</div>
+			<div class='my_column medium_6' style="padding-left:.5em;">
+				<img style='width:100%;' src='/static/store/img/scenecity/city_on_terrain2.jpg'/>
+			</div>
+		</div>
+		<div class='' style="">
+			<img style='width:100%;' src='/static/store/img/scenecity/city_on_terrain2.jpg'/>
+		</div>
+		<div class='texte_lisible'>
+			<br/>
+			<p>
+				SceneCity comes with SceneTerrain, another separate Blender addon, and a whole terrain generation solution in itself. With it you can generate
+				detailed terrains for a city, and for any other use. It is for Blender 2.79, but is gradually being ported to Blender 2.80+, and being more
+				tightly integrated with the cities. </p>
+			<p>
+				<a href='/store/sceneterrain'>Learn more about SceneTerrain...</a>
+			</p>
+		</div-->
+		<!--hr style='margin-top:5rem;'/>
+		<div class='espace'></div>
+		<h3 class='espace_haut_et_bas'>Export your city</h3>
+		<div class='texte_lisible'>
+			<p>
+				SceneCity comes with SceneTerrain, another separate Blender addon, and a whole terrain generation solution in itself.
+			</p>
+		</div-->
+		<hr/>
+		<h2 class='espace_haut_et_bas'>Blender addon</h2>
+		<div class='texte_lisible'>
+			<div class='my_row'>
+				<div class='my_column medium_6'>
+					<img src="../static/store/img/blender_logo_gray.png" alt="" style="max-height:6em; max-width:100%; ">
+				</div>
+				<div class='my_column medium_6'>
+					<img src="../static/store/img/sceneskies/python_logo.png" alt="" style="max-height:6em; max-width:100%;">
+				</div>
+			</div>
+			<p>
+				SceneCity integrates nicely in Blender's interface and the UI is clear and uncluttered as much as possible. It adds a new graph type into
+				Blender's node editor panel. It will also tell you when something is wrong, for example when a node's required input socket isn't plugged
+				yet.</p>
+		</div>
+		<img style='width:100%; margin-top:1em' src='../static/store/img/scenecity/bottom_img.jpg'/>
+		<div class='texte_lisible'>
+			<h2 id='license'>License</h2>
+			<div>
+				By using SceneCity, you agree to the following terms and conditions:
+				<ol>
+					<li>Each unit of SceneCity bought is for one user only. If several persons must use SceneCity in your studio or workplace, then you must buy
+						as many units as the number of people using the program. Therefore you can't redistribute the program to others, if they haven't bought
+						their own copy already.
+					</li>
+					<li>You can install the software on as many computers as you like, provided the previous condition is met.
+					</li>
+					<li>You can use SceneCity for any purpose, personal or commercial.</li>
+					<li>The generated cities are yours, except for the included 3d assets and textures, to redistribute them with your cities, please buy the
+						redistribution licence.
+					</li>
+				</ol>
+				<!--p>
+					THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+					MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+					FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+					CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+				</p-->
+			</div>
+			<br/>
+			<br/>
+		</div>
+	</div>
+</div>
+<section class='section_sombre' style='text-align:left; padding-top:1em;'>
+	<div class='page_width' id='site_footer'>
+		<div class='my_row' style='max-width:100%'>
+			<div class='footer_column my_column medium_4'>
+				<h4>Contact me</h4>
+				<img src="../static/store/img/portrait_gray.jpg" alt="" style="height:10em; margin:auto; display:block; padding:1em 1em 0em 1em;">
+				<p style="text-align:center;"><a href="mailto:couturier.arnaud@gmail.com" style='word-wrap:break-word'>couturier.arnaud@gmail.com</a></p>
+				<p style="text-align:center;">
+					Call me Arnold. I'm an independent developer and artist. I've been programming and using Blender for more than a decade.</p>
+			</div>
+			<div class='footer_column my_column medium_4'>
+				<div id="mc_embed_signup" class="" style="">
+					<form action="//cgchan.us3.list-manage.com/subscribe/post?u=f0eb50ab31ac21d4901e30008&amp;id=88cc97a9cc" method="post"
+							id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" class="validate" target="_blank" novalidate>
+						<div id="mc_embed_signup_scroll">
+							<h4>Stay updated</h4>
+							<p>SceneCity's development news to your inbox</p>
+							<div class="mc-field-group">
+								<label for="mce-EMAIL">Email Address</label> <input type="email" value="" name="EMAIL" class="required email" id="mce-EMAIL"
+									required style="width:100%;"/>
+							</div>
+							<div style="position: absolute; left: -5000px;" aria-hidden="true">
+								<input type="text" name="b_f0eb50ab31ac21d4901e30008_88cc97a9cc" tabindex="-1" value="">
+							</div>
+							<div class="clear">
+								<input type="submit" value="Subscribe" name="subscribe" id="mc-embedded-subscribe" class="button"
+										style="background-color: hsla(45, 70%, 50%, 1)">
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+			<div class='footer_column my_column medium_4' id="footer_community_links">
+				<h4>Community</h4>
+				<a href='https://twitter.com/CouturierArnaud'>
+					<div class="my_row">
+						<div class="my_column small_4">
+							<img src='../static/store/img/logo_twitter.png'/>
+							<br/>
+							TWITTER
+						</div>
+						<div class="my_column small_8">Development updates</div>
+					</div>
+				</a> <a href="https://www.patreon.com/user?u=4081287">
+				<div class="my_row">
+					<div class="my_column small_4">
+						<img src="../external/logo/become_a_patron_button-2x.png" style="filter: grayscale(100%); height:25px"/>
+						<br/>
+						PATREON
+					</div>
+					<div class="my_column small_8">Support SceneCity with recurring contributions
+					</div>
+				</div>
+			</a> <a href='http://blenderartists.org/forum/showthread.php?140415'>
+				<div class="my_row">
+					<div class="my_column small_4">
+						<img src='../static/store/img/logo_ba.png'/>
+						<br/>
+						FORUM
+					</div>
+					<div class="my_column small_8">Forum thread on BlenderArtists.org</div>
+				</div>
+			</a>
+			</div>
+		</div>
+		<small style='text-align:center; display:block; margin:auto;'>
+			Arnaud Couturier © 2009. All Rights Reserved.
+		</small>
+	</div>
+</section>
+</body>
+</html>
