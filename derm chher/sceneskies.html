@@ -1,0 +1,886 @@
+
+<!DOCTYPE html>
+<html class="no-js" lang="en" dir="ltr">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+	<meta http-equiv="x-ua-compatible" content="ie=edge"/>
+	<link rel="stylesheet" type="text/css" href="npm/slick-carousel-1.8.1/slick/slick.css"/>
+	<link href="https://fonts.googleapis.com/css?family=Open+Sans|Poiret+One|Comfortaa:300" rel="stylesheet">
+	<link rel='stylesheet' href='static/store/css/main.css'/>
+	<style>
+		body {
+			background-color: #fff;
+			color: #444;
+		}
+		p, li {
+		 color: #666;
+			max-width: 50em;
+		}
+		h1, h2, h3, h4 {
+		 color: #444;
+			text-align: center;
+		}
+		.product_description h3 {
+		}
+		hr {
+			color: #555;
+			max-width: 1100px;
+			margin-top: 3em;
+			border-color: hsla(0, 0%, 100%, .5);
+		}
+		a:hover {
+		 color: black;
+		}
+		.check_mark {
+			color: hsl(200, 60%, 60%);
+			font-size: 2rem;
+			display: none;
+		}
+		.price {
+			font-size: 1.5em;
+			color: inherit;
+		}
+		.old_price {
+			font-size: 1.5em;
+			text-decoration: line-through;
+			color: #999;
+		}
+		.collection_price_table > div {
+			padding: .5em
+		}
+		.promo_text {
+		 font-size: large;
+			color: hsla(200, 40%, 70%, 1);
+		}
+		.collection h3 {
+			text-align: left;
+			font-size: 2em;
+			padding: 0;
+			margin: 0;
+		}
+		.collection .my_column {
+			align-items: center;
+			justify-content: center;
+			align-content: center;
+			height: auto;
+		}
+		.carousel_previews {
+			position: relative;
+			line-height: 0;
+		}
+		.carousel_previews_container {
+			display: inline-flex; /* et non pas flex tout court, sinon la marge à droite ne fonctionne pas... */
+			flex-direction: row;
+			flex-wrap: nowrap;
+			margin: 0 3rem;
+		}
+		.carousel_previews_container img {
+			box-sizing: content-box;
+			height: 84px;
+			border: 4px solid hsla(200, 40%, 50%, 0);
+		}
+		.carousel_previews_container img:hover {
+			border: 4px solid hsla(200, 40%, 50%, 1);
+		}
+		.carousel_previews_arrow {
+			color: #ddd;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			position: absolute;
+			z-index: 1;
+			font-size: 2em;
+			height: 100%;
+			background-color: hsla(0, 0%, 0%, .5);
+			cursor: pointer;
+			width: 3rem;
+		}
+		.carousel_previews_arrow:hover {
+			color: white;
+			background-color: hsla(200, 40%, 50%, 1);
+		}
+		.carousel_main_img_arrow {
+			color: #ddd;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			position: absolute;
+			z-index: 1;
+			font-size: 2em;
+			height: 100%;
+			background-color: hsla(0, 0%, 0%, 0);
+			cursor: pointer;
+			width: 5rem;
+			text-shadow: .0em .1em .1em hsla(0, 0%, 0%, .5);
+		}
+		.carousel_main_img_arrow:hover {
+			color: white;
+		}
+		.carousel_previews_to_scroll {
+			overflow: hidden;
+		}
+		img.carousel_main_image {
+			width: 100%;
+			display: block
+		}
+		img.preview_selected {
+			/* !important parce que doit être prioritaire sur les règles sur les images, qui sont plus spécifiques que cette classe. Et je ne veux pas ajouter
+			de nouvelle classe pour les images non sélectionnées */
+			border-color: hsla(200, 40%, 70%, 1) !important;
+		}
+		.product_description p {
+			max-width: 50em;
+			margin: 1em auto;
+		 text-align: justify;
+		}
+		.product_description img {
+			display: block;
+			max-width: 100%;
+			width: 50em;
+			margin: auto;
+		}
+		.product_description h3 {
+			margin-top: 2em;
+		}
+		#addon_description .my_column {
+			padding: 1em;
+		}
+	</style>
+	<title>SceneSkies: HDR lighting with color tweaking addon for Blender</title>
+	<link rel="canonical" href="https://www.cgchan.com/sceneskies.html" />
+	<meta name="description" content=""/>
+	<link rel='shortcut icon' href='static/store/img/sceneskies/favicon_sceneskies.png' type='image/png'/>
+	<!--script src='https://cdn.jsdelivr.net/foundation/5.5.3/js/vendor/modernizr.js'></script-->
+	<!-- google analytics -->
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-VJEX0FKGL2"></script>
+	<script type='text/javascript'>
+		// Old
+		// var _gaq = _gaq || [];
+		// _gaq.push(['_setAccount', 'UA-39546177-1']);
+		// _gaq.push(['_setDomainName', 'cgchan.com']);
+		// _gaq.push(['_trackPageview']);
+		// (function () {
+		// 	var ga = document.createElement('script');
+		// 	ga.type = 'text/javascript';
+		// 	ga.async = true;
+		// 	ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+		// 	var s = document.getElementsByTagName('script')[0];
+		// 	s.parentNode.insertBefore(ga, s);
+		// })();
+		// New V4
+		window.dataLayer = window.dataLayer || [];
+		function gtag(){dataLayer.push(arguments);}
+		gtag('js', new Date());
+		gtag('config', 'G-VJEX0FKGL2');
+	</script>
+</head>
+<body>
+<div id="site_header">
+	<div class="page_width">
+		<div id="menu_site">
+			<div style="; margin-right:auto;">
+				<img style="height:3em" src="static/store/img/website_logo_grey.png" alt="">
+			</div>
+			<div><a href='store/scenecity.html'>SceneCity</a></div>
+			<div><a href='sceneskies.html'>SceneSkies</a></div>
+			<div><a href='cantree_index.html'>CanTree</a></div>
+			<!--div><a href='/news'>What's new</a></div-->
+		</div>
+	</div>
+</div>
+<div id='page_body'>
+	<div id="slideshow_container">
+		<div id="slideshow_overlay">
+			<h1 style="font-size:6rem; margin:0em; padding:0em; margin-top: 7rem; color:#fff">Scene Skies</h1>
+			<div style="font-size:3rem; color:#ddd">Photo-real lighting for Blender</div>
+		</div>
+		<div class="slide fadeInOut1" style='background-image: url("static/store/img/sceneskies/1.0/banner_snowy_mountains.jpg");'></div>
+		<div class="slide fadeInOut2" style='background-image: url("static/store/img/sceneskies/1.0/banner_mars.jpg");'></div>
+		<div class="slide fadeInOut3"
+				style='background-image: url("static/store/img/sceneskies/1.0/banner_trees.jpg"); background-position: 50% 0%;'></div>
+		<div class="slide fadeInOut4" style='background-image: url("static/store/img/sceneskies/1.0/banner_plane.jpg");'></div>
+	</div>
+	<div class='page_width_sceneskies'>
+		<div class='my_row' style='text-align: center;'>
+			<div class='my_column medium_6' style='padding:.5em; margin:0em;'>
+				<h2>Blender addon</h2>
+				<img src="static/store/img/blender_logo_gray.png" alt="" style="max-height:5em; max-width:50%; ">
+				<img src="static/store/img/sceneskies/python_logo.png" alt="" style="max-height:5em; max-width:50%;">
+				<p>Everything you'll ever need from an HDRI manager in Blender.</p>
+				<div style="text-align: left;">
+					<p>
+						With it you can very easily list whole collections of HDR panoramas as thumbnails, choose the one you want, and use it. You can quickly
+						rotate the panorama, and tweak its colors. Add your own HDRIs if you want, with automatic thumbnail generation. It is free and regularly
+						updated.
+					</p>
+					<p style="text-align: center">
+						Free
+					</p>
+					<a href='https://arnaud-couturier-downloads.s3.amazonaws.com/sceneskies_1_2_1_install_in_blender_2_82.zip'
+							class="button_2 centered_block medium_button">Download</a>
+					<div style="text-align: center;">
+						v1.2.1 - For Blender 2.82 and above<br> <!--a href="/news/sceneskies_1_1_release">What's new</a> | --> <a
+							href="https://docs.google.com/document/d/1MYzeBaLsXOgPO6NsbXWGoaeGYfz0mX5qJOfklPb4zoc/edit?usp=sharing">Documentation</a>
+					</div>
+					<br> <br>
+					<div style="text-align: center">
+						<a href='https://arnaud-couturier-downloads.s3.amazonaws.com/sceneskies_1_2_0_install_in_blender_2_80.zip'
+						>Download v1.2.0 - For Blender 2.80 | 2.81</a>
+					</div>
+					<div style="text-align: center">
+						<a href='https://arnaud-couturier-downloads.s3.amazonaws.com/sceneskies_1_1_0_install_in_blender_2_79.zip'
+						>Download v1.1.0 - For Blender 2.79</a>
+					</div>
+				</div>
+			</div>
+			<div class='my_column medium_6' style="padding:.5em; margin:0em;">
+				<h2>A pack of professional-grade HDRIs</h2>
+				<img src="static/store/img/sceneskies/mirror_balls.png" alt="" style="max-height:10em; max-width:100%; display:block; margin:2em auto;">
+				<p>
+					Light your 3d scenes and surround them with HDR panoramas that have been created with specific criteria in mind that most other HDRIs don't
+					offer: large-scale backgrounds, very high brightness range, efficiently compressed, high resolution, to name a few. They also have the
+					never-seen before feature of color-tweaking, for the utmost control of their look.
+				</p>
+				<!--div>
+					<span style="color:inherit; font-size: medium; background-color: inherit; border-radius: .0em; font-weight: bold;">
+						Version 1.2 for Blender 2.80 released!
+					</span> <br> <span style="color:white; font-size: xx-large; background-color: red; border-radius: .0em; font-weight: bold;">
+						&nbsp;-33%&nbsp;
+					</span> <br> <span style="color:inherit; font-size: medium; background-color: inherit; border-radius: .0em; font-weight: bold;">
+						Ends on August 25th!
+					</span>
+				</div-->
+				<p style="text-align: center">
+					Starting at $12
+				</p>
+				<a href="#collections_start_title" class="button centered_block medium_button">See pack</a>
+			</div>
+		</div>
+	</div>
+	<hr/>
+	<div id="addon_description" class='page_width_sceneskies product_description' style="margin-bottom:2em;">
+		<h2>Blender addon</h2>
+		<img src="static/store/img/sceneskies/car_half_title.jpg"/>
+		<p>The goal of SceneSkies is to make HDRI-based lighting in Blender easy and fast. It is an HDRI manager. With a few clicks, choose a 360° HDR panorama
+			for your scene's background and lighting. No more manual creation of world materials, creating nodes, and navigating to your HDR files, just to load
+			a HDRI. Simply choose from the thumbnails list. You can still manually change the generated world materials if you need.</p>
+		<div class="my_row">
+			<div class="my_column medium_6">
+				<h3><span class="check_mark">✓</span> Manage your collections of HDRIs</h3>
+				<p>Download SceneSkies collections, and/or group your own HDRIs into collections. Then see all your installed collections at a glance, list the
+					HDRIs as thumbnails, and select the one to use in the current scene</p>
+			</div>
+			<div class="my_column medium_6">
+				<h3><span class="check_mark">✓</span> Free</h3>
+				<p>Download and start using it right away. Also download SceneSkies' collections below to get started.</p>
+			</div>
+		</div>
+		<div class="my_row">
+			<div class="my_column medium_6">
+				<h3><span class="check_mark">✓</span> Use your own HDRIs</h3>
+				<p>Any HDRI can be used with the addon, not just SceneSkies'. Included is a thumbnail generator.</p>
+			</div>
+			<div class="my_column medium_6">
+				<h3><span class="check_mark">✓</span> Sun / moon rotation</h3>
+				<p>Quickly rotate the environment to change the direction of the sun light (or moon light) with a simple control. Use random rotation to easily
+					switch between different directions.</p>
+			</div>
+		</div>
+		<div class="my_row">
+			<div class="my_column medium_6">
+				<h3><span class="check_mark">✓</span> Export cube maps of your scenes</h3>
+				<p>With a click of a button, export your whole 3d scene (even an empty scene if you just want the world background) as 6 cube side images for
+					use in game engines. </p>
+			</div>
+			<div class="my_column medium_6">
+				<h3><span class="check_mark">✓</span> Color-tweaking</h3>
+				<p>Unique to SceneSkies is the ability to control the color and intensity of the sun, atmosphere, clouds and ground, independently of one
+					another. Fine-tune the panoramas color and look for your specific needs, even to a point of having almost a different environment. See
+					below.</p>
+			</div>
+		</div>
+		<!--h3><span class="check_mark">✓</span> Professionally made</h3>
+		<p>100% Python, has its own user preferences, new version checker, up-to-date with latest Blender versions, well documented, friendly user support by me
+			:)</p-->
+	</div>
+	<!--p>
+		SceneSkies is a Blender addon.
+	</p>
+	<p>
+		It contains super realistic 360° panoramic skies. That means they surround your whole scene. They serve two purposes: provide a full background around
+		your scene, and light your scene. HDR lighting is the best modern lighting technique, as each pixel is treated as an individual light source. Any object
+		in the scene is therefore lit from all angles, just like in real life.
+	</p>
+	<p>
+		Each sky is at least 12000 x 8000 pixels, for highly detailed clouds. They're also pure HDRs in 16bit EXR efficiently compressed format.
+	</p>
+	<p>
+		The skies give realistic lighting extremely easily (basically in one click) AND they react properly with color grading and exposure settings in Blender.
+		The sun is as bright as the sun in real life (thousand times stronger than a car's headlights), giving sharp and strong shadows under clear weather
+		conditions.
+	</p>
+	<p>
+		Some skies are bottomless, and some are several hundred meters above plains and mountains. They're perfect for any use, but also for large-scale shots
+		as the viewer won't see the ground in the HDR, two meters below the camera when it was shot.
+	</p-->
+	<!--img src='/static/store/img/sceneskies/sky_balls.jpg'/-->
+	<hr id="collections_start_title">
+	<div class='page_width_sceneskies'>
+		<h2>Pack of professional-grade HDRIs</h2>
+	</div>
+	<div class="page_width_sceneskies">
+		<div class="carousel_main_image_container" style="position:relative;">
+			<div class="carousel_main_img_arrow previous no_select">
+				◄
+			</div>
+			<div class="carousel_main_img_arrow next no_select" style="right:0px;">
+				►
+			</div>
+			<img class="carousel_main_image" src="static/store/img/sceneskies/rough_northern_forest/1.jpg">
+			<div style="position:absolute; z-index:1; width:10em; height:10em; top:0; display:flex; margin:5em;">
+				<img class="carousel_loading_img" src="static/store/img/sceneskies/loading.png" style="display:none; margin:auto;">
+			</div>
+		</div>
+		<div class="carousel_previews">
+			<div class="carousel_previews_arrow no_select" data-scrollAmount="-400">
+				◄
+			</div>
+			<div class="carousel_previews_arrow no_select" style="right:0px;" data-scrollAmount="400">
+				►
+			</div>
+			<div class="carousel_previews_to_scroll">
+				<div class="carousel_previews_container">
+					<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/1.jpg" class="preview_selected"
+							data-text="Du texte ici">
+					<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/2.jpg">
+					<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/3.jpg">
+					<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/4.jpg">
+					<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/5.jpg">
+					<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/6.jpg">
+					<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/7.jpg">
+					<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/8.jpg">
+					<img src="static/store/img/sceneskies/collection_1/previews_150/8.jpg">
+					<img src="static/store/img/sceneskies/collection_1/previews_150/1.jpg">
+					<img src="static/store/img/sceneskies/collection_1/previews_150/3.jpg">
+					<img src="static/store/img/sceneskies/collection_1/previews_150/2.jpg">
+					<img src="static/store/img/sceneskies/collection_1/previews_150/6.jpg">
+					<img src="static/store/img/sceneskies/collection_1/previews_150/30.jpg">
+					<img src="static/store/img/sceneskies/collection_1/previews_150/4.jpg">
+					<img src="static/store/img/sceneskies/collection_1/previews_150/15.jpg">
+					<img src="static/store/img/sceneskies/collection_1/previews_150/9.jpg">
+					<img src="static/store/img/sceneskies/collection_1/previews_150/10.jpg">
+					<img src="static/store/img/sceneskies/collection_1/previews_150/11.jpg">
+					<img src="static/store/img/sceneskies/collection_1/previews_150/32.jpg">
+					<img src="static/store/img/sceneskies/collection_1/previews_150/12.jpg">
+					<img src="static/store/img/sceneskies/collection_1/previews_150/13.jpg">
+					<img src="static/store/img/sceneskies/collection_1/previews_150/14.jpg">
+					<img src="static/store/img/sceneskies/collection_1/previews_150/31.jpg">
+					<img src="static/store/img/sceneskies/collection_1/previews_150/16.jpg">
+					<img src="static/store/img/sceneskies/collection_1/previews_150/17.jpg">
+					<img src="static/store/img/sceneskies/collection_1/previews_150/18.jpg">
+					<img src="static/store/img/sceneskies/collection_1/previews_150/19.jpg">
+					<img src="static/store/img/sceneskies/collection_1/previews_150/20.jpg">
+					<img src="static/store/img/sceneskies/collection_1/previews_150/28.jpg">
+					<img src="static/store/img/sceneskies/collection_1/previews_150/29.jpg">
+					<img src="static/store/img/sceneskies/collection_1/previews_150/21.jpg">
+					<img src="static/store/img/sceneskies/collection_1/previews_150/22.jpg">
+					<img src="static/store/img/sceneskies/collection_1/previews_150/23.jpg">
+					<img src="static/store/img/sceneskies/collection_1/previews_150/24.jpg">
+					<img src="static/store/img/sceneskies/collection_1/previews_150/25.jpg">
+					<img src="static/store/img/sceneskies/collection_1/previews_150/26.jpg">
+					<img src="static/store/img/sceneskies/collection_1/previews_150/27.jpg">
+					<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/9.jpg">
+					<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/10.jpg">
+					<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/11.jpg">
+					<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/12.jpg">
+					<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/13.jpg">
+					<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/14.jpg">
+					<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/15.jpg">
+					<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/16.jpg">
+					<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/17.jpg">
+					<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/18.jpg">
+					<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/19.jpg">
+				</div>
+			</div>
+		</div>
+		<div class="" style="margin:auto; max-width:40em; text-align:center;">
+			<!--h3>Collection 1</h3>
+			<p>This collection depicts several scenes and environments: clouds-only, rocky/grassy hills and mountains, snowy mountains, on Mars, above the
+				ocean. It's a good starting collection.</p>
+			<ul>
+				<li>26 panoramas</li>
+				<li>Several different scenes</li>
+				<li>Includes clouds-only scenes, on a gaseous Earth-like planet</li>
+				<li>At least 2 times of the day and weather conditions for each scene</li>
+				<li>Unusual locations for HDRIs: on Mars, and high altitude above the ocean</li>
+				<li><a href="#collections_characteristics">Technical specifications below...</a></li>
+			</ul>
+			<h3>Rough northern forest</h3>
+			<p>This collection depicts a forest of conifers, along with human-size bushes and some rocky grounds. There are dense and sparse areas. The terrain
+				is very rough, with plateaus and medium-size canyons. In the horizon are mountains chains all around, from far to very far.</p>
+			<ul>
+				<li>22 panoramas</li>
+				<li>Camera at about 300 meters high</li>
+				<li>3 different weather conditions: clear, cloudy, overcast</li>
+				<li>6 times of the day for each weather condition, from dawn/dusk to almost noon</li>
+				<li>4 night times, with and without moon light</li>
+				<li><a href="#collections_characteristics">Technical specifications below...</a></li>
+			</ul-->
+			<img src="static/store/img/sceneskies/dvd_pack.png" alt=""
+					style="max-height:15em; max-width:100%; display:block; padding:1em; margin:0 auto;">
+			48 panoramas<br>Technical specifications below  
+			 <br> <br>
+			<!--div>
+					<span style="color:inherit; font-size: medium; background-color: inherit; border-radius: .0em; font-weight: bold;">
+						Version 1.2 for Blender 2.80 released!
+					</span> <br> <span style="color:white; font-size: large; background-color: red; border-radius: .0em; font-weight: bold;">
+						&nbsp;-33% on the 12k and 16k versions&nbsp;
+					</span> <br> <span style="color:inherit; font-size: medium; background-color: inherit; border-radius: .0em; font-weight: bold;">
+						Ends on August 25th!
+					</span>
+			</div-->
+			<br>
+			<div class="collection_price_table" style="display:flex; flex-direction: row; flex-wrap: wrap;">
+				<!--div style="padding-left: 0;">
+					<a href="https://s3.amazonaws.com/arnaud-couturier-downloads/SceneSkies_Collection1_4k.zip">
+						<div class="button_2 medium_button">Download 4k</div>
+					</a>
+					<div class="price">Free</div>
+				</div-->
+				<div>
+					<a href="https://gumroad.com/l/YOYIF" target="_blank" class="button medium_button"> Buy 8k
+						<div style="font-size: x-small;">via Gumroad</div>
+					</a>
+					<div class="price">$12</div>
+				</div>
+				<div>
+					<a href="https://gum.co/xnnmt/" target="_blank" class="button medium_button"> Buy 12k
+						<div style="font-size: x-small;">via Gumroad</div>
+					</a>
+					<div class="price">$20</div>
+					<!--div class="old_price">$35</div>
+					<div class="price">$23.5</div-->
+				</div>
+				<div>
+					<a href="https://gum.co/nftDT/" target="_blank" class="button medium_button"> Buy 16k
+						<div style="font-size: x-small;">via Gumroad</div>
+					</a>
+					<div class="price">$25</div>
+					<!--div class="old_price">$66</div>
+					<div class="price">$44.5</div-->
+				</div>
+			</div>
+			<div><a href="https://blendermarket.com/products/sceneskies-hdri-pack">Or buy on the BlenderMarket</a></div>
+		</div>
+	</div>
+	<!--br>
+	<br>
+	<div style="width:100%; background-color:hsla(0,0%,0%,0.5);" class="my_row collection">
+		<div class="my_column large_6">
+			<div class="carousel_main_image_container" style="position:relative;">
+				<div class="carousel_main_img_arrow previous no_select">
+					◄
+				</div>
+				<div class="carousel_main_img_arrow next no_select" style="right:0px;">
+					►
+				</div>
+				<img class="carousel_main_image" src="static/store/img/sceneskies/rough_northern_forest/1.jpg">
+			</div>
+			<div class="carousel_previews">
+				<div class="carousel_previews_arrow no_select" data-scrollAmount="-400">
+					◄
+				</div>
+				<div class="carousel_previews_arrow no_select" style="right:0px;" data-scrollAmount="400">
+					►
+				</div>
+				<div class="carousel_previews_to_scroll">
+					<div class="carousel_previews_container">
+						<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/1.jpg" class="preview_selected"
+								data-text="Du texte ici">
+						<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/2.jpg">
+						<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/3.jpg">
+						<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/4.jpg">
+						<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/5.jpg">
+						<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/6.jpg">
+						<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/7.jpg">
+						<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/8.jpg">
+						<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/9.jpg">
+						<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/10.jpg">
+						<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/11.jpg">
+						<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/12.jpg">
+						<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/13.jpg">
+						<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/14.jpg">
+						<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/15.jpg">
+						<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/16.jpg">
+						<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/17.jpg">
+						<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/18.jpg">
+						<img src="static/store/img/sceneskies/rough_northern_forest/previews_150/19.jpg">
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="my_column large_6" style="padding: 1em;">
+			<h3>Rough northern forest</h3>
+			<p>This collection depicts a forest of conifers, along with human-size bushes and some rocky grounds. There are dense and sparse areas. The terrain
+				is very rough, with plateaus and medium-size canyons. In the horizon are mountains chains all around, from far to very far.</p>
+			<ul>
+				<li>22 panoramas</li>
+				<li>Camera at about 300 meters high</li>
+				<li>3 different weather conditions: clear, cloudy, overcast</li>
+				<li>6 times of the day for each weather condition, from dawn/dusk to almost noon</li>
+				<li>4 night times, with and without moon light</li>
+				<li><a href="#collections_characteristics">Technical specifications below...</a></li>
+			</ul>
+			<div class="promo_text">Save 25%: new version release discount, until August 21</div>
+			<div class="collection_price_table" style="display:flex; flex-direction: row; flex-wrap: wrap;">
+				<div>
+					<a href="https://gum.co/GjWoCq/sc_1_1_fDqgK" target="_blank">
+						<div class="button medium_button">Buy 8k on Gumroad</div>
+					</a>
+					<div class="old_price">$12</div>
+					<div class="price">$9</div>
+				</div>
+				<div>
+					<a href="https://gum.co/OVZr/sc_1_1_fDqgK" target="_blank">
+						<div class="button medium_button">Buy 12k on Gumroad</div>
+					</a>
+					<div class="old_price">$35</div>
+					<div class="price">$26</div>
+				</div>
+				<div>
+					<a href="https://gum.co/vpFgr/sc_1_1_fDqgK" target="_blank">
+						<div class="button medium_button">Buy 16k on Gumroad</div>
+					</a>
+					<div class="old_price">$66</div>
+					<div class="price">$49.5</div>
+				</div>
+			</div>
+		</div>
+	</div-->
+	<script>
+		function callback_img_loaded(evt) {
+			var loading_img = evt.target.parentElement.querySelector("img.carousel_loading_img");
+			loading_img.style.display = "none";
+		}
+		function show_loading_img(main_img) {
+			var loading_img = main_img.parentElement.querySelector("img.carousel_loading_img");
+			loading_img.style.display = "block";
+		}
+		// carousels main image arrows
+		function display_previous_carousel_img(evt) {
+			var main_img = evt.target.parentElement.parentElement.querySelector("img.carousel_main_image");
+			main_img.addEventListener('load', callback_img_loaded);
+			var current_preview_img = evt.target.parentElement.parentElement.querySelector("img.preview_selected");
+			var container_to_scroll = current_preview_img.parentElement.parentElement;
+			var previous_preview_img = current_preview_img.previousElementSibling;
+			if (previous_preview_img != null) {
+				show_loading_img(main_img);
+				main_img.src = previous_preview_img.src.replace("previews_150/", "");
+				current_preview_img.classList.remove("preview_selected");
+				previous_preview_img.classList.add("preview_selected");
+				current_preview_img = previous_preview_img;
+				// faire attention à recentrer le scrolling sur la preview actuelle, si besoin
+				if (current_preview_img.offsetLeft < container_to_scroll.scrollLeft ||
+					container_to_scroll.scrollLeft + container_to_scroll.clientWidth < current_preview_img.offsetLeft) {
+					container_to_scroll.scrollLeft = current_preview_img.offsetLeft - container_to_scroll.clientWidth + current_preview_img.clientWidth;
+				}
+			}
+		}
+		function display_next_carousel_img(evt) {
+			var main_img = evt.target.parentElement.parentElement.querySelector("img.carousel_main_image");
+			main_img.addEventListener('load', callback_img_loaded);
+			var current_preview_img = evt.target.parentElement.parentElement.querySelector("img.preview_selected");
+			var container_to_scroll = current_preview_img.parentElement.parentElement;
+			var next_preview_img = current_preview_img.nextElementSibling;
+			if (next_preview_img != null) {
+				show_loading_img(main_img);
+				main_img.src = next_preview_img.src.replace("previews_150/", "");
+				current_preview_img.classList.remove("preview_selected");
+				next_preview_img.classList.add("preview_selected");
+				current_preview_img = next_preview_img;
+				// faire attention à recentrer le scrolling sur la preview actuelle, si besoin
+				if (current_preview_img.offsetLeft + current_preview_img.clientWidth > container_to_scroll.scrollLeft + container_to_scroll.clientWidth ||
+					container_to_scroll.scrollLeft > current_preview_img.offsetLeft) {
+					container_to_scroll.scrollLeft = current_preview_img.offsetLeft;
+				}
+			}
+		}
+		var elements = document.querySelectorAll(".carousel_main_img_arrow.previous");
+		for (var i = 0; i < elements.length; i++) {
+			var el = elements[i];
+			el.onclick = display_previous_carousel_img;
+		}
+		elements = document.querySelectorAll(".carousel_main_img_arrow.next");
+		for (i = 0; i < elements.length; i++) {
+			el = elements[i];
+			el.onclick = display_next_carousel_img;
+		}
+		// carousels previews arrows
+		function scroll_carousel_previews(evt) {
+			var previews_container = evt.target.parentElement.querySelector(".carousel_previews_to_scroll");
+			previews_container.scrollBy(parseInt(evt.target.dataset.scrollamount), 0);
+		}
+		var arrows = document.querySelectorAll(".carousel_previews_arrow");
+		for (i = 0; i < arrows.length; i++) {
+			var arrow = arrows[i];
+			arrow.onclick = scroll_carousel_previews;
+		}
+		// carousels previews img clicked
+		function preview_img_clicked(evt) {
+			var preview_image = evt.target;
+			var main_img = evt.target.parentElement.parentElement.parentElement.parentElement.querySelector("img.carousel_main_image");
+			main_img.addEventListener('load', callback_img_loaded);
+			show_loading_img(main_img);
+			var previous_selected_preview_img = evt.target.parentElement.querySelector(".preview_selected");
+			if (previous_selected_preview_img != null) {
+				previous_selected_preview_img.classList.remove("preview_selected");
+			}
+			main_img.src = evt.target.src.replace("previews_150/", "");
+			preview_image.classList.add("preview_selected");
+		}
+		var previews_imgs = document.querySelectorAll(".carousel_previews_container img");
+		for (i = 0; i < previews_imgs.length; i++) {
+			var previews_img = previews_imgs[i];
+			previews_img.onclick = preview_img_clicked;
+		}
+	</script>
+	<hr>
+	<div class='page_width_sceneskies product_description' id="collections_characteristics">
+		<h2>Common characteristics of all panoramas</h2>
+		<h3><span class="check_mark">✓</span> Color-tweaking!</h3>
+		<img src='static/store/img/sceneskies/color_tweaking_overview.gif'/>
+		<p>Never seen before and totally unique to SceneSkies: change the color and brightness intensity of the sun, the atmosphere, the clouds, and the ground
+			surface, all independently of each other. This unique feature of SceneSkies' panoramas is perfect when you need to have lighter or darker clouds,
+			have a warmer or colder sun color, more or less contrasted shadows on the ground and mountains, have a thicker or thinner atmosphere, have a
+			different shade of blue for the sky, change the color of the mountains, and more (colored clouds, no atmosphere, etc...) By tweaking the color and
+			intensity of those 4 elements, you can have radically different visual results from the same panorama, giving you control over the look you're
+			after, or the possibility to experiment in subtle or extreme ways. Best of all: your changes do impact the lighting of your scene.</p>
+		<h3><span class="check_mark">✓</span> High and multiple resolutions</h3>
+		<p>At 16k you'll have highly detailed backgrounds. Lower resolutions are available: 12k and 8k. Choose the one for your needs and budget. Once you buy a
+			given resolution, you can upgrade to a higher resolution anytime, and by paying just the difference.</p>
+		<h3><span class="check_mark">✓</span> Affordable</h3>
+		<p>Much cheaper compared to other online stores of HDRIs, where a single panorama can cost up to $50, versus at most $1.5 per panorama in SceneSkies'
+			collections. That's at least 20 times cheaper.</p>
+		<h3><span class="check_mark">✓</span> Crystal-clear details</h3>
+		<img src='static/store/img/sceneskies/lens_flares.jpg'/>
+		<p>SceneSkies' panoramas have been digitally rendered. As such they don't have any of the issues of traditional photography: never out of focus, no lens
+			distortion, no lens flares and light bleeding, no dirt on the lens, no hardware defect issues whatsoever. 16k really means native 16k, not upsampled
+			or 8k-equivalent blurry.</p>
+		<h3><span class="check_mark">✓</span> Full 360° panoramas</h3>
+		<img src='static/store/img/sceneskies/360_panorama.jpg'/>
+		<img src='static/store/img/sceneskies/skydome.jpg'/>
+		<p>These are not just skydomes or hemispheres (top half with black bottom), but full spheres, including the bottom. Why do other HDRIs so often have a
+			black bottom? Simply because they don't have anything to show except a boring grassy or rocky ground, about 1 or 2 meter below the camera. In
+			SceneSkies' HDRIs on the other hand, you have the full view, with terrain details even below the camera. This is important for realistic lighting
+			because the lighting not only comes from the sun and the sky, but also bounced light from the ground. This has the added benefit of making aerial
+			shots possible</p>
+		<h3><span class="check_mark">✓</span> Designed for large-scale scenes</h3>
+		<p>Most HDRIs fall short when it comes to surrounding a large 3d scene such as a city, because they are taken about 1 meter off the ground. Consequently
+			they have annoying close objects in the foreground (trees...), and the ground is so close it looks out of place. SceneSkies' HDRIs are taken from
+			some altitude (tens or hundreds of meters), giving you only distant mountains and clouds in the horizon, no close objects.</p>
+		<h3><span class="check_mark">✓</span> Efficiently compressed</h3>
+		<img src='static/store/img/sceneskies/size_per_panorama_file.png' style="max-width:30em;">
+		<p>Hard drive space isn't free. Even in our age of terabytes, we can't afford hundreds of megabytes per HDRI. SceneSkies uses state-of-the-art EXR
+			compression methods to achieve very low file sizes with no visible compression artifacts: a 16k HDRI weighs 70MB on average versus more than 300 for
+			most other HDRIs.</p>
+		<h3><span class="check_mark">✓</span> Memory efficient</h3>
+		<img src='static/store/img/sceneskies/memory_usage.jpg'/>
+		<p>A 16k panorama takes only 1GB of RAM, vs 2GB for most other HDRIs. This is because most of them use 32-bit colors vs 16-bit for SceneSkies. This is a
+			technical choice, and while 32-bit sounds superior to 16-bit because we can encode colors with even higher precision, in reality such high precision
+			is unneeded. First we'd need special cameras to capture such subtle differences, then proper display devices and tone-mapping algorithms that can
+			take advantage of the added precision, and even with all the proper gear our eye couldn't even see any difference in the end. So instead of wasting
+			precious hardware resources for almost zero return, it's best to stick with 99% of the benefits for only half of the disk, RAM and CPU usage. If
+			you're rendering on your GPU this is even more important, as GPUs typically have less video RAM than standard RAM.</p>
+		<h3><span class="check_mark">✓</span> Fast to load</h3>
+		<p>SceneSkies' panoramas are fast to load, even at 16k. Thanks to using the proper file format: modern EXR, efficient compression, 16-bit instead of
+			overkill 32-bit, no unused alpha channel. On an i7 7700k and a SSD a panorama of SceneSkies takes 1s to load then 1s to display, versus 17s to open
+			then 5.5s to display for a regular 32bit .hdr file. That's a 1100% gain in speed. This wasted time quickly adds up when you often do test renders
+			while you're working.</p>
+		<h3><span class="check_mark">✓</span> Extremely high brightness range</h3>
+		<img src='static/store/img/sceneskies/sky_exposure.jpg'/>
+		<p>The number one quality of an HDRI is how wide its brightness range is, and how closely it captures the high differences of luminosity seen in
+			reality. SceneSkies' uses the full precision-capacity of 16-bit float values, with the sun being thousand times brighter than the shadows. Nothing
+			is clipped, not even the sun itself. And nothing is totally dark either, not even at night time. Play with the exposure in your software, and
+			details appear where you thought it was just black or white.</p>
+		<h3><span class="check_mark">✓</span> Razor-sharp shadows</h3>
+		<img src='static/store/img/sceneskies/sharp_shadows.jpg'/>
+		<p>SceneSkies' HDRIs give sharp shadows in clear weather conditions, thanks to the above-listed characteristics. This is a must-have for any
+			high-quality HDR panorama.</p>
+		<h3><span class="check_mark">✓</span> Several times of the day and weather conditions</h3>
+		<p>The collections contain the same scenes at different times of the day, including night time for some, and different weather conditions. So you can
+			choose the lighting conditions best suited to your scene and desired mood. It is also possible to test how your materials and models look under
+			different lighting conditions: direct sun light, more diffuse lighting in a cloudy day, or with a dim moon light.</p>
+		<h3><span class="check_mark">✓</span> Unique environments</h3>
+		<p>Surround your 3d scenes with environments that you cannot find anywhere else: above the clouds and the ocean, on Mars, or on a gaseous planet where
+			there's only clouds and atmosphere. Richer and more varied environments are added regularly. Why not even give me suggestions for the next ones
+			:)</p>
+		<hr>
+		<div style="background-color: hsla(0,0%,50%,.1); padding: 0.5em 2em; margin: 3em auto; max-width: 50em;">
+			<h3 style="margin: 0em;">Licensing</h3>
+			<p>SceneSkies' addon is GPL.</p>
+			<p>SceneSkies' collections of HDRIs are royalty-free, and you can use them for personal, educational, or commercial purposes but you may not resell,
+				redistribute, or repackage them without explicit permission from me.</p>
+		</div>
+	</div>
+	<!--h3 class='espace_haut_et_bas'>Different lighting conditions</h3>
+	<p>
+		Different weathers, cloud types and hours of the day, so you can choose which ones best suits the mood of your scene. It's also perfect to test what
+		lighting works best for a particular scene.
+	</p>
+	<div class='my_row'>
+		<div class="my_column medium_4">
+			<img src='/static/store/img/sceneskies/lighting1_sky.jpg'/><br/> <img src='/static/store/img/sceneskies/lighting1.jpg'/>
+			<h4 class='espace_haut_et_bas'>Noon clear</h4>
+			<p>
+				The most direct lighting, with strong and sharp shadows, and a blue tint.
+			</p>
+		</div>
+		<div class="my_column medium_4">
+			<img src='/static/store/img/sceneskies/lighting2_sky.jpg'/><br/> <img src='/static/store/img/sceneskies/lighting2.jpg'/>
+			<h4 class='espace_haut_et_bas'>Evening clear</h4>
+			<p>
+				Evening light is soft and warm.
+			</p>
+		</div>
+		<div class="my_column medium_4">
+			<img src='/static/store/img/sceneskies/lighting3_sky.jpg'/><br/> <img src='/static/store/img/sceneskies/lighting3.jpg'/>
+			<h4 class='espace_haut_et_bas'>Overcast noon</h4>
+			<p>
+				More diffuse shadows, and more ambient light, mostly gray because of the abundance of clouds.
+			</p>
+		</div>
+	</div>
+	<hr style='margin-top:5rem;'/>
+	<h3 class='espace_haut_et_bas'>Control brightness with exposure</h3>
+	<img src='static/store/img/sceneskies/sky_exposure.jpg'/>
+	<br/>
+	<p>
+		The sun is as bright as the real sun, which gives the number one ingredient of photo-real lighting: full light brightness range.
+	</p>
+	<p>
+		In real life, nothing is completely black or white, that's only a limitation of our eye. Everything reflects or emits light to a certain degree, even if
+		our eye can't see it. And the scale of brightness of light sources vary greatly. For instance compare the intensity of a torchlight to the light of a <a
+			target='_blank_ '
+			href='https://en.wikipedia.org/wiki/Supernova'>supernova</a> which crosses galaxies!
+	</p>
+	<p>
+		Since the skies are saved in High Dynamic Range, each pixel contains not only color, but also light intensity. As such a pixel is never burned out, or
+		completely black due to lack of light. As you increase exposure, black pixels come to life and reveal their hidden details, while decreasing exposure
+		reveals details hidden in otherwise completely white pixels.
+	</p>
+	<p>The filmic color profile in Blender is the only one capable of correctly displaying such a high range and with realistic results.</p>
+	<hr style='margin-top:5rem;'/>
+	<h3 class='espace_haut_et_bas'>Color grading</h3>
+	<img src='/static/store/img/sceneskies/skies_looks.jpg'/>
+	<br/>
+	<p>
+		Being pure HDRs also brings the advantage of realistic and precise color grading right inside of Blender.
+	</p>
+	<p>
+		Apply professional looks and other film effects to your scene. Only true HDR backgrounds and lighting, capturing the whole range of brightness and color
+		for each pixel, can give such lively results.
+	</p>
+	<hr style='margin-top:5rem;'/>
+	<h3 class='espace_haut_et_bas'>Color tweaking</h3>
+	<p>
+		Each sky has realistic default colors, but you don't have to be limited by defaults. Need a different shade of blue for the sky? Need darker or lighter
+		clouds? Need the sun to have a slightly different hue? It is possible to change these without affecting the other elements of the sky.
+	</p>
+	<p>
+		You also have random preset colors for dawn, noon, and dusk sun colors.
+	</p>
+	<video src="/static/store/img/sceneskies/1.0/color_tweaking_x2_crf35.mp4" controls preload="none" loop
+			poster="/static/store/img/sceneskies/1.0/color_tweaking_video_poster.jpg"></video>
+	<hr style='margin-top:5rem;'/>
+	<div class='espace'></div>
+	<h3 class='espace_haut_et_bas'>Pure and elegant Blender addon</h3>
+	<div class='my_row'>
+		<div class='my_column small_6'>
+			<img src='/static/store/img/python_logo_gray.png'/>
+		</div>
+		<div class='my_column small_6'>
+			<img src='static/store/img/blender_logo_gray.png'/>
+		</div>
+	</div>
+	<p>
+		SceneSkies is written entirely in the Python programming language, with zero external dependencies, except for Blender itself. It is therefore very easy
+		to install, and works everywhere Blender does, ie on Windows, Mac, and Linux.
+	</p>
+	<p>
+		It integrates nicely in Blender's interface, by adding a new panel in the world settings. All you have to do is choose a sky in a drop-down menu, and
+		voilà! You have a photo-real world background and lighting.
+	</p-->
+</div>
+<section class='section_sombre' style='text-align:left; padding-top:1em;'>
+	<div class='page_width' id='site_footer'>
+		<div class='my_row' style='max-width:100%'>
+			<div class='footer_column my_column medium_4'>
+				<h4>Contact me</h4>
+				<img src="static/store/img/portrait_gray.jpg" alt="" style="height:10em; margin:auto; display:block; padding:1em 1em 0em 1em;">
+				<p style="text-align:center;"><a href="mailto:couturier.arnaud@gmail.com" style='word-wrap:break-word'>couturier.arnaud@gmail.com</a></p>
+				<p style="text-align:center;">
+					Call me Arnold. I'm an independent developer and artist. I've been programming and using Blender for more than a decade.</p>
+			</div>
+			<div class='footer_column my_column medium_4'>
+				<div id="mc_embed_signup" class="" style="">
+					<form action="//cgchan.us3.list-manage.com/subscribe/post?u=f0eb50ab31ac21d4901e30008&amp;id=88cc97a9cc" method="post"
+							id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" class="validate" target="_blank" novalidate>
+						<div id="mc_embed_signup_scroll">
+							<h4>Stay updated</h4>
+							<p>SceneCity's development news to your inbox</p>
+							<div class="mc-field-group">
+								<label for="mce-EMAIL">Email Address</label> <input type="email" value="" name="EMAIL" class="required email" id="mce-EMAIL"
+									required style="width:100%;"/>
+							</div>
+							<div style="position: absolute; left: -5000px;" aria-hidden="true">
+								<input type="text" name="b_f0eb50ab31ac21d4901e30008_88cc97a9cc" tabindex="-1" value="">
+							</div>
+							<div class="clear">
+								<input type="submit" value="Subscribe" name="subscribe" id="mc-embedded-subscribe" class="button"
+										style="background-color: hsla(45, 70%, 50%, 1)">
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+			<div class='footer_column my_column medium_4' id="footer_community_links">
+				<h4>Community</h4>
+				<a href='https://twitter.com/CouturierArnaud'>
+					<div class="my_row">
+						<div class="my_column small_4">
+							<img src='static/store/img/logo_twitter.png'/>
+							<br/>
+							TWITTER
+						</div>
+						<div class="my_column small_8">Development updates</div>
+					</div>
+				</a> <a href="https://www.patreon.com/user?u=4081287">
+				<div class="my_row">
+					<div class="my_column small_4">
+						<img src="external/logo/become_a_patron_button-2x.png" style="filter: grayscale(100%); height:25px"/>
+						<br/>
+						PATREON
+					</div>
+					<div class="my_column small_8">Support SceneCity with recurring contributions
+					</div>
+				</div>
+			</a> <a href='http://blenderartists.org/forum/showthread.php?140415'>
+				<div class="my_row">
+					<div class="my_column small_4">
+						<img src='static/store/img/logo_ba.png'/>
+						<br/>
+						FORUM
+					</div>
+					<div class="my_column small_8">Forum thread on BlenderArtists.org</div>
+				</div>
+			</a>
+			</div>
+		</div>
+		<small style='text-align:center; display:block; margin:auto;'>
+			Arnaud Couturier © 2009. All Rights Reserved.
+		</small>
+	</div>
+</section>
+</body>
+</html>

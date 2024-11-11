@@ -1,0 +1,409 @@
+
+<!DOCTYPE html>
+<html class="no-js" lang="en" dir="ltr">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+	<meta http-equiv="x-ua-compatible" content="ie=edge"/>
+	<link rel="stylesheet" type="text/css" href="npm/slick-carousel-1.8.1/slick/slick.css"/>
+	<link href="https://fonts.googleapis.com/css?family=Open+Sans|Poiret+One|Comfortaa:300" rel="stylesheet">
+	<link rel='stylesheet' href='static/store/css/main.css'/>
+	<link rel="styleSheet" href="static/store/js/cantree/jquery-ui/css/ui-lightness/jquery-ui-1.8.6.custom.css" type="text/css" media="screen">
+	<link rel="styleSheet" href="static/store/css/cantree/main.css" type="text/css" media="screen">
+	<title>CanTree - Free online 2d tree generator</title>
+	<link rel="canonical" href="https://www.cgchan.com" />
+	<meta name="description" content=""/>
+	<link rel='shortcut icon' href='static/store/img/cantree/icon.png' type='image/png'/>
+	<!--script src='https://cdn.jsdelivr.net/foundation/5.5.3/js/vendor/modernizr.js'></script-->
+	<!-- google analytics -->
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-VJEX0FKGL2"></script>
+	<script type='text/javascript'>
+		// Old
+		// var _gaq = _gaq || [];
+		// _gaq.push(['_setAccount', 'UA-39546177-1']);
+		// _gaq.push(['_setDomainName', 'cgchan.com']);
+		// _gaq.push(['_trackPageview']);
+		// (function () {
+		// 	var ga = document.createElement('script');
+		// 	ga.type = 'text/javascript';
+		// 	ga.async = true;
+		// 	ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+		// 	var s = document.getElementsByTagName('script')[0];
+		// 	s.parentNode.insertBefore(ga, s);
+		// })();
+		// New V4
+		window.dataLayer = window.dataLayer || [];
+		function gtag(){dataLayer.push(arguments);}
+		gtag('js', new Date());
+		gtag('config', 'G-VJEX0FKGL2');
+	</script>
+</head>
+<body>
+<div id='page_body'>
+	<section style="background-color: white; color: #333;">
+		<div id="pageContainerFullWidth" style="display:block; position: relative; min-height: 1200px;">
+			<div id="assets">
+				<h3>ស្លឹក
+					<button onclick="window.addTexture_button_clicked('leaves')">
+						<img src="static/store/img/cantree/add.png">
+					</button>
+				</h3>
+				<div class="form_add_texture" id="form_add_texture_leaves">
+					<input type="file" multiple="true" accept="image/*" onchange="window.localTextureAdded(this.files, 'leaves')">បន្ថែមឯកសារ<br/>
+				</div>
+				<div id="assets_leaves">
+					<img class="asset" src="static/store/img/cantree/leaves/leaf4.png" alt="leaf texture" id="default_leaf">
+					<img class="asset" src="static/store/img/cantree/leaves/leaf1.png" alt="leaf texture">
+					<img class="asset" src="static/store/img/cantree/leaves/leaf2.png" alt="leaf texture">
+					<img class="asset" src="static/store/img/cantree/leaves/leaf3.png" alt="leaf texture">
+					<img class="asset" src="static/store/img/cantree/leaves/leavesTextureNo1051_thumbnail.png" alt="leaf texture">
+					<img class="asset" src="static/store/img/cantree/leaves/leavesTextureNo1052_thumbnail.png" alt="leaf texture">
+					<img class="asset" src="static/store/img/cantree/leaves/leavesTextureNo1055_thumbnail.png" alt="leaf texture">
+					<img class="asset" src="static/store/img/cantree/leaves/leavesTextureNo1065_thumbnail.png" alt="leaf texture">
+					<img class="asset" src="static/store/img/cantree/leaves/leavesTextureNo1075_thumbnail.png" alt="leaf texture">
+					<img class="asset" src="static/store/img/cantree/leaves/leavesTextureNo1077_thumbnail.png" alt="leaf texture">
+					<img class="asset" src="static/store/img/cantree/leaves/leavesTextureNo1084_thumbnail.png" alt="leaf texture">
+					<img class="asset" src="static/store/img/cantree/leaves/leavesTextureNo1088_thumbnail.png" alt="leaf texture">
+					<img class="asset" src="static/store/img/cantree/leaves/leavesTextureNo1091_thumbnail.png" alt="leaf texture">
+					<img class="asset" src="static/store/img/cantree/leaves/leavesTextureNo1094_thumbnail.png" alt="leaf texture">
+					<img class="asset" src="static/store/img/cantree/leaves/leavesTextureNo1106_thumbnail.png" alt="leaf texture">
+					<img class="asset" src="static/store/img/cantree/leaves/leavesTextureNo1110_thumbnail.png" alt="leaf texture">
+					<img class="asset" src="static/store/img/cantree/leaves/leavesTextureNo1112_thumbnail.png" alt="leaf texture">
+					<img class="asset" src="static/store/img/cantree/leaves/leavesTextureNo1116_thumbnail.png" alt="leaf texture">
+					<img class="asset" src="static/store/img/cantree/leaves/leavesTextureNo1119_thumbnail.png" alt="leaf texture">
+					<img class="asset" src="static/store/img/cantree/leaves/leavesTextureNo1120_thumbnail.png" alt="leaf texture">
+					<img class="asset" src="static/store/img/cantree/leaves/leavesTextureNo1126_thumbnail.png" alt="leaf texture">
+					<img class="asset" src="static/store/img/cantree/leaves/leavesTextureNo1132_thumbnail.png" alt="leaf texture">
+					<img class="asset" src="static/store/img/cantree/leaves/leavesTextureNo1134_thumbnail.png" alt="leaf texture">
+				</div>
+				<h3>ផ្ការ
+					<button onclick="window.addTexture_button_clicked('flowers')">
+						<img src="static/store/img/cantree/add.png">
+					</button>
+				</h3>
+				<div class="form_add_texture" id="form_add_texture_flowers">
+					<input type="file" multiple="true" accept="image/*" onchange="window.localTextureAdded(this.files, 'flowers')">បន្ថែមឯកសារ<br/>
+				</div>
+				<div id="assets_flowers">
+					<img class="asset" src="static/store/img/cantree/leaves_small/Anemone-Flaccida-icon.gif" alt="flower texture">
+					<img class="asset" src="static/store/img/cantree/leaves_small/Cornus-Florida-icon.gif" alt="flower texture">
+					<img class="asset" src="static/store/img/cantree/leaves_small/Dicentra-Spectabilis-icon.gif" alt="flower texture">
+					<img class="asset" src="static/store/img/cantree/leaves_small/F11-icon.gif" alt="flower texture">
+					<img class="asset" src="static/store/img/cantree/leaves_small/F14-icon.gif" alt="flower texture">
+					<img class="asset" src="static/store/img/cantree/leaves_small/F17-icon.gif" alt="flower texture">
+					<img class="asset" src="static/store/img/cantree/leaves_small/F19-icon.gif" alt="flower texture">
+					<img class="asset" src="static/store/img/cantree/leaves_small/F20-icon.gif" alt="flower texture">
+					<img class="asset" src="static/store/img/cantree/leaves_small/Garden-Pansy-Blue-icon.gif" alt="flower texture">
+					<img class="asset" src="static/store/img/cantree/leaves_small/Garden-Pansy-White-icon.gif" alt="flower texture">
+				</div>
+				<h3>ដើម
+					<button onclick="window.addTexture_button_clicked('wood')">
+						<img src="static/store/img/cantree/add.png">
+					</button>
+				</h3>
+				<div class="form_add_texture" id="form_add_texture_wood">
+					<input type="file" multiple="true" accept="image/*" onchange="window.localTextureAdded(this.files, 'wood')">បន្ថែមឯកសារ<br/>
+				</div>
+				<div id="assets_wood">
+					<img class="asset" src="static/store/img/cantree/branches/treesTextureNo1723_thumbnail.jpg" alt="wood texture">
+					<img class="asset" src="static/store/img/cantree/branches/treesTextureNo1724_thumbnail.jpg" alt="wood texture">
+					<img class="asset" src="static/store/img/cantree/branches/treesTextureNo1727_thumbnail.jpg" alt="wood texture">
+					<img class="asset" src="static/store/img/cantree/branches/treesTextureNo1729_thumbnail.jpg" alt="wood texture" id="default_wood">
+					<img class="asset" src="static/store/img/cantree/branches/treesTextureNo1730_thumbnail.jpg" alt="wood texture">
+					<img class="asset" src="static/store/img/cantree/branches/treesTextureNo1731_thumbnail.jpg" alt="wood texture">
+					<img class="asset" src="static/store/img/cantree/branches/treesTextureNo1733_thumbnail.jpg" alt="wood texture">
+					<img class="asset" src="static/store/img/cantree/branches/treesTextureNo1734_thumbnail.jpg" alt="wood texture">
+				</div>
+			</div>
+			<div id="parametersContainer">
+				<button id="button_render" title="Generates a random tree, taking into account all your settings">បង្កើតដើមឈើ</button>
+				<span id="renderTime"></span><br/> <a download id="button_save" href="" target="_blank_"
+					title="Save the tree as a PNG in your downloads folder">រក្សាររូបភាព</a>
+				<h3>កំណត់សន្លឹកកិច្ចការ</h3>
+				<div title="Width in pixels of the image canvas in which the tree will be drawn.">បណ្ដោយ <span id="p_canvas_width_value">800 px</span>
+					<div id="p_canvas_width"></div>
+				</div>
+				<div title="Height in pixels of the image canvas in which the tree will be drawn.">កំពស់ <span id="p_canvas_height_value">600 px</span>
+					<div id="p_canvas_height"></div>
+				</div>
+				<h3>កែកំណត់ដើម</h3>
+				<div class="treeParam" id="tp_iterations"
+						title="The overall tree size and complexity. CAN BE SLOW, INCREASE 1 BY 1! Lower = younger tree, faster to generate. Higher = grown up tree, longer to generate.">
+						ទំហំ និងភាពស្មុគស្មាញ
+				</div>
+				<div class="treeParam" id="tp_shadowProba"
+						title="Quantity of shade in the tree. Lower = less shade, faster to generate. Higher = more shade, longer to generate.">បរិមាណស្រមោល
+				</div>
+				<div class="treeParam" id="tp_shadowAlpha" title="How dark shadows are. Lower = light shadows. Higher = dark shadows.">កម្លាំងស្រមោល</div>
+				<div class="treeParam" id="tp_shadowRadius"
+						title="Size of the shades. Lower = concentrated shades, faster to generate. Higher = more diffuse shades, longer to generate.">ទំហំស្រមោល
+				</div>
+				<h3>សាខា ឫ មែកធៀង</h3>
+				<div class="treeParam" id="tp_length" title="Branches length. Lower = shorter. Higher = longer.">ប្រវែង</div>
+				<div class="treeParam" id="tp_lengthReduction"
+						title="Branch shortening factor with each sub-level. Lower = branches keep getting shorter. Higher = child branches are the same size as their parent.">
+					សាខារង ប្រវែង
+				</div>
+				<div class="treeParam" id="tp_angleMean"
+						title="Average children angle relative to their parent. Lower = child branch grows parallel to its parent. Higher = child grows perpendicular to its parent.">
+					មុំមធ្យម
+				</div>
+				<!--div class="treeParam" id="tp_angleVariation" title="How much child branches can deviate from the average angle. Lower = children's angle is close to average angle. Higher = children's angle can be far from average angle.">Angle variation</div-->
+				<div class="treeParam" id="tp_thickness" title="Lower = thin branches. Higher = bulky branches.">កម្រាស់</div>
+				<div class="treeParam" id="tp_thicknessReduction"
+						title="How thinner child branches are relative to their parent. Lower = thinner children branches. Higher = children have same thickness as their parent.">
+					មែកធាងរង កម្រាស់
+				</div>
+				<div class="treeParam" id="tp_curveXVariation" title="How curly branches are. Lower = straight branches. Higher = curly branches.">បរិមាណកោង
+				</div>
+				<div class="treeParam" id="tp_curveYVariation" title="How chaotic curly branches are. Lower = normal curved branches. Higher = chaotic curves.">
+					រំខាន
+				</div>
+				<h3>កែកំណត់ស្លឹក</h3>
+				<div class="treeParam" id="tp_leafScale" title="General leaves size. Lower = small leaves. Higher = large leaves.">មាត្រដ្ឋានស្លឹក</div>
+				<div class="treeParam" id="tp_leafScaleVariation"
+						title="How much leaves can deviate from their normal size. Lower = all leaves are the same size. Higher = leaves have very different sizes.">
+					ការផ្លាស់ប្តូរមាត្រដ្ឋាន
+				</div>
+				<div class="treeParam" id="tp_leafProba"
+						title="General quantity of leaves. Lower = few leaves, faster to generate. Higher = more leaves, slower to generate.">ដង់ស៊ីតេស្លឹក
+				</div>
+				<div class="treeParam" id="tp_leafTotalPerBranch"
+						title="How packed leaves are. Lower = loose leaves, faster to generate. Higher = dense bunches of leaves, slower to generate.">បន្សល់ទុកដង់ស៊ីតេមូលដ្ឋាន
+				</div>
+				<div class="treeParam" id="tp_leafProbaLighterMult"
+						title="Some leaves can be drawn lighter than the others. Lower = few light leaves. Higher = More light leaves.">ស្លឹកស្រាលជាង
+				</div>
+				<!--div class="treeParam" id="tp_leafMinDepth" title="How much leaves stay away from the trunk. Lower = leaves appear closer to the trunk. Higher = leaves stay far from the trunk.">Leaves close to trunk</div-->
+			</div>
+			<div id="message_wait">
+				<div>... កំពុងដំណើរការ ...</div>
+				<div style="font-size: 12px;">
+					ឥឡូវនេះកម្មវិធីរុករករបស់អ្នកត្រូវបានបង្កក<br/> កុំភ័យស្លន់ស្លោ វានឹងត្រលប់មកអ្នកវិញភ្លាមៗនៅពេលដែលដើមឈើនោះរួចរាល់<br/> ប្រសិនបើវាចំណាយពេលយូរពេក (10-15 វិនាទី) អ្នកនឹងត្រូវបានផ្តល់ឱកាសឱ្យបញ្ឈប់ម៉ាស៊ីនភ្លើង
+				</div>
+			</div>
+			<div style="; text-align: center; background-color:transparent; z-index:0; width:100%;">
+				<canvas width="800" height="600" id="the_canvas2d"
+						style="margin:auto; display:block; background-color: hsla(0, 0%, 0%, .1);  "></canvas>
+			</div>
+		</div>
+		<noscript>
+			<h1>Enable Javascript to see this page correctly</h1>
+		</noscript>
+		<script type="text/javascript" src="static/store/js/cantree/jquery-1.4.4.min.js"></script>
+		<script type="text/javascript" src="static/store/js/cantree/jquery-ui/js/jquery-ui-1.8.6.custom.min.js"></script>
+		<script type="text/javascript" src="static/store/js/cantree/trees2d.min.js"></script>
+		<script type="text/javascript">
+			$(function () {
+				// tree fit billboard size
+				// colored light
+				// localization in French
+				// save user settings
+				// restore on load
+				// restore defaults
+				// load sample textures by set
+				// per level control: leaves, branching rules
+				// add force direction, to simulate weight and wind
+				// roots
+				// generate random leaves
+				// generate branch textures
+				function init() {
+					var $the_canvas = $('#the_canvas2d');
+					var tree1 = new trees2d.tree($the_canvas[0], $('#canvas_container')[0]);
+					tree1.branchTexture = $('#default_wood')[0];
+					tree1.addLeafTexture($('#default_leaf')[0], 10, 1);
+					// regularly show how many trees have been created
+					// ##################################################################################################################
+					// leaves
+					var onLeafTextureClicked = function (event) {
+						var $imageClicked = $(event.currentTarget);
+						var imageClicked = event.currentTarget;
+						// delete texture
+						if (event.ctrlKey) {
+							tree1.removeLeafTexture(imageClicked);
+							$imageClicked.remove();
+							return;
+						}
+						if ($imageClicked.hasClass('selected')) {
+							$imageClicked.removeClass('selected');
+							tree1.removeLeafTexture(imageClicked);
+						} else {
+							$imageClicked.addClass('selected');
+							tree1.addLeafTexture(imageClicked, 10, 1);
+						}
+					};
+					$('#assets_leaves img, #assets_flowers img')
+						.click(onLeafTextureClicked)
+						.each(function (i, el) {
+							if (tree1.hasLeafTexture(el)) {
+								$(el).addClass('selected');
+							}
+						})
+						.attr('title', 'Clic to (un)select. CTRL-clic to delete');
+					// ##################################################################################################################
+					// wood
+					var onWoodTextureClicked = function (event) {
+						var $imageClicked = $(event.currentTarget);
+						var imageClicked = event.currentTarget;
+						// delete texture
+						if (event.ctrlKey) {
+							var $otherWoodTextures = $('#assets_wood img');
+							if ($otherWoodTextures.length <= 1) {
+								return;
+							}
+							// deleting currently used texture?  find replacement = unselected wood texture
+							if (imageClicked == tree1.branchTexture) {
+								for (var i = 0; i < $otherWoodTextures.length; i++) {
+									var currentTexture = $otherWoodTextures[i];
+									if (currentTexture != imageClicked) {
+										tree1.branchTexture = currentTexture;
+										break;
+									}
+								}
+							}
+							$(tree1.branchTexture).addClass('selected');
+							$imageClicked.remove();
+							return;
+						}
+						// select texture
+						if (!$imageClicked.hasClass('selected')) {
+							$imageClicked.addClass('selected');
+							tree1.branchTexture = imageClicked;
+							$(prevWoodImg).removeClass('selected');
+							prevWoodImg = imageClicked;
+						}
+					};
+					// prepare textures
+					var prevWoodImg;
+					$('#assets_wood img')
+						.click(onWoodTextureClicked)
+						.each(function (i, el) {
+							if (tree1.branchTexture == el) {
+								$(el).addClass('selected');
+								prevWoodImg = el;
+							}
+							//$(el).attr('title', 'Clic to (un)select');
+						})
+						.attr('title', 'Clic to (un)select. CTRL-clic to delete');
+					// ##################################################################################################################
+					// save button
+					$('#button_save').button().click(function () {
+						let dataURL = tree1.canvas2d.toDataURL();
+						console.log(dataURL)
+						$(this).attr('href', dataURL);
+					});
+					// ##################################################################################################################
+					// render button
+					var $renderTimeDiv = $('#renderTime');
+					$('#button_render').click(function () {
+						$('#message_wait').show();
+						setTimeout(function () {
+							var start = (new Date).getTime();
+							//try {
+							var error = tree1.draw();
+							if (error) {
+								$renderTimeDiv.html('<span style="color:yellow; font-size: 2em;"><p>An error occured</p><p>Make sure all textures for your tree are fully loaded, then try again</p><p>Reload the page if you get a strange behavior</p><span>');
+							} else {
+								$renderTimeDiv.html('Tree drawn in ' + (((new Date).getTime() - start) / 1000) + ' seconds');
+							}
+							$('#message_wait').hide();
+						}, 75);
+					}).button();
+					// ##################################################################################################################
+					// handle imported textures
+					window.addTexture = function (url, type) {
+						var $newImg = $('<img class="asset" src="' + url + '" alt="imported texture" title="click to (un)select"></img>')
+						$('#assets_' + type).append($newImg).append(' ');
+						var clicHandler = onLeafTextureClicked;
+						if (type == 'wood') {
+							clicHandler = onWoodTextureClicked;
+						}
+						$newImg.click(clicHandler);
+						$('#form_add_texture_' + type).hide('fast');
+					};
+					window.localTextureAdded = function (files, type) {
+						for (var i = 0; i < files.length; i++) {
+							var currentFile = files[i];
+							var fileReader = new FileReader();
+							fileReader.onload = function (e) {
+								addTexture(e.currentTarget.result, type);
+							};
+							fileReader.readAsDataURL(currentFile);
+						}
+					};
+					window.addTexture_button_clicked = function (type) {
+						$('#form_add_texture_' + type).toggle('fast');
+					};
+					var treeParamValues = {
+						tp_length: {min: 1, max: 200, step: 1},
+						tp_iterations: {min: 1, max: 16, step: 1},
+						tp_shadowAlpha: {min: 0, max: .1, step: .001},
+						tp_shadowProba: {min: 0, max: .3, step: .001},
+						tp_shadowRadius: {min: 0, max: 200, step: .5},
+						tp_angleMean: {min: 0, max: Math.PI / 4, step: Math.PI / 4 / 180},
+						//tp_angleVariation:{min:0, max:Math.PI/2, step:Math.PI/2/180},
+						tp_thickness: {min: 1, max: 150, step: .1},
+						tp_lengthReduction: {min: .5, max: 1, step: .01},
+						tp_thicknessReduction: {min: .5, max: 1, step: .01},
+						tp_curveXVariation: {min: 0, max: 100, step: .1},
+						tp_curveYVariation: {min: 0, max: 100, step: .1},
+						tp_leafScale: {min: 0, max: 3, step: .01},
+						tp_leafScaleVariation: {min: 0, max: 2, step: .01},
+						tp_leafTotalPerBranch: {min: 0, max: 20, step: 1},
+						tp_leafProba: {min: 0, max: 1, step: .01},
+						tp_leafProbaLighterMult: {min: 0, max: 1.5, step: .01}
+						//tp_leafMinDepth:{min:0, max:20, step:1}
+					};
+					$('.treeParam').each(function () {
+						var domElementId = $(this).attr('id');
+						var treeAttributeName = domElementId.substr(3);
+						var paramValues = treeParamValues[domElementId];
+						//console.log(treeParamValues, domElementId);
+						var $span = $('<span>' + (Math.round(tree1[treeAttributeName] * 1000) / 1000) + '</span>');
+						var $div = $('<div></div>');
+						$(this).append('&nbsp;');
+						$(this).append($span);
+						$(this).append($div);
+						$div.slider({
+							min: paramValues.min,
+							max: paramValues.max,
+							step: paramValues.step,
+							value: tree1[treeAttributeName],
+							slide: function (event, ui) {
+								tree1[treeAttributeName] = ui.value;
+								$span.html(Math.round(ui.value * 1000) / 1000);
+							}
+						});
+					});
+					$('#p_canvas_width').slider({
+						min: 300,
+						max: 2000,
+						step: 10,
+						value: 800,
+						slide: function (event, ui) {
+							$('#p_canvas_width_value').html(ui.value + ' px');
+						},
+						change: function (event, ui) {
+							$the_canvas.attr('width', ui.value);
+						}
+					});
+					$('#p_canvas_height').slider({
+						min: 300,
+						max: 2000,
+						step: 10,
+						value: 600,
+						slide: function (event, ui) {
+							$('#p_canvas_height_value').html(ui.value + ' px');
+						},
+						change: function (event, ui) {
+							$the_canvas.attr('height', ui.value);
+						}
+					});
+				}
+				init();
+			});
+		</script>
+		<div style="clear:both;"></div>
+	</section>
+</div>
+</html>
