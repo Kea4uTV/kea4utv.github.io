@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unique Words Converter</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f4f4f4;
+    }
+    .container {
+      text-align: center;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    .output-box {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #fff;
+    }
+    button {
+      padding: 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .copy-btn {
+      background-color: #28a745;
+      margin-top: 10px;
+    }
+    .copy-btn:hover {
+      background-color: #218838;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>ពិនិត្យពាក្យដដែល ឫជាន់គ្នា</h1>
+    <input type="text" id="inputText" value="Movie Drama Music Movie" placeholder="ចុច ពិនិត្យ នឹងលុប" />
+    <br />
+    <button onclick="convertText()">ចុច ពិនិត្យ នឹងលុប</button>
+
+    <div class="output-box">
+      <span id="output"></span>
+      <button class="copy-btn" onclick="copyText()">ចម្លងពាក្យ</button>
+    </div>
+  </div>
+
+  <script>
+    function convertText() {
+      const input = document.getElementById('inputText').value;
+      const words = input.split(' ');
+
+      // Removing duplicates using Set
+      const uniqueWords = [...new Set(words)];
+
+      // Display the result
+      document.getElementById('output').textContent = uniqueWords.join(' ');
+    }
+
+    function copyText() {
+      const text = document.getElementById('output').textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        alert("Copied: " + text);
+      }).catch(err => {
+        console.error("Error copying text: ", err);
+      });
+    }
+  </script>
+</body>
+</html>
