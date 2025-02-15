@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image to Video Converter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        #preview {
+            margin-top: 20px;
+        }
+        video {
+            margin-top: 20px;
+            filter: brightness(1.1) contrast(1.2);
+        }
+    </style>
+</head>
+<body>
+    <h2>Image to Video Converter</h2>
+    <input type="file" id="imageInput" accept="image/*" multiple>
+    <label for="duration">Transition Duration (ms):</label>
+    <input type="number" id="duration" value="1000" min="500">
+    <label for="transitionEffect">Transition Effect:</label>
+    <select id="transitionEffect">
+        <option value="fade">Fade</option>
+        <option value="slide">Slide</option>
+        <option value="zoom">Zoom</option>
+        <option value="rotate">Rotate</option>
+        <option value="blur">Blur</option>
+        <option value="flip">Flip</option>
+        <option value="wipe">Wipe</option>
+        <option value="bounce">Bounce</option>
+        <option value="spin">Spin</option>
+        <option value="dissolve">Dissolve</option>
+        <option value="ripple">Ripple</option>
+        <option value="swirl">Swirl</option>
+        <option value="flash">Flash</option>
+    </select>
+    <button onclick="convertToVideo()">Convert to Video</button>
+    <canvas id="canvas" style="display:none;"></canvas>
+    <video id="video" controls style="display:none;"></video>
+    <script>
+        function convertToVideo() {
+            const files = document.getElementById('imageInput').files;
+            if (files.length === 0) {
+                alert('Please select images first.');
+                return;
+            }
+            
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            const video = document.getElementById('video');
+            const duration = parseInt(document.getElementById('duration').value);
+            const effect = document.getElementById('transitionEffect').value;
+            const images = [];
+            
+            Array.from(files).forEach(file => {
+                const img = new Image();
+                img.src = URL.createObjectURL(file);
+                images.push(img);
+            });
+            
+            images[0].onload = function() {
+                canvas.width = images[0].width;
+                canvas.height = images[0].height;
+                
+                const stream = canvas.captureStream();
+                const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+                let index = 0;
+                
+                mediaRecorder.ondataavailable = function(event) {
+                    video.src = URL.createObjectURL(event.data);
+                    video.style.display = 'block';
+                };
+                
+                mediaRecorder.start();
+                const interval = setInterval(() => {
+                    if (index >= images.length) {
+                        clearInterval(interval);
+                        mediaRecorder.stop();
+                        return;
+                    }
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    
+                    switch (effect) {
+                        case 'fade':
+                            ctx.globalAlpha = 0.1;
+                            for (let i = 0; i <= 10; i++) {
+                                setTimeout(() => {
+                                    ctx.globalAlpha = i / 10;
+                                    ctx.drawImage(images[index], 0, 0, canvas.width, canvas.height);
+                                }, (duration / 10) * i);
+                            }
+                            break;
+                        case 'slide':
+                            for (let i = 0; i <= 10; i++) {
+                                setTimeout(() => {
+                                    ctx.drawImage(images[index], (canvas.width / 10) * (10 - i), 0, canvas.width, canvas.height);
+                                }, (duration / 10) * i);
+                            }
+                            break;
+                        case 'rotate':
+                            for (let i = 0; i <= 10; i++) {
+                                setTimeout(() => {
+                                    ctx.save();
+                                    ctx.translate(canvas.width / 2, canvas.height / 2);
+                                    ctx.rotate((Math.PI / 10) * i);
+                                    ctx.drawImage(images[index], -canvas.width / 2, -canvas.height / 2, canvas.width, canvas.height);
+                                    ctx.restore();
+                                }, (duration / 10) * i);
+                            }
+                            break;
+                        case 'flash':
+                            for (let i = 0; i <= 10; i++) {
+                                setTimeout(() => {
+                                    ctx.fillStyle = `rgba(255, 255, 255, ${(10 - i) / 10})`;
+                                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                                    ctx.drawImage(images[index], 0, 0, canvas.width, canvas.height);
+                                }, (duration / 10) * i);
+                            }
+                            break;
+                        default:
+                            ctx.drawImage(images[index], 0, 0, canvas.width, canvas.height);
+                            break;
+                    }
+                    index++;
+                }, duration);
+            };
+        }
+    </script>
+</body>
+</html>
