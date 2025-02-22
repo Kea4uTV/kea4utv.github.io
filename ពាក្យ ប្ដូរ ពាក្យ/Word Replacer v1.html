@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Replacer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+        textarea, button {
+            margin: 10px;
+            padding: 10px;
+            font-size: 16px;
+            width: 300px;
+        }
+        #output {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-top: 20px;
+            white-space: pre-line;
+        }
+    </style>
+</head>
+<body>
+    <h2>Text Replacer</h2>
+    <textarea id="inputText" placeholder="Enter your text..." rows="5"></textarea>
+    <button onclick="replaceText()">Replace</button>
+    <div id="output"></div>
+
+    <script>
+        function replaceText() {
+            let text = document.getElementById("inputText").value.trim();
+            if (text === "") return;
+            let replacedText = transformText(text);
+            document.getElementById("output").innerText = replacedText;
+        }
+
+        function transformText(text) {
+            let replacements = {
+                "លក្ខណៈ": "លាក់ខាក់ណាក់",
+                "ង": "ឃ",
+                "ច": "ជ",
+                "ប": "ម"
+            };
+            
+            let vowels = {
+                "លក្ខណៈ": "លាក់ខាក់ណាក់",
+                "ក": "កាក់",
+                "េ": "ៃ",
+                "ោ": "ៅ"
+            };
+
+            let newText = text.split('').map(char => replacements[char] || vowels[char] || char).join('');
+            return newText !== text ? newText : "";
+        }
+    </script>
+</body>
+</html>
