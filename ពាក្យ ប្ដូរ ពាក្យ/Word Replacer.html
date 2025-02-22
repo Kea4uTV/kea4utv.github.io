@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Replacer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+        input, button {
+            margin: 10px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        #output {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Word Replacer</h2>
+    <input type="text" id="inputWord" placeholder="Enter a word...">
+    <button onclick="replaceWord()">Replace</button>
+    <div id="output"></div>
+
+    <script>
+        function replaceWord() {
+            let word = document.getElementById("inputWord").value.trim();
+            if (word === "") return;
+            let replacedWord = transformWord(word);
+            if (replacedWord) {
+                document.getElementById("output").innerText = replacedWord;
+            } else {
+                document.getElementById("output").innerText = "";
+            }
+        }
+
+        function transformWord(word) {
+            let replacements = {
+                "គ": "ខ",
+                "ង": "ឃ",
+                "ច": "ជ",
+                "ប": "ម"
+            };
+            let newWord = word.split('').map(char => replacements[char] || char).join('');
+            return newWord !== word ? newWord : "";
+        }
+    </script>
+</body>
+</html>
