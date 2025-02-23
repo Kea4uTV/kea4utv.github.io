@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=720, height=1080">
+    <title>Customizable Slideshow 720x1080</title>
+    <style>
+        @font-face {
+            font-family: 'CustomFont';
+            src: url('path-to-your-font.ttf'); /* Change this to your actual font path */
+        }
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #222;
+            font-family: 'CustomFont', sans-serif;
+        }
+        .slideshow-container {
+            position: relative;
+            width: 720px;
+            height: 1080px;
+            overflow: hidden;
+            border: 5px solid #fff;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+        }
+        .slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+        .slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+        .active {
+            opacity: 1;
+        }
+        .text-overlay {
+            position: absolute;
+            bottom: var(--text-bottom, 50px);
+            left: var(--text-left, 50%);
+            transform: translate(-50%, 0);
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 10px 20px;
+            font-size: var(--font-size, 24px);
+            font-family: var(--font-family, 'CustomFont');
+            border-radius: 5px;
+            cursor: move;
+            user-select: none;
+            animation: var(--animation, none);
+        }
+        .controls {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .controls input, .controls select {
+            margin: 5px;
+            padding: 5px;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideIn {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="slideshow-container" id="slideshow"></div>
+    <div class="controls">
+        <input type="file" id="imageUpload" multiple accept="image/*">
+        <input type="text" id="captionInput" placeholder="Enter caption">
+        <input type="number" id="speedInput" placeholder="Slideshow speed (ms)" value="3000">
+        <input type="number" id="fontSizeInput" placeholder="Font size (px)" value="24">
+        <input type="number" id="textLeftInput" placeholder="Text Left (%)" value="50">
+        <input type="number" id="textBottomInput" placeholder="Text Bottom (px)" value="50">
+        <select id="animationSelect">
+            <option value="none">None</option>
+            <option value="fadeIn 1s ease-in-out">Fade In</option>
+            <option value="slideIn 1s ease-in-out">Slide In</option>
+        </select>
+        <input type="file" id="fontUpload" accept=".ttf,.otf">
+        <button onclick="updateSlideshow()">Update Slideshow</button>
+    </div>
+    <script>
+        let slideshow = document.getElementById("slideshow");
+        let images = [];
+        let captions = [];
+        let slideIndex = 0;
+        let interval;
+
+        function updateSlideshow() {
+            let uploadedFiles = document.getElementById("imageUpload").files;
+            let captionText = document.getElementById("captionInput").value;
+            let speed = document.getElementById("speedInput").value;
+            let fontSize = document.getElementById("fontSizeInput").value;
+            let textLeft = document.getElementById("textLeftInput").value + '%';
+            let textBottom = document.getElementById("textBottomInput").value + 'px';
+            let animation = document.getElementById("animationSelect").value;
+            let fontFile = document.getElementById("fontUpload").files[0];
+            
+            document.documentElement.style.setProperty('--font-size', fontSize + 'px');
+            document.documentElement.style.setProperty('--text-left', textLeft);
+            document.documentElement.style.setProperty('--text-bottom', textBottom);
+            document.documentElement.style.setProperty('--animation', animation);
+            
+            if (fontFile) {
+                let fontUrl = URL.createObjectURL(fontFile);
+                let newFontFace = new FontFace('CustomUploadedFont', `url(${fontUrl})`);
+                newFontFace.load().then(font => {
+                    document.fonts.add(font);
+                    document.documentElement.style.setProperty('--font-family', 'CustomUploadedFont');
+                });
+            }
+
+            images = [];
+            captions = [];
+            slideshow.innerHTML = "";
+
+            for (let file of uploadedFiles) {
+                let url = URL.createObjectURL(file);
+                images.push(url);
+                captions.push(captionText);
+            }
+            if (images.length > 0) {
+                startSlideshow(speed);
+            }
+        }
+
+        function startSlideshow(speed) {
+            slideshow.innerHTML = images.map((img, index) => `
+                <div class="slide ${index === 0 ? 'active' : ''}">
+                    <img src="${img}" alt="Slide ${index+1}">
+                    <div class="text-overlay">${captions[index]}</div>
+                </div>`).join('');
+
+            let slides = document.querySelectorAll(".slide");
+            clearInterval(interval);
+            interval = setInterval(() => {
+                slides.forEach(slide => slide.classList.remove("active"));
+                slides[slideIndex].classList.add("active");
+                slideIndex = (slideIndex + 1) % slides.length;
+            }, speed);
+        }
+    </script>
+</body>
+</html>
