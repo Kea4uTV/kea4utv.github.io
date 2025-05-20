@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Convert Time to Frames</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #eef2f3;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .converter {
+      background: #fff;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+      max-width: 400px;
+      width: 100%;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+
+    input {
+      width: 100%;
+      padding: 8px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 20px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #218838;
+    }
+
+    .result {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="converter">
+    <h2>Time to Frames Converter</h2>
+
+    <label for="hours">Hours:</label>
+    <input type="number" id="hours" min="0" value="0">
+
+    <label for="minutes">Minutes:</label>
+    <input type="number" id="minutes" min="0" value="0">
+
+    <label for="seconds">Seconds:</label>
+    <input type="number" id="seconds" min="0" step="any" value="0">
+
+    <label for="extraFrames">Frames:</label>
+    <input type="number" id="extraFrames" min="0" value="0">
+
+    <label for="fps">Frame Rate (FPS):</label>
+    <input type="number" id="fps" min="1" value="24">
+
+    <button onclick="convertToFrames()">Convert</button>
+
+    <div class="result" id="result"></div>
+  </div>
+
+  <script>
+    function convertToFrames() {
+      const hours = parseFloat(document.getElementById('hours').value) || 0;
+      const minutes = parseFloat(document.getElementById('minutes').value) || 0;
+      const seconds = parseFloat(document.getElementById('seconds').value) || 0;
+      const extraFrames = parseFloat(document.getElementById('extraFrames').value) || 0;
+      const fps = parseFloat(document.getElementById('fps').value);
+
+      const resultDiv = document.getElementById('result');
+
+      if (fps <= 0 || isNaN(fps)) {
+        resultDiv.textContent = "⚠️ Please enter a valid frame rate.";
+        return;
+      }
+
+      const totalSeconds = hours * 3600 + minutes * 60 + seconds + (extraFrames / fps);
+      const totalFrames = Math.round(totalSeconds * fps);
+
+      resultDiv.textContent = `🎬 Total Frames: ${totalFrames}`;
+    }
+  </script>
+</body>
+</html>
