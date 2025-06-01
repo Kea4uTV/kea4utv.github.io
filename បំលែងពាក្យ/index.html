@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>កម្មវិធីបំប្លែងពាក្យ ខ្មែរ-អង់គ្លេស</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>កម្មវិធីបំប្លែងពាក្យ ខ្មែរ-អង់គ្លេស</h1>
+
+        <div class="input-section">
+            <label for="khmerInput">ពាក្យខ្មែរ (បំបែកដោយដកឃ្លា):</label>
+            <textarea id="khmerInput" rows="10" placeholder="ឧទាហរណ៍: ឆ្មា ឆ្កែ ផ្ទះ"></textarea>
+            <p class="instruction">
+                **របៀបប្រើ៖** បញ្ចូលពាក្យខ្មែរដោយបំបែកដោយដកឃ្លា។ លំដាប់ពាក្យនីមួយៗនឹងត្រូវផ្គូផ្គងជាមួយពាក្យអង់គ្លេស។<br>
+                **ឧទាហរណ៍:** បើអ្នកដាក់ 'មួយ ពីរ បី' នោះ 'one two three' នឹងចេញមក។
+            </p>
+        </div>
+
+        <button id="convertBtn">បំប្លែង</button>
+
+        <div class="output-section">
+            <label for="englishOutput">ពាក្យអង់គ្លេស:</label>
+            <textarea id="englishOutput" rows="10" readonly></textarea>
+        </div>
+
+        <p class="note">
+            **ចំណាំ៖** អ្នកអាចកែសម្រួលបញ្ជីពាក្យនៅក្នុងកូដ JavaScript (script.js) ដើម្បីបន្ថែម ឬកែប្រែពាក្យដែលអ្នកចង់បំប្លែង។
+        </p>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
