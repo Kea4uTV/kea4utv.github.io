@@ -1,0 +1,121 @@
+body {
+    font-family: 'Khmer OS Battambang', 'Noto Sans Khmer', sans-serif;
+    background-color: #f4f4f4;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    color: #333;
+    line-height: 1.6;
+}
+
+.container {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 700px;
+    text-align: center;
+}
+
+h1 {
+    color: #0056b3;
+    margin-bottom: 25px;
+    font-size: 2em;
+}
+
+.input-section, .output-section {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #555;
+}
+
+textarea {
+    width: calc(100% - 20px);
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1.1em;
+    resize: vertical;
+    font-family: inherit;
+}
+
+/* រចនាបថសម្រាប់ div សម្រាប់ output */
+.output-display {
+    width: calc(100% - 22px); /* កែសម្រួលទទឹងបន្តិចដើម្បីមើលទៅដូច textarea */
+    min-height: 150px; /* កំណត់កម្ពស់អប្បបរមា */
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1.1em;
+    text-align: left;
+    background-color: #e9ecef; /* ពណ៌ផ្ទៃខាងក្រោយស្រាល */
+    overflow-y: auto; /* អនុញ្ញាតឱ្យ scroll បើអត្ថបទវែង */
+    line-height: 1.8; /* គម្លាតបន្ទាត់ដើម្បីមើលងាយ */
+}
+
+/* កុំឱ្យ span របស់ពណ៌ជាប់គ្នាពេក */
+.output-display span {
+    margin-right: 2px; /* បន្ថែមគម្លាតបន្តិចរវាងពាក្យពណ៌ */
+    font-weight: bold;
+}
+
+
+#convertBtn {
+    background-color: #007bff;
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.1em;
+    margin-top: 15px;
+    transition: background-color 0.3s ease;
+}
+
+#convertBtn:hover {
+    background-color: #0056b3;
+}
+
+.instruction {
+    font-size: 0.9em;
+    color: #666;
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #e9ecef;
+    border-radius: 5px;
+    border-left: 4px solid #007bff;
+}
+
+.instruction strong {
+    color: #0056b3;
+}
+
+.note {
+    font-size: 0.85em;
+    color: #888;
+    margin-top: 25px;
+    padding: 10px;
+    background-color: #fff3cd;
+    border-radius: 5px;
+    border-left: 4px solid #ffc107;
+}
+
+/* Fallback fonts for Khmer */
+@font-face {
+    font-family: 'Khmer OS Battambang';
+    src: local('Khmer OS Battambang');
+}
+
+@font-face {
+    font-family: 'Noto Sans Khmer';
+    src: local('Noto Sans Khmer');
+}
