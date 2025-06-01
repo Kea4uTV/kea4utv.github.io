@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>កម្មវិធីកែសម្រួលអត្ថបទ</title>
+    <style>
+        /* CSS សម្រាប់រចនាសម្ព័ន្ធរូបរាង */
+        body {
+            font-family: 'Khmer OS Siemreap', 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #0056b3;
+            margin-bottom: 30px;
+        }
+
+        .editor-section, .controls {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        textarea, input[type="text"] {
+            width: calc(100% - 20px);
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            box-sizing: border-box; /* Ensures padding doesn't add to width */
+            font-family: inherit; /* Inherit font from body */
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 150px;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: space-between;
+            padding: 15px;
+            background-color: #e9f5ff;
+            border-radius: 8px;
+            border: 1px solid #cce0f0;
+        }
+
+        .control-group {
+            flex: 1;
+            min-width: 250px; /* Adjust as needed for smaller screens */
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #copy-button {
+            display: block;
+            margin-top: 15px;
+            width: 100%;
+            background-color: #28a745;
+        }
+
+        #copy-button:hover {
+            background-color: #218838;
+        }
+
+        #edited-text-output {
+            background-color: #e9e9e9;
+            cursor: not-allowed;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+            }
+            .control-group {
+                width: 100%;
+                min-width: unset;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>កម្មវិធីកែសម្រួលអត្ថបទ</h1>
+        <div class="editor-section">
+            <label for="text-input">អត្ថបទដើមរបស់អ្នក៖</label>
+            <textarea id="text-input" rows="10" placeholder="សូមបញ្ចូលអត្ថបទរបស់អ្នកនៅទីនេះ..."></textarea>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="word-to-remove">ពាក្យ/ឃ្លាដែលត្រូវដកចេញ៖</label>
+                <input type="text" id="word-to-remove" placeholder="ឧទាហរណ៍៖ ទៅ">
+                <button id="remove-button">ដកចេញ</button>
+            </div>
+
+            <div class="control-group">
+                <label for="word-to-insert">ពាក្យ/ឃ្លាដែលត្រូវបញ្ចូល៖</label>
+                <input type="text" id="word-to-insert" placeholder="ឧទាហរណ៍៖ ទៅ">
+            </div>
+
+            <div class="control-group">
+                <label for="insert-before">បញ្ចូលមុនពាក្យ/ឃ្លា៖</label>
+                <input type="text" id="insert-before" placeholder="ឧទាហរណ៍៖ រកស៊ី">
+                <button id="insert-button">បញ្ចូល</button>
+            </div>
+        </div>
+
+        <div class="editor-section">
+            <label for="edited-text-output">អត្ថបទដែលបានកែសម្រួល៖</label>
+            <textarea id="edited-text-output" rows="10" readonly></textarea>
+            <button id="copy-button">ចម្លងអត្ថបទ</button>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript សម្រាប់មុខងារដំណើរការ
+        document.addEventListener('DOMContentLoaded', () => {
+            const textInput = document.getElementById('text-input');
+            const wordToRemoveInput = document.getElementById('word-to-remove');
+            const removeButton = document.getElementById('remove-button');
+            const wordToInsertInput = document.getElementById('word-to-insert');
+            const insertBeforeInput = document.getElementById('insert-before');
+            const insertButton = document.getElementById('insert-button');
+            const editedTextOutput = document.getElementById('edited-text-output');
+            const copyButton = document.getElementById('copy-button');
+
+            // Function to update the output textarea
+            const updateOutput = () => {
+                editedTextOutput.value = textInput.value;
+            };
+
+            // Initial update when page loads
+            updateOutput();
+
+            // Listen for changes in the input text area to update the output
+            textInput.addEventListener('input', updateOutput);
+
+            // Remove word/phrase functionality
+            removeButton.addEventListener('click', () => {
+                let originalText = textInput.value;
+                const phraseToRemove = wordToRemoveInput.value.trim();
+
+                if (phraseToRemove === "") {
+                    alert("សូមបញ្ចូលពាក្យ/ឃ្លាដែលត្រូវដកចេញ!");
+                    return;
+                }
+
+                // Escape special characters in the phrase to be removed
+                const escapedPhrase = phraseToRemove.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                // Use a regular expression with 'g' flag for global replacement
+                // Removed '\\b' to allow removal of partial words or phrases
+                const regex = new RegExp(escapedPhrase, 'g'); 
+                let newText = originalText.replace(regex, '');
+
+                // Handle multiple spaces that might result from removal
+                newText = newText.replace(/\s+/g, ' ').trim();
+
+                textInput.value = newText;
+                updateOutput();
+                wordToRemoveInput.value = ''; // Clear the input field
+                alert(`បានដកពាក្យ/ឃ្លា "${phraseToRemove}" ចេញហើយ។`);
+            });
+
+            // Insert word/phrase functionality
+            insertButton.addEventListener('click', () => {
+                let originalText = textInput.value;
+                const phraseToInsert = wordToInsertInput.value.trim();
+                const insertBeforePhrase = insertBeforeInput.value.trim();
+
+                if (phraseToInsert === "" || insertBeforePhrase === "") {
+                    alert("សូមបញ្ចូលពាក្យ/ឃ្លាដែលត្រូវបញ្ចូល និងពាក្យ/ឃ្លាដែលត្រូវបញ្ចូលមុន!");
+                    return;
+                }
+
+                // Escape special characters in the phrase to insert before
+                const escapedInsertBeforePhrase = insertBeforePhrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                // Find the index of the phrase to insert before
+                // Removed '\\b' to allow insertion before partial words or phrases
+                const regex = new RegExp(escapedInsertBeforePhrase);
+                const match = originalText.match(regex);
+
+                if (match) {
+                    const index = match.index;
+                    
+                    // Reconstruct the string with the new phrase inserted
+                    let newText = originalText.substring(0, index) +
+                                  phraseToInsert + " " +
+                                  originalText.substring(index, originalText.length);
+
+                    // Handle potential extra spaces
+                    newText = newText.replace(/\s+/g, ' ').trim();
+
+                    textInput.value = newText;
+                    updateOutput();
+                    wordToInsertInput.value = ''; // Clear input fields
+                    insertBeforeInput.value = '';
+                    alert(`បានបញ្ចូលពាក្យ/ឃ្លា "${phraseToInsert}" មុនពាក្យ/ឃ្លា "${insertBeforePhrase}" ហើយ។`);
+                } else {
+                    alert(`រកមិនឃើញពាក្យ/ឃ្លា "${insertBeforePhrase}" នៅក្នុងអត្ថបទទេ។`);
+                }
+            });
+
+            // Copy to clipboard functionality
+            copyButton.addEventListener('click', () => {
+                editedTextOutput.select();
+                editedTextOutput.setSelectionRange(0, 99999); // For mobile devices
+
+                try {
+                    navigator.clipboard.writeText(editedTextOutput.value);
+                    alert("បានចម្លងអត្ថបទហើយ!");
+                } catch (err) {
+                    console.error('Could not copy text: ', err);
+                    alert("មិនអាចចម្លងអត្ថបទបានទេ! សូមព្យាយាមចម្លងដោយដៃ។");
+                }
+            });
+        });
+    </script>
+</body>
+</html>

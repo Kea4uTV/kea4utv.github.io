@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>កម្មវិធីកែសម្រួលអត្ថបទ</title>
+    <style>
+        /* CSS សម្រាប់រចនាសម្ព័ន្ធរូបរាង */
+        body {
+            font-family: 'Khmer OS Siemreap', 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #0056b3;
+            margin-bottom: 30px;
+        }
+
+        .editor-section, .controls, .stats-section {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        textarea, input[type="text"] {
+            width: calc(100% - 20px);
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            box-sizing: border-box; /* Ensures padding doesn't add to width */
+            font-family: inherit; /* Inherit font from body */
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 150px;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: space-between;
+            padding: 15px;
+            background-color: #e9f5ff;
+            border-radius: 8px;
+            border: 1px solid #cce0f0;
+        }
+
+        .control-group {
+            flex: 1;
+            min-width: 250px; /* Adjust as needed for smaller screens */
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #copy-button {
+            display: block;
+            margin-top: 15px;
+            width: 100%;
+            background-color: #28a745;
+        }
+
+        #copy-button:hover {
+            background-color: #218838;
+        }
+
+        #edited-text-output {
+            background-color: #e9e9e9;
+            cursor: not-allowed;
+        }
+
+        .stats-section {
+            background-color: #f0f8ff;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #cce0f0;
+        }
+
+        .stats-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.95rem;
+        }
+
+        .stats-item strong {
+            color: #0056b3;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+            }
+            .control-group {
+                width: 100%;
+                min-width: unset;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>កម្មវិធីកែសម្រួលអត្ថបទ</h1>
+        <div class="editor-section">
+            <label for="text-input">អត្ថបទដើមរបស់អ្នក៖</label>
+            <textarea id="text-input" rows="10" placeholder="សូមបញ្ចូលអត្ថបទរបស់អ្នកនៅទីនេះ..."></textarea>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="phrase-to-remove">ពាក្យ/ឃ្លាដែលត្រូវដកចេញ៖</label>
+                <input type="text" id="phrase-to-remove" placeholder="ឧទាហរណ៍៖ ទៅ">
+                <button id="remove-button">ដកចេញ</button>
+            </div>
+
+            <div class="control-group">
+                <label for="phrase-to-insert">ពាក្យ/ឃ្លាដែលត្រូវបញ្ចូល៖</label>
+                <input type="text" id="phrase-to-insert" placeholder="ឧទាហរណ៍៖ ទៅ">
+            </div>
+
+            <div class="control-group">
+                <label for="insert-before-phrase">បញ្ចូលមុនពាក្យ/ឃ្លា៖</label>
+                <input type="text" id="insert-before-phrase" placeholder="ឧទាហរណ៍៖ រកស៊ី">
+                <button id="insert-before-button">បញ្ចូលមុន</button>
+            </div>
+
+            <div class="control-group">
+                <label for="insert-after-phrase">បញ្ចូលក្រោយពាក្យ/ឃ្លា៖</label>
+                <input type="text" id="insert-after-phrase" placeholder="ឧទាហរណ៍៖ មនុស្ស">
+                <button id="insert-after-button">បញ្ចូលក្រោយ</button>
+            </div>
+        </div>
+
+        <div class="editor-section">
+            <label for="edited-text-output">អត្ថបទដែលបានកែសម្រួល៖</label>
+            <textarea id="edited-text-output" rows="10" readonly></textarea>
+            <button id="copy-button">ចម្លងអត្ថបទ</button>
+        </div>
+
+        <div class="stats-section">
+            <h2>ស្ថិតិអត្ថបទ</h2>
+            <div class="stats-item">
+                <span>ចំនួនតួអក្សរ (Characters):</span> <strong id="char-count">0</strong>
+            </div>
+            <div class="stats-item">
+                <span>ចំនួនពាក្យ (Words):</span> <strong id="word-count">0</strong>
+            </div>
+            <div class="stats-item">
+                <span>ចំនួនស្រៈ (Vowels):</span> <strong id="vowel-count">0</strong>
+            </div>
+            <div class="stats-item">
+                <span>ចំនួនលេខ (Digits):</span> <strong id="digit-count">0</strong>
+            </div>
+            <div class="stats-item">
+                <span>ចំនួន Emoji:</span> <strong id="emoji-count">0</strong>
+            </div>
+            <div class="stats-item">
+                <span>ចំនួនសញ្ញា (Symbols):</span> <strong id="symbol-count">0</strong>
+            </div>
+            <div class="stats-item">
+                <span>ចំនួនដកឃ្លា (Spaces):</span> <strong id="space-count">0</strong>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript សម្រាប់មុខងារដំណើរការ
+        document.addEventListener('DOMContentLoaded', () => {
+            const textInput = document.getElementById('text-input');
+            const phraseToRemoveInput = document.getElementById('phrase-to-remove');
+            const removeButton = document.getElementById('remove-button');
+            const phraseToInsertInput = document.getElementById('phrase-to-insert');
+            const insertBeforePhraseInput = document.getElementById('insert-before-phrase');
+            const insertBeforeButton = document.getElementById('insert-before-button');
+            const insertAfterPhraseInput = document.getElementById('insert-after-phrase');
+            const insertAfterButton = document.getElementById('insert-after-button');
+            const editedTextOutput = document.getElementById('edited-text-output');
+            const copyButton = document.getElementById('copy-button');
+
+            // Statistic elements
+            const charCountElem = document.getElementById('char-count');
+            const wordCountElem = document.getElementById('word-count');
+            const vowelCountElem = document.getElementById('vowel-count');
+            const digitCountElem = document.getElementById('digit-count');
+            const emojiCountElem = document.getElementById('emoji-count');
+            const symbolCountElem = document.getElementById('symbol-count');
+            const spaceCountElem = document.getElementById('space-count');
+
+            // Function to update the output textarea and statistics
+            const updateOutputAndStats = () => {
+                const currentText = textInput.value;
+                editedTextOutput.value = currentText;
+                updateTextStatistics(currentText);
+            };
+
+            // Function to calculate and display text statistics
+            const updateTextStatistics = (text) => {
+                // Characters
+                charCountElem.textContent = text.length;
+
+                // Words (simple split by space, trim to handle extra spaces)
+                const words = text.trim().split(/\s+/).filter(word => word.length > 0);
+                wordCountElem.textContent = words.length;
+
+                // Vowels (Khmer and English)
+                const vowelsRegex = /[aeiouAEIOUែេៅួឿៀីឹអិាុូើឿៀឹ]/g; // Added Khmer vowels
+                const vowelsMatch = text.match(vowelsRegex);
+                vowelCountElem.textContent = vowelsMatch ? vowelsMatch.length : 0;
+
+                // Digits
+                const digitsRegex = /[0-9]/g;
+                const digitsMatch = text.match(digitsRegex);
+                digitCountElem.textContent = digitsMatch ? digitsMatch.length : 0;
+
+                // Emojis (more robust regex for various emojis)
+                const emojiRegex = /(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])/g;
+                const emojiMatch = text.match(emojiRegex);
+                emojiCountElem.textContent = emojiMatch ? emojiMatch.length : 0;
+                
+                // Spaces
+                const spacesMatch = text.match(/\s/g);
+                spaceCountElem.textContent = spacesMatch ? spacesMatch.length : 0;
+
+                // Symbols (anything that's not a letter, number, space, or common punctuation)
+                // This regex might need refinement based on exact definition of "symbol"
+                const symbolsRegex = /[^\p{L}\p{N}\s\p{P}']/gu; // \p{L}=Letter, \p{N}=Number, \s=Space, \p{P}=Punctuation. 'u' flag for Unicode
+                const symbolsMatch = text.match(symbolsRegex);
+                symbolCountElem.textContent = symbolsMatch ? symbolsMatch.length : 0;
+            };
+
+            // Initial update when page loads
+            updateOutputAndStats();
+
+            // Listen for changes in the input text area to update the output and stats
+            textInput.addEventListener('input', updateOutputAndStats);
+
+            // Remove word/phrase functionality (all occurrences)
+            removeButton.addEventListener('click', () => {
+                let originalText = textInput.value;
+                const phraseToRemove = phraseToRemoveInput.value.trim();
+
+                if (phraseToRemove === "") {
+                    alert("សូមបញ្ចូលពាក្យ/ឃ្លាដែលត្រូវដកចេញ!");
+                    return;
+                }
+
+                const escapedPhrase = phraseToRemove.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                // The 'g' flag here ensures ALL occurrences are removed
+                const regex = new RegExp(escapedPhrase, 'g'); 
+                let newText = originalText.replace(regex, '');
+
+                newText = newText.replace(/\s+/g, ' ').trim();
+
+                textInput.value = newText;
+                updateOutputAndStats(); // Update stats after change
+                phraseToRemoveInput.value = '';
+                alert(`បានដកពាក្យ/ឃ្លា "${phraseToRemove}" ចេញទាំងអស់ហើយ។`);
+            });
+
+            // Insert BEFORE word/phrase functionality (all occurrences)
+            insertBeforeButton.addEventListener('click', () => {
+                let originalText = textInput.value;
+                const phraseToInsert = phraseToInsertInput.value.trim();
+                const insertBeforePhrase = insertBeforePhraseInput.value.trim();
+
+                if (phraseToInsert === "" || insertBeforePhrase === "") {
+                    alert("សូមបញ្ចូលពាក្យ/ឃ្លាដែលត្រូវបញ្ចូល និងពាក្យ/ឃ្លាដែលត្រូវបញ្ចូលមុន!");
+                    return;
+                }
+
+                const escapedInsertBeforePhrase = insertBeforePhrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                // Use a replacer function for replaceAll to insert before each match
+                let newText = originalText.replace(new RegExp(escapedInsertBeforePhrase, 'g'), (match) => {
+                    return phraseToInsert + " " + match;
+                });
+
+                newText = newText.replace(/\s+/g, ' ').trim();
+
+                textInput.value = newText;
+                updateOutputAndStats(); // Update stats after change
+                phraseToInsertInput.value = '';
+                insertBeforePhraseInput.value = '';
+                alert(`បានបញ្ចូលពាក្យ/ឃ្លា "${phraseToInsert}" មុនពាក្យ/ឃ្លា "${insertBeforePhrase}" ទាំងអស់ហើយ។`);
+            });
+
+            // Insert AFTER word/phrase functionality (all occurrences)
+            insertAfterButton.addEventListener('click', () => {
+                let originalText = textInput.value;
+                const phraseToInsert = phraseToInsertInput.value.trim();
+                const insertAfterPhrase = insertAfterPhraseInput.value.trim();
+
+                if (phraseToInsert === "" || insertAfterPhrase === "") {
+                    alert("សូមបញ្ចូលពាក្យ/ឃ្លាដែលត្រូវបញ្ចូល និងពាក្យ/ឃ្លាដែលត្រូវបញ្ចូលក្រោយ!");
+                    return;
+                }
+
+                const escapedInsertAfterPhrase = insertAfterPhrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                // Use a replacer function for replaceAll to insert after each match
+                let newText = originalText.replace(new RegExp(escapedInsertAfterPhrase, 'g'), (match) => {
+                    return match + " " + phraseToInsert;
+                });
+
+                newText = newText.replace(/\s+/g, ' ').trim();
+
+                textInput.value = newText;
+                updateOutputAndStats(); // Update stats after change
+                phraseToInsertInput.value = '';
+                insertAfterPhraseInput.value = '';
+                alert(`បានបញ្ចូលពាក្យ/ឃ្លា "${phraseToInsert}" ក្រោយពាក្យ/ឃ្លា "${insertAfterPhrase}" ទាំងអស់ហើយ។`);
+            });
+
+
+            // Copy to clipboard functionality
+            copyButton.addEventListener('click', () => {
+                editedTextOutput.select();
+                editedTextOutput.setSelectionRange(0, 99999); // For mobile devices
+
+                try {
+                    navigator.clipboard.writeText(editedTextOutput.value);
+                    alert("បានចម្លងអត្ថបទហើយ!");
+                } catch (err) {
+                    console.error('Could not copy text: ', err);
+                    alert("មិនអាចចម្លងអត្ថបទបានទេ! សូមព្យាយាមចម្លងដោយដៃ។");
+                }
+            });
+        });
+    </script>
+</body>
+</html>
