@@ -105,7 +105,6 @@ document.addEventListener('DOMContentLoaded', () => {
         'ល្អ': 'Good',
         'អាក្រក់': 'Bad',
         'ស្អាត': 'Beautiful',
-        'អាក្រក់': 'Ugly', // ពាក្យដដែល សម្រាប់ឧទាហរណ៍
         'លឿន': 'Fast',
         'យឺត': 'Slow',
         'ច្រើន': 'Many/Much',
@@ -115,24 +114,37 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     convertBtn.addEventListener('click', () => {
-        const khmerText = khmerInput.value.trim(); // យកពាក្យពី input ដោយលុបដកឃ្លាដើម/ចុង
-        if (khmerText === '') {
-            englishOutput.value = '';
-            return;
+        let khmerText = khmerInput.value; // យកអត្ថបទពី input ដោយមិនចាំបាច់ trim ភ្លាមៗ
+
+        // យក key ទាំងអស់ពី dictionary ហើយតម្រៀបតាមប្រវែងពីធំទៅតូច
+        // នេះជួយធានាថាពាក្យវែង (ឧទាហរណ៍ 'ប្រាំបួន') ត្រូវបានរកឃើញមុនពាក្យខ្លីដែលជាផ្នែករបស់វា (ឧទាហរណ៍ 'ប្រាំ')
+        const sortedKhmerWords = Object.keys(dictionary).sort((a, b) => b.length - a.length);
+
+        // ប្រើ loop ដើម្បីជំនួសពាក្យម្តងមួយៗ
+        for (const khmerWord of sortedKhmerWords) {
+            const englishEquivalent = dictionary[khmerWord];
+
+            // បង្កើត regular expression ដើម្បីស្វែងរកពាក្យខ្មែរ
+            // 'g' សម្រាប់ស្វែងរកទាំងអស់
+            // 'i' សម្រាប់ case-insensitive (ទោះបីជាពាក្យខ្មែរភាគច្រើនមិនមាន uppercase/lowercase ក៏ដោយ)
+            // ប្រើ \b ដើម្បីផ្គូផ្គងតែពាក្យពេញ បើចង់បក 'ឆ្មាឆ្កែ' ជា 'CatDog' គឺត្រូវលុប \b ចេញ
+            // ប្រសិនបើអ្នកចង់ឱ្យវាបក 'ឆ្មាឆ្កែ' ទៅ 'CatDog' សូមលុប `\\b` ចេញពី RegEx ទាំងពីរខាងក្រោម
+            const regex = new RegExp(khmerWord, 'g'); // ឧទាហរណ៍ ឆ្មាឆ្កែ នឹងត្រូវបកទាំងមូល បើអ្នកចង់បក 'ឆ្មា' ក្នុង 'ឆ្មាឆ្កែ' នោះ 'ឆ្កែ' នឹងនៅដដែល
+            
+            // ខ្ញុំបានលុប \b ចេញ ព្រោះអ្នកចង់បក "ឆ្មាឆ្កែ" ទៅ "CatDog"
+            // ប្រសិនបើអ្នកចង់បកតែពាក្យពេញដែលនៅដាច់ពីគ្នា ដូចជា "ឆ្មា ឆ្កែ" នោះអ្នកត្រូវប្រើ `new RegExp('\\b' + khmerWord + '\\b', 'g');`
+
+            // ជំនួសពាក្យខ្មែរដោយពាក្យអង់គ្លេសដែលត្រូវគ្នា
+            // khmerText = khmerText.replace(regex, englishEquivalent);
+
+            // ដើម្បីគាំទ្រការបកពាក្យជាប់គ្នា ដូចជា "ឆ្មាឆ្កែ" -> "CatDog"
+            // យើងត្រូវជំនួសពាក្យដោយផ្ទាល់ ដោយមិនគិតពី boundary (ព្រំដែនពាក្យ)
+            // វិធីសាស្ត្រនេះអាចនឹងមានបញ្ហាបើមានពាក្យខ្លីៗជាផ្នែកនៃពាក្យវែង
+            // ឧទាហរណ៍ បើមាន 'ម៉ា' និង 'ឆ្មា' ហើយ 'ម៉ា' ត្រូវបកមុន 'ឆ្មា' នោះ 'ឆ្មា' អាចនឹងបកមិនត្រឹមត្រូវ
+            // ដូច្នេះ ការតម្រៀបពាក្យពីធំទៅតូចគឺសំខាន់ណាស់នៅទីនេះ។
+            khmerText = khmerText.split(khmerWord).join(englishEquivalent);
         }
 
-        // បំបែកពាក្យខ្មែរដោយដកឃ្លា (អាចមានដកឃ្លាច្រើន)
-        const khmerWords = khmerText.split(/\s+/);
-
-        const englishWords = khmerWords.map(word => {
-            // បំប្លែងពាក្យទៅជាតួអក្សរតូច (lowercase) មុនពេលស្វែងរកក្នុង dictionary
-            // ព្រោះ dictionary របស់យើងប្រើ lowercase keys
-            const normalizedWord = word.toLowerCase(); 
-            
-            // ស្វែងរកពាក្យក្នុង dictionary បើរកមិនឃើញ ប្រើពាក្យដើមវិញ
-            return dictionary[normalizedWord] || word; 
-        });
-
-        englishOutput.value = englishWords.join(' '); // ភ្ជាប់ពាក្យអង់គ្លេសវិញដោយដកឃ្លា
+        englishOutput.value = khmerText; // បង្ហាញលទ្ធផល
     });
 });
