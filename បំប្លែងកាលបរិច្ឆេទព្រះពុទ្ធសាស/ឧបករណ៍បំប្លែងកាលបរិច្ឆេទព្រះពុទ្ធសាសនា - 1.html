@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ឧបករណ៍បំប្លែងកាលបរិច្ឆេទព្រះពុទ្ធសាសនា</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 2.5rem; /* 40px */
+            border-radius: 1.5rem; /* 24px */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        .input-group {
+            display: flex;
+            gap: 1rem; /* 16px */
+            margin-bottom: 1.5rem; /* 24px */
+            justify-content: center;
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+        }
+        .input-item {
+            flex: 1;
+            min-width: 100px; /* Minimum width for input fields */
+        }
+        input[type="number"],
+        button {
+            width: 100%;
+            padding: 0.75rem 1rem; /* 12px 16px */
+            border-radius: 0.75rem; /* 12px */
+            border: 1px solid #cbd5e1; /* Light gray border */
+            font-size: 1rem;
+            transition: all 0.2s ease-in-out;
+        }
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #3b82f6; /* Blue focus border */
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+        }
+        button {
+            background-color: #3b82f6; /* Blue background */
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 1rem;
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+        }
+        button:hover {
+            background-color: #2563eb; /* Darker blue on hover */
+            transform: translateY(-2px);
+        }
+        .result-box {
+            background-color: #e0f2fe; /* Lighter blue for result */
+            padding: 1.5rem; /* 24px */
+            border-radius: 0.75rem; /* 12px */
+            margin-top: 2rem; /* 32px */
+            text-align: left;
+            border: 1px solid #bfdbfe; /* Light blue border */
+        }
+        .result-box p {
+            font-size: 1.125rem; /* 18px */
+            color: #1e3a8a; /* Dark blue text */
+            margin-bottom: 0.5rem;
+        }
+        .result-box p:last-child {
+            margin-bottom: 0;
+        }
+        .error-message {
+            color: #ef4444; /* Red error message */
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+        .message-box {
+            background-color: #fff3cd; /* Yellow background for messages */
+            color: #856404; /* Dark yellow text */
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #ffeeba;
+            margin-bottom: 1rem;
+            display: none; /* Hidden by default */
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">ឧបករណ៍បំប្លែងកាលបរិច្ឆេទព្រះពុទ្ធសាសនា</h1>
+
+        <div id="messageBox" class="message-box"></div>
+
+        <div class="input-group">
+            <div class="input-item">
+                <label for="year" class="block text-gray-700 text-sm font-medium mb-2">ឆ្នាំគ្រឹះសករាជ:</label>
+                <input type="number" id="year" placeholder="ឧទាហរណ៍: 2025" class="focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div class="input-item">
+                <label for="month" class="block text-gray-700 text-sm font-medium mb-2">ខែ:</label>
+                <input type="number" id="month" placeholder="ឧទាហរណ៍: 7" class="focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div class="input-item">
+                <label for="day" class="block text-gray-700 text-sm font-medium mb-2">ថ្ងៃ:</label>
+                <input type="number" id="day" placeholder="ឧទាហរណ៍: 7" class="focus:ring-blue-500 focus:border-blue-500">
+            </div>
+        </div>
+
+        <button id="calculateBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl">គណនា</button>
+
+        <div id="result" class="result-box hidden">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">លទ្ធផល:</h2>
+            <p><span class="font-bold">អាយុកាលព្រះពុទ្ធសាសនា:</span></p>
+            <p>ឆ្នាំ: <span id="resultYears" class="font-semibold"></span></p>
+            <p>ខែ: <span id="resultMonths" class="font-semibold"></span></p>
+            <p>ថ្ងៃ: <span id="resultDays" class="font-semibold"></span></p>
+        </div>
+    </div>
+
+    <script>
+        // Function to display messages in a custom message box
+        function showMessageBox(message, type = 'warning') {
+            const messageBox = document.getElementById('messageBox');
+            messageBox.textContent = message;
+            messageBox.style.display = 'block';
+            messageBox.className = `message-box ${type === 'error' ? 'bg-red-100 text-red-700 border-red-400' : 'bg-yellow-100 text-yellow-700 border-yellow-400'}`;
+        }
+
+        // Function to hide the message box
+        function hideMessageBox() {
+            document.getElementById('messageBox').style.display = 'none';
+        }
+
+        // Function to calculate the difference between two dates in years, months, and days
+        function calculateDateDifference(date1, date2) {
+            // Ensure date1 is the later date for consistent calculation
+            if (date1.getTime() < date2.getTime()) {
+                [date1, date2] = [date2, date1]; // Swap dates if date1 is earlier
+            }
+
+            let years = date1.getFullYear() - date2.getFullYear();
+            let months = date1.getMonth() - date2.getMonth();
+            let days = date1.getDate() - date2.getDate();
+
+            // Adjust for negative days: if days are negative, borrow from months
+            if (days < 0) {
+                months--;
+                // Get the number of days in the previous month of date1
+                const lastMonthDate = new Date(date1.getFullYear(), date1.getMonth(), 0);
+                days += lastMonthDate.getDate();
+            }
+
+            // Adjust for negative months: if months are negative, borrow from years
+            if (months < 0) {
+                years--;
+                months += 12;
+            }
+
+            return { years, months, days };
+        }
+
+        document.getElementById('calculateBtn').addEventListener('click', () => {
+            hideMessageBox(); // Hide previous messages
+
+            const yearInput = document.getElementById('year').value;
+            const monthInput = document.getElementById('month').value;
+            const dayInput = document.getElementById('day').value;
+
+            // Convert inputs to numbers
+            const year = parseInt(yearInput);
+            const month = parseInt(monthInput);
+            const day = parseInt(dayInput);
+
+            // Input validation
+            if (isNaN(year) || isNaN(month) || isNaN(day) || yearInput === '' || monthInput === '' || dayInput === '') {
+                showMessageBox('សូមបញ្ចូលឆ្នាំ ខែ និងថ្ងៃឱ្យបានត្រឹមត្រូវ។', 'error');
+                document.getElementById('result').classList.add('hidden');
+                return;
+            }
+
+            if (month < 1 || month > 12) {
+                showMessageBox('ខែត្រូវតែស្ថិតនៅចន្លោះពី 1 ដល់ 12។', 'error');
+                document.getElementById('result').classList.add('hidden');
+                return;
+            }
+
+            // Create a Date object for the input Gregorian date
+            // Month is 0-indexed in JavaScript Date object, so subtract 1
+            const inputDate = new Date(year, month - 1, day);
+
+            // Validate if the input date is a valid date (e.g., Feb 30)
+            if (inputDate.getFullYear() !== year || inputDate.getMonth() !== (month - 1) || inputDate.getDate() !== day) {
+                showMessageBox('កាលបរិច្ឆេទដែលបានបញ្ចូលមិនត្រឹមត្រូវទេ។ សូមពិនិត្យមើលថ្ងៃ និងខែ។', 'error');
+                document.getElementById('result').classList.add('hidden');
+                return;
+            }
+
+            // Define the Parinirvana date (May 13, 544 BCE)
+            // In JavaScript Date object, year -N represents N+1 BCE. So -543 represents 544 BCE.
+            // Month is 0-indexed, so May is 4.
+            const parinirvanaDate = new Date(-543, 4, 13); // May 13, 544 BCE
+
+            // Check if the input date is earlier than the Parinirvana date
+            if (inputDate.getTime() < parinirvanaDate.getTime()) {
+                showMessageBox('កាលបរិច្ឆេទដែលបានបញ្ចូលត្រូវតែធំជាង ឬស្មើនឹងកាលបរិច្ឆេទបរិនិព្វាន (13 ឧសភា 544 មុនគ.ស)។', 'error');
+                document.getElementById('result').classList.add('hidden');
+                return;
+            }
+
+            // Calculate the difference
+            const { years, months, days } = calculateDateDifference(inputDate, parinirvanaDate);
+
+            // Display the results
+            document.getElementById('resultYears').textContent = years;
+            document.getElementById('resultMonths').textContent = months;
+            document.getElementById('resultDays').textContent = days;
+            document.getElementById('result').classList.remove('hidden'); // Show the result box
+        });
+    </script>
+</body>
+</html>
