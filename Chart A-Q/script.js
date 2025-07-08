@@ -4,10 +4,10 @@ import {ChatMessage} from './chatMessage.js';
 
 // The image/name pairs that are displayed
 var chatProfiles = [];
-chatProfiles.push(new Profile('Grump', './char1.svg', '#218aff', true, '#ffffff'));
-chatProfiles.push(new Profile('Olivia', './senior-transparent.svg', '#d8d8d8'));
-chatProfiles.push(new Profile('Chad', './char2.svg'));
-chatProfiles.push(new Profile('Tischman', './char3.svg'));
+chatProfiles.push(new Profile('លោកតា', './char1.svg', '#218aff', true, '#ffffff'));
+chatProfiles.push(new Profile('លោកយាយ', './senior-transparent.svg', '#d8d8d8'));
+chatProfiles.push(new Profile('ចៅប្រុស', './char2.svg'));
+chatProfiles.push(new Profile('ចៅស្រី', './char3.svg'));
 
 // All chat messages, whether on screen yet or not
 var allChatMessages = [];
