@@ -1,0 +1,284 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: #ffcd85;
+    padding: 0 40px 80px 40px;
+}
+
+h1 {
+    display: none;
+}
+
+#wrapper {
+    padding: 10px 40px;
+    width: min-content;
+}
+.wrapper {
+    margin: 20px auto;
+    background-color: #f5f7fb;
+    display: flex;
+    flex-direction: row;
+    align-items: top;
+    color: #141122;
+    font-family: sans-serif;
+    box-shadow: 40px 28px 15px #00000030;
+    border-radius: 50px;
+}
+
+table, #profilesParentDiv, #textFieldsParent, #description {
+    background: white;
+    border-radius: 40px;
+    padding: 10px 20px;
+}
+
+#description {
+    color: #707070;
+}
+
+table {
+    margin: 40px 0 0 auto;
+}
+td:first-of-type {
+    text-align: right;
+}
+td {
+    padding: 3px 6px;
+}
+
+td input[type="text"], td input[type="number"] {
+    width: 100px;
+}
+
+/* All sliders */
+.range {
+    width: 50px;
+}
+
+/** Only the speed control sliders */
+td > .range:first-child {
+    width: 100px;
+}
+
+#controlsDiv {
+    margin: 30px 40px;
+}
+
+#textFieldsParent {
+    margin-top: 40px;
+}
+
+#profilesParentDiv {
+    width: 360px;
+    margin: 40px 0 0 auto;
+}
+
+/* Class of a profile flex div */
+.profile {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.profile > * {
+    margin: 0 6px;
+}
+
+.profileImageParent {
+    position: relative;
+    width: 50px;
+    height: 50px;
+}
+
+.profilePic {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.uploadIcon {
+    width: 40px;
+    height: 40px;
+    position: absolute;
+    right: -10px;
+    bottom: -10px;
+}
+
+.messageRowDiv {
+    display: flex;
+    justify-content: flex-end;
+}
+
+select {
+    margin: 5px 20px 0 0;
+}
+
+.nameInput {
+    width: 100px;
+}
+
+.messageInput {
+    width: 400px;
+}
+
+/** Frame specify input */
+.messageRowDiv input[type='number'] {
+    width: 44px;
+}
+
+#font {
+    width: 100px;
+}
+
+.nameInput, .messageInput, .sizeInput, #font, select {
+    background-color: white;
+    color: #11111e;
+}
+
+select {
+    -webkit-appearance: none;
+    width: 86px;
+    text-align: center;
+    text-align-last: center;
+}
+
+#saveButtons {
+    display: flex;
+    justify-content: space-around;
+}
+
+.horizontalCenter {
+    display: flex;
+    justify-content: center;
+}
+
+/* Buttons */
+button.newThing {
+    width: 40px;
+    height: 40px;
+    border-radius: 20px;
+    font-size: 30px;
+    line-height: 30px;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.newThing img {
+    width: 30%;
+    height: 30%;
+}
+
+.deleteButton {
+    width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    font-size: 10px;
+    line-height: 10px;
+}
+
+.deleteButton, .newThing {
+    color: white;
+    margin: 0 0 0 9px;
+    border: none;
+    background-color: #FFBE30;
+    text-align: center;
+}
+
+.newThing:hover, .deleteButton:hover {
+    background-color: #cf9E00;
+}
+
+/** Hide the first delete button which is disabled */
+.firstButton {
+    visibility: hidden;
+    margin: 0 16px 0 0;
+}
+
+input.picker {
+    width: 24px;
+    height: 24px;
+}
+
+#canvasParent {
+    display: flex;
+    justify-content: center;
+    margin: 30px auto;
+    width: 290px;
+    height: 640px;
+}
+
+.saveButton {
+    padding: 4px 8px;
+}
+
+.recording {
+    color: red;
+}
+
+#wrapper2 {
+    width: 80vw;
+    overflow: hidden;
+}
+
+video {
+    margin: auto;
+    width: 85vw;
+}
+
+/**
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-runnable-track, input[type="range"]::-moz-range-track {
+    background: linear-gradient(0deg, #666 0%, #333 35%);
+    border-radius: 3px;
+    height: 6px;
+}
+
+input[type="range"]::-webkit-slider-thumb, input[type="range"]::-moz-range-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    margin-top: -6px;
+    background-color: #858585;
+    height: 16px;
+    width: 16px;
+    border-radius: 8px;
+    border: 1px solid #aaa;
+}*/
+
+
+@media screen and (max-width: 1024px) {
+    #wrapper {
+        flex-direction: column-reverse;
+    }
+
+    #description {
+        display: none;
+    }
+    
+    table {
+        margin: 40px auto 0 auto;
+    }
+    
+    #profilesParentDiv {
+        margin: 40px auto 0 auto;
+    }
+    
+    .profile {
+        justify-content: center;
+    }
+    
+    .messageRowDiv {
+        justify-content: center;
+    }
+}
