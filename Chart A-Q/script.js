@@ -14,7 +14,7 @@ var allChatMessages = [];
 allChatMessages.push(new ChatMessage("សូមសូមស្វាគមន៍", chatProfiles[0]));
 allChatMessages.push(new ChatMessage("តើអ្នកចង់ រៀបសំណួរ ចម្លើយបង្កើត វីដេអូឫ?", chatProfiles[0]));
 allChatMessages.push(new ChatMessage("ជំរាប់សួរ អ្នកទាំងអស់គ្នា!", chatProfiles[2]));
-allChatMessages.push(new ChatMessage("ហាសហា ខ្ញុំពិតជារីករាយណាស់. ក្នុងការធ្វើ នឹងង្កើត វីដេអូ. អូ កំភ្លេច ដាក់ការចូលចិត្តម្នាក់មួយផង", chatProfiles[3]));
+allChatMessages.push(new ChatMessage("ហាសហា ខ្ញុំពិតជារីករាយណាស់. ក្នុងការធ្វើនឹងង្កើតវីដេអូ. អូកំភ្លេចដាក់ការចូលចិត្តម្នាក់មួយផង", chatProfiles[3]));
 
 var animationSettings = new AnimationSettings();
 var fileInput;
