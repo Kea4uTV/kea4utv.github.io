@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ឧបករណ៍បំប្លែងកាលបរិច្ឆេទព្រះពុទ្ធសាសនា</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Link to external CSS file -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">ឧបករណ៍បំប្លែងកាលបរិច្ឆេទព្រះពុទ្ធសាសនា</h1>
+
+        <div id="messageBox" class="message-box"></div>
+
+        <div class="input-group">
+            <div class="input-item">
+                <label for="year" class="block text-gray-700 text-sm font-medium mb-2">ឆ្នាំគ្រឹះសករាជ:</label>
+                <input type="number" id="year" placeholder="ឧទាហរណ៍: 2025" class="focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div class="input-item">
+                <label for="month" class="block text-gray-700 text-sm font-medium mb-2">ខែ:</label>
+                <input type="number" id="month" placeholder="ឧទាហរណ៍: 7" class="focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div class="input-item">
+                <label for="day" class="block text-gray-700 text-sm font-medium mb-2">ថ្ងៃ:</label>
+                <input type="number" id="day" placeholder="ឧទាហរណ៍: 7" class="focus:ring-blue-500 focus:border-blue-500">
+            </div>
+        </div>
+
+        <button id="calculateBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl">គណនា</button>
+
+        <div id="result" class="result-box hidden">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">លទ្ធផល:</h2>
+            <p><span class="font-bold">ពុទ្ធសករាជ:</span> <span id="buddhistEraYear" class="font-semibold"></span></p>
+            <p><span class="font-bold">អាយុកាលព្រះពុទ្ធសាសនា:</span></p>
+            <p>ឆ្នាំ: <span id="resultYears" class="font-semibold"></span></p>
+            <p>ខែ: <span id="resultMonths" class="font-semibold"></span></p>
+            <p>ថ្ងៃ: <span id="resultDays" class="font-semibold"></span></p>
+
+            <h3 class="text-xl font-semibold text-gray-800 mt-6 mb-4">ពេលវេលាដែលនៅសល់រហូតដល់ ៥០០០ ឆ្នាំ:</h3>
+            <p>ឆ្នាំ: <span id="remainingYears" class="font-semibold"></span></p>
+            <p>ខែ: <span id="remainingMonths" class="font-semibold"></span></p>
+            <p>ថ្ងៃ: <span id="remainingDays" class="font-semibold"></span></p>
+
+            <h3 class="text-xl font-semibold text-gray-800 mt-6 mb-4">កាលបរិច្ឆេទខ្មែរ:</h3>
+            <p><span class="font-bold">សុរិយគតិ:</span> <span id="khmerSolarDate" class="font-semibold"></span></p>
+            <p><span class="font-bold">ចន្ទគតិ (ប៉ាន់ស្មាន):</span> <span id="khmerLunarDate" class="font-semibold"></span></p>
+            <p class="text-sm text-gray-600 mt-2">
+                <span class="font-bold">ចំណាំ:</span> ការគណនាកាលបរិច្ឆេទចន្ទគតិខ្មែរគឺមានលក្ខណៈសាមញ្ញ ហើយមិនទាន់រួមបញ្ចូលឆ្នាំបង្គ្រប់ ឬខែបង្គ្រប់តាមតារាសាស្ត្រពិតប្រាកដនោះទេ។
+            </p>
+        </div>
+
+        <div id="currentDateResult" class="result-box mt-8">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">ពុទ្ធសករាជបច្ចុប្បន្ន (កាលបរិច្ឆេទសកល):</h2>
+            <p><span class="font-bold">ឆ្នាំគ្រឹះសករាជ:</span> <span id="currentGregorianYear" class="font-semibold"></span></p>
+            <p><span class="font-bold">ខែគ្រឹះសករាជ:</span> <span id="currentGregorianMonth" class="font-semibold"></span></p>
+            <p><span class="font-bold">ថ្ងៃគ្រឹះសករាជ:</span> <span id="currentGregorianDay" class="font-semibold"></span></p>
+            <p><span class="font-bold">ពុទ្ធសករាជ:</span> <span id="currentBuddhistEraYear" class="font-semibold"></span></p>
+            <p><span class="font-bold">អាយុកាលព្រះពុទ្ធសាសនា:</span></p>
+            <p>ឆ្នាំ: <span id="currentResultYears" class="font-semibold"></span></p>
+            <p>ខែ: <span id="currentResultMonths" class="font-semibold"></span></p>
+            <p>ថ្ងៃ: <span id="currentResultDays" class="font-semibold"></span></p>
+            <h3 class="text-xl font-semibold text-gray-800 mt-6 mb-4">ពេលវេលាដែលនៅសល់រហូតដល់ ៥០០០ ឆ្នាំ:</h3>
+            <p>ឆ្នាំ: <span id="currentRemainingYears" class="font-semibold"></span></p>
+            <p>ខែ: <span id="currentRemainingMonths" class="font-semibold"></span></p>
+            <p>ថ្ងៃ: <span id="currentRemainingDays" class="font-semibold"></span></p>
+            <h3 class="text-xl font-semibold text-gray-800 mt-6 mb-4">កាលបរិច្ឆេទខ្មែរ:</h3>
+            <p><span class="font-bold">សុរិយគតិ:</span> <span id="currentKhmerSolarDate" class="font-semibold"></span></p>
+            <p><span class="font-bold">ចន្ទគតិ (ប៉ាន់ស្មាន):</span> <span id="currentKhmerLunarDate" class="font-semibold"></span></p>
+        </div>
+    </div>
+
+    <!-- Link to external JavaScript file -->
+    <script src="script.js"></script>
+</body>
+</html>
