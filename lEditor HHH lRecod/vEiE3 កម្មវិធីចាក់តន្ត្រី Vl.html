@@ -442,7 +442,7 @@
                         <div class="control-group">
                             <label for="recordingQualitySelect" class="text-sm">គុណភាពវីដេអូថត:</label>
                             <select id="recordingQualitySelect" class="recording-quality-select">
-                                <option value="current">ស្វ័យប្រវត្តិ (តាមទំហំបង្ហាញ)</option>
+                                <option value="auto">ស្វ័យប្រវត្តិ (តាមទំហំបង្ហាញ)</option>
                                 <option value="1920x1080">1080p (1920x1080)</option>
                                 <option value="1280x720">720p (1280x720)</option>
                                 <option value="1080x1920">Vertical (1080x1920)</option>
@@ -2391,6 +2391,1051 @@
         addVideoLayerBtn.addEventListener('click', () => {
             createAndAddVideoLayer();
         });
+
+
+        // --- Drawing Functions for each Visualizer Type ---
+        function drawImageLayer(ctx, canvasWidth, canvasHeight, activeMusicScaleFactor, imageLayer, average, visualizerIntensity, bufferLength, dataArray) {
+            if (!imageLayer.isLoaded) return;
+
+            // Calculate start and end times in seconds for image layer
+            const layerStartTime = (imageLayer.startTimeMinutes * 60) + imageLayer.startTimeSeconds;
+            const layerEndTime = (imageLayer.endTimeMinutes * 60) + imageLayer.endTimeSeconds;
+
+            // Check if current audio time is within the layer's active time
+            const currentAudioTime = audioPlayer.currentTime;
+            const shouldDisplay = (currentAudioTime >= layerStartTime) && 
+                                  (layerEndTime === 0 || currentAudioTime < layerEndTime);
+
+            if (!shouldDisplay) return; // Skip drawing if not within time range
+
+
+            ctx.save();
+
+            let initialDrawWidth, initialDrawHeight;
+            if (imageLayer.autoSize) {
+                const imgAspectRatio = imageLayer.img.width / imageLayer.img.height;
+                const canvasAspectRatio = canvasWidth / canvasHeight;
+                if (imgAspectRatio > canvasAspectRatio) {
+                    initialDrawWidth = canvasWidth;
+                    initialDrawHeight = canvasWidth / imgAspectRatio;
+                } else {
+                    initialDrawHeight = canvasHeight;
+                    initialDrawWidth = canvasHeight * imgAspectRatio;
+                }
+            } else {
+                initialDrawWidth = imageLayer.img.width * imageLayer.size;
+                initialDrawHeight = imageLayer.img.height * imageLayer.size;
+                const imgAspectRatio = imageLayer.img.width / imageLayer.img.height;
+                if (initialDrawWidth > canvasWidth || initialDrawHeight > canvasHeight) {
+                    if (imgAspectRatio > canvasWidth / canvasHeight) {
+                        initialDrawWidth = canvasWidth;
+                        initialDrawHeight = canvasWidth / imgAspectRatio;
+                    } else {
+                        initialDrawHeight = canvasHeight;
+                        initialDrawWidth = canvasHeight * imgAspectRatio;
+                    }
+                }
+            }
+
+            let finalDrawWidth = initialDrawWidth;
+            let finalDrawHeight = initialDrawHeight;
+
+            if (imageLayer.pulse) {
+                const minScaleLimit = 0.5;
+                const maxScaleLimit = 2.0;
+                finalDrawWidth = initialDrawWidth * activeMusicScaleFactor;
+                finalDrawHeight = initialDrawHeight * activeMusicScaleFactor;
+                finalDrawWidth = Math.max(initialDrawWidth * minScaleLimit, Math.min(initialDrawWidth * maxScaleLimit, finalDrawWidth));
+                finalDrawHeight = Math.max(initialDrawHeight * minScaleLimit, Math.min(initialDrawHeight * maxScaleLimit, finalDrawHeight));
+            }
+
+            let drawX, drawY;
+            switch(imageLayer.position) {
+                case 'bottom-center':
+                    drawX = (canvasWidth - finalDrawWidth) / 2;
+                    drawY = canvasHeight - finalDrawHeight;
+                    break;
+                case 'top-center':
+                    drawX = (canvasWidth - finalDrawWidth) / 2;
+                    drawY = 0;
+                    break;
+                case 'center-left':
+                    drawX = 0;
+                    drawY = (canvasHeight - finalDrawHeight) / 2;
+                    break;
+                case 'center-right':
+                    drawX = canvasWidth - finalDrawWidth;
+                    drawY = (canvasHeight - finalDrawHeight) / 2;
+                    break;
+                case 'top-left':
+                    drawX = 0;
+                    drawY = 0;
+                    break;
+                case 'top-right':
+                    drawX = canvasWidth - finalDrawWidth;
+                    drawY = 0;
+                    break;
+                case 'bottom-left':
+                    drawX = 0;
+                    drawY = canvasHeight - finalDrawHeight;
+                    break;
+                case 'bottom-right':
+                    drawX = canvasWidth - finalDrawWidth;
+                    drawY = canvasHeight - finalDrawHeight;
+                    break;
+                case 'center':
+                default:
+                    drawX = (canvasWidth - finalDrawWidth) / 2;
+                    drawY = (canvasHeight - finalDrawHeight) / 2;
+                    break;
+            }
+
+            ctx.drawImage(imageLayer.img, drawX, drawY, finalDrawWidth, finalDrawHeight);
+
+            // Apply visualizers *on top of this image* if checked
+            if (imageLayer.applyVisualizer) {
+                ctx.save();
+                // Clip to the image's bounding box
+                ctx.beginPath();
+                ctx.rect(drawX, drawY, finalDrawWidth, finalDrawHeight);
+                ctx.clip();
+
+                // Draw global visualizers within this clipped area
+                activeVisualizerOrder.forEach(item => {
+                    switch (item.type) {
+                        case 'bars':
+                            drawBars(ctx, finalDrawWidth, finalDrawHeight, bufferLength, dataArray, activeMusicScaleFactor, drawX, drawY);
+                            break;
+                        case 'circle-pulse':
+                            drawCirclePulse(ctx, finalDrawWidth, finalDrawHeight, activeMusicScaleFactor, average, visualizerIntensity, drawX, drawY);
+                            break;
+                        case 'wave':
+                            drawWave(ctx, finalDrawWidth, finalDrawHeight, bufferLength, dataArray, activeMidScaleFactor, drawX, drawY);
+                            break;
+                        case 'radial-bars':
+                            drawRadialBars(ctx, finalDrawWidth, finalDrawHeight, bufferLength, dataArray, activeBassScaleFactor, drawX, drawY);
+                            break;
+                        case 'particle-swarm':
+                            drawParticleSwarm(ctx, finalDrawWidth, finalDrawHeight, average, visualizerIntensity, bufferLength, dataArray, drawX, drawY);
+                            break;
+                        case 'line-spectrum':
+                            drawLineSpectrum(ctx, finalDrawWidth, finalDrawHeight, bufferLength, dataArray, activeTrebleScaleFactor, trebleAverage, drawX, drawY);
+                            break;
+                        case 'frequency-circle':
+                            drawFrequencyCircle(ctx, finalDrawWidth, finalDrawHeight, bufferLength, dataArray, activeMusicScaleFactor, drawX, drawY);
+                            break;
+                        case 'falling-particles':
+                            drawFallingParticles(ctx, finalDrawWidth, finalDrawHeight, average, visualizerIntensity, bufferLength, dataArray, drawX, drawY);
+                            break;
+                        case 'rising-particles':
+                            drawRisingParticles(ctx, finalDrawWidth, finalDrawHeight, average, visualizerIntensity, bufferLength, dataArray, drawX, drawY);
+                            break;
+                        case 'leftward-particles':
+                            drawLeftwardParticles(ctx, finalDrawWidth, finalDrawHeight, average, visualizerIntensity, bufferLength, dataArray, drawX, drawY);
+                            break;
+                        case 'rightward-particles':
+                            drawRightwardParticles(ctx, finalDrawWidth, finalDrawHeight, average, visualizerIntensity, bufferLength, dataArray, drawX, drawY);
+                            break;
+                        case 'colorful-particles':
+                            drawColorfulParticles(ctx, finalDrawWidth, finalDrawHeight, average, visualizerIntensity, bufferLength, dataArray, drawX, drawY);
+                            break;
+                        case 'connecting-lines':
+                            drawConnectingLines(ctx, finalDrawWidth, finalDrawHeight, bufferLength, dataArray, activeMusicScaleFactor, visualizerIntensity, average, drawX, drawY);
+                            break;
+                    }
+                });
+                ctx.restore(); // Restore after clipping
+            }
+            ctx.restore();
+        }
+
+
+        function drawVideoLayer(ctx, canvasWidth, canvasHeight, videoLayer) {
+            // Ensure video element is loaded and ready to draw
+            if (!videoLayer.isLoaded || !videoLayer.video || videoLayer.video.readyState < 2) {
+                return;
+            }
+
+            const layerStartTime = (videoLayer.startTimeMinutes * 60) + videoLayer.startTimeSeconds;
+            const layerEndTime = (videoLayer.endTimeMinutes * 60) + videoLayer.endTimeSeconds;
+            const currentAudioTime = audioPlayer.currentTime;
+
+            const shouldDisplay = (currentAudioTime >= layerStartTime) && 
+                                  (layerEndTime === 0 || currentAudioTime < layerEndTime);
+
+            if (!shouldDisplay) {
+                if (!videoLayer.video.paused) {
+                    videoLayer.video.pause();
+                }
+                return;
+            } else {
+                // Synchronize video currentTime with audioPlayer currentTime
+                // Only seek if the difference is significant to avoid constant seeking
+                const timeDifference = Math.abs(videoLayer.video.currentTime - currentAudioTime);
+                if (timeDifference > 0.1) { // If difference is more than 0.1 seconds
+                    videoLayer.video.currentTime = currentAudioTime;
+                }
+                if (videoLayer.video.paused) {
+                    videoLayer.video.play().catch(e => console.error("Video autoplay failed:", e));
+                }
+            }
+
+            ctx.save();
+
+            let initialDrawWidth, initialDrawHeight;
+            if (videoLayer.autoSize) {
+                const videoAspectRatio = videoLayer.video.videoWidth / videoLayer.video.videoHeight;
+                const canvasAspectRatio = canvasWidth / canvasHeight;
+                if (isNaN(videoAspectRatio) || videoAspectRatio === 0) {
+                    initialDrawWidth = 0;
+                    initialDrawHeight = 0;
+                } else if (videoAspectRatio > canvasAspectRatio) {
+                    initialDrawWidth = canvasWidth;
+                    initialDrawHeight = canvasWidth / videoAspectRatio;
+                } else {
+                    initialDrawHeight = canvasHeight;
+                    initialDrawWidth = canvasHeight * videoAspectRatio;
+                }
+            } else {
+                initialDrawWidth = videoLayer.video.videoWidth * videoLayer.size;
+                initialDrawHeight = videoLayer.video.videoHeight * videoLayer.size;
+                if (isNaN(videoLayer.video.videoWidth) || videoLayer.video.videoWidth === 0) {
+                    initialDrawWidth = 0;
+                    initialDrawHeight = 0;
+                } else {
+                    const videoAspectRatio = videoLayer.video.videoWidth / videoLayer.video.videoHeight;
+                    if (initialDrawWidth > canvasWidth || initialDrawHeight > canvasHeight) {
+                        if (videoAspectRatio > canvasWidth / canvasHeight) {
+                            initialDrawWidth = canvasWidth;
+                            initialDrawHeight = canvasWidth / videoAspectRatio;
+                        } else {
+                            initialDrawHeight = canvasHeight;
+                            initialDrawWidth = canvasHeight * videoAspectRatio;
+                        }
+                    }
+                }
+            }
+
+            let finalDrawWidth = initialDrawWidth;
+            let finalDrawHeight = initialDrawHeight;
+
+            let drawX, drawY;
+            switch(videoLayer.position) {
+                case 'bottom-center':
+                    drawX = (canvasWidth - finalDrawWidth) / 2;
+                    drawY = canvasHeight - finalDrawHeight;
+                    break;
+                case 'top-center':
+                    drawX = (canvasWidth - finalDrawWidth) / 2;
+                    drawY = 0;
+                    break;
+                case 'center-left':
+                    drawX = 0;
+                    drawY = (canvasHeight - finalDrawHeight) / 2;
+                    break;
+                case 'center-right':
+                    drawX = canvasWidth - finalDrawWidth;
+                    drawY = (canvasHeight - finalDrawHeight) / 2;
+                    break;
+                case 'top-left':
+                    drawX = 0;
+                    drawY = 0;
+                    break;
+                case 'top-right':
+                    drawX = canvasWidth - finalDrawWidth;
+                    drawY = 0;
+                    break;
+                case 'bottom-left':
+                    drawX = 0;
+                    drawY = canvasHeight - finalDrawHeight;
+                    break;
+                case 'bottom-right':
+                    drawX = canvasWidth - finalDrawWidth;
+                    drawY = canvasHeight - finalDrawHeight;
+                    break;
+                case 'center':
+                default:
+                    drawX = (canvasWidth - finalDrawWidth) / 2;
+                    drawY = (canvasHeight - finalDrawHeight) / 2;
+                    break;
+            }
+
+            if (finalDrawWidth > 0 && finalDrawHeight > 0) { // Only draw if dimensions are valid
+                ctx.drawImage(videoLayer.video, drawX, drawY, finalDrawWidth, finalDrawHeight);
+            }
+            ctx.restore();
+        }
+
+
+        function drawBars(ctx, canvasWidth, canvasHeight, bufferLength, dataArray, activeMusicScaleFactor, offsetX = 0, offsetY = 0) {
+            const barWidth = (canvasWidth / bufferLength) * 2.5;
+            let x = 0;
+            for (let i = 0; i < bufferLength; i++) {
+                const barHeight = dataArray[i] * activeMusicScaleFactor * 1.5;
+                ctx.fillStyle = `rgb(${barHeight + 100}, 50, 50)`;
+                ctx.fillRect(offsetX + x, offsetY + canvasHeight - barHeight, barWidth, barHeight);
+                x += barWidth + 1;
+            }
+        }
+
+        function drawCirclePulse(ctx, canvasWidth, canvasHeight, activeMusicScaleFactor, average, visualizerIntensity, offsetX = 0, offsetY = 0) {
+            ctx.save();
+            ctx.beginPath();
+            const centerX = offsetX + canvasWidth / 2;
+            const centerY = offsetY + canvasHeight / 2;
+            const baseRadius = Math.min(canvasWidth, canvasHeight) * 0.2;
+            const pulseRadius = baseRadius * activeMusicScaleFactor;
+            ctx.arc(centerX, centerY, pulseRadius, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(66, 153, 225, ${0.5 + (average / 255) * 0.5 * visualizerIntensity})`;
+            ctx.fill();
+            ctx.closePath();
+            ctx.restore();
+        }
+
+        function drawWave(ctx, canvasWidth, canvasHeight, bufferLength, dataArray, activeMidScaleFactor, offsetX = 0, offsetY = 0) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.strokeStyle = '#4299e1';
+            ctx.lineWidth = 2;
+            ctx.lineJoin = 'round';
+            const sliceWidth = canvasWidth * 1.0 / bufferLength;
+            let x = 0;
+            for (let i = 0; i < bufferLength; i++) {
+                const v = dataArray[i] / 128.0;
+                const y = offsetY + canvasHeight / 2 + v * (canvasHeight / 4) * activeMidScaleFactor;
+
+                if (i === 0) {
+                    ctx.moveTo(offsetX + x, y);
+                } else {
+                    ctx.lineTo(offsetX + x, y);
+                }
+                x += sliceWidth;
+            }
+            ctx.lineTo(offsetX + canvasWidth, offsetY + canvasHeight / 2);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawRadialBars(ctx, canvasWidth, canvasHeight, bufferLength, dataArray, activeBassScaleFactor, offsetX = 0, offsetY = 0) {
+            ctx.save();
+            ctx.translate(offsetX + canvasWidth / 2, offsetY + canvasHeight / 2);
+            const radius = Math.min(canvasWidth, canvasHeight) * 0.2;
+            const barCount = bufferLength / 2;
+            const barAngle = (Math.PI * 2) / barCount;
+            for (let i = 0; i < barCount; i++) {
+                const barHeight = dataArray[i] * activeBassScaleFactor * 0.8;
+                ctx.rotate(barAngle);
+                ctx.fillStyle = `hsl(${i * (360 / barCount)}, 100%, 50%)`;
+                ctx.fillRect(radius, 0, 5, -barHeight);
+            }
+            ctx.restore();
+        }
+
+        function drawParticleSwarm(ctx, canvasWidth, canvasHeight, average, visualizerIntensity, bufferLength, dataArray, offsetX = 0, offsetY = 0) {
+            initializeParticleArray(fallingParticles, canvasWidth, canvasHeight);
+
+            const baseSpeed = 1; // Minimum speed
+            const musicInfluence = (average / 255) * 10 * visualizerIntensity; // Max influence from music
+
+            for (let i = 0; i < fallingParticles.length; i++) {
+                const particle = fallingParticles[i];
+                particle.speedY = baseSpeed + (dataArray[Math.floor(i / fallingParticles.length * bufferLength)] / 255) * musicInfluence;
+                particle.speedX = 0; // No horizontal movement for falling
+
+                particle.update();
+                if (particle.y > offsetY + canvasHeight) { // Check against offset bounds
+                    particle.y = offsetY; // Reset to top of offset bounds
+                    particle.x = offsetX + Math.random() * canvasWidth; // Reset within offset bounds
+                }
+                particle.draw(ctx);
+            }
+        }
+
+        // Rising Particles visualization
+        function drawRisingParticles(ctx, canvasWidth, canvasHeight, average, visualizerIntensity, bufferLength, dataArray, offsetX = 0, offsetY = 0) {
+            initializeParticleArray(risingParticles, canvasWidth, canvasHeight);
+
+            const baseSpeed = 1; // Minimum speed
+            const musicInfluence = (average / 255) * 10 * visualizerIntensity;
+
+            for (let i = 0; i < risingParticles.length; i++) {
+                const particle = risingParticles[i];
+                particle.speedY = -(baseSpeed + (dataArray[Math.floor(i / risingParticles.length * bufferLength)] / 255) * musicInfluence); // Move upwards
+                particle.speedX = 0;
+
+                particle.update();
+                if (particle.y < offsetY) { // Check against offset bounds
+                    particle.y = offsetY + canvasHeight; // Reset to bottom of offset bounds
+                    particle.x = offsetX + Math.random() * canvasWidth; // Reset within offset bounds
+                }
+                particle.draw(ctx);
+            }
+        }
+
+        // Leftward Particles visualization
+        function drawLeftwardParticles(ctx, canvasWidth, canvasHeight, average, visualizerIntensity, bufferLength, dataArray, offsetX = 0, offsetY = 0) {
+            initializeParticleArray(leftwardParticles, canvasWidth, canvasHeight);
+
+            const baseSpeed = 1; // Minimum speed
+            const musicInfluence = (average / 255) * 10 * visualizerIntensity;
+
+            for (let i = 0; i < leftwardParticles.length; i++) {
+                const particle = leftwardParticles[i];
+                particle.speedX = -(baseSpeed + (dataArray[Math.floor(i / leftwardParticles.length * bufferLength)] / 255) * musicInfluence); // Move leftwards
+                particle.speedY = 0;
+
+                particle.update();
+                if (particle.x < offsetX) { // Check against offset bounds
+                    particle.x = canvasWidth; // Reset to right of offset bounds
+                    particle.y = offsetY + Math.random() * canvasHeight; // Reset within offset bounds
+                }
+                particle.draw(ctx);
+            }
+        }
+
+        // Rightward Particles visualization
+        function drawRightwardParticles(ctx, canvasWidth, canvasHeight, average, visualizerIntensity, bufferLength, dataArray, offsetX = 0, offsetY = 0) {
+            initializeParticleArray(rightwardParticles, canvasWidth, canvasHeight);
+
+            const baseSpeed = 1; // Minimum speed
+            const musicInfluence = (average / 255) * 10 * visualizerIntensity;
+
+            for (let i = 0; i < rightwardParticles.length; i++) {
+                const particle = rightwardParticles[i];
+                particle.speedX = baseSpeed + (dataArray[Math.floor(i / rightwardParticles.length * bufferLength)] / 255) * musicInfluence; // Move rightwards
+                particle.speedY = 0;
+
+                particle.update();
+                if (particle.x > offsetX + canvasWidth) { // Check against offset bounds
+                    particle.x = offsetX; // Reset to left of offset bounds
+                    particle.y = offsetY + Math.random() * canvasHeight; // Reset within offset bounds
+                }
+                particle.draw(ctx);
+            }
+        }
+
+        // Colorful Particles visualization (falling by default, but with dynamic colors)
+        function drawColorfulParticles(ctx, canvasWidth, canvasHeight, average, visualizerIntensity, bufferLength, dataArray, offsetX = 0, offsetY = 0) {
+            initializeParticleArray(colorfulParticles, canvasWidth, canvasHeight);
+
+            const baseSpeed = 1;
+            const musicInfluence = (average / 255) * 10 * visualizerIntensity;
+
+            for (let i = 0; i < colorfulParticles.length; i++) {
+                const particle = colorfulParticles[i];
+                particle.speedY = baseSpeed + (dataArray[Math.floor(i / colorfulParticles.length * bufferLength)] / 255) * musicInfluence; // Falling motion
+                particle.speedX = 0;
+
+                // Update particle color based on frequency data
+                const hue = (dataArray[Math.floor(i / colorfulParticles.length * bufferLength)] / 255) * 360;
+                particle.color = `hsl(${hue}, 100%, 70%)`; // Dynamic color
+
+                particle.update();
+                if (particle.y > offsetY + canvasHeight) { // Check against offset bounds
+                    particle.y = offsetY; // Reset to top of offset bounds
+                    particle.x = offsetX + Math.random() * canvasWidth; // Reset within offset bounds
+                }
+                particle.draw(ctx);
+            }
+        }
+
+
+        function drawConnectingLines(ctx, canvasWidth, canvasHeight, bufferLength, dataArray, activeMusicScaleFactor, visualizerIntensity, average, offsetX = 0, offsetY = 0) {
+            ctx.save();
+            ctx.strokeStyle = `rgba(66, 153, 225, ${0.5 + (average / 255) * 0.5 * visualizerIntensity})`;
+            ctx.lineWidth = 1;
+            const sliceWidth = canvasWidth * 1.0 / bufferLength;
+            const points = [];
+            for (let i = 0; i < bufferLength; i++) {
+                const v = dataArray[i] / 255.0;
+                const x = offsetX + i * sliceWidth;
+                const y = offsetY + canvasHeight / 2 + (v - 0.5) * canvasHeight * 0.4 * activeMusicScaleFactor;
+                points.push({ x, y });
+            }
+            for (let i = 0; i < points.length; i++) {
+                for (let j = i + 1; j < points.length; j++) {
+                    const dist = Math.sqrt(Math.pow(points[i].x - points[j].x, 2) + Math.pow(points[i].y - points[j].y, 2));
+                    if (dist < 150) {
+                        ctx.beginPath();
+                        ctx.moveTo(points[i].x, points[i].y);
+                        ctx.lineTo(points[j].x, points[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            ctx.restore();
+        }
+
+
+        // Main drawVisualizer function
+        function drawVisualizer(currentTime) {
+            // Determine which context to draw to: recordingCtx if recording, otherwise visualizerCtx
+            const targetCtx = isRecording ? recordingCtx : ctx;
+            const targetCanvasWidth = isRecording ? recordingCanvas.width : visualizerCanvas.width;
+            const targetCanvasHeight = isRecording ? recordingCanvas.height : visualizerCanvas.height;
+
+            // Request next frame if not recording, or if recording is active
+            if (!isRecording || (isRecording && mediaRecorder && mediaRecorder.state === 'recording')) {
+                animationFrameId = requestAnimationFrame(drawVisualizer);
+            } else if (isRecording && mediaRecorder && mediaRecorder.state === 'inactive') {
+                cancelAnimationFrame(animationFrameId);
+                return;
+            }
+
+            if (!lastFrameTime) lastFrameTime = currentTime;
+            const deltaTime = (currentTime - lastFrameTime) / 1000;
+            lastFrameTime = currentTime;
+
+            if (!analyser || !dataArray) {
+                // Clear the main display canvas even if analyser is not ready
+                ctx.clearRect(0, 0, visualizerCanvas.width, visualizerCanvas.height);
+                return;
+            }
+
+            analyser.getByteFrequencyData(dataArray);
+
+            // Determine filter to apply: 'none' if recording without filter, otherwise selected filter
+            let currentFilterToApply = canvasFilterSelect.value;
+            if (isRecording && recordWithoutFilterCheckbox.checked) {
+                currentFilterToapply = 'none';
+            }
+            targetCtx.filter = currentFilterToApply;
+
+            // Clear target canvas
+            targetCtx.clearRect(0, 0, targetCanvasWidth, targetCanvasHeight);
+
+            // Draw background image if loaded
+            if (isBgImageLoaded) {
+                targetCtx.save();
+
+                const motionType = backgroundMotionTypeSelect.value;
+                const motionSpeed = parseFloat(backgroundMotionSpeedSlider.value);
+
+                let sum = 0;
+                for (let i = 0; i < bufferLength; i++) {
+                    sum += dataArray[i];
+                }
+                let average = sum / bufferLength;
+                let activeMusicScaleFactor = 1 + ((average / 255) * 0.4 * parseFloat(visualizerIntensitySlider.value));
+
+                let drawWidth, drawHeight, drawX, drawY;
+
+                if (autoBackgroundSizeCheckbox.checked) {
+                    const imgAspectRatio = bgImg.width / bgImg.height;
+                    const canvasAspectRatio = targetCanvasWidth / targetCanvasHeight;
+
+                    let sx = 0, sy = 0, sWidth = bgImg.width, sHeight = bgImg.height;
+                    let dx = 0, dy = 0, dWidth = targetCanvasWidth, dHeight = targetCanvasHeight;
+
+                    if (imgAspectRatio > canvasAspectRatio) {
+                        sWidth = bgImg.height * canvasAspectRatio;
+                        sx = (bgImg.width - sWidth) / 2;
+                    } else {
+                        sHeight = bgImg.width / canvasAspectRatio;
+                        sy = (bgImg.height - sHeight) / 2;
+                    }
+
+                    drawWidth = dWidth;
+                    drawHeight = dHeight;
+                    drawX = dx;
+                    drawY = dy;
+
+                    if (motionType === 'zoom') {
+                        const zoomFactor = 1 + (activeMusicScaleFactor - 1) * motionSpeed * 2;
+                        drawWidth *= zoomFactor;
+                        drawHeight *= zoomFactor;
+                        drawX = (targetCanvasWidth - drawWidth) / 2;
+                        drawY = (targetCanvasHeight - drawHeight) / 2;
+                    }
+
+                    if (motionType === 'pan-horizontal') {
+                        const panSpeed = 50 * motionSpeed * activeMusicScaleFactor;
+                        backgroundPanOffset.x = (backgroundPanOffset.x + panSpeed * deltaTime) % drawWidth;
+                        targetCtx.translate(backgroundPanOffset.x, 0);
+                    } else if (motionType === 'pan-vertical') {
+                        const panSpeed = 50 * motionSpeed * activeMusicScaleFactor;
+                        backgroundPanOffset.y = (backgroundPanOffset.y + panSpeed * deltaTime) % drawHeight;
+                        targetCtx.translate(0, backgroundPanOffset.y);
+                    } else if (motionType === 'rotate') {
+                        const rotationSpeed = Math.PI / 4 * motionSpeed * activeMusicScaleFactor;
+                        backgroundRotation = (backgroundRotation + rotationSpeed * deltaTime) % (Math.PI * 2);
+                        targetCtx.translate(targetCanvasWidth / 2, targetCanvasHeight / 2);
+                        targetCtx.rotate(backgroundRotation);
+                        targetCtx.translate(-targetCanvasWidth / 2, -targetCanvasHeight / 2);
+                    }
+
+                    targetCtx.drawImage(bgImg, sx, sy, sWidth, sHeight, drawX, drawY, drawWidth, drawHeight);
+
+                } else {
+                    const backgroundScale = parseFloat(backgroundSizeSlider.value);
+                    let initialDrawWidth = bgImg.width * backgroundScale;
+                    let initialDrawHeight = bgImg.height * backgroundScale;
+
+                    if (motionType === 'zoom') {
+                        const zoomFactor = 1 + (activeMusicScaleFactor - 1) * motionSpeed * 2;
+                        initialDrawWidth *= zoomFactor;
+                        initialDrawHeight *= zoomFactor;
+                    }
+
+                    const alignment = backgroundAlignmentSelect.value;
+                    switch (alignment) {
+                        case 'top-left': drawX = 0; drawY = 0; break;
+                        case 'top-center': drawX = (targetCanvasWidth - initialDrawWidth) / 2; drawY = 0; break;
+                        case 'top-right': drawX = targetCanvasWidth - initialDrawWidth; drawY = 0; break;
+                        case 'center-left': drawX = 0; drawY = (targetCanvasHeight - initialDrawHeight) / 2; break;
+                        case 'center': drawX = (targetCanvasWidth - initialDrawWidth) / 2; drawY = (targetCanvasHeight - initialDrawHeight) / 2; break;
+                        case 'center-right': drawX = targetCanvasWidth - initialDrawWidth; drawY = (targetCanvasHeight - initialDrawHeight) / 2; break;
+                        case 'bottom-left': drawX = 0; drawY = targetCanvasHeight - initialDrawHeight; break;
+                        case 'bottom-center': drawX = (targetCanvasWidth - initialDrawWidth) / 2; drawY = targetCanvasHeight - initialDrawHeight; break;
+                        case 'bottom-right': drawX = targetCanvasWidth - initialDrawWidth; drawY = targetCanvasHeight - initialDrawHeight; break;
+                        default: drawX = (targetCanvasWidth - initialDrawWidth) / 2; drawY = (targetCanvasHeight - initialDrawHeight) / 2; break;
+                    }
+
+                    if (motionType === 'pan-horizontal') {
+                        const panSpeed = 50 * motionSpeed * activeMusicScaleFactor;
+                        backgroundPanOffset.x = (backgroundPanOffset.x + panSpeed * deltaTime) % initialDrawWidth;
+                        targetCtx.translate(drawX + backgroundPanOffset.x, drawY);
+                        drawX = 0; drawY = 0;
+                    } else if (motionType === 'pan-vertical') {
+                        const panSpeed = 50 * motionSpeed * activeMusicScaleFactor;
+                        backgroundPanOffset.y = (backgroundPanOffset.y + panSpeed * deltaTime) % initialDrawHeight;
+                        targetCtx.translate(drawX, drawY + backgroundPanOffset.y);
+                        drawY = 0; drawX = 0;
+                    } else if (motionType === 'rotate') {
+                        const rotationSpeed = Math.PI / 4 * motionSpeed * activeMusicScaleFactor;
+                        backgroundRotation = (backgroundRotation + rotationSpeed * deltaTime) % (Math.PI * 2);
+                        targetCtx.translate(targetCanvasWidth / 2, targetCanvasHeight / 2);
+                        targetCtx.rotate(backgroundRotation);
+                        targetCtx.translate(-targetCanvasWidth / 2, -targetCanvasHeight / 2);
+                    }
+
+                    targetCtx.drawImage(bgImg, drawX, drawY, initialDrawWidth, initialDrawHeight);
+                }
+                targetCtx.restore();
+            } else {
+                targetCtx.fillStyle = '#1a202c';
+                targetCtx.fillRect(0, 0, targetCanvasWidth, targetCanvasHeight);
+            }
+
+            let bassSum = 0;
+            for (let i = 0; i < bufferLength * 0.25; i++) { bassSum += dataArray[i]; }
+            let bassAverage = bassSum / (bufferLength * 0.25);
+            let midSum = 0;
+            for (let i = bufferLength * 0.25; i < bufferLength * 0.75; i++) { midSum += dataArray[i]; }
+            let midAverage = midSum / (bufferLength * 0.5);
+            let trebleSum = 0;
+            for (let i = bufferLength * 0.75; i < bufferLength; i++) { trebleSum += dataArray[i]; }
+            let trebleAverage = trebleSum / (bufferLength * 0.25);
+
+            let baseMusicScaleFactor = 1 + (average / 255) * 0.4;
+            const visualizerIntensity = parseFloat(visualizerIntensitySlider.value);
+            let activeMusicScaleFactor = 1 + ((baseMusicScaleFactor - 1) * visualizerIntensity);
+            let activeBassScaleFactor = 1 + ((bassAverage / 255) * 0.4 * visualizerIntensity);
+            let activeMidScaleFactor = 1 + ((midAverage / 255) * 0.4 * visualizerIntensity);
+            let activeTrebleScaleFactor = 1 + ((trebleAverage / 255) * 0.4 * visualizerIntensity);
+
+            // --- Draw Global Visualizer Types (those not applied to images) ---
+            activeVisualizerOrder.forEach(item => {
+                if (!item.type.startsWith('image-pulse') && item.type !== 'apply-visualizer-to-image') {
+                    switch (item.type) {
+                        case 'bars': drawBars(targetCtx, targetCanvasWidth, targetCanvasHeight, bufferLength, dataArray, activeMusicScaleFactor); break;
+                        case 'circle-pulse': drawCirclePulse(targetCtx, targetCanvasWidth, targetCanvasHeight, activeMusicScaleFactor, average, visualizerIntensity); break;
+                        case 'wave': drawWave(targetCtx, targetCanvasWidth, targetCanvasHeight, bufferLength, dataArray, activeMidScaleFactor); break;
+                        case 'radial-bars': drawRadialBars(targetCtx, targetCanvasWidth, targetCanvasHeight, bufferLength, dataArray, activeBassScaleFactor); break;
+                        case 'particle-swarm': drawParticleSwarm(targetCtx, targetCanvasWidth, targetCanvasHeight, average, visualizerIntensity, activeMusicScaleFactor); break;
+                        case 'line-spectrum': drawLineSpectrum(targetCtx, targetCanvasWidth, targetCanvasHeight, bufferLength, dataArray, activeTrebleScaleFactor, trebleAverage); break;
+                        case 'frequency-circle': drawFrequencyCircle(targetCtx, targetCanvasWidth, targetCanvasHeight, bufferLength, dataArray, activeMusicScaleFactor); break;
+                        case 'falling-particles': drawFallingParticles(targetCtx, targetCanvasWidth, targetCanvasHeight, average, visualizerIntensity, bufferLength, dataArray); break;
+                        case 'rising-particles': drawRisingParticles(targetCtx, targetCanvasWidth, targetCanvasHeight, average, visualizerIntensity, bufferLength, dataArray); break;
+                        case 'leftward-particles': drawLeftwardParticles(targetCtx, targetCanvasWidth, targetCanvasHeight, average, visualizerIntensity, bufferLength, dataArray); break;
+                        case 'rightward-particles': drawRightwardParticles(targetCtx, targetCanvasWidth, targetCanvasHeight, average, visualizerIntensity, bufferLength, dataArray); break;
+                        case 'colorful-particles': drawColorfulParticles(targetCtx, targetCanvasWidth, targetCanvasHeight, average, visualizerIntensity, bufferLength, dataArray); break;
+                        case 'connecting-lines': drawConnectingLines(targetCtx, targetCanvasWidth, targetCanvasHeight, bufferLength, dataArray, activeMusicScaleFactor, visualizerIntensity, average); break;
+                    }
+                }
+            });
+
+            // --- Draw Image Layers (on top of visualizers) ---
+            imageLayers.forEach(imageLayer => {
+                drawImageLayer(targetCtx, targetCanvasWidth, targetCanvasHeight, activeMusicScaleFactor, imageLayer, average, visualizerIntensity, bufferLength, dataArray);
+            });
+
+            // --- Draw Video Layers (on top of image layers) ---
+            videoLayers.forEach(videoLayer => {
+                drawVideoLayer(targetCtx, targetCanvasWidth, targetCanvasHeight, videoLayer);
+            });
+
+
+            // --- Draw Logo (on top of visualizer) ---
+            if (isLogoLoaded) {
+                targetCtx.save();
+                let logoDrawSize;
+                if (autoLogoSizeCheckbox.checked) {
+                    logoDrawSize = 50;
+                } else {
+                    logoDrawSize = parseFloat(logoSizeSlider.value);
+                }
+
+                const padding = 10;
+                let logoX, logoY;
+
+                switch (logoPositionSelect.value) {
+                    case 'top-left': logoX = padding; logoY = padding; break;
+                    case 'top-right': logoX = targetCanvasWidth - logoDrawSize - padding; logoY = padding; break;
+                    case 'bottom-left': logoX = padding; logoY = targetCanvasHeight - logoDrawSize - padding; break;
+                    case 'bottom-right': logoX = targetCanvasWidth - logoDrawSize - padding; logoY = targetCanvasHeight - logoDrawSize - padding; break;
+                    case 'center': logoX = (targetCanvasWidth - logoDrawSize) / 2; logoY = (targetCanvasHeight - logoDrawSize) / 2; break;
+                    default: logoX = padding; logoY = padding; break;
+                }
+                targetCtx.drawImage(logoImg, logoX, logoY, logoDrawSize, logoDrawSize);
+                targetCtx.restore();
+            }
+
+            // --- Draw Custom Text Layers (on top of everything) ---
+            textLayers.forEach(textLayer => {
+                const text = textLayer.content;
+                if (!text) return;
+
+                const layerStartTime = (textLayer.startTimeMinutes * 60) + textLayer.startTimeSeconds;
+                const layerEndTime = (textLayer.endTimeMinutes * 60) + textLayer.endTimeSeconds;
+                const currentAudioTime = audioPlayer.currentTime;
+                const shouldDisplay = (currentAudioTime >= layerStartTime) && (layerEndTime === 0 || currentAudioTime < layerEndTime);
+
+                if (!shouldDisplay) return;
+
+                targetCtx.save();
+                targetCtx.fillStyle = textLayer.color;
+                
+                let fontStyle = '';
+                if (textLayer.bold) { fontStyle += 'bold '; }
+                targetCtx.font = `${fontStyle}${textLayer.size}px "${textLayer.fontFamily.split(',')[0].trim()}", ${textLayer.fontFamily.split(',').slice(1).join(',').trim() || 'sans-serif'}`;
+                
+                targetCtx.textAlign = 'center';
+                targetCtx.textBaseline = 'middle';
+
+                let textX = targetCanvasWidth / 2;
+                let textY = targetCanvasHeight / 2;
+                const textPadding = 20;
+
+                switch (textLayer.position) {
+                    case 'top-left': textX = textPadding; textY = textPadding; targetCtx.textAlign = 'left'; targetCtx.textBaseline = 'top'; break;
+                    case 'top-right': textX = targetCanvasWidth - textPadding; textY = textPadding; targetCtx.textAlign = 'right'; targetCtx.textBaseline = 'top'; break;
+                    case 'bottom-left': textX = textPadding; textY = targetCanvasHeight - textPadding; targetCtx.textAlign = 'left'; targetCtx.textBaseline = 'bottom'; break;
+                    case 'bottom-right': textX = targetCanvasWidth - textPadding; textY = targetCanvasHeight - textPadding; targetCtx.textAlign = 'right'; targetCtx.textBaseline = 'bottom'; break;
+                    case 'bottom-center': textX = targetCanvasWidth / 2; textY = targetCanvasHeight - textPadding; targetCtx.textAlign = 'center'; targetCtx.textBaseline = 'bottom'; break;
+                    case 'center': default: textX = targetCanvasWidth / 2; textY = targetCanvasHeight / 2; targetCtx.textAlign = 'center'; targetCtx.textBaseline = 'middle'; break;
+                }
+
+                textX += textLayer.marginLeft;
+                textX -= textLayer.marginRight;
+                textY += textLayer.marginVertical;
+
+                let animatedScale = textLayer.scaleX;
+                let animatedAlpha = 1;
+                let animatedOffsetX = 0;
+                let animatedOffsetY = 0;
+
+                switch (textAnimationType) {
+                    case 'pulse': animatedScale = textLayer.scaleX * (1 + (activeMusicScaleFactor - 1) * textAnimationIntensity); break;
+                    case 'fade': animatedAlpha = 0.5 + (average / 255) * 0.5 * textAnimationIntensity; break;
+                    case 'slide-horizontal': animatedOffsetX = (average / 255 - 0.5) * targetCanvasWidth * 0.1 * textAnimationIntensity; break;
+                    case 'slide-vertical': animatedOffsetY = (average / 255 - 0.5) * targetCanvasHeight * 0.1 * textAnimationIntensity; break;
+                }
+
+                targetCtx.translate(textX + animatedOffsetX, textY + animatedOffsetY);
+                targetCtx.scale(animatedScale, textLayer.scaleY * animatedScale);
+                targetCtx.globalAlpha = animatedAlpha;
+                targetCtx.rotate(textLayer.rotation * Math.PI / 180);
+
+                if (textLayer.shadow) {
+                    targetCtx.shadowColor = textLayer.shadowColor;
+                    targetCtx.shadowBlur = textLayer.shadowBlur;
+                    targetCtx.shadowOffsetX = 2;
+                    targetCtx.shadowOffsetY = 2;
+                } else {
+                    targetCtx.shadowColor = 'transparent';
+                    targetCtx.shadowBlur = 0;
+                    targetCtx.shadowOffsetX = 0;
+                    targetCtx.shadowOffsetY = 0;
+                }
+
+                if (textLayer.blur) {
+                    const blurAmount = textLayer.shadowBlur;
+                    targetCtx.filter = `blur(${blurAmount}px)`;
+                } else {
+                    targetCtx.filter = 'none';
+                }
+
+                const lines = text.split('\n');
+                const lineHeight = textLayer.size * 1.2;
+                const totalTextHeight = lines.length * lineHeight;
+                let currentLineY = -totalTextHeight / 2 + lineHeight / 2;
+
+                if (targetCtx.textBaseline === 'top') {
+                    currentLineY = lineHeight / 2;
+                } else if (targetCtx.textBaseline === 'bottom') {
+                    currentLineY = -totalTextHeight + lineHeight / 2;
+                }
+
+                lines.forEach(line => {
+                    if (textLayer.spacing !== 0) {
+                        let currentX = 0;
+                        if (targetCtx.textAlign === 'center') {
+                            const textWidth = targetCtx.measureText(line).width;
+                            currentX = -textWidth / 2;
+                        } else if (targetCtx.textAlign === 'right') {
+                            const textWidth = targetCtx.measureText(line).width;
+                            currentX = -textWidth;
+                        }
+
+                        for (let i = 0; i < line.length; i++) {
+                            const char = line[i];
+                            targetCtx.fillText(char, currentX, currentLineY);
+                            if (textLayer.outlineWidth > 0) {
+                                targetCtx.strokeText(char, currentX, currentLineY);
+                            }
+                            currentX += targetCtx.measureText(char).width + textLayer.spacing;
+                        }
+                    } else {
+                        targetCtx.fillText(line, 0, currentLineY);
+                        if (textLayer.outlineWidth > 0) {
+                            targetCtx.strokeText(line, 0, currentLineY);
+                        }
+                    }
+                    currentLineY += lineHeight;
+                });
+
+                targetCtx.restore();
+            });
+
+            // Reset filter for next frame to avoid accumulation issues, only if not currently recording *with* a filter
+            if (!(isRecording && recordWithoutFilterCheckbox.checked)) {
+                targetCtx.filter = 'none';
+            }
+
+            // Draw the offscreen canvas to the visible canvas if recording
+            if (isRecording) {
+                ctx.clearRect(0, 0, visualizerCanvas.width, visualizerCanvas.height); // Clear display canvas
+                ctx.drawImage(recordingCanvas, 0, 0, visualizerCanvas.width, visualizerCanvas.height); // Draw scaled recording output
+            }
+        }
+
+        // Recording functionality
+        startRecordBtn.addEventListener('click', () => {
+            console.log('Start Record button clicked.');
+            if (!audioPlayer.src) {
+                showMessage('សូមផ្ទុកឯកសារតន្ត្រីជាមុមសិន។', true);
+                console.log('Error: Audio source not loaded.');
+                return;
+            }
+            const needsImage = imageLayers.some(layer => layer.isLoaded && layer.pulse);
+            if (needsImage && imageLayers.length === 0) {
+                showMessage('សូមផ្ទុករូបភាពជាមុនសិន ប្រសិនបើអ្នកជ្រើសរើសចលនារូបភាព។', true);
+                console.log('Error: Image not loaded for image-pulse visualizer.');
+                return;
+            }
+
+            initAudioContext();
+            if (audioContext.state === 'suspended') {
+                audioContext.resume().then(() => {
+                    console.log('AudioContext resumed.');
+                }).catch(e => {
+                    showMessage(`បរាជ័យក្នុងការបន្ត AudioContext: ${e.message}`, true);
+                    console.error('Error resuming AudioContext:', e);
+                });
+            }
+
+            if (audioPlayer.paused) {
+                audioPlayer.play();
+                playPauseBtn.textContent = 'ផ្អាក';
+                console.log('Audio player started.');
+            }
+
+            if (!audioDestinationNode) {
+                audioDestinationNode = audioContext.createMediaStreamDestination();
+                gainNode.connect(audioDestinationNode);
+                console.log('AudioDestinationNode created and connected to gainNode.');
+            }
+
+            const fps = parseInt(recordingFpsInput.value) || 30;
+            // Capture stream from the OFFSCREEN canvas, which holds the desired output resolution
+            const stream = recordingCanvas.captureStream(fps);
+            console.log('Recording stream captured from offscreen canvas:', stream, 'at', fps, 'FPS');
+
+            const audioTrack = audioDestinationNode.stream.getAudioTracks()[0];
+            if (audioTrack) {
+                stream.addTrack(audioTrack);
+                console.log('Audio track added to recording stream.');
+            } else {
+                showMessage('មិនអាចចាប់យកសម្លេងបានទេ។ ត្រូវប្រាកតថាឯកសារតន្ត្រីត្រូវបានផ្ទុក។', true);
+                console.error('Error: Audio track not found in audio destination stream.');
+                if (audioDestinationNode) {
+                    gainNode.disconnect(audioDestinationNode);
+                    audioDestinationNode = null;
+                }
+                isRecording = false;
+                return;
+            }
+
+            isRecording = true;
+            console.log('isRecording set to true.');
+
+            drawVisualizer(); // Start visualization, which now draws to recordingCanvas first
+
+            recordedChunks = [];
+            mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp8,opus' });
+            console.log('MediaRecorder created:', mediaRecorder);
+
+            mediaRecorder.ondataavailable = (event) => {
+                console.log('ondataavailable event fired:', event.data.size, 'bytes');
+                if (event.data.size > 0) {
+                    recordedChunks.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = () => {
+                console.log('onstop event fired. Recorded chunks:', recordedChunks.length);
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                downloadVideoLink.href = url;
+                downloadVideoLink.classList.remove('hidden');
+                downloadVideoLink.textContent = 'ទាញយកវីដេអូ (WebM)';
+                showMessage('ការថតត្រូវបានបញ្ចប់។ អ្នកអាចទាញយកវីដេអូបាន។', false, true);
+                isRecording = false;
+                startRecordBtn.disabled = false;
+                stopRecordBtn.disabled = true;
+
+                if (audioDestinationNode) {
+                    gainNode.disconnect(audioDestinationNode);
+                    audioDestinationNode = null;
+                    console.log('AudioDestinationNode disconnected.');
+                }
+                // Reset filter on the display canvas after recording stops
+                ctx.filter = canvasFilterSelect.value;
+                console.log('Canvas filter reset to display value.');
+            };
+
+            mediaRecorder.start();
+            console.log('MediaRecorder started.');
+            startRecordBtn.disabled = true;
+            stopRecordBtn.disabled = false;
+            downloadVideoLink.classList.add('hidden');
+            showMessage('កំពុងថតវីដេអូ...', false, true);
+        });
+
+        stopRecordBtn.addEventListener('click', () => {
+            console.log('Stop Record button clicked.');
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                cancelAnimationFrame(animationFrameId); // Stop visualization
+                audioPlayer.pause(); // Pause audio
+                playPauseBtn.textContent = 'ចាក់';
+                showMessage('បញ្ឈប់ការថត។ កំពុងរៀបចំវីដេអូ...', false, true);
+                console.log('MediaRecorder stopped. Audio paused. Visualization cancelled.');
+            }
+        });
+
+        // Handle window resize to adjust canvas dimensions
+        window.addEventListener('resize', () => {
+            updateCanvasSize();
+        });
+
+        // --- Access Control Logic ---
+        // Define the target URL (obfuscated)
+        // Note: If you want to change the allowed URL, modify these characters.
+        // For example, to change to "https://example.com/", you would update these.
+        // កន្លែងដែលត្រូវកែសម្រួល URL គោលដៅ:
+        const _TARGET_URL_PART1_ = String.fromCharCode(104, 116, 116, 112, 115, 58, 47, 47, 107, 101, 97, 52); // https://kea4
+        const _TARGET_URL_PART2_ = String.fromCharCode(117, 116, 118, 46, 103, 105, 116, 104, 117, 98, 46, 105, 111, 47); // utv.github.io/
+        const ALLOWED_URL = _TARGET_URL_PART1_ + _TARGET_URL_PART2_;
+        // បញ្ចប់កន្លែងកែសម្រួល URL គោលដៅ។
+
+        function checkAccess() {
+            const currentUrl = window.location.href;
+            if (currentUrl.startsWith(ALLOWED_URL)) {
+                accessModalOverlay.classList.remove('controls-hidden'); // Ensure modal is visible
+                appControlsDiv.classList.add('controls-hidden'); // Ensure app controls are hidden
+            } else {
+                // If URL is incorrect, display error and disable all app controls
+                accessModalOverlay.classList.remove('controls-hidden');
+                appControlsDiv.classList.add('controls-hidden');
+                verifyIdBtn.disabled = true; // Disable verify button
+                secretIdInput.disabled = true; // Disable input
+                showMessage('ការចូលប្រើប្រាស់ត្រូវបានបដិសេធ។ កម្មវិធីនេះអាចដំណើរការបានតែពីអាសយដ្ឋានត្រឹមត្រូវប៉ុណ្ណោះ។', true, false);
+            }
+        }
+
+        verifyIdBtn.addEventListener('click', () => {
+            const userInput = secretIdInput.value;
+
+            // Define the primary embedded code (e.g., "abcde" -> "12345")
+            const _EMBEDDED_CODE_PRIMARY_ = "abcde";
+
+            // Define the secondary embedded code (e.g., "zyxwv" -> "12345")
+            // This MUST be the reverse-alphabet equivalent of _EMBEDDED_CODE_PRIMARY_
+            // a <-> z, b <-> y, c <-> x, d <-> w, e <-> v
+            const _EMBEDDED_CODE_SECONDARY_ = "zyxwv";
+
+            // Function to derive a number from a character using a=1, b=2, ...
+            function mapCharToNumberPrimary(char) {
+                if (char >= 'a' && char <= 'z') {
+                    return (char.charCodeAt(0) - 'a'.charCodeAt(0) + 1).toString();
+                }
+                return ''; // Or handle invalid characters as needed
+            }
+
+            // Function to derive a number from a character using z=1, y=2, ...
+            function mapCharToNumberSecondary(char) {
+                if (char >= 'a' && char <= 'z') {
+                    return ('z'.charCodeAt(0) - char.charCodeAt(0) + 1).toString();
+                }
+                return ''; // Or handle invalid characters as needed
+            }
+
+            // Function to derive the full secret ID from an embedded code using a given mapping function
+            function deriveSecretId(embeddedCode, mapFunction) {
+                let derivedId = "";
+                for (let i = 0; i < embeddedCode.length; i++) {
+                    derivedId += mapFunction(embeddedCode.charAt(i));
+                }
+                return derivedId;
+            }
+
+            // Derive the expected secret ID from the primary code
+            const EXPECTED_SECRET_ID_FROM_PRIMARY = deriveSecretId(_EMBEDDED_CODE_PRIMARY_, mapCharToNumberPrimary);
+            // Derive the expected secret ID from the secondary code
+            const EXPECTED_SECRET_ID_FROM_SECONDARY = deriveSecretId(_EMBEDDED_CODE_SECONDARY_, mapCharToNumberSecondary);
+
+            if (userInput === EXPECTED_SECRET_ID_FROM_PRIMARY &&
+                EXPECTED_SECRET_ID_FROM_PRIMARY === EXPECTED_SECRET_ID_FROM_SECONDARY &&
+                userInput !== null && EXPECTED_SECRET_ID_FROM_PRIMARY !== null) {
+                // Access granted for this session
+                accessModalOverlay.classList.add('controls-hidden'); // Hide modal
+                appControlsDiv.classList.remove('controls-hidden'); // Show main controls
+                showMessage('ការចូលប្រើប្រាស់ត្រូវបានអនុញ្ញាត!', false, false);
+                updateCanvasSize(); // Initialize visualizer after controls are visible
+            } else {
+                showMessage('លេខសម្គាល់មិនត្រឹមត្រូវទេ។ សូមព្យាយាមម្តងទៀត។', true, false);
+            }
+        });
+
+        // Ensure initial canvas size is set correctly and aspect ratio applied
+        window.onload = () => {
+            checkAccess(); // Check access on load (this will now always show the modal initially)
+            // Initial state for auto size checkboxes and sliders
+            autoBackgroundSizeCheckbox.checked = true;
+            backgroundSizeSlider.disabled = autoBackgroundSizeCheckbox.checked;
+
+            autoLogoSizeCheckbox.checked = true; // Set auto logo size to checked by default
+            logoSizeSlider.disabled = autoLogoSizeCheckbox.checked; // Disable logo size slider initially
+
+            // Add one default text layer on load
+            createAndAddTextLayer('បញ្ចូលអត្ថបទនៅទីនេះ');
+            // Add one default image layer on load
+            createAndAddImageLayer(); // Call to create the first image layer
+            // Add one default video layer on load
+            createAndAddVideoLayer(); // Call to create the first video layer
+        };
 
     </script>
 </body>
