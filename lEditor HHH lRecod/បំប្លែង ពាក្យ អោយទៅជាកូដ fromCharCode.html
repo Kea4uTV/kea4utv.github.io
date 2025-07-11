@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>បំប្លែងពាក្យទៅជា fromCharCode</title>
+    <!-- Tailwind CSS CDN for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the Khmer font and general layout */
+        body {
+            font-family: 'Inter', 'Khmer OS Battambang', sans-serif; /* Prioritize Inter, fallback to Khmer OS Battambang */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f2f5; /* Light grey background */
+            margin: 0;
+            padding: 20px; /* Add some padding for smaller screens */
+            box-sizing: border-box; /* Include padding in element's total width and height */
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px; /* More rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Stronger shadow */
+            text-align: center;
+            width: 100%;
+            max-width: 550px; /* Slightly wider container */
+            display: flex;
+            flex-direction: column;
+            gap: 15px; /* Space between elements */
+        }
+        h1 {
+            color: #2c3e50; /* Darker title color */
+            margin-bottom: 15px;
+            font-size: 1.875rem; /* Tailwind's text-3xl equivalent */
+            font-weight: bold;
+        }
+        /* Updated style for the input textarea */
+        #inputText { /* Targeting the input textarea by its ID */
+            width: 100%; /* Full width */
+            padding: 12px;
+            border: 1px solid #dcdcdc;
+            border-radius: 8px; /* Rounded input */
+            font-size: 16px;
+            box-sizing: border-box; /* Include padding in width */
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            min-height: 100px; /* Set a minimum height for the input textarea */
+            resize: vertical; /* Allow vertical resizing for the input textarea */
+        }
+        #inputText:focus {
+            border-color: #3b82f6; /* Blue border on focus */
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); /* Light blue shadow on focus */
+            outline: none; /* Remove default outline */
+        }
+        button {
+            background-color: #3b82f6; /* Tailwind blue-500 */
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px; /* Rounded button */
+            cursor: pointer;
+            font-size: 17px;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
+        }
+        button:hover {
+            background-color: #2563eb; /* Tailwind blue-600 */
+            transform: translateY(-1px); /* Slight lift effect */
+        }
+        button:active {
+            transform: translateY(0); /* Press down effect */
+        }
+        textarea#outputCharCode { /* Targeting the output textarea by its ID */
+            width: 100%; /* Full width */
+            height: 150px; /* Taller textarea */
+            padding: 12px;
+            margin-top: 10px; /* Adjust margin */
+            border: 1px solid #dcdcdc;
+            border-radius: 8px; /* Rounded textarea */
+            font-size: 16px;
+            resize: vertical; /* Allow vertical resizing */
+            background-color: #f8f9fa; /* Lighter background for output */
+            color: #34495e; /* Darker text color */
+            box-sizing: border-box; /* Include padding in width */
+        }
+    </style>
+    <!-- Google Fonts for Inter (default) and Khmer OS Battambang -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Battambang&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Main heading for the converter -->
+        <h1>បំប្លែងពាក្យទៅជា fromCharCode</h1>
+
+        <!-- Input textarea for the user to type multi-line text -->
+        <textarea id="inputText" placeholder="បញ្ចូលពាក្យ ឬអក្សរនៅទីនេះ..."></textarea>
+
+        <!-- Button to trigger the conversion -->
+        <button onclick="convertToCharCode()">បំប្លែង</button>
+
+        <!-- Textarea to display the fromCharCode result -->
+        <textarea id="outputCharCode" readonly placeholder="លទ្ធផល fromCharCode នឹងបង្ហាញនៅទីនេះ..."></textarea>
+    </div>
+
+    <script>
+        /**
+         * Converts a single line of text into its String.fromCharCode() representation.
+         * @param {string} lineText - The text line to convert.
+         * @returns {string} The String.fromCharCode() string for the given line.
+         */
+        function convertLineToCharCode(lineText) {
+            let charCodeString = '';
+            for (let i = 0; i < lineText.length; i++) {
+                const charCode = lineText.charCodeAt(i);
+                if (i > 0) {
+                    charCodeString += ',';
+                }
+                charCodeString += charCode;
+            }
+            return `String.fromCharCode(${charCodeString})`;
+        }
+
+        /**
+         * Converts the input text (which can be multi-line) into a
+         * String.fromCharCode() representation, with each line of input
+         * corresponding to a new line in the output String.fromCharCode() calls.
+         */
+        function convertToCharCode() {
+            // Get the value from the input textarea
+            const inputText = document.getElementById('inputText').value;
+
+            // Split the input text by newline characters to handle multi-line input
+            // The split() method creates an array of strings, one for each line.
+            const lines = inputText.split('\n');
+
+            let outputLines = []; // Array to store the fromCharCode string for each line
+
+            // Iterate over each line and convert it to its fromCharCode representation
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                // Only convert non-empty lines to avoid empty String.fromCharCode() calls
+                if (line.trim() !== '') {
+                    outputLines.push(convertLineToCharCode(line));
+                } else {
+                    // If a line is empty (e.g., just a newline), we still want to preserve the line break
+                    outputLines.push(''); // Add an empty string to preserve the line break in the output
+                }
+            }
+
+            // Join the array of fromCharCode strings with newline characters to display
+            // each line's conversion on a separate line in the output textarea.
+            document.getElementById('outputCharCode').value = outputLines.join('\n');
+        }
+    </script>
+</body>
+</html>
