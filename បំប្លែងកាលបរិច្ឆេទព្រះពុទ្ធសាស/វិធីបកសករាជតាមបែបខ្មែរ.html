@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ឧបករណ៍គណនាបកសករាជ</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: #fff;
+            border-radius: 1rem; /* 16px */
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background-color: #4299e1; /* Blue-500 */
+            color: white;
+            padding: 1.5rem 0;
+            text-align: center;
+            border-top-left-radius: 1rem;
+            border-top-right-radius: 1rem;
+            margin: -2rem -2rem 2rem -2rem; /* Adjust to fit card */
+        }
+        .header h1 {
+            font-size: 2.5rem; /* 40px */
+            font-weight: bold;
+        }
+        .section-title {
+            font-size: 1.875rem; /* 30px */
+            font-weight: bold;
+            color: #1a202c;
+            margin-top: 2rem; /* Added margin-top for separation */
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #cbd5e0;
+            padding-bottom: 0.5rem;
+        }
+        .subsection-title {
+            font-size: 1.5rem; /* 24px */
+            font-weight: bold;
+            color: #2d3748;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        label {
+            font-weight: 600;
+        }
+        input, select {
+            border: 1px solid #cbd5e0;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        button {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .result-box {
+            background-color: #e0f2fe; /* Blue-100 */
+            border: 1px solid #90cdf4; /* Blue-300 */
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-top: 2rem;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+        }
+        .result-text {
+            font-size: 1.125rem; /* 18px */
+            color: #2b6cb0; /* Blue-700 */
+        }
+        .result-value {
+            font-weight: bold;
+            color: #1a202c; /* Gray-900 */
+            margin-top: 0.5rem;
+            display: block;
+        }
+        .error-message {
+            color: #e53e3e; /* Red-600 */
+            background-color: #fee2e2; /* Red-100 */
+            border: 1px solid #fca5a5; /* Red-300 */
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            display: none; /* Hidden by default */
+        }
+        .content-section {
+            background-color: #fff;
+            border-radius: 0.75rem; /* 12px */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            margin-top: 2rem; /* Added margin-top for separation */
+        }
+        ul {
+            list-style-type: disc;
+            margin-left: 1.5rem;
+        }
+        ol {
+            list-style-type: decimal;
+            margin-left: 1.5rem;
+        }
+        li {
+            margin-bottom: 0.5rem;
+        }
+        .note {
+            background-color: #e2e8f0;
+            border-left: 4px solid #4299e1;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ឧបករណ៍គណនាបកសករាជ</h1>
+            <p class="text-lg mt-2">គណនារយៈពេលពុទ្ធសករាជ</p>
+        </div>
+
+        <div class="p-6">
+            <p class="mb-6 text-gray-700">
+                សូមបញ្ចូលព័ត៌មានថ្ងៃខែឆ្នាំតាមចន្ទគតិខ្មែរ ដើម្បីគណនារយៈពេលដែលបានកន្លងផុតទៅពីថ្ងៃព្រះពុទ្ធចូលបរិនិព្វាន និងរយៈពេលដែលនៅសល់រហូតដល់ព្រះពុទ្ធសាសនាកាលគ្រប់ ៥០០០ ឆ្នាំ។
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label for="beYear" class="block text-sm font-medium text-gray-700 mb-1">ពុទ្ធសករាជ (BE Year)</label>
+                    <input type="number" id="beYear" value="2563" min="1" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 p-2.5">
+                </div>
+                <div>
+                    <label for="month" class="block text-sm font-medium text-gray-700 mb-1">ខែ (Month)</label>
+                    <select id="month" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 p-2.5">
+                        <!-- Options will be populated by JavaScript -->
+                    </select>
+                </div>
+                <div>
+                    <label for="day" class="block text-sm font-medium text-gray-700 mb-1">តិថី (Day)</label>
+                    <input type="number" id="day" value="1" min="1" max="15" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 p-2.5">
+                </div>
+                <div>
+                    <label for="phase" class="block text-sm font-medium text-gray-700 mb-1">ខ្នើត/រនោច (Phase)</label>
+                    <select id="phase" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 p-2.5">
+                        <option value="រោច">រោច (Waning)</option>
+                        <option value="កើត">កើត (Waxing)</option>
+                    </select>
+                </div>
+            </div>
+
+            <button id="calculateBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                គណនា (Calculate)
+            </button>
+
+            <div id="errorMessage" class="error-message"></div>
+
+            <div class="result-box" id="resultBox">
+                <h3 class="text-xl font-semibold text-blue-800 mb-4">លទ្ធផល (Results)</h3>
+                <p class="result-text mb-2">
+                    <span class="font-medium">រយៈពេលកន្លងផុតទៅពីថ្ងៃព្រះពុទ្ធចូលបរិនិព្វាន:</span>
+                    <span id="elapsedTime" class="result-value"></span>
+                </p>
+                <p class="result-text">
+                    <span class="font-medium">រយៈពេលដែលនៅសល់រហូតដល់ ៥០០០ ឆ្នាំ:</span>
+                    <span id="remainingTime" class="result-value"></span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Start of the added content from sakarajah_guide -->
+        <div class="content-section">
+            <h2 class="section-title">វិធីរៀនបកសករាជ</h2>
+            <p class="text-lg">
+                ខ្ញុំសូមបង្ហាញអំពីវិធីងាយៗ ដើម្បីរៀនបកសករាជបានទាំងបាលី និងសម្រាយ ។
+            </p>
+            <p class="text-lg mt-4">
+                ដើម្បីបកសករាជបាន ដំបូងយើងត្រូវយល់ដឹងអំពីគោលសំខាន់ៗ ៩ យ៉ាងគឺ៖
+            </p>
+            <ol class="list-decimal list-inside mt-4 text-lg">
+                <li>សកៈ ការរាប់លំដាប់ឆ្នាំ</li>
+                <li>ក្នុងមួយសប្តាហ៍មាន ៧ ថ្ងៃ</li>
+                <li>ឈ្មោះឆ្នាំទាំង ១២</li>
+                <li>ចន្ទគតិទាំង ១២ ខែ</li>
+                <li>បច្ចេកទេសនៃការរាប់ខែ</li>
+                <li>តិថីទាំង ១៥ ថ្ងៃ</li>
+                <li>ក្នុងមួយឆ្នាំ មាន ៣ រដូវ</li>
+                <li>វិធីបកសករាជប្រចាំថ្ងៃ</li>
+                <li>វិធីរាប់បកតិសង្ខ្យា</li>
+            </ol>
+        </div>
+
+        <!-- Section 1: សកៈ ការរាប់លំដាប់ឆ្នាំ -->
+        <div class="content-section">
+            <h2 class="section-title">១. សកៈ ការរាប់លំដាប់ឆ្នាំ</h2>
+            <p>
+                ឆ្នាំរបស់ខ្មែរយើងមាន ១២ គឺ ជូត ឆ្លូវ ខាល ថោះ រោង ម្សាញ់ មមី មមែ វក រកា ច និងកុរ តែចំពោះស័កប្រចាំឆ្នាំមានតែ ១០ គឺ ឯកសក ស័កទី១, ទោសក ស័កទី២, ត្រីសក ស័កទី៣, ចត្វាសក ស័កទី៤, បញ្ចសក ស័កទី៥, ឆសក ស័កទី៦, សប្តសក ស័កទី៧, អដ្ឋសក ស័កទី៨, នព្វសក ស័កទី៩, សំរឹទ្ធិសក ស័កទី១០ ។ យើងសង្កេតឃើញថា ឆ្នាំមាន ១២ រីឯស័កសម្រាប់ដាក់ទៅលើឆ្នាំនីមួយៗមានតែ ១០ ដូច្នេះ ស័កត្រូវដាក់តាមលំដាប់ ហើយវិលមកវិញដាក់ឆ្នាំបន្តបន្ទាប់ទៀត ។ ឧទាហរណ៍ ឆ្នាំនេះ ឆ្នាំ កុរ ឯកស័ក ពុទ្ធសករាជ ២៥៦៣ តែដល់ទៅឆ្នាំ កុរ ក្រោយៗទៀតមិនអាចនៅតែឆ្នាំ កុរ ឯកស័ក ដដែលទៀតនោះទេ ។
+            </p>
+        </div>
+
+        <!-- Section 2: ក្នុងមួយសប្តាហ៍មាន ៧ ថ្ងៃគឺៈ -->
+        <div class="content-section">
+            <h2 class="section-title">២. ក្នុងមួយសប្តាហ៍មាន ៧ ថ្ងៃគឺៈ</h2>
+            <p>
+                ថ្ងៃរបស់ខ្មែរយើងមាន ៧ ថ្ងៃគឺ ត្រូវរាប់ថ្ងៃអាទិត្យជាថ្ងៃទី១ ។ ខ្ញុំសូមរាប់ទាំងបាលីនិងសម្រាយ៖
+            </p>
+            <ul class="list-disc list-inside mt-4">
+                <li><strong>រវិវារ</strong> ថ្ងៃអាទិត្យ</li>
+                <li><strong>ចន្ទវារ/សសិវារ</strong> ថ្ងៃចន្ទ</li>
+                <li><strong>ភុម្មវារ</strong> ថ្ងៃអង្គារ</li>
+                <li><strong>វុធវារ</strong> ថ្ងៃពុធ</li>
+                <li><strong>គុរុវារ</strong> ថ្ងៃព្រហស្បតិ៍</li>
+                <li><strong>សុក្រវារ</strong> ថ្ងៃសុក្រ</li>
+                <li><strong>សោរវារ</strong> ថ្ងៃសៅរ៍</li>
+            </ul>
+        </div>
+
+        <!-- Section 3: ឈ្មោះឆ្នាំទាំង ១២ គឺៈ -->
+        <div class="content-section">
+            <h2 class="section-title">៣. ឈ្មោះឆ្នាំទាំង ១២ គឺៈ</h2>
+            <p>
+                ខ្មែរយើងមានឆ្នាំទាំងអស់ ១២ យើងត្រូវរាប់ឆ្នាំជូតជាឆ្នាំទី១។ ខ្ញុំសូមរាប់ទាំងបាលី និងសម្រាយដូច្នេះគឺ៖
+            </p>
+            <ol class="list-decimal list-inside mt-4">
+                <li><strong>មូសិកសំវច្ឆរ</strong> ឆ្នាំជូត</li>
+                <li><strong>ឧសភសំវច្ឆរ</strong> ឆ្នាំឆ្លូវ</li>
+                <li><strong>ព្យគ្ឃសំវច្ឆរ</strong> ឆ្នាំខាល</li>
+                <li><strong>សសសំវច្ឆរ</strong> ឆ្នាំថោះ</li>
+                <li><strong>នាគសំវច្ឆរ</strong> ឆ្នាំរោង</li>
+                <li><strong>សប្បសំវច្ឆរ</strong> ឆ្នាំម្សាញ់</li>
+                <li><strong>អស្សសំវច្ឆរ</strong> ឆ្នាំមមី</li>
+                <li><strong>អជសំវច្ឆរ/ឯឡកសំវច្ឆរ</strong> ឆ្នាំមមែ</li>
+                <li><strong>មក្កដសំវច្ឆរ/កបិសំវច្ឆរ</strong> ឆ្នាំវក</li>
+                <li><strong>កុក្កុដសំវច្ឆរ</strong> ឆ្នាំរកា</li>
+                <li><strong>សោណសំវច្ឆរ/សុនខសំវច្ឆរ</strong> ឆ្នាំច</li>
+                <li><strong>សូករសំវច្ឆរ</strong> ឆ្នាំកុរ</li>
+            </ol>
+        </div>
+
+        <!-- Section 4: ចន្ទគតិទាំង ១២ ខែគឺៈ -->
+        <div class="content-section">
+            <h2 class="section-title">៤. ចន្ទគតិទាំង ១២ ខែគឺៈ</h2>
+            <p>
+                យើងដឹងហើយថា ក្នុងមួយឆ្នាំមាន ១២ ខែ លើកលែងតែឆ្នាំណា មានអធិកមាស (បុរាណលោកថា ក្នុងឆ្នាំនេះលើកខែ មានន័យថា ក្នុងមួយឆ្នាំមាន ១៣ ខែ ដោយសារមានខែអាសាឍពីរដងគឺ ខែបឋមាសាឍ និងខែទុតិយាសាឍ) ។ យើងគួរចំណាំផងដែរថា បីឆ្នាំទើបមានអធិកមាសម្តង ឧទាហរណ៍ កាលពីឆ្នាំ ច (មានខែអាសាឍពីរដងគឺ ខែបឋមាសាឍ និងខែទុតិយាសាឍ) សំរឹទ្ធិស័ក ពុទ្ធសករាជ ២៥៦២ លុះដល់ទៅឆ្នាំ ឆ្លូវ (មានខែអាសាឍពីរដងគឺ ខែបឋមាសាឍ និងខែទុតិយាសាឍ) ត្រីស័ក ពុទ្ធសករាជ ២៥៦៥ នៅក្នុងឆ្នាំនោះមានអធិកមាសទៀត ។ ខ្ញុំសូមរាប់ខែទាំង ១២ នេះ ទាំងបាលី និងសម្រាយដោយអនុលោមតាមកម្មវិធីបកសករាជដូច្នេះគឺ៖
+            </p>
+            <ol class="list-decimal list-inside mt-4">
+                <li><strong>វិសាខមាស</strong> ខែពិសាខ</li>
+                <li><strong>ជេស្ឋមាស</strong> ខែជេស្ឋ</li>
+                <li><strong>អាសាឍមាស</strong> ខែអាសាឍ</li>
+                <li><strong>ស្រាពណ៍</strong> ខែស្រាពណ៍</li>
+                <li><strong>ភទ្របទមាស</strong> ខែភទ្របទ</li>
+                <li><strong>អស្សុជមាស</strong> ខែអស្សុជ</li>
+                <li><strong>កត្តិកមាស</strong> ខែកត្តិក</li>
+                <li><strong>មិគសិរមាស</strong> ខែមិគសិរ</li>
+                <li><strong>បុស្សមាស</strong> ខែបុស្ស</li>
+                <li><strong>មាឃមាស</strong> ខែមាឃ</li>
+                <li><strong>ផល្គុនមាស</strong> ខែផល្គុន</li>
+                <li><strong>ចេត្រមាស</strong> ខែចេត្រ</li>
+            </ol>
+        </div>
+
+        <!-- Section 5: បច្ចេកទេសនៃការរាប់ខែ -->
+        <div class="content-section">
+            <h2 class="section-title">៥. បច្ចេកទេសនៃការរាប់ខែ</h2>
+            <p>
+                ការបកសករាជ គឺត្រូវចាប់ផ្តើមរាប់ពីថ្ងៃដែលព្រះពុទ្ធអង្គចូលបរិនិព្វាន ដោយអនុបាទិសេសបរិនិព្វានធាតុ នាថ្ងៃអង្គារ នៅថ្ងៃ ១៥ កើត ពេញបូណ៌មីខែពិសាខ ឆ្នាំ ម្សាញ់ ។ ដូច្នេះពុទ្ធសករាជចាប់ផ្តើមរាប់ពីថ្ងៃ ១ រោច ខែពិសាខតទៅ ៖
+            </p>
+            <ul class="list-disc list-inside mt-4">
+                <li><strong>ខែទី ១.</strong> ខែពិសាខ ១ រោច -ដល់- ១៥ រោច + ខែជេស្ឋ ១ កើត -ដល់- ១៥ កើត = ៣០ ថ្ងៃ</li>
+                <li><strong>ខែទី ២.</strong> ខែជេស្ឋ ១ រោច -ដល់- ១៤ រោច + ខែអាសាឍ ១ កើត -ដល់- ១៥ កើត = ២៩ ថ្ងៃ</li>
+                <li><strong>ខែទី ៣.</strong> ខែអាសាឍ ១ រោច -ដល់- ១៥ រោច + ខែស្រាពណ៍ ១ កើត -ដល់- ១៥ កើត = ៣០ ថ្ងៃ</li>
+                <li><strong>ខែទី ៤.</strong> ខែស្រាពណ៍ ១ រោច -ដល់- ១៤ រោច + ខែភទ្របទ ១ កើត -ដល់- ១៥ កើត = ២៩ ថ្ងៃ</li>
+                <li><strong>ខែទី ៥.</strong> ខែភទ្របទ ១ រោច -ដល់- ១៥ រោច + ខែអស្សុជ ១ កើត -ដល់- ១៥ កើត = ៣០ ថ្ងៃ</li>
+                <li><strong>ខែទី ៦.</strong> ខែអស្សុជ ១ រោច -ដល់- ១៤ រោច + ខែកត្តិក ១ កើត -ដល់- ១៥ កើត = ២៩ ថ្ងៃ</li>
+                <li><strong>ខែទី ៧.</strong> ខែកត្តិក ១ រោច -ដល់- ១៥ រោច + ខែមិគសិរ ១ កើត -ដល់- ១៥ កើត = ៣០ ថ្ងៃ</li>
+                <li><strong>ខែទី ៨.</strong> ខែមិគសិរ ១ រោច -ដល់- ១៤ រោច + ខែបុស្ស ១ កើត -ដល់- ១៥ កើត = ២៩ ថ្ងៃ</li>
+                <li><strong>ខែទី ៩.</strong> ខែបុស្ស ១ រោច -ដល់- ១៥ រោច + ខែមាឃ ១ កើត -ដល់- ១៥ កើត = ៣០ ថ្ងៃ</li>
+                <li><strong>ខែទី ១០.</strong> ខែមាឃ ១ រោច -ដល់- ១៤ រោច + ខែផល្គុន ១ កើត -ដល់- ១៥ កើត = ២៩ ថ្ងៃ</li>
+                <li><strong>ខែទី ១១.</strong> ខែផល្គុន ១ រោច -ដល់- ១៥ រោច + ខែចេត្រ ១ កើត -ដល់- ១៥ កើត = ៣០ ថ្ងៃ</li>
+                <li><strong>ខែទី ១២.</strong> ខែចេត្រ ១ រោច -ដល់- ១៤ រោច + ខែពិសាខ ១ កើត -ដល់- ១៥ កើត = ២៩ ថ្ងៃ</li>
+            </ul>
+            <div class="note">
+                <strong>ចំណាំ ៖</strong> ខាងរនោចបាលីថា (កាឡបក្ខ) ខាងខ្នើតបាលីថា (សុក្កបក្ខ)
+            </div>
+        </div>
+
+        <!-- Section 6: តិថីទាំង ១៥ ថ្ងៃគឺៈ -->
+        <div class="content-section">
+            <h2 class="section-title">៦. តិថីទាំង ១៥ ថ្ងៃគឺៈ</h2>
+            <p>
+                ថ្ងៃទី...នៅក្នុងចន្ទគតិ (ដំណើរព្រះចន្ទ) គឺមានត្រឹមតែ ១៥ ថ្ងៃប៉ុណ្ណោះ មិនដែលមានថ្ងៃទី ១៦ កើត ឬ ១៦ រោចនោះទេ ។ ខ្ញុំសូមរាប់ទាំងបាលី និងសម្រាយដូច្នេះគឺ៖
+            </p>
+            <ul class="list-disc list-inside mt-4">
+                <li><strong>ឯកាយ</strong> ១ កើត ឬ ១ រោច</li>
+                <li><strong>ទុតិយាយ</strong> ២ កើត ឬ ២ រោច</li>
+                <li><strong>តតិយាយ</strong> ៣ កើត ឬ ៣ រោច</li>
+                <li><strong>ចតុត្ថិយា</strong> ៤ កើត ឬ ៤ រោច</li>
+                <li><strong>បញ្ចមិយា</strong> ៥ កើត ឬ ៥ រោច</li>
+                <li><strong>ឆដ្ឋិយា</strong> ៦ កើត ឬ ៦ រោច</li>
+                <li><strong>សត្តមិយា</strong> ៧ កើត ឬ ៧ រោច</li>
+                <li><strong>អដ្ឋមិយា</strong> ៨ កើត ឬ ៨ រោច</li>
+                <li><strong>នវមិយា</strong> ៩ កើត ឬ ៩ រោច</li>
+                <li><strong>ទសមិយា</strong> ១០ កើត ឬ ១០ រោច</li>
+                <li><strong>ឯកាទសិយា</strong> ១១ កើត ឬ ១១ រោច</li>
+                <li><strong>ទ្វាទសិយា</strong> ១២ កើត ឬ ១២ រោច</li>
+                <li><strong>តេរសិយា</strong> ១៣ កើត ឬ ១៣ រោច</li>
+                <li><strong>ចាតុទ្ទសិយា</strong> ១៤ កើត ឬ ១៤ រោច</li>
+                <li><strong>បណ្ណរសិយា</strong> ១៥ កើត ឬ ១៥ រោច</li>
+            </ul>
+        </div>
+
+        <!-- Section 7: ក្នុងមួយឆ្នាំមាន ៣ រដូវគឺៈ -->
+        <div class="content-section">
+            <h2 class="section-title">៧. ក្នុងមួយឆ្នាំមាន ៣ រដូវគឺៈ</h2>
+            <p>
+                ក្នុងមួយរដូវៗត្រូវមានបួនខែ ៖
+            </p>
+            <ul class="list-disc list-inside mt-4">
+                <li><strong>ហេមន្តឧតុ</strong> ហេមន្តរដូវ គឺរាប់ចាប់តាំងពីថ្ងៃទី ១ រោច ខែកត្តិកដល់ថ្ងៃទី ១៥ កើត ខែផល្គុន ។</li>
+                <li><strong>គិម្ហឧតុ</strong> គិម្ហរដូវ គឺរាប់ចាប់តាំងពីថ្ងៃទី ១ រោច ខែផល្គុនដល់ថ្ងៃទី ១៥ កើត ខែអាសាឍ ឬ ទុតិយាសាឍ ។</li>
+                <li><strong>វស្សានឧតុ</strong> វស្សានរដូវ គឺរាប់ចាប់តាំងពីថ្ងៃទី ១ រោច ខែអាសាឍ ឬទុតិយាសាឍដល់ថ្ងៃទី ១៥ កើតខែកត្តិក ។</li>
+            </ul>
+        </div>
+
+        <!-- Section 8: វិធីបកសករាជប្រចាំថ្ងៃ -->
+        <div class="content-section">
+            <h2 class="section-title">៨. វិធីបកសករាជប្រចាំថ្ងៃ</h2>
+            <p>
+                ឧកាស សិរីសក្យមុនិសព្វញ្ញុពុទ្ធស្ស ពលវប្បច្ចូសសមយេ កុសិនារាយ យមកសាលានមន្តរេ អមុម្ហិ សប្បសំវច្ឆរេ គិម្ហឧតុម្ហិ វិសាខមាសេ សុក្កបក្ខេ បណ្ណរសិយា តិត្ថិយំ ភុម្មវារេ ភុម្មយាមេ អនុរាធនក្ខត្តទិវសេ បរិនិព្វានំ អហោសិ អនុបាទិសេសាយ និព្វានធាតុយា ។ ខ្ញុំសូមគោរពរំលឹកដល់កាលដែលព្រះសក្យមុនីសព្វញ្ញុពុទ្ធទ្រង់មានសិរី ព្រះអង្គចូលបរិនិព្វាន ដោយអនុបាទិសេសបរិនិព្វានធាតុ ក្នុងថ្ងៃប្រកបដោយអនុរាធនក្ខត្តឫក្ស នាថ្ងៃអង្គារ យាមអង្គារ នៅថ្ងៃ ១៥ កើត ខែពិសាខ ក្នុងគិម្ហរដូវ ឆ្នាំម្សាញ់ឯណោះ ក្រោមចន្លោះមែកសាលព្រឹក្សទាំងគូរ (នាសាលវ័នឧទ្យានជិតក្រុងកុសិនារាក្នុងសម័យជិតភ្លឺ) ។
+            </p>
+            <h3 class="subsection-title">៨.១. (តិថីថ្ងៃនេះ)</h3>
+            <ul class="list-disc list-inside">
+                <li>
+                    តស្ស ភគវតោ សម្មាសម្ពុទ្ធស្ស បរិនិព្វុតទិវសតោ បដ្ឋាយ យាវជ្ជតនា (ទ្វិ) ទិវសុត្តរ (ទ្វិ) មាសាធិក (ទ្វេសដ្ឋី) សំវច្ឆរុត្តរ បញ្ចសតាធិកានិ ទ្វេ សំវច្ឆរសហស្សានិ អតិក្កន្តានិ អហេសុំ រាប់ចាប់ផ្តើមតាំងពីថ្ងៃ ដែលព្រះសម្មាសម្ពុទ្ធដ៏មានព្រះភាគអង្គនោះ ទ្រង់ចូលបរិនិព្វានទៅដរាបមកដល់សព្វថ្ងៃនេះ ព្រះពុទ្ធសាសនកាល កន្លងទៅហើយបាន (២៥៦២) ឆ្នាំ (២) ខែ នឹង (២) ថ្ងៃ ។
+                </li>
+                <li>
+                    ឥមស្មឹ បច្ចុប្បន្នកាលេ (សូករ) សំវច្ឆរេ (វស្សាន) ឧតុម្ហិ (អាសាឍ) មាសេ (កាឡបក្ខេ) (តតិយាយ) តិថិយំ (សុក្រវារេ) ឥឡូវនេះ(ស្ថិតនៅក្នុង) ឆ្នាំ(កុរ) ឯកស័ក (វស្សានរដូវ) ខែ(អាសាឍ) (៣ រោច) ថ្ងៃ(សុក្រ) (ព.ស.២៥៦៣ ថ្ងៃ ខែ ឆ្នាំនេះ លោកកំណត់ទុកជាបច្ចុប្បន្នកាល) ។
+                </li>
+                <li>
+                    អនាគតេ កាលេ (សត្តវីស) ទិវសុត្តរ (នវ) មាសាធិក (សត្តត្តឹស) សំវច្ឆរុត្តរ ចតុស្សតាធិកានិ ទ្វេ សំវច្ឆរសហស្សានិ ភវិស្សន្តិ ឯព្រះពុទ្ធសាសនកាលចំណែកខាងអនាគត (ឯណោះវិញ)នៅសល់ (២៤៣៧) ឆ្នាំ (៩ ខែ) នឹង (២៧ ថ្ងៃ) បើបូករួបរួមថ្ងៃខែឆ្នាំទាំងបីកាល (បញ្ចូលគ្នាមក) ត្រូវជាព្រះពុទ្ធសាសនកាលគ្រប់ចំនួន ៥០០០ វស្សាដោយបរិបូណ៌ ។
+                </li>
+            </ul>
+        </div>
+
+        <!-- Section 9: វិធីរាប់បកតិសង្ខ្យា -->
+        <div class="content-section">
+            <h2 class="section-title">៩. វិធីរាប់បកតិសង្ខ្យា</h2>
+            <p>
+                វិធីរាប់បកតិសង្ខ្យាចែកចេញជា ៤ ផ្នែកដូច្នេះគឺ៖
+            </p>
+            <h3 class="subsection-title">ផ្នែកទី១ រាប់ពីត្រឹម ១ ដល់ ១០</h3>
+            <ul class="list-disc list-inside">
+                <li>ឯក “១”</li>
+                <li>ទិ្វ “២”</li>
+                <li>តិ “៣”</li>
+                <li>ចតុ “៤”</li>
+                <li>បញ្ច “៥”</li>
+                <li>ឆ “៦”</li>
+                <li>សត្ត “៧”</li>
+                <li>អដ្ឋ “៨”</li>
+                <li>នវ “៩”</li>
+                <li>ទស “១០”</li>
+            </ul>
+
+            <h3 class="subsection-title">ផ្នែកទី២ រាប់ពីត្រឹម ១១ ដល់ ៩៩</h3>
+            <ul class="list-disc list-inside">
+                <li>ឯកាទស, ឯការស “១១”</li>
+                <li>ទ្វាទស, ពារស “១២”</li>
+                <li>តេរស “១៣”</li>
+                <li>ចតុទ្ទស, ចុទ្ទស, ចោទ្ទស “១៤”</li>
+                <li>បញ្ចទស, បណ្ណរស “១៥”</li>
+                <li>សោឡស “១៦”</li>
+                <li>សត្តរស “១៧”</li>
+                <li>អដ្ឋារស “១៨”</li>
+                <li>ឯកូនវីស, ឩនវីស, ឯកូនវីសតិ, ឩនវីសតិ “១៩”</li>
+                <li>វីស, វីសតិ “២០”</li>
+                <li>ឯកវីស, ឯកវីសតិ “២១”</li>
+                <li>ទ្វាវីស, ទ្វាវីសតិ, ពាវីស, ពាវីសតិ “២២”</li>
+                <li>តេវីស, តេវីសតិ “២៣”</li>
+                <li>ចតុព្វីស, ចតុព្វីសតិ “២៤”</li>
+                <li>បញ្ចវីស, បញ្ចវីសតិ “២៥”</li>
+                <li>ឆព្វីស, ឆព្វីសតិ “២៦”</li>
+                <li>សត្តវីស, សត្តវីសតិ “២៧”</li>
+                <li>អដ្ឋវីស, អដ្ឋវីសតិ “២៨”</li>
+                <li>ឯកូនត្តឹស ឯកូនត្តឹសតិ ឩនត្តឹស, ឩនត្តឹសតិ “២៩”</li>
+                <li>តឹស, តឹសតិ “៣០”</li>
+                <li>ឯកត្តឹស, ឯកត្តឹសតិ “៣១”</li>
+                <li>ទ្វត្តឹស, ទ្វត្តឹសតិ, ពត្តឹស, ពត្តឹសតិ “៣២”</li>
+                <li>តេត្តឹស, តេត្តឹសតិ “៣៣”</li>
+                <li>ចតុត្តឹស, ចតុត្តឹសតិ “៣៤”</li>
+                <li>បញ្ចត្តឹស បញ្ចត្តឹសតិ “៣៥”</li>
+                <li>ឆតឹ្តស, ឆត្តឹសតិ “៣៦”</li>
+                <li>សត្តត្តឹស, សត្តត្តឹសតិ “៣៧”</li>
+                <li>អដ្ឋត្តឹស, អដ្ឋត្តឹសតិ “៣៨”</li>
+                <li>ឯកូនចត្តាឡីស, ឩនចត្តាឡីស, ឯកូនតាឡីស, ឩនតាឡីស “៣៩”</li>
+                <li>ចត្តាឡីស, តាឡីស “៤០”</li>
+                <li>ឯកចត្តាឡីស,ឯកត្តាឡីស “៤១”</li>
+                <li>ទ្វេចត្តាឡីស, ទ្វេតាឡីស “៤២”</li>
+                <li>តេចត្តាឡីស, តេតាឡីស “៤៣”</li>
+                <li>ចតុច្ចត្តាឡីស, ចតុត្តាឡីស “៤៤”</li>
+                <li>បញ្ចចត្តាឡីស, បញ្ចតាឡីស “៤៥”</li>
+                <li>ឆច្ចត្តាឡីស, ឆត្តាឡីស “៤៦”</li>
+                <li>សត្តចត្តាឡីស, សត្តតាឡី “៤៧”</li>
+                <li>អដ្ឋចត្តាឡីស, អដ្ឋតាឡីស “៤៨”</li>
+                <li>ឯកូនបញ្ញាស, ឩនបញ្ញាស, ឯកូនបណ្ណាស,ឩនបណ្ណាស “៤៩”</li>
+                <li>បញ្ញាស, បណ្ណាស “៥០”</li>
+                <li>ឯកបញ្ញាស, ឯកបណ្ណាស “៥១”</li>
+                <li>ទ្វេបញ្ញាស, ទ្វេបណ្ណាស “៥២”</li>
+                <li>តេបញ្ញាស, តេបណ្ណាស “៥៣”</li>
+                <li>ចតុប្បញ្ញាស, ចតុប្បណ្ណាស “៥៤”</li>
+                <li>បញ្ចបញ្ញាស, បញ្ចបណ្ណាស “៥៥”</li>
+                <li>ឆប្បញ្ញាស, ឆប្បណ្ណាស “៥៦”</li>
+                <li>សត្តបញ្ញាស, សត្តបណ្ណាស “៥៧”</li>
+                <li>អដ្ឋបញ្ញាស, អដ្ឋបណ្ណាស “៥៨”</li>
+                <li>ឯកូនសដ្ឋី, ឩនសដ្ឋី “៥៩”</li>
+                <li>សដ្ឋី “៦០”</li>
+                <li>ឯកសដ្ឋី “៦១”</li>
+                <li>ទ្វេសដ្ឋី, ទ្វាសដ្ឋី “៦២”</li>
+                <li>តេសដ្ឋី “៦៣”</li>
+                <li>ចតុស្សដ្ឋី “៦៤”</li>
+                <li>បញ្ចសដ្ឋី “៦៥”</li>
+                <li>ឆស្សដ្ឋី “៦៦”</li>
+                <li>សត្តសដ្ឋី “៦៧”</li>
+                <li>អដ្ឋសដ្ឋី “៦៨”</li>
+                <li>ឯកូនសត្តតិ, ឩនសត្តតិ,ឯកូនសត្តរិ,ឩនសត្តរិ “៦៩”</li>
+                <li>សត្តតិ, សត្តរិ “៧០”</li>
+                <li>ឯកសត្តតិ, ឯកសត្តរិ “៧១”</li>
+                <li>ទ្វេសត្តតិ, ទ្វេសត្តរិ “៧២”</li>
+                <li>តេសត្តតិ, តេសត្តរិ “៧៣”</li>
+                <li>ចតុស្សត្តតិ, ចតុស្សត្តរិ “៧៤”</li>
+                <li>បញ្ចសត្តតិ, បញ្ចសត្តរិ “៧៥”</li>
+                <li>ឆស្សត្តតិ, ឆស្សត្តរិ “៧៦”</li>
+                <li>សត្តសត្តតិ, សត្តសត្តរិ “៧៧”</li>
+                <li>អដ្ឋសត្តតិ, អដ្ឋសត្តរិ “៧៨”</li>
+                <li>ឯកូនអសីតិ, ឯកូនាសីតិ,ឩនអសីតិ, ឩនាសីតិ “៧៩”</li>
+                <li>អសីតិ “៨០”</li>
+                <li>ឯកអសីតិ, ឯកាសីតិ “៨១”</li>
+                <li>ទ្វេអសីតិ, ទ្វាសីតិ “៨២”</li>
+                <li>តេអសីតិ, ត្យាសីតិ “៨៣”</li>
+                <li>ចតុអសីតិ, ចតុរាសីតិ “៨៤”</li>
+                <li>បញ្ចអសីតិ, បញ្ចាសីតិ “៨៥”</li>
+                <li>ឆអសីតិ(ឆាសីតិ), ឆរាសីតិ, ឆឡាសីតិ “៨៦”</li>
+                <li>សត្តអសីតិ, សត្តាសីតិ “៨៧”</li>
+                <li>អដ្ឋអសីតិ, អដ្ឋាសីតិ “៨៨”</li>
+                <li>ឯកូននវុតិ, ឩននវុតិ “៨៩”</li>
+                <li>នវុតិ “៩០”</li>
+                <li>ឯកនវុតិ “៩១”</li>
+                <li>ទ្វេនវុតិ “៩២”</li>
+                <li>តេនវុតិ “៩៣”</li>
+                <li>ចតុន្នវុតិ “៩៤”</li>
+                <li>បញ្ចនវុតិ “៩៥”</li>
+                <li>ឆន្នវុតិ “៩៦”</li>
+                <li>សត្តនវុតិ “៩៧”</li>
+                <li>អដ្ឋនវុតិ “៩៨”</li>
+                <li>ឯកូនសតំ, ឩនសតំ “៩៩”</li>
+            </ul>
+
+            <h3 class="subsection-title">ផ្នែកទី៣ រាប់ពីត្រឹមរយដល់កោដិ</h3>
+            <ul class="list-disc list-inside">
+                <li>សតំ “រយ”</li>
+                <li>សហស្សំ “ពាន់”</li>
+                <li>ទសសហស្សំ “ម៉ឺន”</li>
+                <li>សតសហស្សំ(លក្ខំ) “សែន”</li>
+                <li>ទសសតសហស្សំ “លាន”</li>
+                <li>កោដិ “កោដិ”</li>
+            </ul>
+
+            <h3 class="subsection-title">ផ្នែកទី៤ រាប់ពីត្រឹមបកោដិដល់អសង្ខេយ្យ</h3>
+            <ul class="list-disc list-inside">
+                <li>បកោដិ “រយសែនកោដិ”</li>
+                <li>កោដិបកោដិ “រយសែនបកោដិ”</li>
+                <li>នហុតំ “រយសែនកោដិបកោដិ”</li>
+                <li>និន្នហុតំ “រយសែននហុត”</li>
+                <li>អក្ខោភិនី “រយសែននិន្នហុត”</li>
+                <li>វិន្ទុ “រយសែនអក្ខោភិនី”</li>
+                <li>អព្វុទំ “រយសែនវិន្ទុ”</li>
+                <li>និរព្វុទំ “រយសែនអព្វុទៈ”</li>
+                <li>អហហំ “រយសែននិរព្វុទៈ”</li>
+                <li>អពពំ “រយសែនអហហៈ”</li>
+                <li>អដដំ “រយសែនអពពៈ”</li>
+                <li>សោគន្ធិកំ “រយសែនអដដៈ”</li>
+                <li>ឧប្បលំ “រយសែនឧប្បលៈ”</li>
+                <li>កុមុទំ “រយសែនឧប្បលៈ”</li>
+                <li>បុណ្ឌរីកំ “រយសែនកុមុទៈ”</li>
+                <li>បទុមំ “រយសែនបុណ្ឌរីកៈ”</li>
+                <li>កថានំ “រយសែនបទុមៈ”</li>
+                <li>មហាកថានំ “រយសែនកថានៈ”</li>
+                <li>អសង្ខេយ្យំ “រយសែនមហាកថានៈ”</li>
+            </ul>
+        </div>
+
+        <div class="content-section text-center text-sm text-gray-600">
+            <p>
+                រៀបរៀងដោយព្រះរតនវិសុទ្ធិវង្ស គាន សារ៉ាត់ វត្តព្រះពុទ្ធឃោសាចារ្យ (វត្តចិនដំដែក) សង្កាត់ស្រះចក ខណ្ឌដូនពេញ រាជធានីភ្នំពេញ ថ្ងៃ ៦​ ᧳ ៨ ឆ្នាំកុរ ឯកស័ក ព.ស.២៥៦៣ ត្រូវនឹងថ្ងៃទី១៩ ខែកក្កដា ឆ្នាំ២០១៩។
+            </p>
+        </div>
+        <!-- End of the added content -->
+
+    </div>
+
+    <script>
+        // Constants and Mappings for Khmer Lunar Months based on Section 5
+        // Each entry represents a lunar month with its specific waning and waxing days.
+        const KHMER_LUNAR_MONTHS_DETAIL = [
+            { name: "ពិសាខ", waningDays: 15, waxingDays: 15, totalDaysInMonth: 30 }, // Month 1
+            { name: "ជេស្ឋ", waningDays: 14, waxingDays: 15, totalDaysInMonth: 29 }, // Month 2
+            { name: "អាសាឍ", waningDays: 15, waxingDays: 15, totalDaysInMonth: 30 }, // Month 3 (First Asadha)
+            { name: "ស្រាពណ៍", waningDays: 14, waxingDays: 15, totalDaysInMonth: 29 }, // Month 4
+            { name: "ភទ្របទ", waningDays: 15, waxingDays: 15, totalDaysInMonth: 30 }, // Month 5
+            { name: "អស្សុជ", waningDays: 14, waxingDays: 15, totalDaysInMonth: 29 }, // Month 6
+            { name: "កត្តិក", waningDays: 15, waxingDays: 15, totalDaysInMonth: 30 }, // Month 7
+            { name: "មិគសិរ", waningDays: 14, waxingDays: 15, totalDaysInMonth: 29 }, // Month 8
+            { name: "បុស្ស", waningDays: 15, waxingDays: 15, totalDaysInMonth: 30 }, // Month 9
+            { name: "មាឃ", waningDays: 14, waxingDays: 15, totalDaysInMonth: 29 }, // Month 10
+            { name: "ផល្គុន", waningDays: 15, waxingDays: 15, totalDaysInMonth: 30 }, // Month 11
+            { name: "ចេត្រ", waningDays: 14, waxingDays: 15, totalDaysInMonth: 29 }  // Month 12
+        ];
+
+        // Based on the text: "បីឆ្នាំទើបមានអធិកមាសម្តង ឧទាហរណ៍ កាលពីឆ្នាំ ច ... ពុទ្ធសករាជ ២៥៦២ លុះដល់ទៅឆ្នាំ ឆ្លូវ ... ពុទ្ធសករាជ ២៥៦៥"
+        // This implies 2562 is an Adhikameas year, and then every 3 years after that.
+        const ADHIKAMEAS_REFERENCE_YEAR = 2562;
+        const ADHIKAMEAS_CYCLE = 3; // Every 3 years
+
+        // Epoch: 1st Waning Day of Visakha, BE 1.
+        // This is considered day 1 of the Buddhist Era.
+        const EPOCH_BE_YEAR = 1;
+
+        // Total target years for Buddhist Era
+        const TARGET_BE_YEARS = 5000;
+
+        // DOM Elements
+        const beYearInput = document.getElementById('beYear');
+        const monthSelect = document.getElementById('month');
+        const dayInput = document.getElementById('day');
+        const phaseSelect = document.getElementById('phase');
+        const calculateBtn = document.getElementById('calculateBtn');
+        const elapsedTimeSpan = document.getElementById('elapsedTime');
+        const remainingTimeSpan = document.getElementById('remainingTime');
+        const errorMessageDiv = document.getElementById('errorMessage');
+        const resultBox = document.getElementById('resultBox');
+
+        // Function to check if a BE year is an Adhikameas year
+        function isAdhikameasYear(beYear) {
+            return (beYear - ADHIKAMEAS_REFERENCE_YEAR) % ADHIKAMEAS_CYCLE === 0;
+        }
+
+        // Function to get total days in a specific BE year
+        function getTotalDaysForBEYear(beYear) {
+            let yearDays = 0;
+            const isAdhik = isAdhikameasYear(beYear);
+            for (let i = 0; i < KHMER_LUNAR_MONTHS_DETAIL.length; i++) {
+                yearDays += KHMER_LUNAR_MONTHS_DETAIL[i].totalDaysInMonth;
+                // If it's Adhikameas and the month is Asadha (index 2), add the second Asadha's days
+                if (isAdhik && i === 2) {
+                    yearDays += KHMER_LUNAR_MONTHS_DETAIL[i].totalDaysInMonth;
+                }
+            }
+            return yearDays;
+        }
+
+        // Function to update the max value for the day input based on selected month and phase
+        function updateDayInputMax() {
+            const selectedMonthName = monthSelect.value;
+            const selectedPhase = phaseSelect.value;
+
+            // Get the base month name (remove "(ទុតិយាសាឍ)" if present)
+            const actualMonthName = selectedMonthName.replace(' (ទុតិយាសាឍ)', '');
+            const monthData = KHMER_LUNAR_MONTHS_DETAIL.find(m => m.name === actualMonthName);
+
+            if (monthData) {
+                let maxDays = 15; // Default max day for any phase, as 15 is the highest possible tithi
+
+                if (selectedPhase === 'រោច') {
+                    maxDays = monthData.waningDays;
+                } else if (selectedPhase === 'កើត') {
+                    maxDays = monthData.waxingDays;
+                }
+                dayInput.max = maxDays;
+
+                // Adjust current day value if it exceeds the new max
+                if (parseInt(dayInput.value) > maxDays) {
+                    dayInput.value = maxDays;
+                }
+            }
+        }
+
+        // Populate month dropdown options (only base names)
+        function populateBaseMonths() {
+            monthSelect.innerHTML = ''; // Clear existing options
+            KHMER_LUNAR_MONTHS_DETAIL.forEach(month => {
+                const option = document.createElement('option');
+                option.value = month.name;
+                option.textContent = month.name;
+                monthSelect.appendChild(option);
+            });
+        }
+
+        // Update month options based on BE year (for Adhikameas)
+        function updateMonthOptions() {
+            const currentSelectedMonth = monthSelect.value; // Store current selection
+            populateBaseMonths(); // Re-populate base months
+
+            const beYear = parseInt(beYearInput.value);
+            const isAdhik = isAdhikameasYear(beYear);
+
+            const asadhaIndex = KHMER_LUNAR_MONTHS_DETAIL.findIndex(m => m.name === "អាសាឍ");
+            if (asadhaIndex !== -1) {
+                if (isAdhik) {
+                    const option = document.createElement('option');
+                    option.value = "អាសាឍ (ទុតិយាសាឍ)";
+                    option.textContent = "អាសាឍ (ទុតិយាសាឍ)";
+                    // Insert after the first Asadha option (index 2 in KHMER_LUNAR_MONTHS_DETAIL)
+                    monthSelect.insertBefore(option, monthSelect.options[asadhaIndex + 1]);
+                }
+            }
+            // Restore previous selection if possible, otherwise default to first option
+            if (Array.from(monthSelect.options).some(opt => opt.value === currentSelectedMonth)) {
+                monthSelect.value = currentSelectedMonth;
+            } else {
+                monthSelect.value = KHMER_LUNAR_MONTHS_DETAIL[0].name; // Default to Visakha
+            }
+
+            updateDayInputMax(); // After updating options, re-evaluate day max
+        }
+
+        // Function to convert a Khmer lunar date to total days since epoch (BE 1, 1st Waning Visakha)
+        function khmerLunarDateToDays(beYear, monthName, day, phase) {
+            let totalDays = 0;
+
+            if (beYear < EPOCH_BE_YEAR || day < 1 || day > 15) {
+                return -1; // Invalid day input
+            }
+
+            let actualMonthName = monthName.replace(' (ទុតិយាសាឍ)', '');
+            const monthIndex = KHMER_LUNAR_MONTHS_DETAIL.findIndex(m => m.name === actualMonthName);
+            if (monthIndex === -1) {
+                return -1; // Invalid month name
+            }
+            const currentMonthData = KHMER_LUNAR_MONTHS_DETAIL[monthIndex];
+
+            // Validate day against specific month's waning/waxing days
+            if (phase === 'រោច') {
+                if (day > currentMonthData.waningDays) return -1;
+            } else if (phase === 'កើត') {
+                if (day > currentMonthData.waxingDays) return -1;
+            } else {
+                return -1; // Invalid phase
+            }
+
+            // Calculate days for full preceding BE years
+            for (let y = EPOCH_BE_YEAR; y < beYear; y++) {
+                totalDays += getTotalDaysForBEYear(y);
+            }
+
+            const isAdhik = isAdhikameasYear(beYear);
+            let currentYearDaysAccumulated = 0; // Days accumulated within the current BE year up to the current month
+
+            for (let m = 0; m < KHMER_LUNAR_MONTHS_DETAIL.length; m++) {
+                let monthDataInLoop = KHMER_LUNAR_MONTHS_DETAIL[m];
+                let daysInThisMonthLoop = monthDataInLoop.totalDaysInMonth;
+
+                // Handle Asadha month for Adhikameas years
+                if (isAdhik && m === 2) { // If it's Asadha (index 2)
+                    if (monthIndex === m && monthName.includes('(ទុតិយាសាឍ)')) {
+                        // If the target is the SECOND Asadha, add the days of the FIRST Asadha
+                        currentYearDaysAccumulated += daysInThisMonthLoop;
+                        // Then add the current day in the second Asadha
+                        if (phase === 'រោច') {
+                            currentYearDaysAccumulated += day;
+                        } else if (phase === 'កើត') {
+                            currentYearDaysAccumulated += currentMonthData.waningDays + day;
+                        }
+                        break; // Stop after processing the target month
+                    } else if (monthIndex === m) {
+                        // If the target is the FIRST Asadha, just add its days
+                        if (phase === 'រោច') {
+                            currentYearDaysAccumulated += day;
+                        } else if (phase === 'កើត') {
+                            currentYearDaysAccumulated += currentMonthData.waningDays + day;
+                        }
+                        break; // Stop after processing the target month
+                    } else {
+                        // If it's a preceding month and it's Asadha in an Adhikameas year, add both Asadhas
+                        currentYearDaysAccumulated += daysInThisMonthLoop * 2;
+                    }
+                } else { // For non-Asadha months or non-Adhikameas years
+                    if (monthIndex === m) { // Reached the target month
+                        if (phase === 'រោច') {
+                            currentYearDaysAccumulated += day;
+                        } else if (phase === 'កើត') {
+                            currentYearDaysAccumulated += currentMonthData.waningDays + day;
+                        }
+                        break; // Stop after processing the target month
+                    } else { // Add full days for preceding months
+                        currentYearDaysAccumulated += daysInThisMonthLoop;
+                    }
+                }
+            }
+            totalDays += currentYearDaysAccumulated;
+            return totalDays;
+        }
+
+        // Function to convert total days into Years, Months, and Days (for display)
+        function convertDaysToYearsMonthsDays(totalDays) {
+            let remainingDays = totalDays;
+            let years = 0;
+            let months = 0;
+            let days = 0;
+
+            let currentYearForCalculation = EPOCH_BE_YEAR;
+
+            // Calculate years
+            while (remainingDays >= getTotalDaysForBEYear(currentYearForCalculation)) {
+                remainingDays -= getTotalDaysForBEYear(currentYearForCalculation);
+                years++;
+                currentYearForCalculation++; // Increment year for next iteration to get correct days for that year
+            }
+
+            // Calculate months and days within the current year
+            const isAdhik = isAdhikameasYear(currentYearForCalculation);
+            for (let m = 0; m < KHMER_LUNAR_MONTHS_DETAIL.length; m++) {
+                let monthData = KHMER_LUNAR_MONTHS_DETAIL[m];
+                let daysInThisMonth = monthData.totalDaysInMonth;
+
+                if (isAdhik && m === 2) { // If it's Asadha and Adhikameas
+                    // First Asadha
+                    if (remainingDays >= daysInThisMonth) {
+                        remainingDays -= daysInThisMonth;
+                        months++;
+                    } else {
+                        // Days fall within this month (first Asadha)
+                        break;
+                    }
+                    // Second Asadha
+                    if (remainingDays >= daysInThisMonth) {
+                        remainingDays -= daysInThisMonth;
+                        months++;
+                    } else {
+                        // Days fall within this month (second Asadha)
+                        break;
+                    }
+                } else {
+                    if (remainingDays >= daysInThisMonth) {
+                        remainingDays -= daysInThisMonth;
+                        months++;
+                    } else {
+                        // Days fall within this month
+                        break;
+                    }
+                }
+            }
+            days = remainingDays; // Remaining days are the final days
+
+            return { years, months, days };
+        }
+
+        // Calculate total days for the full 5000 BE years
+        let totalDaysFor5000Years = 0;
+        for (let y = EPOCH_BE_YEAR; y <= TARGET_BE_YEARS; y++) {
+            totalDaysFor5000Years += getTotalDaysForBEYear(y);
+        }
+
+        // Event Listeners
+        beYearInput.addEventListener('input', updateMonthOptions); // Update month options when BE year changes
+        monthSelect.addEventListener('change', updateDayInputMax); // Update day max when month changes
+        phaseSelect.addEventListener('change', updateDayInputMax); // Update day max when phase changes
+        calculateBtn.addEventListener('click', () => {
+            const beYear = parseInt(beYearInput.value);
+            const monthName = monthSelect.value;
+            const day = parseInt(dayInput.value);
+            const phase = phaseSelect.value;
+
+            // Clear previous error messages
+            errorMessageDiv.style.display = 'none';
+            errorMessageDiv.textContent = '';
+            resultBox.style.display = 'block'; // Ensure result box is visible
+
+            if (isNaN(beYear) || beYear < 1 || isNaN(day) || day < 1 || day > 15) {
+                errorMessageDiv.textContent = 'សូមបញ្ចូលពុទ្ធសករាជ និងតិថីជាលេខត្រឹមត្រូវ (តិថីពី ១ ដល់ ១៥)។';
+                errorMessageDiv.style.display = 'block';
+                resultBox.style.display = 'none'; // Hide result box on error
+                return;
+            }
+
+            const elapsedDays = khmerLunarDateToDays(beYear, monthName, day, phase);
+
+            if (elapsedDays === -1) {
+                errorMessageDiv.textContent = 'មានបញ្ហាក្នុងការគណនា។ សូមពិនិត្យមើលទិន្នន័យបញ្ចូល។ ថ្ងៃ ឬខែមិនត្រឹមត្រូវតាមវដ្តចន្ទគតិ។';
+                errorMessageDiv.style.display = 'block';
+                resultBox.style.display = 'none'; // Hide result box on error
+                return;
+            }
+
+            const remainingDays = totalDaysFor5000Years - elapsedDays;
+
+            // Convert elapsedDays and remainingDays back to Years, Months, Days for display
+            const elapsedFormatted = convertDaysToYearsMonthsDays(elapsedDays);
+            const remainingFormatted = convertDaysToYearsMonthsDays(remainingDays);
+
+            elapsedTimeSpan.textContent = `${elapsedFormatted.years} ឆ្នាំ ${elapsedFormatted.months} ខែ នឹង ${elapsedFormatted.days} ថ្ងៃ`;
+            remainingTimeSpan.textContent = `${remainingFormatted.years} ឆ្នាំ ${remainingFormatted.months} ខែ នឹង ${remainingFormatted.days} ថ្ងៃ`;
+        });
+
+        // Initial setup
+        updateMonthOptions(); // This will populate months and set initial day max
+        // Trigger initial calculation with default values
+        calculateBtn.click();
+    </script>
+</body>
+</html>
