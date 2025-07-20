@@ -1,0 +1,2585 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recode Video Preview App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for predefined options -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto:wght@400;700&family=Open+Sans:wght@400;700&family=Noto+Sans+Khmer:wght@400;700&family=Hanuman:wght@400;700&family=Koh+Santepheap:wght@400;700&family=Moul:wght@400&family=Battambang:wght@400;700&family=Content:wght@400;700&family=Kantumruy+Pro:wght@440;700&family=Koulen:wght@400&family=Odor+Mean+Chey:wght@400&family=Preahvihear:wght@400&family=Suwannaphum:wght@400&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Dark background */
+            color: #e2e8f0; /* Light text */
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .card {
+            background-color: #2d3748; /* Slightly lighter dark */
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+        input[type="file"],
+        input[type="text"],
+        input[type="number"],
+        input[type="range"],
+        input[type="color"],
+        select,
+        textarea { /* Added textarea */
+            background-color: #4a5568;
+            border: 1px solid #6b7280;
+            color: #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #63b3ed; /* Blue */
+            color: #1a202c;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s ease-in-out;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        button:hover {
+            background-color: #4299e1; /* Darker blue on hover */
+        }
+        canvas {
+            background-color: #000;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: block;
+            margin-top: 2rem;
+            max-width: 100%; /* Ensure canvas is responsive */
+            height: auto; /* Maintain aspect ratio */
+        }
+        .message-box {
+            background-color: #2d3748;
+            border: 1px solid #63b3ed;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            display: none; /* Hidden by default */
+        }
+        .recording-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background-color: red;
+            border-radius: 50%;
+            margin-left: 8px;
+            animation: pulse 1.5s infinite alternate;
+        }
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        details {
+            margin-top: 1rem;
+            background-color: #334155;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            border: 1px solid #475569;
+        }
+        summary {
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0.5rem 0;
+            color: #cbd5e1;
+        }
+        summary:hover {
+            color: #e2e8f0;
+        }
+        .grid-cols-2-dense {
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+        .font-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .animation-control-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .animation-control-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 0.5rem;
+        }
+        .animation-mode-select {
+            width: 100px; /* Smaller width for mode select */
+        }
+
+        /* Styles for the login popup */
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .login-box {
+            background-color: #2d3748;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+        }
+        .login-box input[type="password"] {
+            margin-bottom: 1rem;
+        }
+
+        /* Styles for the general message popup */
+        .general-message-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* Slightly lighter overlay */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 999; /* Below login overlay */
+        }
+        .general-message-box {
+            background-color: #2d3748;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            width: 80%;
+            max-width: 350px;
+            animation: fadeInOut 3s forwards; /* Animation for visibility */
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateY(-20px); }
+            10% { opacity: 1; transform: translateY(0); }
+            90% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-20px); }
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <!-- Login Overlay -->
+    <div id="loginOverlay" class="login-overlay hidden">
+        <div class="login-box">
+            <h2 class="text-2xl font-bold mb-4">សូមបញ្ចូលពាក្យសម្ងាត់</h2>
+            <input type="password" id="passwordInput" placeholder="ពាក្យសម្ងាត់" class="mb-4">
+            <button id="loginButton" class="bg-blue-600 hover:bg-blue-800 text-white w-full">ចូល</button>
+            <div id="loginMessage" class="message-box mt-4 hidden"></div>
+        </div>
+    </div>
+
+    <!-- General Message Overlay -->
+    <div id="generalMessageOverlay" class="general-message-overlay hidden">
+        <div id="generalMessageBox" class="general-message-box">
+            <!-- Message content will be inserted here by JavaScript -->
+        </div>
+    </div>
+
+    <div id="mainAppContent" class="container flex flex-col lg:flex-row gap-8">
+        <!-- Left Column: Settings and Editing -->
+        <div class="w-full lg:w-2/5 xl:w-1/2 flex flex-col lg:h-screen lg:overflow-y-auto lg:sticky lg:top-0">
+            <h1 class="text-4xl font-bold text-center mb-8 lg:hidden">កម្មវិធីមើលជាមុនវីដេអូ Recode</h1> <!-- Keep for mobile -->
+            <div class="card flex-grow"> <!-- Make card fill available height -->
+                <p class="text-sm text-yellow-300 mb-4">
+                    <span class="font-bold">ចំណាំ:</span> កម្មវិធីនេះនឹងបង្កើតការមើលជាមុននៅក្នុង browser របស់អ្នកប៉ុណ្ណោះ។ វាមិនអាចបង្កើតឯកសារវីដេអូ MP4 ពិតប្រាកដបានទេ ដោយសារការរឹតបន្តឹងរបស់ browser និងតម្រូវការដំណើរការ server ។ វីដេអូដែលបានថតនឹងជាទម្រង់ WebM ។
+                </p>
+                <p class="text-sm text-green-300 mb-4">
+                    <span class="font-bold">ចំណាំអំពីការរក្សាទុក/ផ្ទុក:</span> មុខងាររក្សាទុក/ផ្ទុកគម្រោងរក្សាទុកតែការកំណត់ប៉ុណ្ណោះ មិនមែនឯកសារមេឌៀ (រូបភាព/សំឡេង) ទេ។ អ្នកត្រូវផ្ទុកឡើងឯកសារមេឌៀរបស់អ្នកឡើងវិញបន្ទាប់ពីផ្ទុកគម្រោង។
+                </p>
+                <p class="text-sm text-blue-300 mb-4">
+                    <span class="font-bold">ចំណាំសំឡេង:</span> ដើម្បីឱ្យ visualizer ដំណើរការ និងដើម្បីថតវីដេអូជាមួយសំឡេង សូមផ្ទុកឡើងឯកសារអូឌីយ៉ូ (MP3/WAV) ជាមុនសិន។
+                </p>
+                <p class="text-sm text-purple-300 mb-4">
+                    <span class="font-bold">ចំណាំ GIF:</span> HTML Canvas អាចបង្ហាញតែ Frame ដំបូងនៃរូបភាព GIF ប៉ុណ្ណោះ។ ដើម្បីឱ្យរូបភាព GIF លេងចលនាពេញលេញ អ្នកនឹងត្រូវការបំប្លែងវាទៅជាទម្រង់វីដេអូ (ដូចជា WebM) ឬប្រើបណ្ណាល័យ JavaScript ឯកទេសដើម្បីបង្ហាញ Frame នីមួយៗ។ ទោះជាយ៉ាងណាក៏ដោយ រូបភាព GIF ដែលមានផ្ទៃខាងក្រោយថ្លានឹងត្រូវបានបង្ហាញដោយថ្លា។
+                </p>
+
+                <!-- General Controls (Audio, Video Format, FPS) -->
+                <h2 class="text-2xl font-bold mb-4">ការកំណត់ទូទៅ</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div>
+                        <label for="audioFile" class="block text-sm font-medium mb-2">ផ្ទុកឡើងបទចម្រៀង (MP3/WAV)</label>
+                        <input type="file" id="audioFile" accept="audio/*" class="mb-4">
+                    </div>
+                    <div>
+                        <label for="videoFormat" class="block text-sm font-medium mb-2">ទម្រង់វីដេអូ</label>
+                        <select id="videoFormat" class="mb-4">
+                            <option value="16:9">វីដេអូធម្មតា (16:9)</option>
+                            <option value="9:16">Reel/Short (9:16)</option>
+                            <option value="1:1">ការ៉េ (1:1)</option>
+                            <optgroup label="720p (HD)">
+                                <option value="1280x720">720p (1280x720)</option>
+                                <option value="720x1280">720p Portrait (720x1280)</option>
+                            </optgroup>
+                            <optgroup label="576p (SD)">
+                                <option value="720x576">576p (720x576)</option>
+                                <option value="576x720">576p Portrait (576x720)</option>
+                            </optgroup>
+                            <optgroup label="480p (SD)">
+                                <option value="720x480">480p (720x480)</option>
+                                <option value="480x720">480p Portrait (480x720)</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="fps" class="block text-sm font-medium mb-2">FPS (ស៊ុមក្នុងមួយវិនាទី)</label>
+                        <input type="number" id="fps" value="30" min="1" max="60" class="mb-4">
+                    </div>
+                    <!-- Global Volume Control -->
+                    <div class="col-span-1">
+                        <label for="globalVolume" class="block text-sm font-medium mb-2">កម្រិតសំឡេង</label>
+                        <input type="range" id="globalVolume" min="0" max="1" step="0.01" value="1">
+                    </div>
+                </div>
+
+                <!-- Element Specific Controls -->
+                <h2 class="text-2xl font-bold mb-4">ការកំណត់ធាតុ</h2>
+
+                <!-- Main Image/Background Section -->
+                <details open>
+                    <summary>រូបភាពផ្ទៃខាងក្រោយ/រូបភាពសំខាន់</summary>
+                    <div class="mt-4">
+                        <div class="flex gap-2 mb-4">
+                            <select id="mainImageInstanceSelect" class="flex-1"></select>
+                            <button id="addMainImageButton" class="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded">បន្ថែម</button>
+                            <button id="copyMainImageButton" class="bg-green-500 hover:bg-green-700 text-white px-4 py-2 rounded">ចម្លង</button>
+                            <button id="deleteMainImageButton" class="bg-red-500 hover:bg-red-700 text-white px-4 py-2 rounded">លុប</button>
+                        </div>
+                        <div id="mainImageControlsContainer">
+                            <!-- Dynamic controls for the selected main image instance will be rendered here -->
+                        </div>
+                    </div>
+                </details>
+
+                <!-- Moving Image Section -->
+                <details>
+                    <summary>រូបភាពធ្វើចលនា (Moving Image)</summary>
+                    <div class="mt-4">
+                        <div class="flex gap-2 mb-4">
+                            <select id="movingImageInstanceSelect" class="flex-1"></select>
+                            <button id="addMovingImageButton" class="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded">បន្ថែម</button>
+                            <button id="copyMovingImageButton" class="bg-green-500 hover:bg-green-700 text-white px-4 py-2 rounded">ចម្លង</button>
+                            <button id="deleteMovingImageButton" class="bg-red-500 hover:bg-red-700 text-white px-4 py-2 rounded">លុប</button>
+                        </div>
+                        <div id="movingImageControlsContainer">
+                            <!-- Dynamic controls for the selected moving image instance will be rendered here -->
+                        </div>
+                    </div>
+                </details>
+
+                <!-- Logo Section -->
+                <details>
+                    <summary>ឡូហ្គោ</summary>
+                    <div class="mt-4">
+                        <div class="flex gap-2 mb-4">
+                            <select id="logoInstanceSelect" class="flex-1"></select>
+                            <button id="addLogoButton" class="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded">បន្ថែម</button>
+                            <button id="copyLogoButton" class="bg-green-500 hover:bg-green-700 text-white px-4 py-2 rounded">ចម្លង</button>
+                            <button id="deleteLogoButton" class="bg-red-500 hover:bg-red-700 text-white px-4 py-2 rounded">លុប</button>
+                        </div>
+                        <div id="logoControlsContainer">
+                            <!-- Dynamic controls for the selected logo instance will be rendered here -->
+                        </div>
+                    </div>
+                </details>
+
+                <!-- Title Section -->
+                <details>
+                    <summary>ចំណងជើង</summary>
+                    <div class="mt-4">
+                        <div class="flex gap-2 mb-4">
+                            <select id="titleInstanceSelect" class="flex-1"></select>
+                            <button id="addTitleButton" class="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded">បន្ថែម</button>
+                            <button id="copyTitleButton" class="bg-green-500 hover:bg-green-700 text-white px-4 py-2 rounded">ចម្លង</button>
+                            <button id="deleteTitleButton" class="bg-red-500 hover:bg-red-700 text-white px-4 py-2 rounded">លុប</button>
+                        </div>
+                        <div id="titleControlsContainer">
+                            <!-- Dynamic controls for the selected title instance will be rendered here -->
+                        </div>
+                    </div>
+                </details>
+
+                <!-- Text Section -->
+                <details>
+                    <summary>អត្ថបទ</summary>
+                    <div class="mt-4">
+                        <div class="flex gap-2 mb-4">
+                            <select id="textInstanceSelect" class="flex-1"></select>
+                            <button id="addTextButton" class="bg-blue-500 hover:bg-blue-700 text-white px-4 py-2 rounded">បន្ថែម</button>
+                            <button id="copyTextButton" class="bg-green-500 hover:bg-green-700 text-white px-4 py-2 rounded">ចម្លង</button>
+                            <button id="deleteTextButton" class="bg-red-500 hover:bg-red-700 text-white px-4 py-2 rounded">លុប</button>
+                        </div>
+                        <div id="textControlsContainer">
+                            <!-- Dynamic controls for the selected text instance will be rendered here -->
+                        </div>
+                    </div>
+                </details>
+
+                <!-- Visualizer Section (remains single instance) -->
+                <details>
+                    <summary>Visualizer</summary>
+                    <div class="mt-4">
+                        <div class="animation-control-group mb-4">
+                            <input type="checkbox" id="visualizerEnabled" checked>
+                            <label for="visualizerEnabled" class="block text-sm font-medium">បើក Visualizer</label>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <div><label class="block text-sm mb-1">X Offset</label><input type="number" id="visualizerOffsetX" value="0"></div>
+                            <div><label class="block text-sm mb-1">Y Offset</label><input type="number" id="visualizerOffsetY" value="0"></div>
+                            <div>
+                                <label class="block text-sm mb-1">តម្រឹមទីតាំង (Position Alignment)</label>
+                                <select id="visualizerPositionAlignment">
+                                    <option value="center">កណ្តាល</option>
+                                    <option value="topLeft">លើ-ឆ្វេង</option>
+                                    <option value="topCenter">លើ-កណ្តាល</option>
+                                    <option value="topRight">លើ-ស្តាំ</option>
+                                    <option value="centerLeft">កណ្តាល-ឆ្វេង</option>
+                                    <option value="centerRight">កណ្តាល-ស្តាំ</option>
+                                    <option value="bottomLeft">ក្រោម-ឆ្វេង</option>
+                                    <option value="bottomCenter">ក្រោម-កណ្តាល</option>
+                                    <option value="bottomRight">ក្រោម-ស្តាំ</option>
+                                </select>
+                            </div>
+                            <div><label class="block text-sm mb-1">ទទឹង (0-1)</label><input type="range" id="visualizerWidth" min="0.1" max="1" step="0.01" value="0.6"></div>
+                            <div><label class="block text-sm mb-1">កម្ពស់មូលដ្ឋាន</label><input type="number" id="visualizerHeight" value="50" min="10" max="200"></div>
+                            <div><label class="block text-sm mb-1">ទំហំ (Scale)</label><input type="range" id="visualizerScale" min="0.1" max="2" step="0.01" value="1"></div>
+                            <div><label class="block text-sm mb-1">បង្វិល (Degrees)</label><input type="number" id="visualizerRotation" value="0" min="-360" max="360"></div>
+                            <div><label class="block text-sm mb-1">តម្លាភាព (Opacity)</label><input type="range" id="visualizerOpacity" min="0" max="1" step="0.01" value="1"></div>
+                            <div><label class="block text-sm mb-1">ពណ៌ (Color)</label><input type="color" id="visualizerColor" value="#63b3ed"></div>
+                            <div><label class="block text-sm mb-1">ពណ៌គែម (Stroke Color)</label><input type="color" id="visualizerStrokeColor" value="#63b3ed"></div>
+                            <div><label class="block text-sm mb-1">កម្រាស់គែម (Stroke Thickness)</label><input type="number" id="visualizerStrokeThickness" value="2" min="0" max="20"></div>
+                            <div><label class="block text-sm mb-1">ពណ៌ស្រមោល (Shadow Color)</label><input type="color" id="visualizerShadowColor" value="#000000"></div>
+                            <div><label class="block text-sm mb-1">តម្លាភាពស្រមោល</label><input type="range" id="visualizerShadowOpacity" min="0" max="1" step="0.01" value="0"></div>
+                            <div><label class="block text-sm mb-1">ភាពព្រាលស្រមោល (Bluriness)</label><input type="number" id="visualizerShadowBlur" value="0" min="0" max="50"></div>
+                            <div><label class="block text-sm mb-1">ចម្ងាយស្រមោល (Distance)</label><input type="number" id="visualizerShadowDistance" value="0" min="0" max="50"></div>
+                            <div><label class="block text-sm mb-1">មុំស្រមោល (Angle)</label><input type="number" id="visualizerShadowAngle" value="45" min="0" max="360"></div>
+                            
+                            <!-- Animation Effects for Visualizer -->
+                            <div class="col-span-2">
+                                <details>
+                                    <summary>ប្រភេទចលនា Effects</summary>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                        <div class="animation-control-group">
+                                            <input type="checkbox" id="visualizerAnimScaleEnabled" checked>
+                                            <label for="visualizerAnimScaleEnabled" class="block text-sm mb-1">កម្លាំងញាក់ទំហំ (Scale)</label>
+                                            <input type="range" id="visualizerAnimScaleIntensity" min="0" max="1" step="0.01" value="0.8"> <!-- Changed max to 1 -->
+                                            <select id="visualizerAnimScaleMode" class="animation-mode-select">
+                                                <option value="Direct">Direct</option>
+                                                <option value="Oscillate">Oscillate</option>
+                                            </select>
+                                        </div>
+                                        <div class="animation-control-group">
+                                            <input type="checkbox" id="visualizerAnimRotationEnabled">
+                                            <label for="visualizerAnimRotationEnabled" class="block text-sm mb-1">កម្លាំងញាក់បង្វិល (Rotation)</label>
+                                            <input type="number" id="visualizerAnimRotationIntensity" value="0" min="0" max="60"> <!-- Changed max to 60 -->
+                                            <select id="visualizerAnimRotationMode" class="animation-mode-select">
+                                                <option value="Direct">Direct</option>
+                                                <option value="Oscillate">Oscillate</option>
+                                            </select>
+                                        </div>
+                                        <div class="animation-control-group">
+                                            <input type="checkbox" id="visualizerAnimOffsetXEnabled">
+                                            <label for="visualizerAnimOffsetXEnabled" class="block text-sm mb-1">កម្លាំងញាក់ X Offset</label>
+                                            <input type="number" id="visualizerAnimOffsetXIntensity" value="0" min="0" max="50">
+                                            <select id="visualizerAnimOffsetXMode" class="animation-mode-select">
+                                                <option value="Direct">Direct</option>
+                                                <option value="Oscillate">Oscillate</option>
+                                            </select>
+                                        </div>
+                                        <div class="animation-control-group">
+                                            <input type="checkbox" id="visualizerAnimOffsetYEnabled" checked>
+                                            <label for="visualizerAnimOffsetYEnabled" class="block text-sm mb-1">កម្លាំងញាក់ Y Offset</label>
+                                            <input type="number" id="visualizerAnimOffsetYIntensity" value="40"> <!-- Increased default -->
+                                            <select id="visualizerAnimOffsetYMode" class="animation-mode-select">
+                                                <option value="Direct">Direct</option>
+                                                <option value="Oscillate">Oscillate</option>
+                                                <option value="Bounce">Bounce</option>
+                                            </select>
+                                        </div>
+                                        <div class="animation-control-group">
+                                            <input type="checkbox" id="visualizerAnimBlurEnabled">
+                                            <label for="visualizerAnimBlurEnabled" class="block text-sm mb-1">កម្លាំងញាក់ព្រាល (Blur)</label>
+                                            <input type="number" id="visualizerAnimBlurIntensity" value="0" min="0" max="20">
+                                            <select id="visualizerAnimBlurMode" class="animation-mode-select">
+                                                <option value="Direct">Direct</option>
+                                                <option value="Oscillate">Oscillate</option>
+                                            </select>
+                                        </div>
+                                        <div class="animation-control-group">
+                                            <input type="checkbox" id="visualizerAnimOpacityEnabled" checked>
+                                            <label for="visualizerAnimOpacityEnabled" class="block text-sm mb-1">កម្លាំងញាក់តម្លាភាព (Opacity)</label>
+                                            <input type="range" id="visualizerAnimOpacityIntensity" min="0" max="1" step="0.01" value="0.8"> <!-- Changed max to 1 -->
+                                            <select id="visualizerAnimOpacityMode" class="animation-mode-select">
+                                                <option value="Direct">Direct</option>
+                                                <option value="Oscillate">Oscillate</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </details>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+            </div>
+        </div>
+        
+        <!-- Right Column: Canvas and Playback Controls -->
+        <div class="w-full lg:w-3/5 xl:w-1/2 flex flex-col items-center">
+            <h1 class="text-4xl font-bold text-center mb-8 hidden lg:block">កម្មវិធីមើលជាមុនវីដេអូ Recode</h1> <!-- Hide for mobile, show for desktop -->
+
+            <canvas id="videoCanvas" class="w-full min-h-[300px] mb-6"></canvas>
+
+            <!-- Controls below Canvas (now part of right column) -->
+            <div class="flex flex-col sm:flex-row justify-center gap-4 w-full mb-4">
+                <button id="playPauseButton" class="flex-1 bg-blue-600 hover:bg-blue-800 text-white">លេង/ផ្អាក</button>
+                <button id="recordButton" class="flex-1 bg-red-500 hover:bg-red-700 text-white">
+                    ថតវីដេអូ <span id="recordingIndicator" class="recording-indicator hidden"></span>
+                </button>
+                <button id="downloadImageButton" class="flex-1 bg-green-500 hover:bg-green-700 text-white">ទាញយករូបភាព</button>
+            </div>
+            <!-- Project Save/Load/Delete Controls (now part of right column) -->
+            <div class="flex flex-col sm:flex-row justify-center gap-4 w-full mb-4">
+                <input type="text" id="projectNameInput" placeholder="ឈ្មោះគម្រោង" class="flex-1">
+                <button id="saveProjectButton" class="flex-1 bg-purple-600 hover:bg-purple-800 text-white">រក្សាទុកគម្រោង</button>
+                <button id="loadProjectButton" class="flex-1 bg-yellow-600 hover:bg-yellow-800 text-white">ផ្ទុកគម្រោង</button>
+            </div>
+            <div class="flex flex-col sm:flex-row justify-center gap-4 w-full mb-4">
+                <select id="projectListSelect" class="flex-1"></select>
+                <button id="deleteProjectButton" class="flex-1 bg-red-600 hover:bg-red-700 text-white">លុបគម្រោង</button>
+            </div>
+            <div class="flex flex-col sm:flex-row justify-center gap-4 w-full">
+                <button id="generatePreview" class="flex-1">បង្កើតការមើលជាមុន</button>
+            </div>
+        </div>
+
+
+        <div id="messageBox" class="message-box w-full lg:w-3/4 xl:w-2/3"></div>
+
+    </div>
+
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, query, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Wrap the entire script in an IIFE to create a private scope
+        ((appId, firebaseConfig, initialAuthToken) => {
+            // Canvas and context
+            const canvas = document.getElementById('videoCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // UI elements
+            const audioFileInput = document.getElementById('audioFile');
+            const videoFormatSelect = document.getElementById('videoFormat');
+            const fpsInput = document.getElementById('fps');
+            const globalVolumeInput = document.getElementById('globalVolume');
+            const generateButton = document.getElementById('generatePreview');
+            const recordButton = document.getElementById('recordButton');
+            const downloadImageButton = document.getElementById('downloadImageButton');
+            const playPauseButton = document.getElementById('playPauseButton');
+            const messageBox = document.getElementById('messageBox'); // Old message box, now hidden by default
+            const recordingIndicator = document.getElementById('recordingIndicator');
+
+            // General Message Popup elements
+            const generalMessageOverlay = document.getElementById('generalMessageOverlay');
+            const generalMessageBox = document.getElementById('generalMessageBox');
+
+
+            // Project Management UI
+            const projectNameInput = document.getElementById('projectNameInput');
+            const saveProjectButton = document.getElementById('saveProjectButton');
+            const loadProjectButton = document.getElementById('loadProjectButton');
+            const projectListSelect = document.getElementById('projectListSelect');
+            const deleteProjectButton = document.getElementById('deleteProjectButton');
+
+            // Login UI elements
+            const loginOverlay = document.getElementById('loginOverlay');
+            const passwordInput = document.getElementById('passwordInput');
+            const loginButton = document.getElementById('loginButton'); // Corrected ID here
+            const loginMessage = document.getElementById('loginMessage');
+            const mainAppContent = document.getElementById('mainAppContent');
+
+
+            // Audio variables
+            let audioContext = null; // Initialize to null
+            let analyser = null;
+            let source = null;
+            let gainNode = null;
+            let audioBuffer = null;
+            let dataArray = null;
+            let bufferLength = 0;
+            let isPlaying = false;
+            let audioPlaybackStartTime = 0;
+
+            // Image/Element instances (arrays now)
+            let mainImages = []; // Stores Image objects for drawing
+            let movingImages = []; // Stores Image objects for drawing
+            let logos = []; // Stores Image objects for drawing
+
+            // Animation variables
+            let animationFrameId;
+            let lastFrameTime = 0;
+            let fpsInterval = 1000 / 30;
+
+            // Recording variables
+            let mediaRecorder;
+            let recordedChunks = [];
+            let isRecording = false;
+
+            // Firebase variables
+            let db;
+            let auth;
+            let currentUserId = null;
+            let isFirebaseReady = false;
+
+            // --- Active Element Tracking for UI ---
+            // These track which instance is currently selected for editing in the UI
+            let activeMainImageIndex = -1;
+            let activeMovingImageIndex = -1;
+            let activeLogoIndex = -1;
+            let activeTitleIndex = -1;
+            let activeTextIndex = -1;
+
+            // --- Default Settings for New Elements ---
+            const defaultMainImageSettings = {
+                offsetX: 0, offsetY: 0, scale: 1, rotation: 0, opacity: 1, positionAlignment: 'center',
+                strokeColor: '#ffffff', strokeThickness: 0,
+                shadowColor: '#000000', shadowOpacity: 0, shadowBlur: 0, shadowDistance: 0, shadowAngle: 45,
+                animations: {
+                    scale: { enabled: true, intensity: 0.1, mode: 'Direct' },
+                    rotation: { enabled: false, intensity: 0, mode: 'Direct' },
+                    offsetX: { enabled: false, intensity: 0, mode: 'Direct' },
+                    offsetY: { enabled: false, intensity: 0, mode: 'Direct' },
+                    blur: { enabled: false, intensity: 0, mode: 'Direct' },
+                    opacity: { enabled: false, intensity: 0, mode: 'Direct' }
+                },
+                startTime: 0, endTime: 99999,
+                src: '' // To store data URL or placeholder
+            };
+
+            // A 1x1 transparent GIF (base64 encoded) for default moving image/logo
+            const transparentGif = "data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==";
+
+            const defaultMovingImageSettings = {
+                offsetX: 0, offsetY: 0, scale: 0.5, rotation: 0, opacity: 1, positionAlignment: 'center',
+                strokeColor: '#ffffff', strokeThickness: 0,
+                shadowColor: '#000000', shadowOpacity: 0, shadowBlur: 0, shadowDistance: 0, shadowAngle: 45,
+                animations: {
+                    scale: { enabled: true, intensity: 0.15, mode: 'Direct' },
+                    rotation: { enabled: false, intensity: 0, mode: 'Direct' },
+                    offsetX: { enabled: false, intensity: 0, mode: 'Direct' },
+                    offsetY: { enabled: false, intensity: 0, mode: 'Direct' },
+                    blur: { enabled: false, intensity: 0, mode: 'Direct' },
+                    opacity: { enabled: false, intensity: 0, mode: 'Direct' }
+                },
+                startTime: 0, endTime: 99999,
+                src: transparentGif // Default to transparent GIF
+            };
+
+            const defaultLogoSettings = {
+                offsetX: -20, offsetY: 20, scale: 1, rotation: 0, opacity: 1, positionAlignment: 'topRight', // Default logo to top-right
+                strokeColor: '#ffffff', strokeThickness: 0,
+                shadowColor: '#000000', shadowOpacity: 0, shadowBlur: 0, shadowDistance: 0, shadowAngle: 45,
+                animations: {
+                    scale: { enabled: true, intensity: 0.2, mode: 'Direct' },
+                    rotation: { enabled: false, intensity: 0, mode: 'Direct' },
+                    offsetX: { enabled: false, intensity: 0, mode: 'Direct' },
+                    offsetY: { enabled: false, intensity: 0, mode: 'Direct' },
+                    blur: { enabled: false, intensity: 0, mode: 'Direct' },
+                    opacity: { enabled: false, intensity: 0, mode: 'Direct' }
+                },
+                startTime: 0, endTime: 99999,
+                src: transparentGif // Default to transparent GIF
+            };
+
+            const defaultTitleSettings = {
+                text: 'ចំណងជើងវីដេអូ',
+                fontFamily: 'Inter', customFontFamily: '', fontSize: 30, fontStyle: 'normal', color: '#ffffff',
+                lineHeight: 1.2, alignment: 'center', offsetX: 0, offsetY: 20, scale: 1, rotation: 0, opacity: 1, positionAlignment: 'topCenter', // Default title to top-center
+                strokeColor: '#ffffff', strokeThickness: 0,
+                bgColor: '#000000', bgOpacity: 0, bgRoundedRect: 0, bgHeight: 1, bgWidth: 1, bgOffsetX: 0, bgOffsetY: 0,
+                shadowColor: '#000000', shadowOpacity: 0, shadowBlur: 0, shadowDistance: 0, shadowAngle: 45,
+                animations: {
+                    scale: { enabled: true, intensity: 1.5, mode: 'Direct' },
+                    rotation: { enabled: false, intensity: 0, mode: 'Direct' },
+                    offsetX: { enabled: false, intensity: 0, mode: 'Direct' },
+                    offsetY: { enabled: false, intensity: 0, mode: 'Direct' },
+                    blur: { enabled: false, intensity: 0, mode: 'Direct' },
+                    opacity: { enabled: false, intensity: 0, mode: 'Direct' }
+                },
+                startTime: 0, endTime: 99999
+            };
+
+            const defaultTextSettings = {
+                text: 'បញ្ចូលអត្ថបទនៅទីនេះ',
+                fontFamily: 'Inter', customFontFamily: '', fontSize: 20, fontStyle: 'normal', color: '#cccccc',
+                lineHeight: 1.2, alignment: 'center', offsetX: 0, offsetY: -20, scale: 1, rotation: 0, opacity: 1, positionAlignment: 'bottomCenter', // Default text to bottom-center
+                strokeColor: '#ffffff', strokeThickness: 0,
+                bgColor: '#000000', bgOpacity: 0, bgRoundedRect: 0, bgHeight: 1, bgWidth: 1, bgOffsetX: 0, bgOffsetY: 0,
+                shadowColor: '#000000', shadowOpacity: 0, shadowBlur: 0, shadowDistance: 0, shadowAngle: 45,
+                animations: {
+                    scale: { enabled: true, intensity: 1, mode: 'Direct' },
+                    rotation: { enabled: false, intensity: 0, mode: 'Direct' },
+                    offsetX: { enabled: false, intensity: 0, mode: 'Direct' },
+                    offsetY: { enabled: false, intensity: 0, mode: 'Direct' },
+                    blur: { enabled: false, intensity: 0, mode: 'Direct' },
+                    opacity: { enabled: false, intensity: 0, mode: 'Direct' }
+                },
+                startTime: 0, endTime: 99999
+            };
+
+            // --- Global Settings (not dynamic instances) ---
+            const globalSettings = {
+                visualizer: {
+                    enabled: true,
+                    offsetX: 0, offsetY: -40, width: 0.6, height: 50, scale: 1, rotation: 0, opacity: 1, positionAlignment: 'bottomCenter', // Renamed and defaulted
+                    color: '#63b3ed', strokeColor: '#63b3ed', strokeThickness: 2,
+                    shadowColor: '#000000', shadowOpacity: 0, shadowBlur: 0, shadowDistance: 0, shadowAngle: 45,
+                    animations: {
+                        scale: { enabled: true, intensity: 0.8, mode: 'Direct' },
+                        rotation: { enabled: false, intensity: 0, mode: 'Direct' },
+                        offsetX: { enabled: false, intensity: 0, mode: 'Direct' },
+                        offsetY: { enabled: true, intensity: 40, mode: 'Direct' },
+                        blur: { enabled: false, intensity: 0, mode: 'Direct' },
+                        opacity: { enabled: true, intensity: 0.8, mode: 'Direct' }
+                    }
+                },
+                global: {
+                    volume: 1
+                }
+            };
+
+            // Consolidated settings object for Firebase
+            let allSettings = {
+                mainImages: [],
+                movingImages: [],
+                logos: [],
+                titles: [],
+                texts: [],
+                visualizer: globalSettings.visualizer,
+                global: globalSettings.global,
+                videoFormat: '16:9',
+                fps: 30
+            };
+
+            /**
+             * Displays a message in a small, fading popup.
+             * @param {string} message - The message to display.
+             * @param {string} type - 'success', 'error', 'info'.
+             */
+            function showMessage(message, type = 'info') {
+                generalMessageBox.textContent = message;
+                generalMessageOverlay.classList.remove('hidden');
+                generalMessageBox.className = 'general-message-box'; // Reset classes
+                if (type === 'error') {
+                    generalMessageBox.classList.add('border-red-500', 'bg-red-900', 'text-red-200');
+                } else if (type === 'success') {
+                    generalMessageBox.classList.add('border-green-500', 'bg-green-900', 'text-green-200');
+                } else {
+                    generalMessageBox.classList.add('border-blue-500', 'bg-blue-900', 'text-blue-200');
+                }
+
+                // Automatically hide after 3 seconds
+                setTimeout(() => {
+                    generalMessageOverlay.classList.add('hidden');
+                }, 3000);
+            }
+
+            /**
+             * Hides the general message popup.
+             */
+            function hideGeneralMessage() {
+                generalMessageOverlay.classList.add('hidden');
+            }
+
+            /**
+             * Sets the canvas dimensions based on the selected video format.
+             */
+            function setCanvasDimensions() {
+                const format = videoFormatSelect.value;
+                const maxWidth = canvas.parentElement.clientWidth; // Get parent width
+                let targetWidth, targetHeight; // These are the internal canvas dimensions for recording
+
+                switch (format) {
+                    case '16:9':
+                        targetWidth = 1920; // Default high resolution for 16:9
+                        targetHeight = 1080;
+                        break;
+                    case '9:16':
+                        targetWidth = 1080; // Default high resolution for 9:16
+                        targetHeight = 1920;
+                        break;
+                    case '1:1':
+                        targetWidth = 1080; // Default high resolution for 1:1
+                        targetHeight = 1080;
+                        break;
+                    case '1280x720': // 720p Landscape
+                        targetWidth = 1280;
+                        targetHeight = 720;
+                        break;
+                    case '720x1280': // 720p Portrait
+                        targetWidth = 720;
+                        targetHeight = 1280;
+                        break;
+                    case '720x576': // 576p Landscape
+                        targetWidth = 720;
+                        targetHeight = 576;
+                        break;
+                    case '576x720': // 576p Portrait
+                        targetWidth = 576;
+                        targetHeight = 720;
+                        break;
+                    case '720x480': // 480p Landscape
+                        targetWidth = 720;
+                        targetHeight = 480;
+                        break;
+                    case '480x720': // 480p Portrait
+                        targetWidth = 480;
+                        targetHeight = 720;
+                        break;
+                    default: // Fallback to 16:9 if format is unrecognized
+                        targetWidth = 1920;
+                        targetHeight = 1080;
+                        break;
+                }
+
+                // Set the internal canvas dimensions for rendering and recording
+                canvas.width = Math.floor(targetWidth);
+                canvas.height = Math.floor(targetHeight);
+
+                // For display, CSS will handle scaling down the canvas to fit the parent width
+                // while maintaining the aspect ratio, thanks to max-width: 100% and height: auto.
+            }
+
+            /**
+             * Calculates the normalized audio value (0-1).
+             */
+            function getNormalizedAudioValue() {
+                if (!analyser || !dataArray) return 0;
+                analyser.getByteFrequencyData(dataArray);
+                let sum = 0;
+                for (let i = 0; i < bufferLength; i++) {
+                    sum += dataArray[i];
+                }
+                const average = sum / bufferLength;
+                return average / 255; // Normalize to 0-1
+            }
+
+
+            // --- Helper to update settings from UI (now takes elementType and instanceIndex) ---
+            function setupSettingListener(elementId, settingPath, type = 'number', elementType = null, instanceIndex = -1) {
+                const element = document.getElementById(elementId);
+                if (element) {
+                    element.oninput = () => {
+                        let value;
+                        if (type === 'number' || type === 'range') {
+                            value = parseFloat(element.value);
+                        } else if (type === 'color' || type === 'text' || type === 'select' || type === 'textarea') {
+                            value = element.value;
+                        } else if (type === 'checkbox') {
+                            value = element.checked;
+                        }
+                        
+                        const pathParts = settingPath.split('.');
+                        let currentSettingsObject;
+
+                        if (elementType) {
+                            currentSettingsObject = allSettings[elementType][instanceIndex];
+                        } else {
+                            currentSettingsObject = allSettings;
+                        }
+
+                        let targetProperty = currentSettingsObject;
+                        for (let i = 0; i < pathParts.length - 1; i++) {
+                            if (targetProperty[pathParts[i]] === undefined) {
+                                targetProperty[pathParts[i]] = {}; // Create nested object if it doesn't exist
+                            }
+                            targetProperty = targetProperty[pathParts[i]];
+                        }
+                        targetProperty[pathParts[pathParts.length - 1]] = value;
+
+                        // Specific updates for audio and canvas dimensions
+                        if (settingPath === 'global.volume' && gainNode) {
+                            gainNode.gain.value = value;
+                        }
+                        if (settingPath === 'videoFormat') {
+                            setCanvasDimensions();
+                        }
+                        if (settingPath === 'fps') {
+                            fpsInterval = 1000 / parseInt(fpsInput.value || 30);
+                        }
+
+                        drawCanvas(audioBuffer && isPlaying ? audioContext.currentTime - audioPlaybackStartTime : 0);
+                    };
+                }
+            }
+
+            /**
+             * Dynamically loads a custom font from a URL (data URL or external URL).
+             * @param {string} fontName - The CSS font-family name to use.
+             * @param {string} fontUrl - The URL of the font file (data URL or external URL).
+             * @param {string} format - The format of the font (e.g., 'truetype', 'opentype', 'woff', 'woff2').
+             */
+            function loadCustomFont(fontName, fontUrl, format) {
+                const style = document.createElement('style');
+                style.innerHTML = `
+                    @font-face {
+                        font-family: '${fontName}';
+                        src: url('${fontUrl}') format('${format}');
+                        font-display: swap;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            /**
+             * Dynamically loads a font stylesheet from a URL.
+             * @param {string} url - The URL of the CSS stylesheet.
+             */
+            function loadFontStylesheet(url) {
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = url;
+                document.head.appendChild(link);
+            }
+
+            // --- UI Initialization and Dynamic Control Rendering ---
+            document.addEventListener('DOMContentLoaded', () => {
+                // Setup listeners for global controls (not instance-specific)
+                setupSettingListener('globalVolume', 'global.volume', 'range');
+                setupSettingListener('videoFormat', 'videoFormat', 'select');
+                setupSettingListener('fps', 'fps');
+
+                // Visualizer controls (single instance)
+                setupSettingListener('visualizerEnabled', 'visualizer.enabled', 'checkbox');
+                setupSettingListener('visualizerOffsetX', 'visualizer.offsetX', 'number');
+                setupSettingListener('visualizerOffsetY', 'visualizer.offsetY', 'number');
+                setupSettingListener('visualizerPositionAlignment', 'visualizer.positionAlignment', 'select'); // New listener
+                setupSettingListener('visualizerWidth', 'visualizer.width', 'range');
+                setupSettingListener('visualizerHeight', 'visualizer.height');
+                setupSettingListener('visualizerScale', 'visualizer.scale', 'range');
+                setupSettingListener('visualizerRotation', 'visualizer.rotation');
+                setupSettingListener('visualizerOpacity', 'visualizer.opacity', 'range');
+                setupSettingListener('visualizerColor', 'visualizer.color', 'color');
+                setupSettingListener('visualizerStrokeColor', 'visualizer.strokeColor', 'color');
+                setupSettingListener('visualizerStrokeThickness', 'visualizer.strokeThickness');
+                setupSettingListener('visualizerShadowColor', 'visualizer.shadowColor', 'color');
+                setupSettingListener('visualizerShadowOpacity', 'visualizer.shadowOpacity', 'range');
+                setupSettingListener('visualizerShadowBlur', 'visualizer.shadowBlur');
+                setupSettingListener('visualizerShadowDistance', 'visualizer.shadowDistance');
+                setupSettingListener('visualizerShadowAngle', 'visualizer.shadowAngle');
+                setupSettingListener('visualizerAnimScaleEnabled', 'visualizer.animations.scale.enabled', 'checkbox');
+                setupSettingListener('visualizerAnimScaleIntensity', 'visualizer.animations.scale.intensity', 'range');
+                setupSettingListener('visualizerAnimScaleMode', 'visualizer.animations.scale.mode', 'select');
+                setupSettingListener('visualizerAnimRotationEnabled', 'visualizer.animations.rotation.enabled', 'checkbox');
+                setupSettingListener('visualizerAnimRotationIntensity', 'visualizer.animations.rotation.intensity', 'number');
+                setupSettingListener('visualizerAnimRotationMode', 'visualizer.animations.rotation.mode', 'select');
+                setupSettingListener('visualizerAnimOffsetXEnabled', 'visualizer.animations.offsetX.enabled', 'checkbox');
+                setupSettingListener('visualizerAnimOffsetXIntensity', 'visualizer.animations.offsetX.intensity', 'number');
+                setupSettingListener('visualizerAnimOffsetXMode', 'visualizer.animations.offsetX.mode', 'select');
+                setupSettingListener('visualizerAnimOffsetYEnabled', 'visualizer.animations.offsetY.enabled', 'checkbox');
+                setupSettingListener('visualizerAnimOffsetYIntensity', 'visualizer.animations.offsetY.intensity', 'number');
+                setupSettingListener('visualizerAnimOffsetYMode', 'visualizer.animations.offsetY.mode', 'select');
+                setupSettingListener('visualizerAnimBlurEnabled', 'visualizer.animations.blur.enabled', 'checkbox');
+                setupSettingListener('visualizerAnimBlurIntensity', 'visualizer.animations.blur.intensity', 'number');
+                setupSettingListener('visualizerAnimBlurMode', 'visualizer.animations.blur.mode', 'select');
+                setupSettingListener('visualizerAnimOpacityEnabled', 'visualizer.animations.opacity.enabled', 'checkbox');
+                setupSettingListener('visualizerAnimOpacityIntensity', 'visualizer.animations.opacity.intensity', 'range');
+                setupSettingListener('visualizerAnimOpacityMode', 'visualizer.animations.opacity.mode', 'select');
+
+                // Add initial elements
+                addNewElement('mainImages');
+                addNewElement('movingImages');
+                addNewElement('logos');
+                addNewElement('titles');
+                addNewElement('texts');
+            });
+
+            /**
+             * Generates HTML for common element properties.
+             * @param {string} elementType - 'mainImages', 'movingImages', 'logos', 'titles', 'texts'
+             * @param {number} index - The index of the element in its array
+             * @param {object} settings - The settings object for this specific element instance
+             * @returns {string} HTML string
+             */
+            function generateCommonControlsHtml(elementType, index, settings) {
+                const elementIdPrefix = `${elementType.slice(0, -1)}${index}`; // e.g., mainImage0, title1
+                const isTextElement = elementType === 'titles' || elementType === 'texts';
+                const hasImageFile = elementType.includes('Image') || elementType === 'logos';
+
+                let html = '';
+
+                if (hasImageFile) {
+                    html += `
+                        <div>
+                            <label for="${elementIdPrefix}File" class="block text-sm font-medium mb-2">ផ្ទុកឡើងរូបភាព</label>
+                            <input type="file" id="${elementIdPrefix}File" accept="image/*" class="mb-4">
+                        </div>
+                    `;
+                } else if (isTextElement) {
+                    html += `
+                        <div>
+                            <label for="${elementIdPrefix}TextContent" class="block text-sm font-medium mb-2">${elementType === 'titles' ? 'ចំណងជើងវីដេអូ' : 'អត្ថបទ'}</label>
+                            <textarea id="${elementIdPrefix}TextContent" placeholder="បញ្ចូល${elementType === 'titles' ? 'ចំណងជើង' : 'អត្ថបទ'}" rows="${elementType === 'titles' ? '3' : '5'}" class="mb-4">${settings.text}</textarea>
+                        </div>
+                    `;
+                }
+
+                html += `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <div><label class="block text-sm mb-1">X Offset</label><input type="number" id="${elementIdPrefix}OffsetX" value="${settings.offsetX}"></div>
+                        <div><label class="block text-sm mb-1">Y Offset</label><input type="number" id="${elementIdPrefix}OffsetY" value="${settings.offsetY}"></div>
+                        <div>
+                            <label class="block text-sm mb-1">តម្រឹមទីតាំង (Position Alignment)</label>
+                            <select id="${elementIdPrefix}PositionAlignment">
+                                <option value="center" ${settings.positionAlignment === 'center' ? 'selected' : ''}>កណ្តាល</option>
+                                <option value="topLeft" ${settings.positionAlignment === 'topLeft' ? 'selected' : ''}>លើ-ឆ្វេង</option>
+                                <option value="topCenter" ${settings.positionAlignment === 'topCenter' ? 'selected' : ''}>លើ-កណ្តាល</option>
+                                <option value="topRight" ${settings.positionAlignment === 'topRight' ? 'selected' : ''}>លើ-ស្តាំ</option>
+                                <option value="centerLeft" ${settings.positionAlignment === 'centerLeft' ? 'selected' : ''}>កណ្តាល-ឆ្វេង</option>
+                                <option value="centerRight" ${settings.positionAlignment === 'centerRight' ? 'selected' : ''}>កណ្តាល-ស្តាំ</option>
+                                <option value="bottomLeft" ${settings.positionAlignment === 'bottomLeft' ? 'selected' : ''}>ក្រោម-ឆ្វេង</option>
+                                <option value="bottomCenter" ${settings.positionAlignment === 'bottomCenter' ? 'selected' : ''}>ក្រោម-កណ្តាល</option>
+                                <option value="bottomRight" ${settings.positionAlignment === 'bottomRight' ? 'selected' : ''}>ក្រោម-ស្តាំ</option>
+                            </select>
+                        </div>
+                        <div><label class="block text-sm mb-1">ទំហំ (Scale)</label><input type="range" id="${elementIdPrefix}Scale" min="0.1" max="2" step="0.01" value="${settings.scale}"></div>
+                        <div><label class="block text-sm mb-1">បង្វិល (Degrees)</label><input type="number" id="${elementIdPrefix}Rotation" value="${settings.rotation}" min="-360" max="360"></div>
+                        <div><label class="block text-sm mb-1">តម្លាភាព (Opacity)</label><input type="range" id="${elementIdPrefix}Opacity" min="0" max="1" step="0.01" value="${settings.opacity}"></div>
+                        <div><label class="block text-sm mb-1">ពណ៌គែម (Stroke Color)</label><input type="color" id="${elementIdPrefix}StrokeColor" value="${settings.strokeColor}"></div>
+                        <div><label class="block text-sm mb-1">កម្រាស់គែម (Stroke Thickness)</label><input type="number" id="${elementIdPrefix}StrokeThickness" value="${settings.strokeThickness}" min="0" max="20"></div>
+                        <div><label class="block text-sm mb-1">ពណ៌ស្រមោល (Shadow Color)</label><input type="color" id="${elementIdPrefix}ShadowColor" value="${settings.shadowColor}"></div>
+                        <div><label class="block text-sm mb-1">តម្លាភាពស្រមោល</label><input type="range" id="${elementIdPrefix}ShadowOpacity" min="0" max="1" step="0.01" value="${settings.shadowOpacity}"></div>
+                        <div><label class="block text-sm mb-1">ភាពព្រាលស្រមោល (Bluriness)</label><input type="number" id="${elementIdPrefix}ShadowBlur" value="0" min="0" max="50"></div>
+                        <div><label class="block text-sm mb-1">ចម្ងាយស្រមោល (Distance)</label><input type="number" id="${elementIdPrefix}ShadowDistance" value="0" min="0" max="50"></div>
+                        <div><label class="block text-sm mb-1">មុំស្រមោល (Angle)</label><input type="number" id="${elementIdPrefix}ShadowAngle" value="${settings.shadowAngle}" min="0" max="360"></div>
+                `;
+
+                if (isTextElement) {
+                    html += `
+                        <div class="font-input-group">
+                            <label class="block text-sm mb-1">ពុម្ពអក្សរ (Font)</label>
+                            <select id="${elementIdPrefix}FontFamilySelect">
+                                <option value="Inter">Inter</option>
+                                <option value="Roboto">Roboto</option>
+                                <option value="Open Sans">Open Sans</option>
+                                <option value="Noto Sans Khmer">Noto Sans Khmer</option>
+                                <option value="Hanuman">Hanuman</option>
+                                <option value="Koh Santepheap">Koh Santepheap</option>
+                                <option value="Moul">Moul</option>
+                                <option value="Battambang">Battambang</option>
+                                <option value="Content">Content</option>
+                                <option value="Kantumruy Pro">Kantumruy Pro</option>
+                                <option value="Koulen">Koulen</option>
+                                <option value="Odor Mean Chey">Odor Mean Chey</option>
+                                <option value="Preahvihear">Preahvihear</option>
+                                <option value="Suwannaphum">Suwannaphum</option>
+                                <option value="custom-upload">ផ្ទាល់ខ្លួន (ផ្ទុកឡើង)</option>
+                                <option value="custom-url">ផ្ទាល់ខ្លួន (URL)</option>
+                            </select>
+                            <input type="file" id="${elementIdPrefix}FontUpload" accept=".ttf,.otf,.woff,.woff2" class="hidden mt-2">
+                            <input type="text" id="${elementIdPrefix}FontUrl" placeholder="បញ្ចូល URL ពុម្ពអក្សរ (CSS)" class="hidden mt-2">
+                            <input type="text" id="${elementIdPrefix}CustomFontName" placeholder="ឈ្មោះពុម្ពអក្សរពី URL" class="hidden mt-2">
+                        </div>
+                        <div><label class="block text-sm mb-1">ទំហំពុម្ពអក្សរ (Size)</label><input type="number" id="${elementIdPrefix}FontSize" value="${settings.fontSize}" min="10" max="200"></div>
+                        <div>
+                            <label class="block text-sm mb-1">រចនាប័ទ្ម (Style)</label>
+                            <select id="${elementIdPrefix}FontStyle">
+                                <option value="normal">ធម្មតា</option>
+                                <option value="bold">ដិត</option>
+                                <option value="italic">ទ្រេត</option>
+                                <option value="bold italic">ដិត & ទ្រេត</option>
+                            </select>
+                        </div>
+                        <div><label class="block text-sm mb-1">ពណ៌ (Color)</label><input type="color" id="${elementIdPrefix}Color" value="${settings.color}"></div>
+                        <div><label class="block text-sm mb-1">កម្ពស់បន្ទាត់ (Line Height)</label><input type="range" id="${elementIdPrefix}LineHeight" min="0.5" max="2.5" step="0.1" value="${settings.lineHeight}"></div>
+                        <div>
+                            <label class="block text-sm mb-1">តម្រឹម (Alignment)</label>
+                            <select id="${elementIdPrefix}Alignment">
+                                <option value="left">ឆ្វេង</option>
+                                <option value="center">កណ្តាល</option>
+                                <option value="right">ស្តាំ</option>
+                            </select>
+                        </div>
+                        <div class="col-span-2"><h4 class="font-medium mt-2">ផ្ទៃខាងក្រោយអត្ថបទ</h4></div>
+                        <div><label class="block text-sm mb-1">ពណ៌ផ្ទៃខាងក្រោយ</label><input type="color" id="${elementIdPrefix}BgColor" value="${settings.bgColor}"></div>
+                        <div><label class="block text-sm mb-1">តម្លាភាពផ្ទៃខាងក្រោយ</label><input type="range" id="${elementIdPrefix}BgOpacity" min="0" max="1" step="0.01" value="${settings.bgOpacity}"></div>
+                        <div><label class="block text-sm mb-1">ជ្រុងមូល (Rounded Rect)</label><input type="number" id="${elementIdPrefix}BgRoundedRect" value="${settings.bgRoundedRect}" min="0" max="50"></div>
+                        <div><label class="block text-sm mb-1">កម្ពស់ផ្ទៃខាងក្រោយ</label><input type="range" id="${elementIdPrefix}BgHeight" min="0.5" max="2" step="0.01" value="${settings.bgHeight}"></div>
+                        <div><label class="block text-sm mb-1">ទទឹងផ្ទៃខាងក្រោយ</label><input type="range" id="${elementIdPrefix}BgWidth" min="0.5" max="2" step="0.01" value="${settings.bgWidth}"></div>
+                        <div><label class="block text-sm mb-1">X Offset ផ្ទៃខាងក្រោយ</label><input type="number" id="${elementIdPrefix}BgOffsetX" value="${settings.bgOffsetX}"></div>
+                        <div><label class="block text-sm mb-1">Y Offset ផ្ទៃខាងក្រោយ</label><input type="number" id="${elementIdPrefix}BgOffsetY" value="${settings.bgOffsetY}"></div>
+                    `;
+                }
+
+                html += `
+                        <div class="col-span-2"><h4 class="font-medium mt-2">ប្រភេទចលនា Effects</h4></div>
+                        <div class="animation-control-group">
+                            <input type="checkbox" id="${elementIdPrefix}AnimScaleEnabled" ${settings.animations.scale.enabled ? 'checked' : ''}>
+                            <label for="${elementIdPrefix}AnimScaleEnabled" class="block text-sm mb-1">កម្លាំងញាក់ទំហំ (Scale)</label>
+                            <input type="range" id="${elementIdPrefix}AnimScaleIntensity" min="0" max="2" step="0.01" value="${settings.animations.scale.intensity}"> <!-- Changed max to 2 -->
+                            <select id="${elementIdPrefix}AnimScaleMode" class="animation-mode-select">
+                                <option value="Direct" ${settings.animations.scale.mode === 'Direct' ? 'selected' : ''}>Direct</option>
+                                <option value="Oscillate" ${settings.animations.scale.mode === 'Oscillate' ? 'selected' : ''}>Oscillate</option>
+                            </select>
+                        </div>
+                        <div class="animation-control-group">
+                            <input type="checkbox" id="${elementIdPrefix}AnimRotationEnabled" ${settings.animations.rotation.enabled ? 'checked' : ''}>
+                            <label for="${elementIdPrefix}AnimRotationEnabled" class="block text-sm mb-1">កម្លាំងញាក់បង្វិល (Rotation)</label>
+                            <input type="number" id="${elementIdPrefix}AnimRotationIntensity" value="${settings.animations.rotation.intensity}" min="0" max="60"> <!-- Changed max to 60 -->
+                            <select id="${elementIdPrefix}AnimRotationMode" class="animation-mode-select">
+                                <option value="Direct" ${settings.animations.rotation.mode === 'Direct' ? 'selected' : ''}>Direct</option>
+                                <option value="Oscillate" ${settings.animations.rotation.mode === 'Oscillate' ? 'selected' : ''}>Oscillate</option>
+                            </select>
+                        </div>
+                        <div class="animation-control-group">
+                            <input type="checkbox" id="${elementIdPrefix}AnimOffsetXEnabled" ${settings.animations.offsetX.enabled ? 'checked' : ''}>
+                            <label for="${elementIdPrefix}AnimOffsetXEnabled" class="block text-sm mb-1">កម្លាំងញាក់ X Offset</label>
+                            <input type="number" id="${elementIdPrefix}AnimOffsetXIntensity" value="${settings.animations.offsetX.intensity}" min="0" max="50">
+                            <select id="${elementIdPrefix}AnimOffsetXMode" class="animation-mode-select">
+                                <option value="Direct" ${settings.animations.offsetX.mode === 'Direct' ? 'selected' : ''}>Direct</option>
+                                <option value="Oscillate" ${settings.animations.offsetX.mode === 'Oscillate' ? 'selected' : ''}>Oscillate</option>
+                            </select>
+                        </div>
+                        <div class="animation-control-group">
+                            <input type="checkbox" id="${elementIdPrefix}AnimOffsetYEnabled" ${settings.animations.offsetY.enabled ? 'checked' : ''}>
+                            <label for="${elementIdPrefix}AnimOffsetYEnabled" class="block text-sm mb-1">កម្លាំងញាក់ Y Offset</label>
+                            <input type="number" id="${elementIdPrefix}AnimOffsetYIntensity" value="${settings.animations.offsetY.intensity}" min="0" max="50">
+                            <select id="${elementIdPrefix}AnimOffsetYMode" class="animation-mode-select">
+                                <option value="Direct" ${settings.animations.offsetY.mode === 'Direct' ? 'selected' : ''}>Direct</option>
+                                <option value="Oscillate" ${settings.animations.offsetY.mode === 'Oscillate' ? 'selected' : ''}>Oscillate</option>
+                                <option value="Bounce" ${settings.animations.offsetY.mode === 'Bounce' ? 'selected' : ''}>Bounce</option>
+                            </select>
+                        </div>
+                        <div class="animation-control-group">
+                            <input type="checkbox" id="${elementIdPrefix}AnimBlurEnabled" ${settings.animations.blur.enabled ? 'checked' : ''}>
+                            <label for="${elementIdPrefix}AnimBlurEnabled" class="block text-sm mb-1">កម្លាំងញាក់ព្រាល (Blur)</label>
+                            <input type="number" id="${elementIdPrefix}AnimBlurIntensity" value="${settings.animations.blur.intensity}" min="0" max="20">
+                            <select id="${elementIdPrefix}AnimBlurMode" class="animation-mode-select">
+                                <option value="Direct" ${settings.animations.blur.mode === 'Direct' ? 'selected' : ''}>Direct</option>
+                                <option value="Oscillate" ${settings.animations.blur.mode === 'Oscillate' ? 'selected' : ''}>Oscillate</option>
+                            </select>
+                        </div>
+                        <div class="animation-control-group">
+                            <input type="checkbox" id="${elementIdPrefix}AnimOpacityEnabled" ${settings.animations.opacity.enabled ? 'checked' : ''}>
+                            <label for="${elementIdPrefix}AnimOpacityEnabled" class="block text-sm mb-1">កម្លាំងញាក់តម្លាភាព (Opacity)</label>
+                            <input type="range" id="${elementIdPrefix}AnimOpacityIntensity" min="0" max="1" step="0.01" value="${settings.animations.opacity.intensity}"> <!-- Changed max to 1 -->
+                            <select id="${elementIdPrefix}AnimOpacityMode" class="animation-mode-select">
+                                <option value="Direct" ${settings.animations.opacity.mode === 'Direct' ? 'selected' : ''}>Direct</option>
+                                <option value="Oscillate" ${settings.animations.opacity.mode === 'Oscillate' ? 'selected' : ''}>Oscillate</option>
+                            </select>
+                        </div>
+                        <div class="col-span-2"><h4 class="font-medium mt-2">ការកំណត់ពេលវេលា</h4></div>
+                        <div><label class="block text-sm mb-1">ចាប់ផ្តើមនៅ (វិនាទី)</label><input type="number" id="${elementIdPrefix}StartTime" value="${settings.startTime}" min="0" step="0.1"></div>
+                        <div><label class="block text-sm mb-1">បញ្ចប់នៅ (វិនាទី)</label><input type="number" id="${elementIdPrefix}EndTime" value="${settings.endTime}" min="0" step="0.1"></div>
+                    </div>
+                `;
+                return html;
+            }
+
+            /**
+             * Renders the controls for a specific element instance.
+             * @param {string} elementType - 'mainImages', 'movingImages', 'logos', 'titles', 'texts'
+             * @param {number} instanceIndex - The index of the element instance to render controls for.
+             */
+            function renderElementControls(elementType, instanceIndex) {
+                const containerId = `${elementType.slice(0, -1)}ControlsContainer`; // e.g., mainImageControlsContainer
+                const container = document.getElementById(containerId);
+                if (!container) return;
+
+                container.innerHTML = ''; // Clear previous controls
+
+                const elementSettings = allSettings[elementType][instanceIndex];
+                if (!elementSettings) return;
+
+                container.innerHTML = generateCommonControlsHtml(elementType, instanceIndex, elementSettings);
+
+                // Setup listeners for newly rendered controls
+                const elementIdPrefix = `${elementType.slice(0, -1)}${instanceIndex}`;
+
+                // Re-derive flags for setting up listeners in this scope
+                const isTextElement = elementType === 'titles' || elementType === 'texts';
+                const hasImageFile = elementType.includes('Image') || elementType === 'logos';
+
+                // Common properties
+                setupSettingListener(`${elementIdPrefix}OffsetX`, 'offsetX', 'number', elementType, instanceIndex);
+                setupSettingListener(`${elementIdPrefix}OffsetY`, 'offsetY', 'number', elementType, instanceIndex);
+                setupSettingListener(`${elementIdPrefix}PositionAlignment`, 'positionAlignment', 'select', elementType, instanceIndex);
+                setupSettingListener(`${elementIdPrefix}Scale`, 'scale', 'range', elementType, instanceIndex);
+                setupSettingListener(`${elementIdPrefix}Rotation`, 'rotation', 'number', elementType, instanceIndex);
+                setupSettingListener(`${elementIdPrefix}Opacity`, 'opacity', 'range', elementType, instanceIndex);
+                setupSettingListener(`${elementIdPrefix}StrokeColor`, 'strokeColor', 'color', elementType, instanceIndex);
+                setupSettingListener(`${elementIdPrefix}StrokeThickness`, 'strokeThickness', 'number', elementType, instanceIndex);
+                setupSettingListener(`${elementIdPrefix}ShadowColor`, 'shadowColor', 'color', elementType, instanceIndex);
+                setupSettingListener(`${elementIdPrefix}ShadowOpacity`, 'shadowOpacity', 'range', elementType, instanceIndex);
+                setupSettingListener(`${elementIdPrefix}ShadowBlur`, 'shadowBlur', 'number', elementType, instanceIndex);
+                setupSettingListener(`${elementIdPrefix}ShadowDistance`, 'shadowDistance', 'number', elementType, instanceIndex);
+                setupSettingListener(`${elementIdPrefix}ShadowAngle`, 'shadowAngle', 'number', elementType, instanceIndex);
+                setupSettingListener(`${elementIdPrefix}StartTime`, 'startTime', 'number', elementType, instanceIndex);
+                setupSettingListener(`${elementIdPrefix}EndTime`, 'endTime', 'number', elementType, instanceIndex);
+
+                // Animations
+                setupSettingListener(`${elementIdPrefix}AnimScaleEnabled`, 'animations.scale.enabled', 'checkbox', elementType, instanceIndex);
+                setupSettingListener(`${elementIdPrefix}AnimScaleIntensity`, 'animations.scale.intensity', 'range', elementType, instanceIndex);
+                setupSettingListener(`${elementIdPrefix}AnimScaleMode`, 'animations.scale.mode', 'select', elementType, instanceIndex);
+                setupSettingListener(`${elementIdPrefix}AnimRotationEnabled`, 'animations.rotation.enabled', 'checkbox', elementType, instanceIndex);
+                setupSettingListener(`${elementIdPrefix}AnimRotationIntensity`, 'animations.rotation.intensity', 'number', elementType, instanceIndex);
+                setupSettingListener(`${elementIdPrefix}AnimRotationMode`, 'animations.rotation.mode', 'select', elementType, instanceIndex);
+                setupSettingListener(`${elementIdPrefix}AnimOffsetXEnabled`, 'animations.offsetX.enabled', 'checkbox', elementType, instanceIndex);
+                setupSettingListener(`${elementIdPrefix}AnimOffsetXIntensity`, 'animations.offsetX.intensity', 'number', elementType, instanceIndex);
+                setupSettingListener(`${elementIdPrefix}AnimOffsetXMode`, 'animations.offsetX.mode', 'select', elementType, instanceIndex);
+                setupSettingListener(`${elementIdPrefix}AnimOffsetYEnabled`, 'animations.offsetY.enabled', 'checkbox', elementType, instanceIndex);
+                setupSettingListener(`${elementIdPrefix}AnimOffsetYIntensity`, 'animations.offsetY.intensity', 'number', elementType, instanceIndex);
+                setupSettingListener(`${elementIdPrefix}AnimOffsetYMode`, 'animations.offsetY.mode', 'select', elementType, instanceIndex);
+                setupSettingListener(`${elementIdPrefix}AnimBlurEnabled`, 'animations.blur.enabled', 'checkbox', elementType, instanceIndex);
+                setupSettingListener(`${elementIdPrefix}AnimBlurIntensity`, 'animations.blur.intensity', 'number', elementType, instanceIndex);
+                setupSettingListener(`${elementIdPrefix}AnimBlurMode`, 'animations.blur.mode', 'select', elementType, instanceIndex);
+                setupSettingListener(`${elementIdPrefix}AnimOpacityEnabled`, 'animations.opacity.enabled', 'checkbox', elementType, instanceIndex);
+                setupSettingListener(`${elementIdPrefix}AnimOpacityIntensity`, 'animations.opacity.intensity', 'range', elementType, instanceIndex);
+                setupSettingListener(`${elementIdPrefix}AnimOpacityMode`, 'animations.opacity.mode', 'select', elementType, instanceIndex);
+
+                // Specific for text elements
+                if (isTextElement) {
+                    setupSettingListener(`${elementIdPrefix}TextContent`, 'text', 'textarea', elementType, instanceIndex);
+                    setupSettingListener(`${elementIdPrefix}FontFamilySelect`, 'fontFamily', 'select', elementType, instanceIndex);
+                    setupSettingListener(`${elementIdPrefix}FontSize`, 'fontSize', 'number', elementType, instanceIndex);
+                    setupSettingListener(`${elementIdPrefix}FontStyle`, 'fontStyle', 'select', elementType, instanceIndex);
+                    setupSettingListener(`${elementIdPrefix}Color`, 'color', 'color', elementType, instanceIndex);
+                    setupSettingListener(`${elementIdPrefix}LineHeight`, 'lineHeight', 'range', elementType, instanceIndex);
+                    setupSettingListener(`${elementIdPrefix}Alignment`, 'alignment', 'select', elementType, instanceIndex);
+                    setupSettingListener(`${elementIdPrefix}BgColor`, 'bgColor', 'color', elementType, instanceIndex);
+                    setupSettingListener(`${elementIdPrefix}BgOpacity`, 'bgOpacity', 'range', elementType, instanceIndex);
+                    setupSettingListener(`${elementIdPrefix}BgRoundedRect`, 'bgRoundedRect', 'number', elementType, instanceIndex);
+                    setupSettingListener(`${elementIdPrefix}BgHeight`, 'bgHeight', 'range', elementType, instanceIndex);
+                    setupSettingListener(`${elementIdPrefix}BgWidth`, 'bgWidth', 'range', elementType, instanceIndex);
+                    setupSettingListener(`${elementIdPrefix}BgOffsetX`, 'bgOffsetX', 'number', elementType, instanceIndex);
+                    setupSettingListener(`${elementIdPrefix}BgOffsetY`, 'bgOffsetY', 'number', elementType, instanceIndex);
+
+                    const fontSelect = document.getElementById(`${elementIdPrefix}FontFamilySelect`);
+                    const fontUpload = document.getElementById(`${elementIdPrefix}FontUpload`);
+                    const fontUrlInput = document.getElementById(`${elementIdPrefix}FontUrl`);
+                    const customFontNameInput = document.getElementById(`${elementIdPrefix}CustomFontName`);
+
+                    // Set initial visibility for custom font inputs
+                    if (elementSettings.fontFamily.startsWith('custom-') && fontSelect) {
+                        if (elementSettings.fontFamily.includes('uploaded')) {
+                            fontSelect.value = 'custom-upload';
+                            fontUpload.classList.remove('hidden');
+                        } else if (elementSettings.fontFamily.includes('url')) {
+                            fontSelect.value = 'custom-url';
+                            fontUrlInput.classList.remove('hidden');
+                            customFontNameInput.classList.remove('hidden');
+                        }
+                    } else if (fontSelect) {
+                        fontSelect.value = elementSettings.fontFamily;
+                    }
+
+
+                    if (fontSelect) {
+                        fontSelect.onchange = () => {
+                            fontUpload.classList.add('hidden');
+                            fontUrlInput.classList.add('hidden');
+                            customFontNameInput.classList.add('hidden');
+                            allSettings[elementType][instanceIndex].customFontFamily = '';
+
+                            if (fontSelect.value === 'custom-upload') {
+                                fontUpload.classList.remove('hidden');
+                                allSettings[elementType][instanceIndex].fontFamily = `custom-${elementType.slice(0, -1)}-uploaded-font-${Date.now()}`;
+                            } else if (fontSelect.value === 'custom-url') {
+                                fontUrlInput.classList.remove('hidden');
+                                customFontNameInput.classList.remove('hidden');
+                                allSettings[elementType][instanceIndex].fontFamily = customFontNameInput.value || `custom-${elementType.slice(0, -1)}-url-font`;
+                            } else {
+                                allSettings[elementType][instanceIndex].fontFamily = fontSelect.value;
+                            }
+                            drawCanvas(audioBuffer && isPlaying ? audioContext.currentTime - audioPlaybackStartTime : 0);
+                        };
+                    }
+
+                    if (fontUpload) {
+                        fontUpload.onchange = (e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                                const reader = new FileReader();
+                                reader.onload = (event) => {
+                                    const fontName = `custom-${elementType.slice(0, -1)}-uploaded-font-${Date.now()}`;
+                                    let format = 'truetype';
+                                    if (file.name.endsWith('.otf')) format = 'opentype';
+                                    else if (file.name.endsWith('.woff')) format = 'woff';
+                                    else if (file.name.endsWith('.woff2')) format = 'woff2';
+                                    loadCustomFont(fontName, event.target.result, format);
+                                    allSettings[elementType][instanceIndex].fontFamily = fontName;
+                                    showMessage('ពុម្ពអក្សរផ្ទាល់ខ្លួនបានផ្ទុកឡើងដោយជោគជ័យ។', 'success');
+                                    drawCanvas(audioBuffer && isPlaying ? audioContext.currentTime - audioPlaybackStartTime : 0);
+                                };
+                                reader.readAsDataURL(file);
+                            }
+                        };
+                    }
+
+                    if (fontUrlInput) {
+                        fontUrlInput.oninput = () => {
+                            if (fontUrlInput.value) {
+                                loadFontStylesheet(fontUrlInput.value);
+                                allSettings[elementType][instanceIndex].fontFamily = customFontNameInput.value || `custom-${elementType.slice(0, -1)}-url-font`;
+                                showMessage('URL ពុម្ពអក្សរបានផ្ទុក។ ត្រូវប្រាកដថាឈ្មោះពុម្ពអក្សរត្រឹមត្រូវ។', 'info');
+                            }
+                            drawCanvas(audioBuffer && isPlaying ? audioContext.currentTime - audioPlaybackStartTime : 0);
+                        };
+                    }
+
+                    if (customFontNameInput) {
+                        customFontNameInput.oninput = () => {
+                            allSettings[elementType][instanceIndex].fontFamily = customFontNameInput.value || `custom-${elementType.slice(0, -1)}-url-font`;
+                            drawCanvas(audioBuffer && isPlaying ? audioContext.currentTime - audioPlaybackStartTime : 0);
+                        };
+                    }
+                }
+
+                // Specific for image elements
+                if (hasImageFile) {
+                    const fileInput = document.getElementById(`${elementIdPrefix}File`);
+                    if (fileInput) {
+                        fileInput.onchange = (event) => {
+                            const file = event.target.files[0];
+                            if (file) {
+                                const reader = new FileReader();
+                                reader.onload = (e) => {
+                                    const img = new Image();
+                                    img.src = e.target.result;
+                                    img.onload = () => {
+                                        if (elementType === 'mainImages') mainImages[instanceIndex] = img;
+                                        else if (elementType === 'movingImages') movingImages[instanceIndex] = img;
+                                        else if (elementType === 'logos') logos[instanceIndex] = img;
+                                        allSettings[elementType][instanceIndex].src = e.target.result; // Save data URL
+                                        showMessage(`រូបភាព ${elementType.slice(0, -1)} ${instanceIndex + 1} បានផ្ទុកឡើងដោយជោគជ័យ។`, 'success');
+                                        drawCanvas(audioBuffer && isPlaying ? audioContext.currentTime - audioPlaybackStartTime : 0);
+                                    };
+                                    img.onerror = () => {
+                                        showMessage(`បរាជ័យក្នុងការផ្ទុករូបភាព ${elementType.slice(0, -1)} ${instanceIndex + 1}។`, 'error');
+                                        console.error('Image loading error:', img.src);
+                                    };
+                                };
+                                reader.readAsDataURL(file);
+                            }
+                        };
+                    }
+                }
+            }
+
+            /**
+             * Populates the dropdown for a given element type with its instances.
+             * @param {string} elementType - 'mainImages', 'movingImages', 'logos', 'titles', 'texts'
+             */
+            function populateElementDropdown(elementType) {
+                const selectId = `${elementType.slice(0, -1)}InstanceSelect`;
+                const selectElement = document.getElementById(selectId);
+                if (!selectElement) return;
+
+                selectElement.innerHTML = ''; // Clear existing options
+
+                if (allSettings[elementType].length === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = `គ្មាន ${elementType === 'mainImages' ? 'រូបភាពផ្ទៃខាងក្រោយ' : elementType === 'movingImages' ? 'រូបភាពធ្វើចលនា' : elementType === 'logos' ? 'ឡូហ្គោ' : elementType === 'titles' ? 'ចំណងជើង' : 'អត្ថបទ'} ទេ។`;
+                    selectElement.appendChild(option);
+                    // Clear controls if no elements
+                    document.getElementById(`${elementType.slice(0, -1)}ControlsContainer`).innerHTML = '';
+                    return;
+                }
+
+                allSettings[elementType].forEach((_, i) => {
+                    const option = document.createElement('option');
+                    option.value = i;
+                    option.textContent = `${elementType === 'mainImages' ? 'រូបភាពផ្ទៃខាងក្រោយ' : elementType === 'movingImages' ? 'រូបភាពធ្វើចលនា' : elementType === 'logos' ? 'ឡូហ្គោ' : elementType === 'titles' ? 'ចំណងជើង' : 'អត្ថបទ'} ${i + 1}`;
+                    selectElement.appendChild(option);
+                });
+
+                // Set active index and render controls for the selected one
+                let activeIndexVar;
+                if (elementType === 'mainImages') activeIndexVar = activeMainImageIndex;
+                else if (elementType === 'movingImages') activeIndexVar = activeMovingImageIndex;
+                else if (elementType === 'logos') activeIndexVar = activeLogoIndex;
+                else if (elementType === 'titles') activeIndexVar = activeTitleIndex;
+                else if (elementType === 'texts') activeIndexVar = activeTextIndex;
+
+                if (activeIndexVar === -1 && allSettings[elementType].length > 0) {
+                    selectElement.value = 0; // Select the first element if none is active
+                    selectElementInstance(elementType, 0);
+                } else if (activeIndexVar !== -1 && allSettings[elementType].length > activeIndexVar) {
+                    selectElement.value = activeIndexVar;
+                    renderElementControls(elementType, activeIndexVar);
+                } else if (allSettings[elementType].length > 0) {
+                    selectElement.value = allSettings[elementType].length - 1; // Select the last added element
+                    selectElementInstance(elementType, allSettings[elementType].length - 1);
+                }
+            }
+
+            /**
+             * Sets the active element index and re-renders its controls.
+             * @param {string} elementType - 'mainImages', 'movingImages', 'logos', 'titles', 'texts'
+             * @param {number} index - The index of the element to select.
+             */
+            function selectElementInstance(elementType, index) {
+                if (elementType === 'mainImages') activeMainImageIndex = index;
+                else if (elementType === 'movingImages') activeMovingImageIndex = index;
+                else if (elementType === 'logos') activeLogoIndex = index;
+                else if (elementType === 'titles') activeTitleIndex = index;
+                else if (elementType === 'texts') activeTextIndex = index;
+                
+                const selectId = `${elementType.slice(0, -1)}InstanceSelect`;
+                const selectElement = document.getElementById(selectId);
+                if (selectElement) {
+                    selectElement.value = index;
+                }
+
+                renderElementControls(elementType, index);
+                drawCanvas(audioBuffer && isPlaying ? audioContext.currentTime - audioPlaybackStartTime : 0);
+            }
+
+            /**
+             * Adds a new element instance.
+             * @param {string} elementType - 'mainImages', 'movingImages', 'logos', 'titles', 'texts'
+             */
+            function addNewElement(elementType) {
+                let newElement;
+                if (elementType === 'mainImages') {
+                    newElement = JSON.parse(JSON.stringify(defaultMainImageSettings));
+                    mainImages.push(new Image()); // Add corresponding Image object
+                } else if (elementType === 'movingImages') {
+                    newElement = JSON.parse(JSON.stringify(defaultMovingImageSettings));
+                    movingImages.push(new Image()); // Add corresponding Image object
+                } else if (elementType === 'logos') {
+                    newElement = JSON.parse(JSON.stringify(defaultLogoSettings));
+                    logos.push(new Image()); // Add corresponding Image object
+                } else if (elementType === 'titles') {
+                    newElement = JSON.parse(JSON.stringify(defaultTitleSettings));
+                } else if (elementType === 'texts') {
+                    newElement = JSON.parse(JSON.stringify(defaultTextSettings));
+                }
+                
+                allSettings[elementType].push(newElement);
+                populateElementDropdown(elementType);
+                selectElementInstance(elementType, allSettings[elementType].length - 1); // Select the newly added element
+                showMessage(`បានបន្ថែម ${elementType.slice(0, -1)} ថ្មី។`, 'success');
+            }
+
+            /**
+             * Copies the currently selected element instance.
+             * @param {string} elementType - 'mainImages', 'movingImages', 'logos', 'titles', 'texts'
+             */
+            function copySelectedElement(elementType) {
+                let activeIndex;
+                if (elementType === 'mainImages') activeIndex = activeMainImageIndex;
+                else if (elementType === 'movingImages') activeIndex = activeMovingImageIndex;
+                else if (elementType === 'logos') activeIndex = activeLogoIndex;
+                else if (elementType === 'titles') activeIndex = activeTitleIndex;
+                else if (elementType === 'texts') activeIndex = activeTextIndex;
+
+                if (activeIndex === -1 || !allSettings[elementType][activeIndex]) {
+                    showMessage(`សូមជ្រើសរើស ${elementType.slice(0, -1)} ដើម្បីចម្លង។`, 'error');
+                    return;
+                }
+
+                const copiedElement = JSON.parse(JSON.stringify(allSettings[elementType][activeIndex]));
+                allSettings[elementType].push(copiedElement);
+
+                // If it's an image type, create a new Image object and copy its src
+                if (elementType === 'mainImages') {
+                    const newImg = new Image();
+                    newImg.src = copiedElement.src;
+                    mainImages.push(newImg);
+                } else if (elementType === 'movingImages') {
+                    const newImg = new Image();
+                    newImg.src = copiedElement.src;
+                    movingImages.push(newImg);
+                } else if (elementType === 'logos') {
+                    const newImg = new Image();
+                    newImg.src = copiedElement.src;
+                    logos.push(newImg);
+                }
+
+                populateElementDropdown(elementType);
+                selectElementInstance(elementType, allSettings[elementType].length - 1); // Select the copied element
+                showMessage(`បានចម្លង ${elementType.slice(0, -1)}។`, 'success');
+            }
+
+            /**
+             * Deletes the currently selected element instance.
+             * @param {string} elementType - 'mainImages', 'movingImages', 'logos', 'titles', 'texts'
+             */
+            function deleteSelectedElement(elementType) {
+                let activeIndex;
+                if (elementType === 'mainImages') activeIndex = activeMainImageIndex;
+                else if (elementType === 'movingImages') activeIndex = activeMovingImageIndex;
+                else if (elementType === 'logos') activeIndex = activeLogoIndex;
+                else if (elementType === 'titles') activeIndex = activeTitleIndex;
+                else if (elementType === 'texts') activeIndex = activeTextIndex;
+
+                if (activeIndex === -1 || !allSettings[elementType][activeIndex]) {
+                    showMessage(`សូមជ្រើសរើស ${elementType.slice(0, -1)} ដើម្បីលុប។`, 'error');
+                    return;
+                }
+
+                allSettings[elementType].splice(activeIndex, 1);
+                
+                // Remove corresponding Image object if it's an image type
+                if (elementType === 'mainImages') mainImages.splice(activeIndex, 1);
+                else if (elementType === 'movingImages') movingImages.splice(activeIndex, 1);
+                else if (elementType === 'logos') logos.splice(activeIndex, 1);
+
+                // Reset active index
+                if (elementType === 'mainImages') activeMainImageIndex = -1;
+                else if (elementType === 'movingImages') activeMovingImageIndex = -1;
+                else if (elementType === 'logos') activeLogoIndex = -1;
+                else if (elementType === 'titles') activeTitleIndex = -1;
+                else if (elementType === 'texts') activeTextIndex = -1;
+
+                populateElementDropdown(elementType);
+                if (allSettings[elementType].length > 0) {
+                    selectElementInstance(elementType, 0); // Select the first element if others remain
+                } else {
+                    // Clear controls if no elements left
+                    document.getElementById(`${elementType.slice(0, -1)}ControlsContainer`).innerHTML = '';
+                }
+                showMessage(`បានលុប ${elementType.slice(0, -1)}។`, 'success');
+                drawCanvas(audioBuffer && isPlaying ? audioContext.currentTime - audioPlaybackStartTime : 0);
+            }
+
+            // --- Event Listeners for Add/Copy/Delete Buttons ---
+            document.getElementById('addMainImageButton').addEventListener('click', () => addNewElement('mainImages'));
+            document.getElementById('copyMainImageButton').addEventListener('click', () => copySelectedElement('mainImages'));
+            document.getElementById('deleteMainImageButton').addEventListener('click', () => deleteSelectedElement('mainImages'));
+            document.getElementById('mainImageInstanceSelect').addEventListener('change', (e) => selectElementInstance('mainImages', parseInt(e.target.value)));
+
+            document.getElementById('addMovingImageButton').addEventListener('click', () => addNewElement('movingImages'));
+            document.getElementById('copyMovingImageButton').addEventListener('click', () => copySelectedElement('movingImages'));
+            document.getElementById('deleteMovingImageButton').addEventListener('click', () => deleteSelectedElement('movingImages'));
+            document.getElementById('movingImageInstanceSelect').addEventListener('change', (e) => selectElementInstance('movingImages', parseInt(e.target.value)));
+
+            document.getElementById('addLogoButton').addEventListener('click', () => addNewElement('logos'));
+            document.getElementById('copyLogoButton').addEventListener('click', () => copySelectedElement('logos'));
+            document.getElementById('deleteLogoButton').addEventListener('click', () => deleteSelectedElement('logos'));
+            document.getElementById('logoInstanceSelect').addEventListener('change', (e) => selectElementInstance('logos', parseInt(e.target.value)));
+
+            document.getElementById('addTitleButton').addEventListener('click', () => addNewElement('titles'));
+            document.getElementById('copyTitleButton').addEventListener('click', () => copySelectedElement('titles'));
+            document.getElementById('deleteTitleButton').addEventListener('click', () => deleteSelectedElement('titles'));
+            document.getElementById('titleInstanceSelect').addEventListener('change', (e) => selectElementInstance('titles', parseInt(e.target.value)));
+
+            document.getElementById('addTextButton').addEventListener('click', () => addNewElement('texts'));
+            document.getElementById('copyTextButton').addEventListener('click', () => copySelectedElement('texts'));
+            document.getElementById('deleteTextButton').addEventListener('click', () => deleteSelectedElement('texts'));
+            document.getElementById('textInstanceSelect').addEventListener('change', (e) => selectElementInstance('texts', parseInt(e.target.value)));
+
+
+            /**
+             * Calculates aligned coordinates based on positionAlignment.
+             * Returns the top-left (x, y) for drawing the element.
+             * @param {object} elementSettings - The settings object for the element.
+             * @param {number} elementDisplayWidth - The rendered width of the element.
+             * @param {number} elementDisplayHeight - The rendered height of the element.
+             * @param {number} canvasWidth - The width of the canvas.
+             * @param {number} canvasHeight - The height of the canvas.
+             * @returns {{x: number, y: number}} - The calculated top-left coordinates.
+             */
+            function getAlignedCoordinates(elementSettings, elementDisplayWidth, elementDisplayHeight, canvasWidth, canvasHeight) {
+                let x = 0;
+                let y = 0;
+
+                switch (elementSettings.positionAlignment) {
+                    case 'topLeft':
+                        x = 0;
+                        y = 0;
+                        break;
+                    case 'topCenter':
+                        x = (canvasWidth - elementDisplayWidth) / 2;
+                        y = 0;
+                        break;
+                    case 'topRight':
+                        x = canvasWidth - elementDisplayWidth;
+                        y = 0;
+                        break;
+                    case 'centerLeft':
+                        x = 0;
+                        y = (canvasHeight - elementDisplayHeight) / 2;
+                        break;
+                    case 'center':
+                        x = (canvasWidth - elementDisplayWidth) / 2;
+                        y = (canvasHeight - elementDisplayHeight) / 2;
+                        break;
+                    case 'centerRight':
+                        x = canvasWidth - elementDisplayWidth;
+                        y = (canvasHeight - elementDisplayHeight) / 2;
+                        break;
+                    case 'bottomLeft':
+                        x = 0;
+                        y = canvasHeight - elementDisplayHeight;
+                        break;
+                    case 'bottomCenter':
+                        x = (canvasWidth - elementDisplayWidth) / 2;
+                        y = canvasHeight - elementDisplayHeight;
+                        break;
+                    case 'bottomRight':
+                        x = canvasWidth - elementDisplayWidth;
+                        y = canvasHeight - elementDisplayHeight;
+                        break;
+                    default: // Fallback to center
+                        x = (canvasWidth - elementDisplayWidth) / 2;
+                        y = (canvasHeight - elementDisplayHeight) / 2;
+                        break;
+                }
+
+                // Apply pixel offsets
+                x += elementSettings.offsetX;
+                y += elementSettings.offsetY;
+
+                return { x: x, y: y };
+            }
+
+            /**
+             * Draws a rounded rectangle path.
+             * @param {CanvasRenderingContext2D} ctx - The canvas rendering context.
+             * @param {number} x - The x-coordinate of the upper-left corner of the rectangle.
+             * @param {number} y - The y-coordinate of the upper-left corner of the rectangle.
+             * @param {number} width - The width of the rectangle.
+             * @param {number} height - The height of the rectangle.
+             * @param {number} radius - The corner radius.
+             */
+            function roundRect(ctx, x, y, width, height, radius) {
+                if (width < 2 * radius) radius = width / 2;
+                if (height < 2 * radius) radius = height / 2;
+                ctx.beginPath();
+                ctx.moveTo(x + radius, y);
+                ctx.arcTo(x + width, y, x + width, y + height, radius);
+                ctx.arcTo(x + width, y + height, x, y + height, radius);
+                ctx.arcTo(x, y + height, x, y, radius);
+                ctx.arcTo(x, y, x + width, y, radius);
+                ctx.closePath();
+            }
+
+            /**
+             * Applies shadow properties to the context.
+             * @param {CanvasRenderingContext2D} ctx - The canvas rendering context.
+             * @param {object} shadowSettings - Object containing shadow properties.
+             */
+            function applyShadow(ctx, shadowSettings) {
+                if (shadowSettings.shadowOpacity > 0 && (shadowSettings.shadowBlur > 0 || shadowSettings.shadowDistance > 0)) {
+                    ctx.shadowColor = `rgba(${parseInt(shadowSettings.shadowColor.slice(1, 3), 16)}, ${parseInt(shadowSettings.shadowColor.slice(3, 5), 16)}, ${parseInt(shadowSettings.shadowColor.slice(5, 7), 16)}, ${shadowSettings.shadowOpacity})`;
+                    ctx.shadowBlur = shadowSettings.shadowBlur;
+                    const angleRad = shadowSettings.shadowAngle * Math.PI / 180;
+                    ctx.shadowOffsetX = Math.cos(angleRad) * shadowSettings.shadowDistance;
+                    ctx.shadowOffsetY = Math.sin(angleRad) * shadowSettings.shadowDistance;
+                } else {
+                    ctx.shadowColor = 'rgba(0,0,0,0)';
+                    ctx.shadowBlur = 0;
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 0;
+                }
+            }
+
+            /**
+             * Calculates animated value based on mode.
+             * @param {number} baseValue - The base value.
+             * @param {number} audioValue - Normalized audio value (0-1).
+             * @param {object} animSettings - Animation settings for a specific property (e.g., scale, rotation).
+             * @param {boolean} isAngle - True if the value is an angle (for rotation).
+             */
+            function getAnimatedValue(baseValue, audioValue, animSettings, isAngle = false) {
+                if (!animSettings.enabled || animSettings.intensity === 0) {
+                    return baseValue;
+                }
+
+                let animatedValue = 0;
+                switch (animSettings.mode) {
+                    case 'Direct':
+                        animatedValue = baseValue + audioValue * animSettings.intensity;
+                        break;
+                    case 'Oscillate':
+                        // Use sin wave for oscillation. Scale audioValue to a larger range for more cycles.
+                        // For angles, ensure it oscillates around the base angle.
+                        animatedValue = baseValue + Math.sin(audioValue * Math.PI * 2) * animSettings.intensity;
+                        break;
+                    case 'Bounce': // Primarily for Y-offset, makes it only move in one direction (e.g., up)
+                        // The bounce effect should always be positive (upwards) from the base position
+                        animatedValue = baseValue - Math.abs(Math.sin(audioValue * Math.PI)) * animSettings.intensity;
+                        break;
+                    default:
+                        animatedValue = baseValue;
+                }
+                return animatedValue;
+            }
+
+            /**
+             * Draws all elements on the canvas.
+             * @param {number} audioTime - Current audio playback time in seconds.
+             */
+            function drawCanvas(audioTime = 0) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+
+                // Helper to check if an element should be visible based on timeline
+                const isVisible = (elementSettings) => {
+                    return audioTime >= elementSettings.startTime && audioTime <= elementSettings.endTime;
+                };
+
+                const normalizedAudioValue = audioBuffer ? getNormalizedAudioValue() : 0;
+
+                // Draw Main Images
+                allSettings.mainImages.forEach((imgSettings, i) => {
+                    const img = mainImages[i];
+                    if (img && img.complete && isVisible(imgSettings)) {
+                        ctx.save();
+                        applyShadow(ctx, imgSettings);
+
+                        let currentScaleBg = getAnimatedValue(imgSettings.scale, normalizedAudioValue, imgSettings.animations.scale);
+                        let currentRotationBg = getAnimatedValue(imgSettings.rotation, normalizedAudioValue, imgSettings.animations.rotation, true);
+                        let currentOffsetXBg = getAnimatedValue(imgSettings.offsetX, normalizedAudioValue, imgSettings.animations.offsetX);
+                        let currentOffsetYBg = getAnimatedValue(imgSettings.offsetY, normalizedAudioValue, imgSettings.animations.offsetY);
+                        let currentBlurBg = getAnimatedValue(0, normalizedAudioValue, imgSettings.animations.blur);
+                        let currentOpacityBg = getAnimatedValue(imgSettings.opacity, normalizedAudioValue, imgSettings.animations.opacity);
+                        currentOpacityBg = Math.max(0, Math.min(imgSettings.opacity, currentOpacityBg));
+
+                        ctx.globalAlpha = currentOpacityBg;
+                        ctx.filter = `blur(${currentBlurBg}px)`;
+
+                        const imgWidth = canvas.width * currentScaleBg; // Main image always fills canvas width
+                        const imgHeight = canvas.height * currentScaleBg; // Main image always fills canvas height
+
+                        const { x, y } = getAlignedCoordinates(imgSettings, imgWidth, imgHeight, canvas.width, canvas.height);
+
+                        ctx.translate(x + imgWidth / 2, y + imgHeight / 2); // Translate to center of image for rotation/scale
+                        ctx.rotate(currentRotationBg * Math.PI / 180);
+                        
+                        ctx.drawImage(img, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight);
+
+                        if (imgSettings.strokeThickness > 0) {
+                            ctx.strokeStyle = imgSettings.strokeColor;
+                            ctx.lineWidth = imgSettings.strokeThickness;
+                            ctx.strokeRect(-imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight);
+                        }
+                        ctx.restore();
+                    }
+                });
+
+                // Draw Moving Images
+                allSettings.movingImages.forEach((imgSettings, i) => {
+                    const img = movingImages[i];
+                    if (img && img.complete && isVisible(imgSettings)) {
+                        ctx.save();
+                        applyShadow(ctx, imgSettings);
+
+                        let currentScaleMoving = getAnimatedValue(imgSettings.scale, normalizedAudioValue, imgSettings.animations.scale);
+                        let currentRotationMoving = getAnimatedValue(imgSettings.rotation, normalizedAudioValue, imgSettings.animations.rotation, true);
+                        let currentOffsetXMoving = getAnimatedValue(imgSettings.offsetX, normalizedAudioValue, imgSettings.animations.offsetX);
+                        let currentOffsetYMoving = getAnimatedValue(imgSettings.offsetY, normalizedAudioValue, imgSettings.animations.offsetY);
+                        let currentBlurMoving = getAnimatedValue(0, normalizedAudioValue, imgSettings.animations.blur);
+                        let currentOpacityMoving = getAnimatedValue(imgSettings.opacity, normalizedAudioValue, imgSettings.animations.opacity);
+                        currentOpacityMoving = Math.max(0, Math.min(imgSettings.opacity, currentOpacityMoving));
+
+                        ctx.globalAlpha = currentOpacityMoving;
+                        ctx.filter = `blur(${currentBlurMoving}px)`;
+
+                        const imgWidth = img.width * currentScaleMoving;
+                        const imgHeight = img.height * currentScaleMoving;
+
+                        const { x, y } = getAlignedCoordinates(imgSettings, imgWidth, imgHeight, canvas.width, canvas.height);
+
+                        ctx.translate(x + imgWidth / 2, y + imgHeight / 2); // Translate to center of image for rotation/scale
+                        ctx.rotate(currentRotationMoving * Math.PI / 180);
+                        
+                        ctx.drawImage(img, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight);
+
+                        if (imgSettings.strokeThickness > 0) {
+                            ctx.strokeStyle = imgSettings.strokeColor;
+                            ctx.lineWidth = imgSettings.strokeThickness;
+                            ctx.strokeRect(-imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight);
+                        }
+                        ctx.restore();
+                    }
+                });
+
+                // Draw Logos
+                allSettings.logos.forEach((logoSettings, i) => {
+                    const img = logos[i];
+                    if (img && img.complete && isVisible(logoSettings)) {
+                        ctx.save();
+                        applyShadow(ctx, logoSettings);
+
+                        let currentScaleLogo = getAnimatedValue(logoSettings.scale, normalizedAudioValue, logoSettings.animations.scale);
+                        let currentRotationLogo = getAnimatedValue(logoSettings.rotation, normalizedAudioValue, logoSettings.animations.rotation, true);
+                        let currentOffsetXLogo = getAnimatedValue(logoSettings.offsetX, normalizedAudioValue, logoSettings.animations.offsetX);
+                        let currentOffsetYLogo = getAnimatedValue(logoSettings.offsetY, normalizedAudioValue, logoSettings.animations.offsetY);
+                        let currentBlurLogo = getAnimatedValue(0, normalizedAudioValue, logoSettings.animations.blur);
+                        let currentOpacityLogo = getAnimatedValue(logoSettings.opacity, normalizedAudioValue, logoSettings.animations.opacity);
+                        currentOpacityLogo = Math.max(0, Math.min(logoSettings.opacity, currentOpacityLogo));
+
+                        ctx.globalAlpha = currentOpacityLogo;
+                        ctx.filter = `blur(${currentBlurLogo}px)`;
+
+                        const logoSize = (80 * currentScaleLogo); // Assuming a base size for logo
+                        
+                        const { x, y } = getAlignedCoordinates(logoSettings, logoSize, logoSize, canvas.width, canvas.height);
+
+                        ctx.translate(x + logoSize / 2, y + logoSize / 2); // Translate to center of logo for rotation/scale
+                        ctx.rotate(currentRotationLogo * Math.PI / 180);
+                        
+                        ctx.drawImage(img, -logoSize / 2, -logoSize / 2, logoSize, logoSize);
+
+                        if (logoSettings.strokeThickness > 0) {
+                            ctx.strokeStyle = logoSettings.strokeColor;
+                            ctx.lineWidth = logoSettings.strokeThickness;
+                            ctx.strokeRect(-logoSize / 2, -logoSize / 2, logoSize, logoSize);
+                        }
+                        ctx.restore();
+                    }
+                });
+
+                // Draw Titles
+                allSettings.titles.forEach((titleSettings, i) => {
+                    if (titleSettings.text && isVisible(titleSettings)) {
+                        ctx.save();
+                        applyShadow(ctx, titleSettings);
+
+                        let currentFontSizeTitle = titleSettings.fontSize;
+                        let currentScaleTitle = getAnimatedValue(titleSettings.scale, normalizedAudioValue, titleSettings.animations.scale);
+                        let currentRotationTitle = getAnimatedValue(titleSettings.rotation, normalizedAudioValue, titleSettings.animations.rotation, true);
+                        let currentOffsetXTitle = getAnimatedValue(titleSettings.offsetX, normalizedAudioValue, titleSettings.animations.offsetX);
+                        let currentOffsetYTitle = getAnimatedValue(titleSettings.offsetY, normalizedAudioValue, titleSettings.animations.offsetY);
+                        let currentBlurTitle = getAnimatedValue(0, normalizedAudioValue, titleSettings.animations.blur);
+                        let currentOpacityTitle = getAnimatedValue(titleSettings.opacity, normalizedAudioValue, titleSettings.animations.opacity);
+                        currentOpacityTitle = Math.max(0, Math.min(titleSettings.opacity, currentOpacityTitle));
+
+                        ctx.globalAlpha = currentOpacityTitle;
+                        ctx.filter = `blur(${currentBlurTitle}px)`;
+
+                        const fontToUse = titleSettings.fontFamily.startsWith('custom-') ? titleSettings.fontFamily : `'${titleSettings.fontFamily}'`;
+                        ctx.font = `${titleSettings.fontStyle} ${currentFontSizeTitle}px ${fontToUse}, sans-serif`;
+                        
+                        const lines = titleSettings.text.split('\n');
+                        const textWidths = lines.map(line => ctx.measureText(line).width);
+                        const maxTextWidth = Math.max(...textWidths);
+                        const textHeight = currentFontSizeTitle * titleSettings.lineHeight * lines.length;
+
+                        const { x: bboxX, y: bboxY } = getAlignedCoordinates(titleSettings, maxTextWidth, textHeight, canvas.width, canvas.height);
+
+                        ctx.translate(bboxX + maxTextWidth / 2, bboxY + textHeight / 2); // Translate to center of text block
+                        ctx.rotate(currentRotationTitle * Math.PI / 180);
+                        ctx.scale(currentScaleTitle, currentScaleTitle);
+
+                        // Draw background relative to the new (0,0) which is the center of the text block
+                        if (titleSettings.bgOpacity > 0) {
+                            const bgWidth = maxTextWidth * titleSettings.bgWidth;
+                            const bgHeight = textHeight * titleSettings.bgHeight;
+                            let bgDrawX = -bgWidth / 2 + titleSettings.bgOffsetX; // Relative to center
+                            let bgDrawY = -bgHeight / 2 + titleSettings.bgOffsetY; // Relative to center
+                            roundRect(ctx, bgDrawX, bgDrawY, bgWidth, bgHeight, titleSettings.bgRoundedRect);
+                            ctx.fill();
+                        }
+
+                        // Draw text lines relative to the new (0,0) (center of text block)
+                        ctx.textBaseline = 'middle'; // Set baseline to middle for easier vertical centering of lines
+                        ctx.fillStyle = titleSettings.color;
+
+                        for (let i = 0; i < lines.length; i++) {
+                            const line = lines[i];
+                            let lineX = 0; // Default for center alignment relative to current origin
+                            if (titleSettings.alignment === 'left') {
+                                lineX = -maxTextWidth / 2; // Move left edge to left of center
+                            } else if (titleSettings.alignment === 'right') {
+                                lineX = maxTextWidth / 2; // Move right edge to right of center
+                            }
+                            
+                            // Calculate vertical position relative to the center of the text block
+                            const totalLinesHeight = currentFontSizeTitle * titleSettings.lineHeight * lines.length;
+                            const lineOffsetFromCenter = (i - (lines.length - 1) / 2) * (currentFontSizeTitle * titleSettings.lineHeight);
+                            const lineY = lineOffsetFromCenter;
+
+                            ctx.textAlign = titleSettings.alignment; // Use text alignment for fillText
+                            ctx.fillText(line, lineX, lineY);
+
+                            if (titleSettings.strokeThickness > 0) {
+                                ctx.strokeStyle = titleSettings.strokeColor;
+                                ctx.lineWidth = titleSettings.strokeThickness;
+                                ctx.strokeText(line, lineX, lineY);
+                            }
+                        }
+                        ctx.restore();
+                    }
+                });
+
+                // Draw Texts
+                allSettings.texts.forEach((textSettings, i) => {
+                    if (textSettings.text && isVisible(textSettings)) {
+                        ctx.save();
+                        applyShadow(ctx, textSettings);
+
+                        let currentFontSizeText = textSettings.fontSize;
+                        let currentScaleText = getAnimatedValue(textSettings.scale, normalizedAudioValue, textSettings.animations.scale);
+                        let currentRotationText = getAnimatedValue(textSettings.rotation, normalizedAudioValue, textSettings.animations.rotation, true);
+                        let currentOffsetXText = getAnimatedValue(textSettings.offsetX, normalizedAudioValue, textSettings.animations.offsetX);
+                        let currentOffsetYText = getAnimatedValue(textSettings.offsetY, normalizedAudioValue, textSettings.animations.offsetY);
+                        let currentBlurText = getAnimatedValue(0, normalizedAudioValue, textSettings.animations.blur);
+                        let currentOpacityText = getAnimatedValue(textSettings.opacity, normalizedAudioValue, textSettings.animations.opacity);
+                        currentOpacityText = Math.max(0, Math.min(textSettings.opacity, currentOpacityText));
+
+                        ctx.globalAlpha = currentOpacityText;
+                        ctx.filter = `blur(${currentBlurText}px)`;
+
+                        const fontToUse = textSettings.fontFamily.startsWith('custom-') ? textSettings.fontFamily : `'${textSettings.fontFamily}'`;
+                        ctx.font = `${textSettings.fontStyle} ${currentFontSizeText}px ${fontToUse}, sans-serif`;
+                        ctx.textBaseline = 'top'; // Set baseline to top for consistent calculation
+
+                        const lines = textSettings.text.split('\n');
+                        const textWidths = lines.map(line => ctx.measureText(line).width);
+                        const maxTextWidth = Math.max(...textWidths);
+                        const textHeight = currentFontSizeText * textSettings.lineHeight * lines.length;
+
+                        const { x: bboxX, y: bboxY } = getAlignedCoordinates(textSettings, maxTextWidth, textHeight, canvas.width, canvas.height);
+
+                        ctx.translate(bboxX + maxTextWidth / 2, bboxY + textHeight / 2); // Translate to center of text block
+                        ctx.rotate(currentRotationText * Math.PI / 180);
+                        ctx.scale(currentScaleText, currentScaleText);
+
+                        if (textSettings.bgOpacity > 0) {
+                            const bgWidth = maxTextWidth * textSettings.bgWidth;
+                            const bgHeight = textHeight * textSettings.bgHeight;
+                            let bgX = -bgWidth / 2 + textSettings.bgOffsetX; // Relative to center
+                            let bgY = -bgHeight / 2 + textSettings.bgOffsetY; // Relative to center
+
+                            ctx.fillStyle = `rgba(${parseInt(textSettings.bgColor.slice(1, 3), 16)}, ${parseInt(textSettings.bgColor.slice(3, 5), 16)}, ${parseInt(textSettings.bgColor.slice(5, 7), 16)}, ${textSettings.bgOpacity})`;
+                            roundRect(ctx, bgX, bgY, bgWidth, bgHeight, textSettings.bgRoundedRect);
+                            ctx.fill();
+                        }
+
+                        ctx.textBaseline = 'middle'; // Set baseline to middle for easier vertical centering of lines
+                        ctx.fillStyle = textSettings.color;
+
+                        for (let i = 0; i < lines.length; i++) {
+                            const line = lines[i];
+                            let lineX = 0; // Default for center alignment relative to current origin
+                            if (textSettings.alignment === 'left') {
+                                lineX = -maxTextWidth / 2; // Move left edge to left of center
+                            } else if (textSettings.alignment === 'right') {
+                                lineX = maxTextWidth / 2; // Move right edge to right of center
+                            }
+                            const lineY = (i - (lines.length - 1) / 2) * (currentFontSizeText * textSettings.lineHeight);
+
+                            ctx.textAlign = textSettings.alignment;
+                            ctx.fillText(line, lineX, lineY);
+
+                            if (textSettings.strokeThickness > 0) {
+                                ctx.strokeStyle = textSettings.strokeColor;
+                                ctx.lineWidth = textSettings.strokeThickness;
+                                ctx.strokeText(line, lineX, lineY);
+                            }
+                        }
+                        ctx.restore();
+                    }
+                });
+
+                // Draw audio visualization bar (remains single instance)
+                const visualizerSettings = allSettings.visualizer;
+                if (audioBuffer && visualizerSettings.enabled) {
+                    ctx.save();
+                    applyShadow(ctx, visualizerSettings);
+
+                    let currentScaleViz = getAnimatedValue(visualizerSettings.scale, normalizedAudioValue, visualizerSettings.animations.scale);
+                    let currentRotationViz = getAnimatedValue(visualizerSettings.rotation, normalizedAudioValue, visualizerSettings.animations.rotation, true);
+                    let currentOffsetXViz = getAnimatedValue(visualizerSettings.offsetX, normalizedAudioValue, visualizerSettings.animations.offsetX);
+                    let currentOffsetYViz = getAnimatedValue(visualizerSettings.offsetY, normalizedAudioValue, visualizerSettings.animations.offsetY);
+                    let currentBlurViz = getAnimatedValue(0, normalizedAudioValue, visualizerSettings.animations.blur);
+                    let currentOpacityViz = getAnimatedValue(visualizerSettings.opacity, normalizedAudioValue, visualizerSettings.animations.opacity);
+                    currentOpacityViz = Math.max(0, Math.min(visualizerSettings.opacity, currentOpacityViz));
+
+                    ctx.globalAlpha = currentOpacityViz;
+                    ctx.filter = `blur(${currentBlurViz}px)`;
+
+                    const baseBarWidth = canvas.width * visualizerSettings.width * currentScaleViz;
+                    const animatedBarHeight = visualizerSettings.height * currentScaleViz + (normalizedAudioValue * 50);
+
+                    const { x: bboxX, y: bboxY } = getAlignedCoordinates(visualizerSettings, baseBarWidth, animatedBarHeight, canvas.width, canvas.height);
+
+                    ctx.translate(bboxX + baseBarWidth / 2, bboxY + animatedBarHeight / 2); // Translate to center
+                    ctx.rotate(currentRotationViz * Math.PI / 180);
+
+                    ctx.fillStyle = visualizerSettings.color;
+                    ctx.fillRect(-baseBarWidth / 2, -animatedBarHeight / 2, baseBarWidth, animatedBarHeight);
+
+                    if (visualizerSettings.strokeThickness > 0) {
+                        ctx.strokeStyle = visualizerSettings.strokeColor;
+                        ctx.lineWidth = visualizerSettings.strokeThickness;
+                        ctx.strokeRect(-baseBarWidth / 2, -animatedBarHeight / 2, baseBarWidth, animatedBarHeight);
+                    }
+                    ctx.restore();
+                }
+            }
+
+            /**
+             * The main animation loop.
+             */
+            function animate(currentTime) {
+                animationFrameId = requestAnimationFrame(animate);
+
+                if (!audioContext || !analyser || !dataArray || !isPlaying) {
+                    drawCanvas(0);
+                    return;
+                }
+
+                const elapsed = currentTime - lastFrameTime;
+                const currentFpsInterval = 1000 / parseInt(allSettings.fps || 30);
+                const currentAudioTime = audioContext.currentTime - audioPlaybackStartTime;
+
+                if (elapsed > currentFpsInterval) {
+                    lastFrameTime = currentTime - (elapsed % currentFpsInterval);
+                    drawCanvas(currentAudioTime);
+                }
+            }
+
+            /**
+             * Starts the audio playback and visualization.
+             */
+            async function startAudioVisualization() {
+                if (!audioBuffer) {
+                    showMessage('សូមផ្ទុកឡើងបទចម្រៀងជាមុនសិន។', 'error');
+                    return;
+                }
+                
+                // Ensure audioContext is resumed if suspended (e.g., after user interaction)
+                if (audioContext && audioContext.state === 'suspended') {
+                    await audioContext.resume();
+                }
+
+                // Stop any currently playing source before creating a new one
+                if (source) {
+                    source.stop();
+                    source.disconnect(); // Disconnect previous source
+                }
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                }
+
+                source = audioContext.createBufferSource();
+                source.buffer = audioBuffer;
+
+                // Connect the new source to the pre-existing analyser
+                source.connect(analyser);
+
+                source.loop = false;
+                source.onended = () => {
+                    if (isRecording) {
+                        stopRecording();
+                    }
+                    pauseAudio();
+                    showMessage('បទចម្រៀងបានបញ្ចប់។', 'info');
+                };
+                audioPlaybackStartTime = audioContext.currentTime;
+                source.start(0);
+
+                isPlaying = true;
+                playPauseButton.textContent = 'ផ្អាក';
+                showMessage('កំពុងបង្កើតការមើលជាមុន...', 'info');
+                lastFrameTime = performance.now();
+                animate(lastFrameTime);
+            }
+
+            /**
+             * Pauses the audio playback and and visualization.
+             */
+            function pauseAudio() {
+                if (source && audioContext && audioContext.state !== 'closed') {
+                    source.stop();
+                    source.disconnect();
+                }
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                    animationFrameId = null;
+                }
+                isPlaying = false;
+                playPauseButton.textContent = 'លេង';
+                drawCanvas(audioBuffer && audioContext ? audioContext.currentTime - audioPlaybackStartTime : 0);
+            }
+
+            /**
+             * Disables all interactive UI elements.
+             */
+            function disableUI() {
+                const interactiveElements = mainAppContent.querySelectorAll('input, select, button, textarea'); // Target elements within mainAppContent
+                interactiveElements.forEach(element => {
+                    element.disabled = true;
+                    element.classList.add('opacity-50', 'cursor-not-allowed');
+                });
+                mainAppContent.classList.add('pointer-events-none', 'opacity-50'); // Visually disable main content
+            }
+
+            /**
+             * Enables all interactive UI elements.
+             */
+            function enableUI() {
+                const interactiveElements = mainAppContent.querySelectorAll('input, select, button, textarea'); // Target elements within mainAppContent
+                interactiveElements.forEach(element => {
+                    element.disabled = false;
+                    element.classList.remove('opacity-50', 'cursor-not-allowed');
+                });
+                mainAppContent.classList.remove('pointer-events-none', 'opacity-50'); // Enable main content
+            }
+
+            // --- Recording Functions ---
+
+            /**
+             * Starts recording the canvas.
+             */
+            function startRecording() {
+                if (!canvas.captureStream) {
+                    showMessage('Browser របស់អ្នកមិនគាំទ្រការថតវីដេអូទេ។', 'error');
+                    return;
+                }
+                if (!audioBuffer) {
+                    showMessage('សូមផ្ទុកឡើងបទចម្រៀងជាមុនសិន ដើម្បីថតវីដេអូជាមួយសំឡេង។', 'error');
+                    return;
+                }
+
+                // Ensure audioContext is resumed if suspended
+                if (audioContext && audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+
+                const stream = canvas.captureStream(parseInt(allSettings.fps || 30));
+
+                // Stop any currently playing source before creating a new one for recording
+                if (source) {
+                    source.stop();
+                    source.disconnect(); // Disconnect previous source
+                }
+                source = audioContext.createBufferSource();
+                source.buffer = audioBuffer;
+                source.loop = false;
+                source.onended = () => {
+                    if (isRecording) {
+                        stopRecording();
+                    }
+                    pauseAudio();
+                    showMessage('បទចម្រៀងបានបញ្ចប់។', 'info');
+                };
+
+                // Connect the new source to the pre-existing analyser
+                source.connect(analyser);
+
+                const audioDestination = audioContext.createMediaStreamDestination();
+                // Connect the source to the audioDestination for recording audio
+                source.connect(audioDestination);
+                stream.addTrack(audioDestination.stream.getAudioTracks()[0]);
+
+                audioPlaybackStartTime = audioContext.currentTime;
+                source.start(0);
+
+                recordedChunks = [];
+                mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp8,opus' });
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        recordedChunks.push(event.data);
+                    }
+                };
+
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    document.body.appendChild(a);
+                    a.style = 'display: none';
+                    a.href = url;
+                    a.download = 'recode_video_preview.webm';
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    showMessage('វីដេអូ WebM ត្រូវបានទាញយកដោយជោគជ័យ។', 'success');
+                    recordButton.textContent = 'ថតវីដេអូ';
+                    recordingIndicator.classList.add('hidden');
+                    isRecording = false;
+                    // When recording stops, ensure audio context is properly closed or reset if no longer needed
+                    if (source && audioContext && audioContext.state !== 'closed') {
+                        source.stop();
+                        source.disconnect();
+                        // audioContext.close(); // Only close if no further audio operations are expected
+                        // audioContext = null;
+                    }
+                    if (animationFrameId) {
+                        cancelAnimationFrame(animationFrameId);
+                        animationFrameId = null;
+                    }
+                    drawCanvas(0);
+                };
+
+                mediaRecorder.onerror = (event) => {
+                    showMessage('មានបញ្ហាក្នុងការថតវីដេអូ: ' + event.error.name, 'error');
+                    console.error('MediaRecorder Error:', event.error);
+                    recordButton.textContent = 'ថតវីដេអូ';
+                    recordingIndicator.classList.add('hidden');
+                    isRecording = false;
+                    if (source && audioContext && audioContext.state !== 'closed') {
+                        source.stop();
+                        source.disconnect();
+                        // audioContext.close();
+                        // audioContext = null;
+                    }
+                    if (animationFrameId) {
+                        cancelAnimationFrame(animationFrameId);
+                        animationFrameId = null;
+                    }
+                    drawCanvas(0);
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                recordButton.textContent = 'បញ្ឈប់ការថត';
+                recordingIndicator.classList.remove('hidden');
+                showMessage('កំពុងថតវីដេអូ...', 'info');
+                lastFrameTime = performance.now();
+                animate(lastFrameTime);
+            }
+
+            /**
+             * Stops recording the canvas.
+             */
+            function stopRecording() {
+                if (mediaRecorder && mediaRecorder.state === 'recording') {
+                    mediaRecorder.stop();
+                }
+            }
+
+            // --- Image Download Function ---
+
+            /**
+             * Downloads the current canvas content as a PNG image.
+             */
+            function downloadImage() {
+                const dataURL = canvas.toDataURL('image/png');
+                const a = document.createElement('a');
+                document.body.appendChild(a);
+                a.style = 'display: none';
+                a.href = dataURL;
+                a.download = 'recode_image_snapshot.png';
+                a.click();
+                document.body.removeChild(a);
+                showMessage('រូបភាពត្រូវបានទាញយកដោយជោគជ័យ។', 'success');
+            }
+
+            // --- Firebase Project Management Functions ---
+
+            /**
+             * Initializes Firebase app and authentication.
+             */
+            async function initializeFirebase() {
+                try {
+                    if (firebaseConfig) {
+                        const app = initializeApp(firebaseConfig);
+                        db = getFirestore(app);
+                        auth = getAuth(app);
+
+                        onAuthStateChanged(auth, async (user) => {
+                            if (user) {
+                                currentUserId = user.uid;
+                                isFirebaseReady = true;
+                                console.log("Firebase initialized. User ID:", currentUserId);
+                                await loadProjectList();
+                            } else {
+                                if (initialAuthToken) {
+                                    await signInWithCustomToken(auth, initialAuthToken);
+                                } else {
+                                    await signInAnonymously(auth);
+                                }
+                            }
+                        });
+                    } else {
+                        console.warn("Firebase config not provided. Persistence features will be unavailable.");
+                        showMessage("Firebase config មិនត្រូវបានផ្តល់ឱ្យទេ។ មុខងាររក្សាទុក/ផ្ទុកគម្រោងនឹងមិនមានទេ។", "error");
+                    }
+                } catch (error) {
+                    console.error("Error initializing Firebase:", error);
+                    showMessage("មានបញ្ហាក្នុងការចាប់ផ្តើម Firebase: " + error.message, "error");
+                }
+            }
+
+            /**
+             * Saves the current settings to Firestore.
+             */
+            async function saveProject() {
+                if (!isFirebaseReady || !currentUserId) {
+                    showMessage("Firebase មិនទាន់រួចរាល់ទេ។ សូមរង់ចាំបន្តិច។", "error");
+                    return;
+                }
+                const projectName = projectNameInput.value.trim();
+                if (!projectName) {
+                    showMessage("សូមបញ្ចូលឈ្មោះគម្រោង។", "error");
+                    return;
+                }
+
+                try {
+                    const projectRef = doc(db, `artifacts/${appId}/users/${currentUserId}/projects`, projectName);
+                    await setDoc(projectRef, allSettings);
+                    showMessage(`គម្រោង '${projectName}' ត្រូវបានរក្សាទុកដោយជោគជ័យ។`, "success");
+                    await loadProjectList();
+                }
+                catch (error) {
+                    console.error("Error saving project:", error);
+                    showMessage("បរាជ័យក្នុងការរក្សាទុកគម្រោង: " + error.message, "error");
+                }
+            }
+
+            /**
+             * Loads settings from a selected project in Firestore.
+             */
+            async function loadProject() {
+                if (!isFirebaseReady || !currentUserId) {
+                    showMessage("Firebase មិនទាន់រួចរាល់ទេ។ សូមរង់ចាំបន្តិច។", "error");
+                    return;
+                }
+                const projectName = projectListSelect.value;
+                if (!projectName) {
+                    showMessage("សូមជ្រើសរើសគម្រោងដើម្បីផ្ទុក។", "error");
+                    return;
+                }
+
+                try {
+                    const projectRef = doc(db, `artifacts/${appId}/users/${currentUserId}/projects`, projectName);
+                    const projectSnap = await getDoc(projectRef);
+
+                    if (projectSnap.exists()) {
+                        const loadedSettings = projectSnap.data();
+                        // Clear current elements and their corresponding Image objects
+                        allSettings.mainImages = [];
+                        mainImages = [];
+                        allSettings.movingImages = [];
+                        movingImages = [];
+                        allSettings.logos = [];
+                        logos = [];
+                        allSettings.titles = [];
+                        allSettings.texts = [];
+
+                        // Deep copy loaded settings
+                        Object.assign(allSettings, loadedSettings);
+                        allSettings.visualizer = loadedSettings.visualizer || globalSettings.visualizer;
+                        allSettings.global = loadedSettings.global || globalSettings.global;
+
+                        // Re-initialize image objects if src is available
+                        loadedSettings.mainImages.forEach((s, index) => {
+                            const img = new Image();
+                            img.onload = () => {
+                                mainImages[index] = img; // Ensure the loaded image is in the array
+                                drawCanvas(audioBuffer && isPlaying ? audioContext.currentTime - audioPlaybackStartTime : 0);
+                            };
+                            img.onerror = () => {
+                                console.error(`Error loading image from src for mainImage ${index}: ${s.src}`);
+                                // Optionally set a placeholder or show an error on canvas
+                            };
+                            img.src = s.src || '';
+                            mainImages.push(img); // Add to the array
+                        });
+                        loadedSettings.movingImages.forEach((s, index) => {
+                            const img = new Image();
+                            img.onload = () => {
+                                movingImages[index] = img;
+                                drawCanvas(audioBuffer && isPlaying ? audioContext.currentTime - audioPlaybackStartTime : 0);
+                            };
+                            img.onerror = () => {
+                                console.error(`Error loading image from src for movingImage ${index}: ${s.src}`);
+                            };
+                            img.src = s.src || '';
+                            movingImages.push(img);
+                        });
+                        loadedSettings.logos.forEach((s, index) => {
+                            const img = new Image();
+                            img.onload = () => {
+                                logos[index] = img;
+                                drawCanvas(audioBuffer && isPlaying ? audioContext.currentTime - audioPlaybackStartTime : 0);
+                            };
+                            img.onerror = () => {
+                                console.error(`Error loading image from src for logo ${index}: ${s.src}`);
+                            };
+                            img.src = s.src || '';
+                            logos.push(img);
+                        });
+
+                        updateUIFromSettings();
+                        showMessage(`គម្រោង '${projectName}' ត្រូវបានផ្ទុកដោយជោគជ័យ។ សូមផ្ទុកឡើងឯកសារមេឌៀរបស់អ្នកឡើងវិញ។`, "success");
+                        drawCanvas(audioBuffer && isPlaying ? audioContext.currentTime - audioPlaybackStartTime : 0);
+                    } else {
+                        showMessage(`គម្រោង '${projectName}' មិនត្រូវបានរកឃើញទេ។`, "error");
+                    }
+                } catch (error) {
+                    console.error("Error loading project:", error);
+                    showMessage("បរាជ័យក្នុងការផ្ទុកគម្រោង: " + error.message, "error");
+                }
+            }
+
+            /**
+             * Deletes a selected project from Firestore.
+             */
+            async function deleteProject() {
+                if (!isFirebaseReady || !currentUserId) {
+                    showMessage("Firebase មិនទាន់រួចរាល់ទេ។ សូមរង់ចាំបន្តិច។", "error");
+                    return;
+                }
+                const projectName = projectListSelect.value;
+                if (!projectName) {
+                    showMessage("សូមជ្រើសរើសគម្រោងដើម្បីលុប។", "error");
+                    return;
+                }
+
+                try {
+                    const projectRef = doc(db, `artifacts/${appId}/users/${currentUserId}/projects`, projectName);
+                    await deleteDoc(projectRef);
+                    showMessage(`គម្រោង '${projectName}' ត្រូវបានលុបដោយជោគជ័យ។`, "success");
+                    await loadProjectList();
+                } catch (error) {
+                    console.error("Error deleting project:", error);
+                    showMessage("បរាជ័យក្នុងការលុបគម្រោង: " + error.message, "error");
+                }
+            }
+
+            /**
+             * Populates the project list dropdown from Firestore.
+             */
+            async function loadProjectList() {
+                if (!isFirebaseReady || !currentUserId) {
+                    return;
+                }
+                projectListSelect.innerHTML = '<option value="">ជ្រើសរើសគម្រោង</option>';
+                try {
+                    const q = query(collection(db, `artifacts/${appId}/users/${currentUserId}/projects`));
+                    const querySnapshot = await getDocs(q);
+                    if (querySnapshot.empty) {
+                        showMessage("មិនទាន់មានគម្រោងដែលបានរក្សាទុកទេ។", "info");
+                    } else {
+                        querySnapshot.forEach((doc) => {
+                            const option = document.createElement('option');
+                            option.value = doc.id;
+                            option.textContent = doc.id;
+                            projectListSelect.appendChild(option);
+                        });
+                    }
+                } catch (error) {
+                    console.error("Error loading project list:", error);
+                    showMessage("បរាជ័យក្នុងការផ្ទុកបញ្ជីគម្រោង: " + error.message, "error");
+                }
+            }
+
+            /**
+             * Updates UI input fields based on the current allSettings object.
+             * This is crucial after loading a project.
+             */
+            function updateUIFromSettings() {
+                // Update global controls
+                globalVolumeInput.value = allSettings.global.volume;
+                videoFormatSelect.value = allSettings.videoFormat;
+                fpsInput.value = allSettings.fps;
+
+                // Update visualizer controls
+                document.getElementById('visualizerEnabled').checked = allSettings.visualizer.enabled;
+                document.getElementById('visualizerOffsetX').value = allSettings.visualizer.offsetX;
+                document.getElementById('visualizerOffsetY').value = allSettings.visualizer.offsetY;
+                document.getElementById('visualizerPositionAlignment').value = allSettings.visualizer.positionAlignment;
+                document.getElementById('visualizerWidth').value = allSettings.visualizer.width;
+                document.getElementById('visualizerHeight').value = allSettings.visualizer.height;
+                document.getElementById('visualizerScale').value = allSettings.visualizer.scale;
+                document.getElementById('visualizerRotation').value = allSettings.visualizer.rotation;
+                document.getElementById('visualizerOpacity').value = allSettings.visualizer.opacity;
+                document.getElementById('visualizerColor').value = allSettings.visualizer.color;
+                document.getElementById('visualizerStrokeColor').value = allSettings.visualizer.strokeColor;
+                document.getElementById('visualizerStrokeThickness').value = allSettings.visualizer.strokeThickness;
+                document.getElementById('visualizerShadowColor').value = allSettings.visualizer.shadowColor;
+                document.getElementById('visualizerShadowOpacity').value = allSettings.visualizer.shadowOpacity;
+                document.getElementById('visualizerShadowBlur').value = allSettings.visualizer.shadowBlur;
+                document.getElementById('visualizerShadowDistance').value = allSettings.visualizer.shadowDistance;
+                document.getElementById('visualizerShadowAngle').value = allSettings.visualizer.shadowAngle;
+                document.getElementById('visualizerAnimScaleEnabled').checked = allSettings.visualizer.animations.scale.enabled;
+                document.getElementById('visualizerAnimScaleIntensity').value = allSettings.visualizer.animations.scale.intensity;
+                document.getElementById('visualizerAnimScaleMode').value = allSettings.visualizer.animations.scale.mode;
+                document.getElementById('visualizerAnimRotationEnabled').checked = allSettings.visualizer.animations.rotation.enabled;
+                document.getElementById('visualizerAnimRotationIntensity').value = allSettings.visualizer.animations.rotation.intensity;
+                document.getElementById('visualizerAnimRotationMode').value = allSettings.visualizer.animations.rotation.mode;
+                document.getElementById('visualizerAnimOffsetXEnabled').checked = allSettings.visualizer.animations.offsetX.enabled;
+                document.getElementById('visualizerAnimOffsetXIntensity').value = allSettings.visualizer.animations.offsetX.intensity;
+                document.getElementById('visualizerAnimOffsetXMode',).value = allSettings.visualizer.animations.offsetX.mode;
+                document.getElementById('visualizerAnimOffsetYEnabled').checked = allSettings.visualizer.animations.offsetY.enabled;
+                document.getElementById('visualizerAnimOffsetYIntensity').value = allSettings.visualizer.animations.offsetY.intensity;
+                document.getElementById('visualizerAnimOffsetYMode').value = allSettings.visualizer.animations.offsetY.mode;
+                document.getElementById('visualizerAnimBlurEnabled').checked = allSettings.visualizer.animations.blur.enabled;
+                document.getElementById('visualizerAnimBlurIntensity').value = allSettings.visualizer.animations.blur.intensity;
+                document.getElementById('visualizerAnimBlurMode').value = allSettings.visualizer.animations.blur.mode;
+                document.getElementById('visualizerAnimOpacityEnabled').checked = allSettings.visualizer.animations.opacity.enabled;
+                document.getElementById('visualizerAnimOpacityIntensity').value = allSettings.visualizer.animations.opacity.intensity;
+                document.getElementById('visualizerAnimOpacityMode').value = allSettings.visualizer.animations.opacity.mode;
+
+
+                // Repopulate and render controls for dynamic elements
+                populateElementDropdown('mainImages');
+                populateElementDropdown('movingImages');
+                populateElementDropdown('logos');
+                populateElementDropdown('titles');
+                populateElementDropdown('texts');
+
+                // Ensure at least one element is selected for each type if it exists
+                if (allSettings.mainImages.length > 0) selectElementInstance('mainImages', activeMainImageIndex === -1 ? 0 : activeMainImageIndex);
+                if (allSettings.movingImages.length > 0) selectElementInstance('movingImages', activeMovingImageIndex === -1 ? 0 : activeMovingImageIndex);
+                if (allSettings.logos.length > 0) selectElementInstance('logos', activeLogoIndex === -1 ? 0 : activeLogoIndex);
+                if (allSettings.titles.length > 0) selectElementInstance('titles', activeTitleIndex === -1 ? 0 : activeTitleIndex);
+                if (allSettings.texts.length > 0) selectElementInstance('texts', activeTextIndex === -1 ? 0 : activeTextIndex);
+                
+                // Trigger a redraw
+                drawCanvas(audioBuffer && isPlaying ? audioContext.currentTime - audioPlaybackStartTime : 0);
+            }
+
+
+            // --- Main Logic ---
+            generateButton.addEventListener('click', () => {
+                hideGeneralMessage(); // Hide any general messages
+                startAudioVisualization();
+            });
+
+            playPauseButton.addEventListener('click', () => {
+                hideGeneralMessage(); // Hide any general messages
+                if (isPlaying) {
+                    pauseAudio();
+                } else {
+                    startAudioVisualization();
+                }
+            });
+
+            recordButton.addEventListener('click', () => {
+                hideGeneralMessage(); // Hide any general messages
+                if (isRecording) {
+                    stopRecording();
+                } else {
+                    startRecording();
+                }
+            });
+
+            downloadImageButton.addEventListener('click', downloadImage);
+
+            // Project Management Event Listeners
+            saveProjectButton.addEventListener('click', saveProject);
+            loadProjectButton.addEventListener('click', loadProject);
+            deleteProjectButton.addEventListener('click', deleteProject);
+            projectListSelect.addEventListener('change', () => {
+                projectNameInput.value = projectListSelect.value;
+            });
+
+            // Add event listener for audio file input
+            audioFileInput.addEventListener('change', async (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    try {
+                        // Initialize AudioContext only once, if it hasn't been already
+                        if (!audioContext) {
+                            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                            gainNode = audioContext.createGain();
+                            analyser = audioContext.createAnalyser();
+                            analyser.fftSize = 256;
+                            bufferLength = analyser.frequencyBinCount;
+                            dataArray = new Uint8Array(bufferLength);
+
+                            // Connect analyser to gainNode and then to destination. These connections are permanent.
+                            analyser.connect(gainNode);
+                            gainNode.connect(audioContext.destination);
+                        }
+                        gainNode.gain.value = allSettings.global.volume; // Set volume from settings
+                        const arrayBuffer = await file.arrayBuffer();
+                        audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                        showMessage('បទចម្រៀងបានផ្ទុកដោយជោគជ័យ។', 'success');
+                    } catch (error) {
+                        console.error('Error loading or decoding audio:', error);
+                        showMessage('បរាជ័យក្នុងការផ្ទុក ឬឌិកូដបទចម្រៀង។', 'error');
+                        audioBuffer = null;
+                    }
+                }
+            });
+
+            // --- URL Restriction Logic ---
+            // NOTE: This is where you can change the allowed URL.
+            // Convert the desired URL string into character codes to obfuscate it.
+            // Example for "https://kea4utv.github.io/":
+            // "h".charCodeAt(0), "t".charCodeAt(0), "t".charCodeAt(0), "p".charCodeAt(0), "s".charCodeAt(0), ":".charCodeAt(0), "/".charCodeAt(0), "/".charCodeAt(0), "k".charCodeAt(0), "e".charCodeAt(0), "a".charCodeAt(0), "4".charCodeAt(0), "u".charCodeAt(0), "t".charCodeAt(0), "v".charCodeAt(0), ".".charCodeAt(0), "g".charCodeAt(0), "i".charCodeAt(0), "t".charCodeAt(0), "h".charCodeAt(0), "u".charCodeAt(0), "b".charCodeAt(0), ".".charCodeAt(0), "i".charCodeAt(0), "o".charCodeAt(0), "/".charCodeAt(0)
+            const allowedUrlChars = [104, 116, 116, 112, 115, 58, 47, 47, 107, 101, 97, 52, 117, 116, 118, 46, 103, 105, 116, 104, 117, 98, 46, 105, 111, 47];
+            const allowedUrl = String.fromCharCode(...allowedUrlChars);
+
+            // --- Password Logic ---
+            // NOTE: This is where you can change the password.
+            // Convert the desired password string into character codes to obfuscate it.
+            // Example for "kounsokea":
+            // "k".charCodeAt(0), "o".charCodeAt(0), "u".charCodeAt(0), "n".charCodeAt(0), "s".charCodeAt(0), "o".charCodeAt(0), "k".charCodeAt(0), "e".charCodeAt(0), "a".charCodeAt(0)
+            const correctPasswordChars = [107, 111, 117, 110, 115, 111, 107, 101, 97];
+            const correctPassword = String.fromCharCode(...correctPasswordChars);
+
+            function showLoginPopup(message = '') {
+                loginOverlay.classList.remove('hidden');
+                mainAppContent.classList.add('pointer-events-none', 'opacity-50'); // Disable main content
+                if (message) {
+                    loginMessage.textContent = message;
+                    loginMessage.classList.remove('hidden');
+                    loginMessage.classList.add('border-red-500', 'bg-red-900'); // Default to error style
+                } else {
+                    loginMessage.classList.add('hidden');
+                }
+                passwordInput.value = ''; // Clear password field
+                passwordInput.focus();
+                // Ensure the password input is enabled when the popup is shown
+                passwordInput.disabled = false;
+                loginButton.disabled = false;
+                passwordInput.classList.remove('opacity-50', 'cursor-not-allowed');
+                loginButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+
+            function hideLoginPopup() {
+                loginOverlay.classList.add('hidden');
+                mainAppContent.classList.remove('pointer-events-none', 'opacity-50'); // Enable main content
+            }
+
+            loginButton.addEventListener('click', () => {
+                const enteredPassword = passwordInput.value;
+                if (enteredPassword === correctPassword) {
+                    hideLoginPopup();
+                    enableUI(); // Enable all UI elements after successful login
+                    showMessage('ចូលដោយជោគជ័យ!', 'success');
+                } else {
+                    showLoginPopup('ពាក្យសម្ងាត់មិនត្រឹមត្រូវ។');
+                    // No need to call disableUI here, showLoginPopup already handles disabling main content
+                    // and we want the login elements to remain interactive.
+                }
+            });
+
+            // Initial check for URL and then show login if URL is correct
+            if (window.location.href.startsWith(allowedUrl)) {
+                showLoginPopup(); // Show login popup on load
+                // Do NOT call disableUI() here, as it would disable the password input itself.
+                // showLoginPopup already handles disabling the main app content.
+                // Initial setup for canvas and firebase will happen after successful login
+            } else {
+                disableUI(); // Disable everything if URL is wrong
+                showMessage('កម្មវិធីនេះអាចដំណើរការបានតែនៅលើ URL ដែលបានកំណត់ប៉ុណ្ណោះ។', 'error');
+            }
+        })(typeof __app_id !== 'undefined' ? __app_id : 'default-app-id',
+           typeof __firebase_config !== 'undefined' && __firebase_config !== '' ? JSON.parse(__firebase_config) : null, // Fix: Check for empty string
+           typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null);
+    </script>
+</body>
+</html>
