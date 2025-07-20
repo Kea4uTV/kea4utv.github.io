@@ -1855,108 +1855,136 @@
 
 
             // --- Main Logic ---
-            generateButton.addEventListener('click', () => {
-                hideGeneralMessage(); // Hide any general messages
-                startAudioVisualization();
-            });
-
-            playPauseButton.addEventListener('click', () => {
-                hideGeneralMessage(); // Hide any general messages
-                if (isPlaying) {
-                    pauseAudio();
-                } else {
+            // Moved all event listeners and initial setup into DOMContentLoaded
+            document.addEventListener('DOMContentLoaded', () => {
+                generateButton.addEventListener('click', () => {
+                    hideGeneralMessage(); // Hide any general messages
                     startAudioVisualization();
-                }
-            });
+                });
 
-            recordButton.addEventListener('click', () => {
-                hideGeneralMessage(); // Hide any general messages
-                if (isRecording) {
-                    stopRecording();
-                } else {
-                    startRecording();
-                }
-            });
-
-            downloadImageButton.addEventListener('click', downloadImage);
-
-            // Project Management Event Listeners
-            saveProjectButton.addEventListener('click', saveProject);
-            loadProjectButton.addEventListener('click', loadProject);
-            deleteProjectButton.addEventListener('click', deleteProject);
-            projectListSelect.addEventListener('change', () => {
-                projectNameInput.value = projectListSelect.value;
-            });
-
-            // Add event listener for audio file input
-            audioFileInput.addEventListener('change', async (event) => {
-                const file = event.target.files[0];
-                if (file) {
-                    try {
-                        // Initialize AudioContext only once, if it hasn't been already
-                        if (!audioContext) {
-                            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                            gainNode = audioContext.createGain();
-                            analyser = audioContext.createAnalyser();
-                            analyser.fftSize = 256;
-                            bufferLength = analyser.frequencyBinCount;
-                            dataArray = new Uint8Array(bufferLength);
-
-                            // Connect analyser to gainNode and then to destination. These connections are permanent.
-                            analyser.connect(gainNode);
-                            gainNode.connect(audioContext.destination);
-                        }
-                        gainNode.gain.value = allSettings.global.volume; // Set volume from settings
-                        const arrayBuffer = await file.arrayBuffer();
-                        audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-
-                        // Set seekbar max and display total duration
-                        audioSeekbar.max = audioBuffer.duration;
-                        totalDurationDisplay.textContent = formatTime(audioBuffer.duration);
-                        currentTimeDisplay.textContent = formatTime(0); // Reset current time
-
-                        showMessage('បទចម្រៀងបានផ្ទុកដោយជោគជ័យ។', 'success');
-                    } catch (error) {
-                        console.error('Error loading or decoding audio:', error);
-                        showMessage('បរាជ័យក្នុងការផ្ទុក ឬឌិកូដបទចម្រៀង។', 'error');
-                        audioBuffer = null;
-                    }
-                }
-            });
-
-            // Seekbar input event listener
-            audioSeekbar.addEventListener('input', () => {
-                if (audioContext && audioBuffer) {
-                    const seekTime = parseFloat(audioSeekbar.value);
-                    // Stop current source if playing
-                    if (source && isPlaying) {
-                        source.stop();
-                        source.disconnect();
-                        isPlaying = false; // Temporarily set to false to prevent animation loop issues
-                    }
-
-                    // Create new source and play from seekTime
-                    source = audioContext.createBufferSource();
-                    source.buffer = audioBuffer;
-                    source.connect(analyser); // Reconnect to analyser
-                    analyser.connect(gainNode); // Reconnect to gainNode
-                    source.loop = false;
-                    source.onended = () => {
-                        if (isRecording) {
-                            stopRecording();
-                        }
+                playPauseButton.addEventListener('click', () => {
+                    hideGeneralMessage(); // Hide any general messages
+                    if (isPlaying) {
                         pauseAudio();
-                        showMessage('បទចម្រៀងបានបញ្ចប់។', 'info');
-                    };
-                    audioPlaybackStartTime = audioContext.currentTime - seekTime; // Adjust start time for seeking
-                    source.start(0, seekTime); // Start from seekTime
+                    } else {
+                        startAudioVisualization();
+                    }
+                });
 
-                    isPlaying = true; // Resume playing
-                    playPauseButton.textContent = 'ផ្អាក';
-                    animate(performance.now()); // Restart animation loop
+                recordButton.addEventListener('click', () => {
+                    hideGeneralMessage(); // Hide any general messages
+                    if (isRecording) {
+                        stopRecording();
+                    } else {
+                        startRecording();
+                    }
+                });
+
+                downloadImageButton.addEventListener('click', downloadImage);
+
+                // Project Management Event Listeners
+                saveProjectButton.addEventListener('click', saveProject);
+                loadProjectButton.addEventListener('click', loadProject);
+                deleteProjectButton.addEventListener('click', deleteProject);
+                projectListSelect.addEventListener('change', () => {
+                    projectNameInput.value = projectListSelect.value;
+                });
+
+                // Add event listener for audio file input
+                audioFileInput.addEventListener('change', async (event) => {
+                    const file = event.target.files[0];
+                    if (file) {
+                        try {
+                            // Initialize AudioContext only once, if it hasn't been already
+                            if (!audioContext) {
+                                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                                gainNode = audioContext.createGain();
+                                analyser = audioContext.createAnalyser();
+                                analyser.fftSize = 256;
+                                bufferLength = analyser.frequencyBinCount;
+                                dataArray = new Uint8Array(bufferLength);
+
+                                // Connect analyser to gainNode and then to destination. These connections are permanent.
+                                analyser.connect(gainNode);
+                                gainNode.connect(audioContext.destination);
+                            }
+                            gainNode.gain.value = allSettings.global.volume; // Set volume from settings
+                            const arrayBuffer = await file.arrayBuffer();
+                            audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+                            // Set seekbar max and display total duration
+                            audioSeekbar.max = audioBuffer.duration;
+                            totalDurationDisplay.textContent = formatTime(audioBuffer.duration);
+                            currentTimeDisplay.textContent = formatTime(0); // Reset current time
+
+                            showMessage('បទចម្រៀងបានផ្ទុកដោយជោគជ័យ។', 'success');
+                        } catch (error) {
+                            console.error('Error loading or decoding audio:', error);
+                            showMessage('បរាជ័យក្នុងការផ្ទុក ឬឌិកូដបទចម្រៀង។', 'error');
+                            audioBuffer = null;
+                        }
+                    }
+                });
+
+                // Seekbar input event listener
+                audioSeekbar.addEventListener('input', () => {
+                    if (audioContext && audioBuffer) {
+                        const seekTime = parseFloat(audioSeekbar.value);
+                        // Stop current source if playing
+                        if (source && isPlaying) {
+                            source.stop();
+                            source.disconnect();
+                            isPlaying = false; // Temporarily set to false to prevent animation loop issues
+                        }
+
+                        // Create new source and play from seekTime
+                        source = audioContext.createBufferSource();
+                        source.buffer = audioBuffer;
+                        source.connect(analyser); // Reconnect to analyser
+                        analyser.connect(gainNode); // Reconnect to gainNode
+                        source.loop = false;
+                        source.onended = () => {
+                            if (isRecording) {
+                                stopRecording();
+                            }
+                            pauseAudio();
+                            showMessage('បទចម្រៀងបានបញ្ចប់។', 'info');
+                        };
+                        audioPlaybackStartTime = audioContext.currentTime - seekTime; // Adjust start time for seeking
+                        source.start(0, seekTime); // Start from seekTime
+
+                        isPlaying = true; // Resume playing
+                        playPauseButton.textContent = 'ផ្អាក';
+                        animate(performance.now()); // Restart animation loop
+                    }
+                });
+                
+                // Login Button Listener
+                loginButton.addEventListener('click', () => {
+                    const enteredPassword = passwordInput.value;
+                    if (enteredPassword === correctPassword) {
+                        hideLoginPopup();
+                        enableUI(); // Enable all UI elements after successful login
+                        showMessage('ចូលដោយជោគជ័យ!', 'success');
+                    } else {
+                        showLoginPopup('ពាក្យសម្ងាត់មិនត្រឹមត្រូវ។');
+                    }
+                });
+
+                // Initial check for URL and then show login if URL is correct
+                if (window.location.href.startsWith(allowedUrl)) {
+                    showLoginPopup(); // Show login popup on load
+                } else {
+                    disableUI(); // Disable everything if URL is wrong
+                    showMessage('កម្មវិធីនេះអាចដំណើរការបានតែនៅលើ URL ដែលបានកំណត់ប៉ុណ្ណោះ។', 'error');
                 }
+
+                // Initial setup for canvas and firebase will happen after successful login
+                setCanvasDimensions();
+                drawCanvas();
+                initializeFirebase();
             });
-            
+
             // --- URL Restriction Logic ---
             // NOTE: This is where you can change the allowed URL.
             // Convert the desired URL string into character codes to obfuscate it.
@@ -1973,37 +2001,6 @@
             const correctPasswordChars = [107, 111, 117, 110, 115, 111, 107, 101, 97]; 
             const correctPassword = String.fromCharCode(...correctPasswordChars);
 
-            function showLoginPopup(message = '') {
-                loginOverlay.classList.remove('hidden');
-                mainAppContent.classList.add('pointer-events-none', 'opacity-50'); // Disable main content
-                if (message) {
-                    loginMessage.textContent = message;
-                    loginMessage.classList.remove('hidden');
-                    loginMessage.classList.add('border-red-500', 'bg-red-900'); // Default to error style
-                } else {
-                    loginMessage.classList.add('hidden');
-                }
-                passwordInput.value = ''; // Clear password field
-                passwordInput.focus();
-                // Ensure the password input is enabled when the popup is shown
-                passwordInput.disabled = false;
-                loginButton.disabled = false;
-                passwordInput.classList.remove('opacity-50', 'cursor-not-allowed');
-                loginButton.classList.remove('opacity-50', 'cursor-not-allowed');
-            }
-
-            function hideLoginPopup() {
-                loginOverlay.classList.add('hidden');
-                mainAppContent.classList.remove('pointer-events-none', 'opacity-50'); // Enable main content
-            }
-
-            // Initial check for URL and then show login if URL is correct
-            if (window.location.href.startsWith(allowedUrl)) {
-                showLoginPopup(); // Show login popup on load
-            } else {
-                disableUI(); // Disable everything if URL is wrong
-                showMessage('កម្មវិធីនេះអាចដំណើរការបានតែនៅលើ URL ដែលបានកំណត់ប៉ុណ្ណោះ។', 'error');
-            }
         })(typeof __app_id !== 'undefined' ? __app_id : 'default-app-id',
            typeof __firebase_config !== 'undefined' && __firebase_config !== '' ? JSON.parse(__firebase_config) : null, // Fix: Check for empty string
            typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null);
