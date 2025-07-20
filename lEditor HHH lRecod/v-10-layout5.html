@@ -1821,18 +1821,18 @@
                 document.getElementById('visualizerAnimRotationEnabled').checked = allSettings.visualizer.animations.rotation.enabled;
                 document.getElementById('visualizerAnimRotationIntensity').value = allSettings.visualizer.animations.rotation.intensity;
                 document.getElementById('visualizerAnimRotationMode').value = allSettings.visualizer.animations.rotation.mode;
-                document.getElementById('visualizerAnimOffsetXEnabled').checked = allSettings.visualizer.animations.offsetX.enabled;
-                document.getElementById('visualizerAnimOffsetXIntensity').value = allSettings.visualizer.animations.offsetX.intensity;
-                document.getElementById('visualizerAnimOffsetXMode',).value = allSettings.visualizer.animations.offsetX.mode;
-                document.getElementById('visualizerAnimOffsetYEnabled').checked = allSettings.visualizer.animations.offsetY.enabled;
-                document.getElementById('visualizerAnimOffsetYIntensity').value = allSettings.visualizer.animations.offsetY.intensity;
-                document.getElementById('visualizerAnimOffsetYMode').value = allSettings.visualizer.animations.offsetY.mode;
-                document.getElementById('visualizerAnimBlurEnabled').checked = allSettings.visualizer.animations.blur.enabled;
-                document.getElementById('visualizerAnimBlurIntensity').value = allSettings.visualizer.animations.blur.intensity;
-                document.getElementById('visualizerAnimBlurMode').value = allSettings.visualizer.animations.blur.mode;
-                document.getElementById('visualizerAnimOpacityEnabled').checked = allSettings.visualizer.animations.opacity.enabled;
-                document.getElementById('visualizerAnimOpacityIntensity').value = allSettings.visualizer.animations.opacity.intensity;
-                document.getElementById('visualizerAnimOpacityMode').value = allSettings.visualizer.animations.opacity.mode;
+                setupSettingListener('visualizerAnimOffsetXEnabled', 'visualizer.animations.offsetX.enabled', 'checkbox');
+                setupSettingListener('visualizerAnimOffsetXIntensity', 'visualizer.animations.offsetX.intensity', 'number');
+                setupSettingListener('visualizerAnimOffsetXMode', 'visualizer.animations.offsetX.mode', 'select');
+                setupSettingListener('visualizerAnimOffsetYEnabled', 'visualizer.animations.offsetY.enabled', 'checkbox');
+                setupSettingListener('visualizerAnimOffsetYIntensity', 'visualizer.animations.offsetY.intensity', 'number');
+                setupSettingListener('visualizerAnimOffsetYMode', 'visualizer.animations.offsetY.mode', 'select');
+                setupSettingListener('visualizerAnimBlurEnabled', 'visualizer.animations.blur.enabled', 'checkbox');
+                setupSettingListener('visualizerAnimBlurIntensity', 'visualizer.animations.blur.intensity', 'number');
+                setupSettingListener('visualizerAnimBlurMode', 'visualizer.animations.blur.mode', 'select');
+                setupSettingListener('visualizerAnimOpacityEnabled', 'visualizer.animations.opacity.enabled', 'checkbox');
+                setupSettingListener('visualizerAnimOpacityIntensity', 'visualizer.animations.opacity.intensity', 'range');
+                setupSettingListener('visualizerAnimOpacityMode', 'visualizer.animations.opacity.mode', 'select');
 
 
                 // Repopulate and render controls for dynamic elements
