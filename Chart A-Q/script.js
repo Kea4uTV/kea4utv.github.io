@@ -4,17 +4,17 @@ import {ChatMessage} from './chatMessage.js';
 
 // The image/name pairs that are displayed
 var chatProfiles = [];
-chatProfiles.push(new Profile('លោកតា', './char1.svg', '#218aff', true, '#ffffff'));
-chatProfiles.push(new Profile('លោកយាយ', './senior-transparent.svg', '#d8d8d8'));
-chatProfiles.push(new Profile('ចៅប្រុស', './char2.svg'));
-chatProfiles.push(new Profile('ចៅស្រី', './char3.svg'));
+chatProfiles.push(new Profile('Grump', './char1.svg', '#218aff', true, '#ffffff'));
+chatProfiles.push(new Profile('Olivia', './senior-transparent.svg', '#d8d8d8'));
+chatProfiles.push(new Profile('Chad', './char2.svg'));
+chatProfiles.push(new Profile('Tischman', './char3.svg'));
 
 // All chat messages, whether on screen yet or not
 var allChatMessages = [];
-allChatMessages.push(new ChatMessage("សូមស្វាគមន៍", chatProfiles[0]));
-allChatMessages.push(new ChatMessage("តើអ្នកចង់ រៀបសំណួរ ចម្លើយបង្កើត វីដេអូឫ?", chatProfiles[0]));
-allChatMessages.push(new ChatMessage("ជំរាប់សួរ អ្នកទាំងអស់គ្នា!", chatProfiles[2]));
-allChatMessages.push(new ChatMessage("ហាសហា ខ្ញុំពិតជារីករាយណាស់. ក្នុងការធ្វើនឹងង្កើតវីដេអូ. អូកំភ្លេចដាក់ការចូលចិត្តម្នាក់មួយផង", chatProfiles[3]));
+allChatMessages.push(new ChatMessage("Have you heard about chat-animator?", chatProfiles[0]));
+allChatMessages.push(new ChatMessage("It makes phone chat animations like this.", chatProfiles[0]));
+allChatMessages.push(new ChatMessage("How cool ðŸ˜ƒ ", chatProfiles[2]));
+allChatMessages.push(new ChatMessage("You can use them anywhere for free! No attribution necessary. Even the customizable profile pictures are free for commercial use.", chatProfiles[3]));
 
 var animationSettings = new AnimationSettings();
 var fileInput;
