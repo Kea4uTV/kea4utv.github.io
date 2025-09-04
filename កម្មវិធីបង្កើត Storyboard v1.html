@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>កម្មវិធីបង្កើត Storyboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+Khmer:wght@400;700&display=swap');
+        body {
+            font-family: 'Noto Serif Khmer', serif;
+            background-color: #f0f4f8;
+        }
+        .container {
+            max-width: 1200px;
+        }
+        .card {
+            border: 2px dashed #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        canvas {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            cursor: crosshair;
+            touch-action: none;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-8 flex flex-col items-center">
+
+    <div class="container mx-auto p-6 bg-white rounded-3xl shadow-xl">
+        <h1 class="text-4xl font-bold text-center text-blue-800 mb-8">កម្មវិធីបង្កើត Storyboard</h1>
+
+        <!-- Audio Player & Action Button -->
+        <div class="mb-8 p-6 bg-gray-50 rounded-2xl shadow-inner flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex-grow w-full md:w-auto">
+                <label for="audio-upload" class="block text-gray-700 font-bold mb-2">បញ្ចូលឯកសារសំឡេង:</label>
+                <input type="file" id="audio-upload" accept="audio/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                <audio id="audio-player" class="w-full mt-4" controls></audio>
+            </div>
+            <button id="add-card-btn" class="bg-blue-500 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:bg-blue-600 transition-transform transform hover:scale-105 w-full md:w-auto mt-4 md:mt-0">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                បន្ថែមផ្ទាំងនៅពេលបច្ចុប្បន្ន
+            </button>
+        </div>
+
+        <!-- Storyboard Container -->
+        <div id="storyboard-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Storyboard items will be injected here -->
+        </div>
+    </div>
+
+    <!-- Save/Load Section -->
+    <div class="mt-8 p-6 bg-white rounded-3xl shadow-xl w-full max-w-4xl">
+        <h2 class="text-3xl font-bold text-center text-blue-800 mb-4">រក្សាទុក / ផ្ទុកគម្រោង</h2>
+        <p class="text-center text-gray-600 mb-4">ចម្លងទិន្នន័យនេះដើម្បីរក្សាទុក ឬបិទភ្ជាប់ទិន្នន័យដែលបានរក្សាទុកនៅទីនេះដើម្បីផ្ទុកវា។</p>
+        <textarea id="project-data-textarea" class="w-full h-40 p-4 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm mb-4"></textarea>
+        <div class="flex flex-wrap gap-4 justify-center">
+            <button id="save-btn" class="bg-gray-800 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:bg-gray-900 transition-transform transform hover:scale-105">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v4a4 4 0 004 4h4v-4m-4-4H8a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-8a2 2 0 00-2-2zm2-2a2 2 0 00-2-2h-4a2 2 0 00-2 2v2h8v-2z" />
+                </svg>
+                រក្សាទុកគម្រោង
+            </button>
+            <button id="load-btn" class="bg-gray-600 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:bg-gray-700 transition-transform transform hover:scale-105">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                ផ្ទុកគម្រោង
+            </button>
+        </div>
+    </div>
+
+    <!-- Custom Alert/Modal Box -->
+    <div id="modal-container" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-80 text-center">
+            <h3 class="text-lg font-bold mb-4" id="modal-title"></h3>
+            <p id="modal-message" class="mb-4"></p>
+            <button id="modal-close-btn" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-full hover:bg-blue-600">យល់ព្រម</button>
+        </div>
+    </div>
+
+    <script>
+        // Array to hold the storyboard data. Each item is a card.
+        let storyboardData = [];
+        const storyboardContainer = document.getElementById('storyboard-container');
+        const projectDataTextarea = document.getElementById('project-data-textarea');
+        const audioPlayer = document.getElementById('audio-player');
+        const audioUpload = document.getElementById('audio-upload');
+
+        // Custom alert function to replace window.alert
+        function showAlert(title, message) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').textContent = message;
+            document.getElementById('modal-container').classList.remove('hidden');
+            document.getElementById('modal-close-btn').onclick = () => {
+                document.getElementById('modal-container').classList.add('hidden');
+            };
+        }
+
+        // Handle audio file upload
+        audioUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const url = URL.createObjectURL(file);
+                audioPlayer.src = url;
+            }
+        });
+
+        // Function to format time in mm:ss format
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = Math.floor(seconds % 60);
+            return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+        }
+
+        // Function to render the storyboard
+        function renderStoryboard() {
+            storyboardContainer.innerHTML = '';
+            storyboardData.forEach((cardItem, cardIndex) => {
+                const card = document.createElement('div');
+                card.id = `card-${cardIndex}`;
+                card.className = `card relative p-6 bg-white rounded-2xl shadow-md flex flex-col items-center`;
+                
+                // Add delete button for the entire card
+                const deleteCardBtn = document.createElement('button');
+                deleteCardBtn.className = 'absolute top-2 right-2 p-1 text-red-500 rounded-full hover:bg-red-100 transition';
+                deleteCardBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-7 7-7-7" /></svg>`;
+                deleteCardBtn.onclick = () => {
+                    storyboardData.splice(cardIndex, 1);
+                    renderStoryboard();
+                    updateProjectData();
+                };
+                card.appendChild(deleteCardBtn);
+
+                // Add timestamp display
+                const timestampDiv = document.createElement('div');
+                timestampDiv.className = 'text-gray-500 text-sm mb-2';
+                timestampDiv.textContent = cardItem.timestamp ? `ពេលវេលា: ${cardItem.timestamp}` : 'មិនមានពេលវេលា';
+                card.appendChild(timestampDiv);
+                
+                // Add the drawing canvas
+                const canvas = document.createElement('canvas');
+                canvas.className = 'w-full mb-4 rounded-lg';
+                card.appendChild(canvas);
+
+                const ctx = canvas.getContext('2d');
+                let isDrawing = false;
+                let lastX = 0;
+                let lastY = 0;
+
+                // Set drawing styles
+                ctx.strokeStyle = '#000000'; // ពណ៌ខ្មៅសម្រាប់ជក់
+                ctx.lineCap = 'round'; // កំណត់ចុងបន្ទាត់ឱ្យមូល
+                ctx.lineJoin = 'round'; // កំណត់ជ្រុងបន្ទាត់ឱ្យមូល
+                ctx.lineWidth = 4; // កំណត់កម្រាស់ជក់
+                
+                // Set initial canvas size and load saved drawing
+                function resizeCanvas() {
+                    const rect = canvas.getBoundingClientRect();
+                    canvas.width = rect.width;
+                    canvas.height = rect.height;
+                    // Load the saved drawing after resizing
+                    if (cardItem.drawing) {
+                        const img = new Image();
+                        img.onload = () => {
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        };
+                        img.src = cardItem.drawing;
+                    }
+                }
+                
+                // Set the initial size and handle window resize
+                resizeCanvas();
+                window.addEventListener('resize', resizeCanvas);
+
+                // Function to draw on the canvas
+                function draw(x, y) {
+                    if (!isDrawing) return;
+                    ctx.beginPath();
+                    ctx.moveTo(lastX, lastY);
+                    ctx.lineTo(x, y);
+                    ctx.stroke();
+                    lastX = x;
+                    lastY = y;
+                }
+
+                // Mouse events for drawing
+                canvas.addEventListener('mousedown', (e) => {
+                    isDrawing = true;
+                    [lastX, lastY] = [e.offsetX, e.offsetY];
+                });
+                canvas.addEventListener('mousemove', (e) => {
+                    draw(e.offsetX, e.offsetY);
+                });
+                canvas.addEventListener('mouseup', () => {
+                    isDrawing = false;
+                    saveDrawingData();
+                });
+                canvas.addEventListener('mouseout', () => {
+                    if (isDrawing) saveDrawingData();
+                    isDrawing = false;
+                });
+                
+                // Touch events for drawing
+                canvas.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    isDrawing = true;
+                    const touch = e.touches[0];
+                    const rect = canvas.getBoundingClientRect();
+                    lastX = touch.clientX - rect.left;
+                    lastY = touch.clientY - rect.top;
+                });
+                canvas.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const rect = canvas.getBoundingClientRect();
+                    const currentX = touch.clientX - rect.left;
+                    const currentY = touch.clientY - rect.top;
+                    draw(currentX, currentY);
+                });
+                canvas.addEventListener('touchend', () => {
+                    isDrawing = false;
+                    saveDrawingData();
+                });
+
+                function saveDrawingData() {
+                    cardItem.drawing = canvas.toDataURL();
+                    updateProjectData();
+                }
+
+                // --- Collapsible Camera Settings Section ---
+                const settingsDetails = document.createElement('details');
+                settingsDetails.className = 'w-full mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200';
+                
+                const settingsSummary = document.createElement('summary');
+                settingsSummary.className = 'font-bold text-gray-700 cursor-pointer';
+                settingsSummary.textContent = 'ការកំណត់កាមេរ៉ា';
+                settingsDetails.appendChild(settingsSummary);
+
+                const settingsGrid = document.createElement('div');
+                settingsGrid.className = 'grid grid-cols-1 md:grid-cols-2 gap-4 mt-2';
+                settingsDetails.appendChild(settingsGrid);
+
+                // Aperture
+                settingsGrid.appendChild(createSettingSelect('Aperture (F-Stop)', [
+                    { value: '', text: 'ជ្រើសរើស' },
+                    { value: 'f/1.8 - f/2.8', text: 'f/1.8 - f/2.8' },
+                    { value: 'f/8 - f/16', text: 'f/8 - f/16' }
+                ], cardItem, 'aperture', 'ល្អសម្រាប់ថតរូបមនុស្ស (Portrait) ឬវីដេអូបែបសិល្បៈ ដែលអ្នកចង់ឲ្យផ្ទៃខាងក្រោយព្រាលៗ (Bokeh Effect)។'));
+
+                // Shutter Speed
+                settingsGrid.appendChild(createSettingSelect('Shutter Speed', [
+                    { value: '', text: 'ជ្រើសរើស' },
+                    { value: '1/50', text: '1/50' },
+                    { value: '1/60', text: '1/60' },
+                    { value: '1/100', text: '1/100' },
+                    { value: '1/120', text: '1/120' }
+                ], cardItem, 'shutterSpeed', 'ត្រូវកំណត់ Shutter Speed ឲ្យមានទំហំធំជាង Frame Rate ពីរដង (2x Rule)។ ឧទាហរណ៍: បើអ្នកថត 24 FPS ត្រូវកំណត់ Shutter Speed ជា 1/50។'));
+
+                // ISO
+                settingsGrid.appendChild(createSettingSelect('ISO', [
+                    { value: '', text: 'ជ្រើសរើស' },
+                    { value: '100 - 400', text: 'ISO ទាប (100 - 400)' },
+                    { value: '800+', text: 'ISO ខ្ពស់ (800+)' }
+                ], cardItem, 'iso', 'ISO ទាប (100 - 400): ប្រើពេលថតនៅកន្លែងមានពន្លឺគ្រប់គ្រាន់ (ពេលថ្ងៃ) ដើម្បីកុំឲ្យវីដេអូមានគ្រាប់រំខាន (Noise)។ ISO ខ្ពស់ (800+): ប្រើនៅពេលថតក្នុងស្ថានភាពងងឹត។'));
+
+                // White Balance
+                settingsGrid.appendChild(createSettingSelect('White Balance (WB)', [
+                    { value: '', text: 'ជ្រើសរើស' },
+                    { value: '5600K', text: 'ពន្លឺថ្ងៃ (5600K)' },
+                    { value: '3200K', text: 'ពន្លឺអំពូល (3200K)' }
+                ], cardItem, 'whiteBalance', 'កំណត់ WB ឲ្យត្រូវតាមប្រភេទពន្លឺដូចជា ពន្លឺថ្ងៃ (5600K) ឬពន្លឺអំពូល (3200K) ដើម្បីទទួលបានពណ៌ធម្មជាតិ។'));
+
+                // Frame Rate (FPS)
+                settingsGrid.appendChild(createSettingSelect('Frame Rate (FPS)', [
+                    { value: '', text: 'ជ្រើសរើស' },
+                    { value: '24', text: '24 FPS (Cinematic)' },
+                    { value: '30', text: '30 FPS (ទូទៅ)' },
+                    { value: '60+', text: '60 FPS+ (Slow-motion)' }
+                ], cardItem, 'frameRate', '24 FPS: ល្អសម្រាប់វីដេអូ Cinematic។ 30 FPS: ល្អសម្រាប់វីដេអូទូទៅ។ 60 FPS ឬខ្ពស់ជាងនេះ: ល្អសម្រាប់ថតវីដេអូយឺត។'));
+
+                card.appendChild(settingsDetails);
+
+                // --- Collapsible Camera Angle Section ---
+                const angleDetails = document.createElement('details');
+                angleDetails.className = 'w-full mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200';
+                
+                const angleSummary = document.createElement('summary');
+                angleSummary.className = 'font-bold text-gray-700 cursor-pointer';
+                angleSummary.textContent = 'មុំកាមេរ៉ា (Camera Angle)';
+                angleDetails.appendChild(angleSummary);
+
+                const angleGrid = document.createElement('div');
+                angleGrid.className = 'grid grid-cols-1 gap-4 mt-2';
+                angleDetails.appendChild(angleGrid);
+
+                // Camera Angle
+                angleGrid.appendChild(createSettingSelect('', [
+                    { value: '', text: 'ជ្រើសរើស' },
+                    { value: 'Wide Shot', text: 'Wide Shot (មុំទូលាយ)' },
+                    { value: 'Medium Shot', text: 'Medium Shot (មុំកណ្ដាល)' },
+                    { value: 'Close-up', text: 'Close-up (មុំជិត)' },
+                    { value: 'Low Angle', text: 'Low Angle (មុំទាប)' },
+                    { value: 'High Angle', text: 'High Angle (មុំខ្ពស់)' }
+                ], cardItem, 'cameraAngle', 'Wide Shot: បង្ហាញពីទេសភាពធំទូលាយ។ Medium Shot: ថតតួអង្គពីចង្កេះឡើងលើ។ Close-up: ផ្តោតលើទឹកមុខ។ Low Angle: ធ្វើឲ្យតួអង្គមើលទៅមានអំណាច។ High Angle: ធ្វើឲ្យតួអង្គមើលទៅទន់ខ្សោយ។'));
+
+                card.appendChild(angleDetails);
+                
+                // Add content elements below the canvas
+                cardItem.contents.forEach((contentItem, contentIndex) => {
+                    const contentElement = createContentElement(contentItem, cardIndex, contentIndex);
+                    card.appendChild(contentElement);
+                });
+
+                // Add action buttons to add content to this card
+                const actionButtons = document.createElement('div');
+                actionButtons.className = 'flex flex-wrap gap-2 mt-4 justify-center';
+                const addTextBtn = createActionButton('បន្ថែមអក្សរ', 'text', cardIndex);
+                const addImageBtn = createActionButton('បន្ថែមរូបភាព', 'image', cardIndex);
+                const addEmojiBtn = createActionButton('បន្ថែម Emoji', 'emoji', cardIndex);
+                const clearCanvasBtn = document.createElement('button');
+                clearCanvasBtn.className = 'bg-red-200 text-red-700 py-1 px-3 rounded-full text-xs hover:bg-red-300 transition-colors';
+                clearCanvasBtn.textContent = 'លុបការគូរ';
+                clearCanvasBtn.onclick = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    cardItem.drawing = '';
+                    updateProjectData();
+                };
+
+                actionButtons.appendChild(addTextBtn);
+                actionButtons.appendChild(addImageBtn);
+                actionButtons.appendChild(addEmojiBtn);
+                actionButtons.appendChild(clearCanvasBtn);
+                card.appendChild(actionButtons);
+
+                storyboardContainer.appendChild(card);
+            });
+        }
+
+        // Helper function to create a setting select dropdown
+        function createSettingSelect(label, options, cardItem, propName, description) {
+            const div = document.createElement('div');
+            div.className = 'mb-2 w-full';
+            
+            const labelEl = document.createElement('label');
+            labelEl.className = 'block text-sm font-medium text-gray-600';
+            labelEl.textContent = label;
+            div.appendChild(labelEl);
+
+            const selectEl = document.createElement('select');
+            selectEl.className = 'mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md';
+            options.forEach(option => {
+                const optEl = document.createElement('option');
+                optEl.value = option.value;
+                optEl.textContent = option.text;
+                selectEl.appendChild(optEl);
+            });
+            selectEl.value = cardItem[propName] || '';
+            selectEl.onchange = (e) => {
+                cardItem[propName] = e.target.value;
+                updateProjectData();
+            };
+            div.appendChild(selectEl);
+
+            const descEl = document.createElement('p');
+            descEl.className = 'mt-1 text-xs text-gray-500';
+            descEl.textContent = description;
+            div.appendChild(descEl);
+
+            return div;
+        }
+
+        // Helper function to create action buttons for adding content
+        function createActionButton(text, type, cardIndex) {
+            const btn = document.createElement('button');
+            btn.className = 'bg-gray-200 text-gray-700 py-1 px-3 rounded-full text-xs hover:bg-gray-300 transition-colors';
+            btn.textContent = text;
+            btn.onclick = () => {
+                if (type === 'image') {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    input.onchange = (e) => {
+                        const file = e.target.files[0];
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            storyboardData[cardIndex].contents.push({ type: type, content: e.target.result });
+                            renderStoryboard();
+                            updateProjectData();
+                        };
+                        reader.readAsDataURL(file);
+                    };
+                    input.click();
+                } else {
+                    storyboardData[cardIndex].contents.push({ type: type, content: '' });
+                    renderStoryboard();
+                    updateProjectData();
+                }
+            };
+            return btn;
+        }
+        
+        // Helper function to create content elements
+        function createContentElement(item, cardIndex, contentIndex) {
+            const contentWrapper = document.createElement('div');
+            contentWrapper.className = 'relative group w-full p-2 mb-2 bg-gray-50 rounded-lg';
+            
+            const deleteContentBtn = document.createElement('button');
+            deleteContentBtn.className = 'absolute top-1 right-1 p-1 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity';
+            deleteContentBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>`;
+            deleteContentBtn.onclick = () => {
+                storyboardData[cardIndex].contents.splice(contentIndex, 1);
+                renderStoryboard();
+                updateProjectData();
+            };
+            contentWrapper.appendChild(deleteContentBtn);
+
+            let contentElement;
+            switch (item.type) {
+                case 'text':
+                    contentElement = document.createElement('textarea');
+                    contentElement.className = 'w-full p-2 text-sm resize-none border-none focus:outline-none bg-transparent';
+                    contentElement.placeholder = 'បញ្ចូលអក្សរនៅទីនេះ...';
+                    contentElement.value = item.content;
+                    contentElement.oninput = (e) => {
+                        storyboardData[cardIndex].contents[contentIndex].content = e.target.value;
+                        updateProjectData();
+                    };
+                    break;
+                case 'image':
+                    contentElement = document.createElement('img');
+                    contentElement.src = item.content;
+                    contentElement.className = 'max-w-full max-h-48 object-contain rounded-lg mx-auto';
+                    break;
+                case 'emoji':
+                    contentElement = document.createElement('input');
+                    contentElement.type = 'text';
+                    contentElement.className = 'text-4xl w-full text-center bg-transparent border-none focus:outline-none';
+                    contentElement.placeholder = '😊';
+                    contentElement.value = item.content;
+                    contentElement.oninput = (e) => {
+                        storyboardData[cardIndex].contents[contentIndex].content = e.target.value;
+                        updateProjectData();
+                    };
+                    break;
+            }
+            contentWrapper.appendChild(contentElement);
+            return contentWrapper;
+        }
+
+
+        // Function to update the project data textarea
+        function updateProjectData() {
+            projectDataTextarea.value = JSON.stringify(storyboardData, null, 2);
+        }
+
+        // Add a new empty card to the storyboard
+        document.getElementById('add-card-btn').onclick = () => {
+            const currentTime = audioPlayer.currentTime;
+            const formattedTime = formatTime(currentTime);
+            storyboardData.push({ 
+                id: `card-${storyboardData.length}`, 
+                timestamp: formattedTime,
+                drawing: '',
+                contents: [],
+                aperture: '',
+                shutterSpeed: '',
+                iso: '',
+                whiteBalance: '',
+                frameRate: '',
+                cameraAngle: ''
+            });
+            renderStoryboard();
+            updateProjectData();
+        };
+
+        document.getElementById('save-btn').onclick = () => {
+            updateProjectData();
+            projectDataTextarea.select();
+            document.execCommand('copy');
+            showAlert('រក្សាទុក', 'ទិន្នន័យគម្រោងត្រូវបានចម្លងទៅ Clipboard!');
+        };
+
+        document.getElementById('load-btn').onclick = () => {
+            try {
+                const data = JSON.parse(projectDataTextarea.value);
+                if (Array.isArray(data)) {
+                    storyboardData = data;
+                    renderStoryboard();
+                } else {
+                    showAlert('ទិន្នន័យមិនត្រឹមត្រូវ', 'សូមបិទភ្ជាប់ទិន្នន័យ JSON ត្រឹមត្រូវ។');
+                }
+            } catch (e) {
+                showAlert('ទិន្នន័យមិនត្រឹមត្រូវ', 'សូមបិទភ្ជាប់ទិន្នន័យ JSON ត្រឹមត្រូវ។');
+            }
+        };
+
+        // Initial render
+        renderStoryboard();
+        updateProjectData();
+
+    </script>
+
+</body>
+</html>
