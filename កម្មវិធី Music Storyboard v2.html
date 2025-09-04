@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>កម្មវិធី Music Storyboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- JSZip for creating and reading zip files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <!-- FileSaver.js for saving files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .container-main {
+            min-height: 100vh;
+        }
+        .card {
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background-color: #ffffff;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+        input[type="number"]::-webkit-inner-spin-button, 
+        input[type="number"]::-webkit-outer-spin-button { 
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0,0,0);
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 400px;
+        }
+        .audio-progress::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #2563eb;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+        }
+        .audio-progress::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: #2563eb;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+        .audio-progress {
+            background: linear-gradient(to right, #2563eb 0%, #2563eb 0%, #d1d5db 0%, #d1d5db 100%);
+        }
+        .group-card {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+        }
+        .group-card-header {
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .group-card-content {
+            display: none;
+            padding-top: 1rem;
+        }
+        .group-card-content.show {
+            display: block;
+        }
+        .music-player-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #f3f4f6;
+            padding: 8px 12px;
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div id="loading" class="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 z-50 hidden">
+        <div class="flex flex-col items-center">
+            <svg class="animate-spin h-10 w-10 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p id="loading-message" class="text-white mt-4">កំពុងដំណើរការ...</p>
+        </div>
+    </div>
+
+    <!-- Custom Alert/Confirm Modal -->
+    <div id="custom-modal" class="modal">
+        <div class="modal-content">
+            <p id="modal-message" class="text-gray-900 text-lg mb-4"></p>
+            <div class="flex justify-end space-x-4" id="modal-buttons">
+                <button id="modal-cancel-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-full transition duration-200 ease-in-out">
+                    បោះបង់
+                </button>
+                <button id="modal-ok-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full transition duration-200 ease-in-out">
+                    យល់ព្រម
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- New Group/Playlist Modal -->
+    <div id="group-modal" class="modal">
+        <div class="modal-content">
+            <h3 class="text-xl font-semibold mb-4 text-gray-800">បង្កើត Group/Playlist ថ្មី</h3>
+            <div class="mb-4">
+                <label for="group-title" class="block text-sm font-medium text-gray-700">ចំណងជើង</label>
+                <input type="text" id="group-title" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 p-2">
+            </div>
+            <div class="mb-4">
+                <label for="group-description" class="block text-sm font-medium text-gray-700">ការពិពណ៌នា</label>
+                <textarea id="group-description" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 p-2"></textarea>
+            </div>
+            <div class="flex justify-end space-x-4">
+                <button id="group-modal-cancel-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-full transition duration-200 ease-in-out">
+                    បោះបង់
+                </button>
+                <button id="group-modal-create-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full transition duration-200 ease-in-out">
+                    បង្កើត
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-content" class="container-main p-4 sm:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-900">កម្មវិធី Music Storyboard</h1>
+            <p class="mt-2 text-lg text-gray-600">រៀបចំគំនិត Storyboard របស់អ្នកតាមបទភ្លេង</p>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Panel: Storyboard List -->
+            <div class="col-span-1 lg:col-span-1">
+                <div class="bg-white p-6 rounded-xl shadow-lg h-full flex flex-col">
+                    <h2 class="text-2xl font-semibold mb-4 text-gray-800">បញ្ជី Storyboard</h2>
+                    <div class="flex flex-col space-y-2 mb-4">
+                        <button id="add-storyboard-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full transition duration-200 ease-in-out">
+                            + បន្ថែម Storyboard តាមពេលវេលាបច្ចុប្បន្ន
+                        </button>
+                        <button id="create-group-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full transition duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed">
+                            បង្កើត Group/Playlist ពីផ្ទាំងដែលបានជ្រើសរើស
+                        </button>
+                        <button id="export-zip-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-full transition duration-200 ease-in-out">
+                           រក្សាទុកជា ZIP File
+                        </button>
+                         <label for="import-zip-input" class="bg-gray-400 text-white font-bold py-2 px-4 rounded-full text-center cursor-pointer hover:bg-gray-500 transition duration-200 ease-in-out">
+                            បញ្ចូលពី ZIP File
+                        </label>
+                        <input type="file" id="import-zip-input" accept=".zip" class="hidden">
+                    </div>
+                    <div id="storyboard-list" class="flex-grow overflow-y-auto space-y-4 pr-2">
+                        <!-- Storyboard cards will be dynamically added here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Storyboard Details -->
+            <div class="col-span-1 lg:col-span-2">
+                <div class="bg-white p-6 rounded-xl shadow-lg h-full" id="storyboard-details-container">
+                    <h2 class="text-2xl font-semibold mb-4 text-gray-800">ព័ត៌មានលម្អិត Storyboard</h2>
+                    <div id="details-content" class="space-y-6">
+                        <div class="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-4">
+                            <div class="relative w-full sm:w-1/2">
+                                <label for="music-upload" class="block text-sm font-medium text-gray-700 mb-1">បញ្ចូលបទភ្លេង</label>
+                                <input type="file" id="music-upload" accept="audio/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100">
+                                
+                                <!-- New Checkboxes for Loop and Autoplay -->
+                                <div class="flex space-x-4 mt-2">
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="music-loop" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                        <label for="music-loop" class="ml-2 block text-sm text-gray-900">
+                                            Loop
+                                        </label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="music-autoplay" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                        <label for="music-autoplay" class="ml-2 block text-sm text-gray-900">
+                                            Autoplay
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-4 w-full sm:w-1/2">
+                                <button id="play-btn" class="p-2 rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors duration-200 ease-in-out">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg>
+                                </button>
+                                <button id="pause-btn" class="p-2 rounded-full bg-yellow-500 text-white hover:bg-yellow-600 transition-colors duration-200 ease-in-out">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                                </button>
+                                <span id="audio-time" class="text-sm font-medium text-gray-600">00:00 / 00:00</span>
+                            </div>
+                        </div>
+
+                        <!-- Audio Progress Bar -->
+                        <div class="w-full h-2 bg-gray-200 rounded-full mb-4">
+                            <input type="range" id="audio-progress" class="audio-progress w-full h-full appearance-none bg-transparent rounded-full" value="0">
+                        </div>
+
+                        <!-- Storyboard form will be dynamically loaded here -->
+                        <div id="storyboard-form" class="hidden">
+                            <!-- Title -->
+                            <div class="mb-4">
+                                <label for="storyboard-title" class="block text-sm font-medium text-gray-700">ចំណងជើង</label>
+                                <input type="text" id="storyboard-title" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 p-2">
+                            </div>
+
+                            <!-- Subtitle -->
+                            <div class="mb-4">
+                                <label for="storyboard-subtitle" class="block text-sm font-medium text-gray-700">ចំណងជើងរង</label>
+                                <textarea id="storyboard-subtitle" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 p-2"></textarea>
+                            </div>
+
+                            <!-- Emojis & Time -->
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                                <div>
+                                    <label for="storyboard-emoji" class="block text-sm font-medium text-gray-700">Emoji</label>
+                                    <input type="text" id="storyboard-emoji" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 p-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">រយៈពេល (នាទី) <span id="storyboard-duration-min-display">0</span></label>
+                                    <input type="range" id="storyboard-duration-min" min="0" max="99" class="mt-1 block w-full">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">រយៈពេល (វិនាទី) <span id="storyboard-duration-sec-display">0</span></label>
+                                    <input type="range" id="storyboard-duration-sec" min="0" max="59" class="mt-1 block w-full">
+                                </div>
+                            </div>
+                            
+                            <!-- Image Upload & Preview -->
+                            <div class="mb-4">
+                                <label for="storyboard-image-upload" class="block text-sm font-medium text-gray-700">បញ្ចូលរូបភាព</label>
+                                <input type="file" id="storyboard-image-upload" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100">
+                            </div>
+                            <img id="image-preview" src="" alt="មើលរូបភាពជាមុន" class="mt-2 rounded-md shadow-md max-w-full h-auto hidden">
+                            
+                            <!-- New Music Upload (for storyboard) -->
+                            <div class="mb-4">
+                                <label for="storyboard-music-upload" class="block text-sm font-medium text-gray-700">បញ្ចូលបទភ្លេងសម្រាប់ផ្ទាំងនេះ</label>
+                                <input type="file" id="storyboard-music-upload" accept="audio/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100">
+                            </div>
+                            <div id="storyboard-music-player-container" class="mt-2 hidden">
+                                <div class="music-player-container">
+                                    <button id="storyboard-music-play-btn" class="p-1 rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors duration-200 ease-in-out">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg>
+                                    </button>
+                                    <button id="storyboard-music-pause-btn" class="p-1 rounded-full bg-yellow-500 text-white hover:bg-yellow-600 transition-colors duration-200 ease-in-out">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                                    </button>
+                                    <span id="storyboard-music-time" class="text-xs font-medium text-gray-600">00:00 / 00:00</span>
+                                </div>
+                            </div>
+                            <audio id="storyboard-audio-player" class="hidden"></audio>
+                            
+                            <!-- Description Field -->
+                            <div class="mb-4">
+                                <label for="storyboard-description" class="block text-sm font-medium text-gray-700">ការពិពណ៌នា</label>
+                                <textarea id="storyboard-description" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 p-2"></textarea>
+                            </div>
+                            
+                            <!-- Collapsible Dropdowns -->
+                            <details class="group my-4 border-b border-gray-200 rounded-md">
+                                <summary class="flex items-center justify-between p-2 font-medium cursor-pointer rounded-md hover:bg-gray-100 transition-colors duration-200 ease-in-out">
+                                    <span>ព័ត៌មានលម្អិត</span>
+                                    <svg class="w-5 h-5 transition-transform duration-200 ease-in-out transform group-open:rotate-180" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </summary>
+                                <div class="px-2 pb-4">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <!-- Genre -->
+                                        <div class="mb-4">
+                                            <label for="storyboard-genre" class="block text-sm font-medium text-gray-700">ប្រភេទ (Genre)</label>
+                                            <select id="storyboard-genre" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 p-2">
+                                                <option value="">ជ្រើសរើសប្រភេទ</option>
+                                                <option value="Hip hop">Hip hop</option>
+                                                <option value="Festive">Festive</option>
+                                                <option value="Indian">Indian</option>
+                                                <option value="Japanese">Japanese</option>
+                                                <option value="Jazz">Jazz</option>
+                                                <option value="Korean">Korean</option>
+                                                <option value="Latin">Latin</option>
+                                                <option value="Middle Eastern">Middle Eastern</option>
+                                                <option value="Novelty">Novelty</option>
+                                                <option value="Pop">Pop</option>
+                                                <option value="R&B and soul">R&B and soul</option>
+                                                <option value="Reggae">Reggae</option>
+                                                <option value="Rock">Rock</option>
+                                                <option value="Spanish">Spanish</option>
+                                                <option value="World">World</option>
+                                            </select>
+                                        </div>
+        
+                                        <!-- Moods -->
+                                        <div class="mb-4">
+                                            <label for="storyboard-mood" class="block text-sm font-medium text-gray-700">អារម្មណ៍ (Moods)</label>
+                                            <select id="storyboard-mood" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 p-2">
+                                                <option value="">ជ្រើសរើសអារម្មណ៍</option>
+                                                <option value="Reflective">Reflective</option>
+                                                <option value="Relaxing">Relaxing</option>
+                                                <option value="Romantic">Romantic</option>
+                                                <option value="Sad">Sad</option>
+                                                <option value="Scary">Scary</option>
+                                                <option value="Sentimental">Sentimental</option>
+                                                <option value="Sexy">Sexy</option>
+                                                <option value="Soulful">Soulful</option>
+                                                <option value="Spooky">Spooky</option>
+                                                <option value="Suspenseful">Suspenseful</option>
+                                                <option value="Sweet">Sweet</option>
+                                                <option value="Upbeat">Upbeat</option>
+                                                <option value="Uplifting">Uplifting</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <!-- Vocals -->
+                                        <div class="mb-4">
+                                            <label for="storyboard-vocals" class="block text-sm font-medium text-gray-700">សំឡេង (Vocals)</label>
+                                            <select id="storyboard-vocals" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 p-2">
+                                                <option value="">ជ្រើសរើសសំឡេង</option>
+                                                <option value="Ensemble">Ensemble</option>
+                                                <option value="Has vocals">Has vocals</option>
+                                                <option value="No vocals">No vocals</option>
+                                                <option value="Male & female">Male & female</option>
+                                                <option value="Female vocal">Female vocal</option>
+                                                <option value="Male vocal">Male vocal</option>
+                                                <option value="Samples">Samples</option>
+                                            </select>
+                                        </div>
+        
+                                        <!-- Tempos -->
+                                        <div class="mb-4">
+                                            <label for="storyboard-tempo" class="block text-sm font-medium text-gray-700">ចង្វាក់ (Tempos)</label>
+                                            <select id="storyboard-tempo" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 p-2">
+                                                <option value="">ជ្រើសរើសចង្វាក់</option>
+                                                <option value="Slow">Slow</option>
+                                                <option value="Medium">Medium</option>
+                                                <option value="Fast">Fast</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </details>
+                            
+                            <div class="mt-6 flex justify-end space-x-4">
+                                <button id="delete-storyboard-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full transition duration-200 ease-in-out">
+                                    លុប
+                                </button>
+                                <button id="save-storyboard-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full transition duration-200 ease-in-out">
+                                    រក្សាទុក
+                                </button>
+                            </div>
+                        </div>
+                        <div id="no-storyboard-selected" class="text-center text-gray-500 p-8">
+                            <p>សូមជ្រើសរើស Storyboard មួយ ឬបង្កើតថ្មី</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <audio id="audio-player" class="w-full mt-4 rounded-md hidden"></audio>
+
+    <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', () => {
+            // Hide loading screen, show main content
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('main-content').classList.remove('hidden');
+        });
+
+        // Global state
+        let storyboards = [];
+        let groups = []; // New array for groups
+        let selectedStoryboardIndex = -1;
+        let selectedGroupIndex = -1;
+        let selectedStoryboardIds = [];
+        let uploadedMusicFile = null; // Store the main music file object for export
+        let musicLoop = false; // Main music player loop setting
+        let musicAutoplay = false; // Main music player autoplay setting
+
+        // DOM elements
+        const loadingScreen = document.getElementById('loading');
+        const loadingMessage = document.getElementById('loading-message');
+        const musicUpload = document.getElementById('music-upload');
+        const musicLoopCheckbox = document.getElementById('music-loop');
+        const musicAutoplayCheckbox = document.getElementById('music-autoplay');
+        const audioPlayer = document.getElementById('audio-player');
+        const playBtn = document.getElementById('play-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const audioTimeDisplay = document.getElementById('audio-time');
+        const audioProgress = document.getElementById('audio-progress');
+
+        const storyboardListContainer = document.getElementById('storyboard-list');
+        const addStoryboardBtn = document.getElementById('add-storyboard-btn');
+        const createGroupBtn = document.getElementById('create-group-btn');
+        const exportZipBtn = document.getElementById('export-zip-btn');
+        const importZipInput = document.getElementById('import-zip-input');
+        const storyboardForm = document.getElementById('storyboard-form');
+        const noStoryboardSelected = document.getElementById('no-storyboard-selected');
+        
+        // Group Modal Elements
+        const groupModal = document.getElementById('group-modal');
+        const groupTitleInput = document.getElementById('group-title');
+        const groupDescriptionInput = document.getElementById('group-description');
+        const groupModalCreateBtn = document.getElementById('group-modal-create-btn');
+        const groupModalCancelBtn = document.getElementById('group-modal-cancel-btn');
+
+        const titleInput = document.getElementById('storyboard-title');
+        const subtitleInput = document.getElementById('storyboard-subtitle');
+        const descriptionInput = document.getElementById('storyboard-description');
+        const imageUploadInput = document.getElementById('storyboard-image-upload');
+        const imagePreview = document.getElementById('image-preview');
+        const storyboardMusicUpload = document.getElementById('storyboard-music-upload');
+        const storyboardMusicPlayerContainer = document.getElementById('storyboard-music-player-container');
+        const storyboardAudioPlayer = document.getElementById('storyboard-audio-player');
+        const storyboardMusicPlayBtn = document.getElementById('storyboard-music-play-btn');
+        const storyboardMusicPauseBtn = document.getElementById('storyboard-music-pause-btn');
+        const storyboardMusicTimeDisplay = document.getElementById('storyboard-music-time');
+        
+        const emojiInput = document.getElementById('storyboard-emoji');
+        const durationMinInput = document.getElementById('storyboard-duration-min');
+        const durationMinDisplay = document.getElementById('storyboard-duration-min-display');
+        const durationSecInput = document.getElementById('storyboard-duration-sec');
+        const durationSecDisplay = document.getElementById('storyboard-duration-sec-display');
+        const genreSelect = document.getElementById('storyboard-genre');
+        const moodSelect = document.getElementById('storyboard-mood');
+        const vocalsSelect = document.getElementById('storyboard-vocals');
+        const tempoSelect = document.getElementById('storyboard-tempo');
+
+        const saveBtn = document.getElementById('save-storyboard-btn');
+        const deleteBtn = document.getElementById('delete-storyboard-btn');
+
+        // Custom Modal UI
+        const modal = document.getElementById('custom-modal');
+        const modalMessage = document.getElementById('modal-message');
+        const modalOkBtn = document.getElementById('modal-ok-btn');
+        const modalCancelBtn = document.getElementById('modal-cancel-btn');
+        let confirmCallback = null;
+
+        function showCustomAlert(message) {
+            modalMessage.textContent = message;
+            modalOkBtn.style.display = 'inline-block';
+            modalCancelBtn.style.display = 'none';
+            modal.style.display = 'flex';
+            modalOkBtn.onclick = () => {
+                modal.style.display = 'none';
+            };
+        }
+
+        function showCustomConfirm(message, callback) {
+            modalMessage.textContent = message;
+            modalOkBtn.style.display = 'inline-block';
+            modalCancelBtn.style.display = 'inline-block';
+            modal.style.display = 'flex';
+            confirmCallback = callback;
+            modalOkBtn.onclick = () => {
+                modal.style.display = 'none';
+                if (confirmCallback) confirmCallback(true);
+            };
+            modalCancelBtn.onclick = () => {
+                modal.style.display = 'none';
+                if (confirmCallback) confirmCallback(false);
+            };
+        }
+
+        // Helper function to format time from seconds to MM:SS
+        function formatTime(seconds) {
+            if (isNaN(seconds) || seconds < 0) {
+                return "00:00";
+            }
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = Math.floor(seconds % 60);
+            const formattedMinutes = String(minutes).padStart(2, '0');
+            const formattedSeconds = String(remainingSeconds).padStart(2, '0');
+            return `${formattedMinutes}:${formattedSeconds}`;
+        }
+        
+        // --- File Handling Functions (Export/Import) ---
+        async function exportAsZip() {
+            if (!uploadedMusicFile && storyboards.length === 0) {
+                showCustomAlert('គ្មានទិន្នន័យដើម្បីរក្សាទុកទេ។');
+                return;
+            }
+
+            loadingMessage.textContent = 'កំពុងបង្កើតឯកសារ ZIP...';
+            loadingScreen.classList.remove('hidden');
+
+            try {
+                const zip = new JSZip();
+                
+                // Keep track of unique filenames to avoid duplicates in the zip
+                const uniqueFilenames = new Set();
+                
+                // Store project configuration (main music settings)
+                const config = {
+                    musicFilename: uploadedMusicFile ? uploadedMusicFile.name : null,
+                    loop: musicLoop,
+                    autoplay: musicAutoplay
+                };
+                zip.file("config.json", JSON.stringify(config, null, 2));
+                
+                // Store groups and storyboards data as JSON files
+                zip.file("groups.json", JSON.stringify(groups, null, 2));
+
+                // Process and add main music file if it exists
+                if (uploadedMusicFile) {
+                    zip.file(`media/${uploadedMusicFile.name}`, uploadedMusicFile);
+                    uniqueFilenames.add(uploadedMusicFile.name);
+                }
+
+                // Process and add storyboard media files
+                const storyboardsForExport = storyboards.map(sb => {
+                    const { storyboardMusicFile, imageFile, imageUrl, ...rest } = sb;
+                    
+                    // Handle storyboard music file
+                    let storyboardMusicFilename = null;
+                    if (storyboardMusicFile) {
+                        storyboardMusicFilename = storyboardMusicFile.name;
+                        if (!uniqueFilenames.has(storyboardMusicFilename)) {
+                            zip.file(`media/${storyboardMusicFilename}`, storyboardMusicFile);
+                            uniqueFilenames.add(storyboardMusicFilename);
+                        }
+                    }
+
+                    // Handle image file
+                    let imageFilename = null;
+                    if (imageFile) {
+                         imageFilename = imageFile.name;
+                         if (!uniqueFilenames.has(imageFilename)) {
+                             zip.file(`media/${imageFilename}`, imageFile);
+                             uniqueFilenames.add(imageFilename);
+                         }
+                    } else if (imageUrl && imageUrl.startsWith('data:image')) {
+                        // Handle data URL images by creating a new file
+                        const mimeType = imageUrl.split(',')[0].split(':')[1].split(';')[0];
+                        const ext = mimeType.split('/')[1];
+                        const filename = `${sb.id}.${ext}`;
+                        const data = atob(imageUrl.split(',')[1]);
+                        const array = new Uint8Array(data.length);
+                        for (let i = 0; i < data.length; i++) {
+                            array[i] = data.charCodeAt(i);
+                        }
+                        const blob = new Blob([array], { type: mimeType });
+                        imageFilename = filename;
+                        zip.file(`media/${imageFilename}`, blob);
+                    }
+                    
+                    return {
+                        ...rest,
+                        storyboardMusicFilename,
+                        imageFilename
+                    };
+                });
+                
+                zip.file("storyboards.json", JSON.stringify(storyboardsForExport, null, 2));
+
+                const content = await zip.generateAsync({ type: "blob" });
+                saveAs(content, "music_storyboard.zip");
+                showCustomAlert('ឯកសារ ZIP ត្រូវបានរក្សាទុកដោយជោគជ័យ!');
+            } catch (error) {
+                console.error("Could not export data:", error);
+                showCustomAlert('ការរក្សាទុកឯកសារ ZIP បានបរាជ័យ។');
+            } finally {
+                loadingScreen.classList.add('hidden');
+            }
+        }
+
+        async function importFromZip(file) {
+             showCustomConfirm('ការផ្ទុកឯកសារ ZIP ថ្មីនឹងជំនួសទិន្នន័យបច្ចុប្បន្នទាំងអស់។ តើអ្នកពិតជាចង់បន្តទេ?', async (result) => {
+                if (result) {
+                    loadingMessage.textContent = 'កំពុងផ្ទុកឯកសារ ZIP...';
+                    loadingScreen.classList.remove('hidden');
+
+                    try {
+                        const zip = new JSZip();
+                        const content = await zip.loadAsync(file);
+
+                        const allFiles = new Map();
+                        const mediaFolder = content.folder("media");
+                        if (mediaFolder) {
+                             for (const filename in mediaFolder.files) {
+                                 if (!mediaFolder.files[filename].dir) {
+                                     const name = filename.split('/').pop();
+                                     allFiles.set(name, await mediaFolder.files[filename].async("blob"));
+                                 }
+                             }
+                        }
+
+                        // 1. Load config
+                        const configJsonFile = content.file("config.json");
+                        if (configJsonFile) {
+                            const config = JSON.parse(await configJsonFile.async("string"));
+                            if (config.musicFilename && allFiles.has(config.musicFilename)) {
+                                uploadedMusicFile = new File([allFiles.get(config.musicFilename)], config.musicFilename, { type: 'audio/*' });
+                                const musicUrl = URL.createObjectURL(uploadedMusicFile);
+                                audioPlayer.src = musicUrl;
+                                audioPlayer.load();
+                                musicLoop = config.loop;
+                                musicAutoplay = config.autoplay;
+                                audioPlayer.loop = musicLoop;
+                                musicLoopCheckbox.checked = musicLoop;
+                                musicAutoplayCheckbox.checked = musicAutoplay;
+                                if (musicAutoplay) {
+                                    audioPlayer.autoplay = musicAutoplay;
+                                    audioPlayer.play();
+                                }
+                            }
+                        }
+
+                        // 2. Load groups and storyboards
+                        const groupsJsonFile = content.file("groups.json");
+                        groups = groupsJsonFile ? JSON.parse(await groupsJsonFile.async("string")) : [];
+
+                        const storyboardsJsonFile = content.file("storyboards.json");
+                        const importedStoryboards = storyboardsJsonFile ? JSON.parse(await storyboardsJsonFile.async("string")) : [];
+
+                        storyboards = [];
+                        for (const sbData of importedStoryboards) {
+                            const newSb = { ...sbData };
+                            // Find and assign storyboard music file
+                            if (newSb.storyboardMusicFilename && allFiles.has(newSb.storyboardMusicFilename)) {
+                                const musicBlob = allFiles.get(newSb.storyboardMusicFilename);
+                                newSb.storyboardMusicFile = new File([musicBlob], newSb.storyboardMusicFilename, { type: musicBlob.type });
+                                newSb.storyboardMusicUrl = URL.createObjectURL(newSb.storyboardMusicFile);
+                            }
+                            // Find and assign image file (as data URL)
+                            if (newSb.imageFilename && allFiles.has(newSb.imageFilename)) {
+                                const imageBlob = allFiles.get(newSb.imageFilename);
+                                newSb.imageFile = new File([imageBlob], newSb.imageFilename, { type: imageBlob.type });
+                                newSb.imageUrl = URL.createObjectURL(newSb.imageFile);
+                            }
+                            storyboards.push(newSb);
+                        }
+                        
+                        selectedStoryboardIds = [];
+                        renderStoryboardList();
+                        hideStoryboardDetails();
+                        showCustomAlert('ទិន្នន័យត្រូវបានផ្ទុកឡើងដោយជោគជ័យ!');
+
+                    } catch (error) {
+                        console.error("Error importing zip file:", error);
+                        showCustomAlert('ការផ្ទុកឯកសារ ZIP បានបរាជ័យ។ ឯកសារមិនត្រឹមត្រូវទេ។');
+                    } finally {
+                        loadingScreen.classList.add('hidden');
+                    }
+                }
+            });
+        }
+        
+        // Render the list of storyboards and groups
+        function renderStoryboardList() {
+            storyboardListContainer.innerHTML = '';
+            if (storyboards.length === 0 && groups.length === 0) {
+                storyboardListContainer.innerHTML = `<p class="text-center text-gray-500 italic">មិនទាន់មាន Storyboard ឬ Group ណាមួយ</p>`;
+            } else {
+                // Render groups
+                groups.forEach((group, groupIndex) => {
+                    const groupHtml = `
+                        <div class="group-card p-4 rounded-xl shadow-lg mb-4">
+                            <div class="group-card-header">
+                                <h3 class="font-bold text-gray-900">${group.title || 'គ្មានចំណងជើង'}</h3>
+                                <svg class="w-5 h-5 transition-transform duration-200 ease-in-out transform group-open:rotate-180" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <div class="group-card-content">
+                                <p class="text-sm text-gray-600 mb-2">${group.description || 'គ្មានការពិពណ៌នា'}</p>
+                                <div class="space-y-2">
+                                    ${group.storyboardIds.map(sbId => {
+                                        const sb = storyboards.find(s => s.id === sbId);
+                                        if (!sb) return '';
+                                        return `
+                                            <div class="card p-4 cursor-pointer hover:bg-gray-50 flex items-center space-x-4" data-id="${sb.id}">
+                                                <span class="text-4xl">${sb.emoji}</span>
+                                                <div class="flex-grow">
+                                                    <h3 class="font-bold text-gray-900">${sb.title || 'គ្មានចំណងជើង'}</h3>
+                                                    <p class="text-sm text-gray-600">${sb.subtitle || 'គ្មានចំណងជើងរង'}</p>
+                                                    <p class="text-xs text-gray-400 mt-1">រយៈពេល: ${formatTime(sb.durationMin * 60 + sb.durationSec)}</p>
+                                                </div>
+                                                ${sb.imageUrl ? `<img src="${sb.imageUrl}" alt="មើលរូបភាពជាមុន" class="w-16 h-16 object-cover rounded-md">` : ''}
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    const groupCard = document.createElement('div');
+                    groupCard.innerHTML = groupHtml;
+                    groupCard.querySelector('.group-card-header').addEventListener('click', () => {
+                        groupCard.querySelector('.group-card-content').classList.toggle('show');
+                    });
+                    groupCard.querySelectorAll('.card').forEach(card => {
+                        card.addEventListener('click', (e) => {
+                            const sbId = e.currentTarget.dataset.id;
+                            const index = storyboards.findIndex(s => s.id === sbId);
+                            if (index !== -1) {
+                                selectStoryboard(index);
+                            }
+                        });
+                    });
+                    storyboardListContainer.appendChild(groupCard);
+                });
+
+                // Render ungrouped storyboards
+                const ungroupedStoryboards = storyboards.filter(sb => !sb.groupId);
+                ungroupedStoryboards.forEach((sb, index) => {
+                    const isActive = sb.id === selectedStoryboardIds[0] && selectedStoryboardIds.length === 1;
+                    const isSelected = selectedStoryboardIds.includes(sb.id);
+                    const cardHtml = `
+                        <div class="card p-4 cursor-pointer hover:bg-gray-50 ${isActive ? 'bg-blue-100' : ''} ${isSelected ? 'border-2 border-blue-500' : ''}" data-id="${sb.id}">
+                            <div class="flex items-center space-x-4">
+                                <input type="checkbox" class="storyboard-checkbox" data-id="${sb.id}" ${isSelected ? 'checked' : ''}>
+                                <span class="text-4xl">${sb.emoji}</span>
+                                <div class="flex-grow">
+                                    <h3 class="font-bold text-gray-900">${sb.title || 'គ្មានចំណងជើង'}</h3>
+                                    <p class="text-sm text-gray-600">${sb.subtitle || 'គ្មានចំណងជើងរង'}</p>
+                                    <p class="text-xs text-gray-400 mt-1">រយៈពេល: ${formatTime(sb.durationMin * 60 + sb.durationSec)}</p>
+                                </div>
+                                ${sb.imageUrl ? `<img src="${sb.imageUrl}" alt="មើលរូបភាពជាមុន" class="w-16 h-16 object-cover rounded-md">` : ''}
+                                ${sb.storyboardMusicFilename ? '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-500" viewBox="0 0 20 20" fill="currentColor"><path d="M18 3a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1h2a1 1 0 001-1V3zM3 3a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V3zM3 13a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zM15 12h2a1 1 0 011 1v2a1 1 0 01-1 1h-2a1 1 0 01-1-1v-2z" /></svg>' : ''}
+                            </div>
+                        </div>
+                    `;
+                    const card = document.createElement('div');
+                    card.innerHTML = cardHtml;
+                    card.querySelector('.card').addEventListener('click', (e) => {
+                        const sbId = e.currentTarget.dataset.id;
+                        const index = storyboards.findIndex(s => s.id === sbId);
+                        if (index !== -1) {
+                            selectStoryboard(index);
+                        }
+                    });
+                    card.querySelector('.storyboard-checkbox').addEventListener('click', (e) => {
+                         e.stopPropagation();
+                         const sbId = e.currentTarget.dataset.id;
+                         toggleSelection(sbId);
+                    });
+                    storyboardListContainer.appendChild(card);
+                });
+            }
+            updateCreateGroupButton();
+        }
+        
+        function toggleSelection(storyboardId) {
+            const index = selectedStoryboardIds.indexOf(storyboardId);
+            if (index > -1) {
+                selectedStoryboardIds.splice(index, 1);
+            } else {
+                selectedStoryboardIds.push(storyboardId);
+            }
+            updateCreateGroupButton();
+            renderStoryboardList();
+        }
+
+        function updateCreateGroupButton() {
+            createGroupBtn.disabled = selectedStoryboardIds.length < 2;
+        }
+
+        // Add a new storyboard at current audio time
+        addStoryboardBtn.addEventListener('click', () => {
+            const currentTime = audioPlayer.currentTime;
+            const minutes = Math.floor(currentTime / 60);
+            const seconds = Math.floor(currentTime % 60);
+
+            const newStoryboard = {
+                id: crypto.randomUUID(), // Use a unique ID for grouping
+                title: 'Storyboard ថ្មី',
+                subtitle: 'ចុចដើម្បីកែសម្រួល',
+                description: '',
+                imageUrl: '',
+                imageFile: null,
+                storyboardMusicUrl: '',
+                storyboardMusicFile: null,
+                storyboardMusicFilename: null,
+                emoji: '💡',
+                durationMin: minutes,
+                durationSec: seconds,
+                genre: '',
+                mood: '',
+                vocals: '',
+                tempo: '',
+                groupId: null
+            };
+            storyboards.push(newStoryboard);
+            const newIndex = storyboards.length - 1;
+            renderStoryboardList();
+            selectStoryboard(newIndex);
+        });
+
+        createGroupBtn.addEventListener('click', () => {
+            groupModal.style.display = 'flex';
+        });
+
+        groupModalCancelBtn.addEventListener('click', () => {
+            groupModal.style.display = 'none';
+        });
+
+        groupModalCreateBtn.addEventListener('click', () => {
+            const groupTitle = groupTitleInput.value || 'Group ថ្មី';
+            const groupDescription = groupDescriptionInput.value;
+            const newGroup = {
+                id: crypto.randomUUID(),
+                title: groupTitle,
+                description: groupDescription,
+                storyboardIds: selectedStoryboardIds
+            };
+            groups.push(newGroup);
+
+            // Assign groupId to selected storyboards
+            selectedStoryboardIds.forEach(sbId => {
+                const sb = storyboards.find(s => s.id === sbId);
+                if (sb) {
+                    sb.groupId = newGroup.id;
+                }
+            });
+
+            selectedStoryboardIds = [];
+            groupModal.style.display = 'none';
+            groupTitleInput.value = '';
+            groupDescriptionInput.value = '';
+            renderStoryboardList();
+            hideStoryboardDetails();
+        });
+        
+        // Export to zip button
+        exportZipBtn.addEventListener('click', exportAsZip);
+
+        // Import from zip input
+        importZipInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                importFromZip(file);
+            }
+        });
+
+        // Select a storyboard and show its details
+        function selectStoryboard(index) {
+            if (index < 0 || index >= storyboards.length) {
+                return;
+            }
+            selectedStoryboardIndex = index;
+            const sb = storyboards[index];
+            titleInput.value = sb.title;
+            subtitleInput.value = sb.subtitle;
+            descriptionInput.value = sb.description;
+            emojiInput.value = sb.emoji;
+            durationMinInput.value = sb.durationMin;
+            durationMinDisplay.textContent = sb.durationMin;
+            durationSecInput.value = sb.durationSec;
+            durationSecDisplay.textContent = sb.durationSec;
+            genreSelect.value = sb.genre;
+            moodSelect.value = sb.mood;
+            vocalsSelect.value = sb.vocals;
+            tempoSelect.value = sb.tempo;
+            
+            // Handle image preview
+            if (sb.imageUrl) {
+                imagePreview.src = sb.imageUrl;
+                imagePreview.classList.remove('hidden');
+            } else {
+                imagePreview.classList.add('hidden');
+            }
+
+            // Handle storyboard music player
+            if (sb.storyboardMusicUrl) {
+                storyboardAudioPlayer.src = sb.storyboardMusicUrl;
+                storyboardMusicPlayerContainer.classList.remove('hidden');
+            } else {
+                storyboardAudioPlayer.src = '';
+                storyboardMusicPlayerContainer.classList.add('hidden');
+            }
+            
+            // Clear the file input for a new upload
+            imageUploadInput.value = '';
+            storyboardMusicUpload.value = '';
+            
+            storyboardForm.classList.remove('hidden');
+            noStoryboardSelected.classList.add('hidden');
+            selectedStoryboardIds = [];
+            renderStoryboardList();
+        }
+
+        // Hide storyboard details
+        function hideStoryboardDetails() {
+            selectedStoryboardIndex = -1;
+            storyboardForm.classList.add('hidden');
+            noStoryboardSelected.classList.remove('hidden');
+            renderStoryboardList();
+        }
+
+        // Event listener for saving the form data
+        saveBtn.addEventListener('click', () => {
+            if (selectedStoryboardIndex === -1) return;
+            const sb = storyboards[selectedStoryboardIndex];
+            sb.title = titleInput.value;
+            sb.subtitle = subtitleInput.value;
+            sb.description = descriptionInput.value;
+            sb.emoji = emojiInput.value;
+            sb.durationMin = parseInt(durationMinInput.value) || 0;
+            sb.durationSec = parseInt(durationSecInput.value) || 0;
+            sb.genre = genreSelect.value;
+            sb.mood = moodSelect.value;
+            sb.vocals = vocalsSelect.value;
+            sb.tempo = tempoSelect.value;
+            renderStoryboardList();
+        });
+
+        // Event listener for deleting a storyboard
+        deleteBtn.addEventListener('click', () => {
+            if (selectedStoryboardIndex === -1) return;
+            showCustomConfirm('តើអ្នកពិតជាចង់លុប Storyboard នេះមែនទេ?', (result) => {
+                if (result) {
+                    const sbToDelete = storyboards[selectedStoryboardIndex];
+                    // Remove from group if it's in one
+                    if (sbToDelete.groupId) {
+                        const group = groups.find(g => g.id === sbToDelete.groupId);
+                        if (group) {
+                            group.storyboardIds = group.storyboardIds.filter(id => id !== sbToDelete.id);
+                            if (group.storyboardIds.length === 0) {
+                                groups = groups.filter(g => g.id !== group.id);
+                            }
+                        }
+                    }
+
+                    storyboards.splice(selectedStoryboardIndex, 1);
+                    hideStoryboardDetails();
+                }
+            });
+        });
+
+        // Event listeners for minute and second sliders
+        durationMinInput.addEventListener('input', (event) => {
+            durationMinDisplay.textContent = event.target.value;
+        });
+
+        durationSecInput.addEventListener('input', (event) => {
+            durationSecDisplay.textContent = event.target.value;
+        });
+
+        // Event listener for image upload
+        imageUploadInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file && selectedStoryboardIndex !== -1) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const imageUrl = e.target.result;
+                    storyboards[selectedStoryboardIndex].imageUrl = imageUrl;
+                    storyboards[selectedStoryboardIndex].imageFile = file;
+                    imagePreview.src = imageUrl;
+                    imagePreview.classList.remove('hidden');
+                    renderStoryboardList();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Event listener for storyboard-specific music upload
+        storyboardMusicUpload.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file && selectedStoryboardIndex !== -1) {
+                const audioUrl = URL.createObjectURL(file);
+                storyboards[selectedStoryboardIndex].storyboardMusicUrl = audioUrl;
+                storyboards[selectedStoryboardIndex].storyboardMusicFile = file;
+                storyboards[selectedStoryboardIndex].storyboardMusicFilename = file.name;
+                storyboardAudioPlayer.src = audioUrl;
+                storyboardMusicPlayerContainer.classList.remove('hidden');
+            }
+        });
+        
+        // Event listeners for main music player
+        musicUpload.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                uploadedMusicFile = file; // Store the file for export
+                const audioUrl = URL.createObjectURL(file);
+                audioPlayer.src = audioUrl;
+                audioPlayer.load();
+                
+                // Apply loop and autoplay settings
+                musicLoop = musicLoopCheckbox.checked;
+                musicAutoplay = musicAutoplayCheckbox.checked;
+                audioPlayer.loop = musicLoop;
+                audioPlayer.autoplay = musicAutoplay;
+
+                if (audioPlayer.autoplay) {
+                    audioPlayer.play();
+                }
+            }
+        });
+
+        // Event listeners for loop and autoplay checkboxes
+        musicLoopCheckbox.addEventListener('change', (event) => {
+            musicLoop = event.target.checked;
+            audioPlayer.loop = musicLoop;
+        });
+
+        musicAutoplayCheckbox.addEventListener('change', (event) => {
+            musicAutoplay = event.target.checked;
+        });
+
+        playBtn.addEventListener('click', () => {
+            audioPlayer.play();
+        });
+
+        pauseBtn.addEventListener('click', () => {
+            audioPlayer.pause();
+        });
+
+        audioPlayer.addEventListener('timeupdate', () => {
+            const currentTime = audioPlayer.currentTime;
+            const duration = audioPlayer.duration;
+            audioTimeDisplay.textContent = `${formatTime(currentTime)} / ${formatTime(duration)}`;
+            const progress = (currentTime / duration) * 100;
+            audioProgress.style.background = `linear-gradient(to right, #2563eb ${progress}%, #d1d5db ${progress}%)`;
+            audioProgress.value = currentTime;
+        });
+
+        audioPlayer.addEventListener('loadedmetadata', () => {
+            const duration = audioPlayer.duration;
+            audioProgress.max = duration;
+            audioTimeDisplay.textContent = `00:00 / ${formatTime(duration)}`;
+        });
+        
+        // Seek functionality for audio progress bar
+        audioProgress.addEventListener('input', (event) => {
+            audioPlayer.currentTime = event.target.value;
+        });
+
+        // Event listeners for storyboard music player
+        storyboardMusicPlayBtn.addEventListener('click', () => {
+            storyboardAudioPlayer.play();
+        });
+        
+        storyboardMusicPauseBtn.addEventListener('click', () => {
+            storyboardAudioPlayer.pause();
+        });
+
+        storyboardAudioPlayer.addEventListener('timeupdate', () => {
+            storyboardMusicTimeDisplay.textContent = `${formatTime(storyboardAudioPlayer.currentTime)} / ${formatTime(storyboardAudioPlayer.duration)}`;
+        });
+        
+        storyboardAudioPlayer.addEventListener('loadedmetadata', () => {
+            storyboardMusicTimeDisplay.textContent = `00:00 / ${formatTime(storyboardAudioPlayer.duration)}`;
+        });
+
+        // Initial render
+        renderStoryboardList();
+    </script>
+</body>
+</html>
