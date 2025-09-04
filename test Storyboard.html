@@ -211,15 +211,7 @@
                 <div class="bg-white p-6 rounded-xl shadow-lg h-full flex flex-col">
                     <h2 class="text-2xl font-semibold mb-4 text-gray-800">បញ្ជី Storyboard</h2>
                     <div class="flex flex-col space-y-2 mb-4">
-                        <button id="add-storyboard-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full transition duration-200 ease-in-out">
-                            + បន្ថែម Storyboard តាមពេលវេលាបច្ចុប្បន្ន
-                        </button>
-                        <button id="create-group-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full transition duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed">
-                            បង្កើត Group/Playlist ពីផ្ទាំងដែលបានជ្រើសរើស
-                        </button>
-                        <button id="export-zip-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-full transition duration-200 ease-in-out">
-                           រក្សាទុកជា ZIP File
-                        </button>
+                        
                          <label for="import-zip-input" class="bg-gray-400 text-white font-bold py-2 px-4 rounded-full text-center cursor-pointer hover:bg-gray-500 transition duration-200 ease-in-out">
                             បញ្ចូលពី ZIP File
                         </label>
@@ -242,20 +234,7 @@
                                 <input type="file" id="music-upload" accept="audio/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100">
                                 
                                 <!-- New Checkboxes for Loop and Autoplay -->
-                                <div class="flex space-x-4 mt-2">
-                                    <div class="flex items-center">
-                                        <input type="checkbox" id="music-loop" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                        <label for="music-loop" class="ml-2 block text-sm text-gray-900">
-                                            Loop
-                                        </label>
-                                    </div>
-                                    <div class="flex items-center">
-                                        <input type="checkbox" id="music-autoplay" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                        <label for="music-autoplay" class="ml-2 block text-sm text-gray-900">
-                                            Autoplay
-                                        </label>
-                                    </div>
-                                </div>
+                                
                             </div>
                             <div class="flex items-center space-x-4 w-full sm:w-1/2">
                                 <button id="play-btn" class="p-2 rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors duration-200 ease-in-out">
@@ -293,28 +272,19 @@
                                     <label for="storyboard-emoji" class="block text-sm font-medium text-gray-700">Emoji</label>
                                     <input type="text" id="storyboard-emoji" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 p-2">
                                 </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">រយៈពេល (នាទី) <span id="storyboard-duration-min-display">0</span></label>
-                                    <input type="range" id="storyboard-duration-min" min="0" max="99" class="mt-1 block w-full">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">រយៈពេល (វិនាទី) <span id="storyboard-duration-sec-display">0</span></label>
-                                    <input type="range" id="storyboard-duration-sec" min="0" max="59" class="mt-1 block w-full">
-                                </div>
+                            
                             </div>
                             
                             <!-- Image Upload & Preview -->
                             <div class="mb-4">
                                 <label for="storyboard-image-upload" class="block text-sm font-medium text-gray-700">បញ្ចូលរូបភាព</label>
-                                <input type="file" id="storyboard-image-upload" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100">
-                            </div>
+                                </div>
                             <img id="image-preview" src="" alt="មើលរូបភាពជាមុន" class="mt-2 rounded-md shadow-md max-w-full h-auto hidden">
                             
                             <!-- New Music Upload (for storyboard) -->
                             <div class="mb-4">
                                 <label for="storyboard-music-upload" class="block text-sm font-medium text-gray-700">បញ្ចូលបទភ្លេងសម្រាប់ផ្ទាំងនេះ</label>
-                                <input type="file" id="storyboard-music-upload" accept="audio/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100">
-                            </div>
+                                </div>
                             <div id="storyboard-music-player-container" class="mt-2 hidden">
                                 <div class="music-player-container">
                                     <button id="storyboard-music-play-btn" class="p-1 rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors duration-200 ease-in-out">
@@ -420,12 +390,7 @@
                             </details>
                             
                             <div class="mt-6 flex justify-end space-x-4">
-                                <button id="delete-storyboard-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full transition duration-200 ease-in-out">
-                                    លុប
-                                </button>
-                                <button id="save-storyboard-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full transition duration-200 ease-in-out">
-                                    រក្សាទុក
-                                </button>
+                                
                             </div>
                         </div>
                         <div id="no-storyboard-selected" class="text-center text-gray-500 p-8">
@@ -831,7 +796,7 @@
                     const cardHtml = `
                         <div class="card p-4 cursor-pointer hover:bg-gray-50 ${isActive ? 'bg-blue-100' : ''} ${isSelected ? 'border-2 border-blue-500' : ''}" data-id="${sb.id}">
                             <div class="flex items-center space-x-4">
-                                <input type="checkbox" class="storyboard-checkbox" data-id="${sb.id}" ${isSelected ? 'checked' : ''}>
+                                
                                 <span class="text-4xl">${sb.emoji}</span>
                                 <div class="flex-grow">
                                     <h3 class="font-bold text-gray-900">${sb.title || 'គ្មានចំណងជើង'}</h3>
