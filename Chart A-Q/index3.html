@@ -1,22 +1,21 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="km">
     <head>
         <meta charset="UTF-8">
-            <title>Chat-Animator</title>
-            <link rel="stylesheet" href="style.css">
-            <link rel="icon" type="image/x-icon" href="./favicon.ico">
+        <title>Chat-Animator</title>
+        <link rel="stylesheet" href="style.css">
+        <link rel="icon" type="image/x-icon" href="./favicon.ico">
         <meta name="viewport" content="width=640px, initial-scale=0.5" />
         <meta name="description" content="A free online tool for creating videos of phone text chats."/>
     </head>
     <body>
         <div id="wrapper" class="wrapper">
         <div id="controlsDiv">
-		<!--
             <div id="description">
                 <h1>Chat-Animator</h1>
                 <p>A free tool to create fake phone chat animations. 
                     Export to .webm or .mp4 video, depending on your browser support.</p>
-            </div>-->
+            </div>
             <table>
                 <tr>
                     <td>
@@ -36,42 +35,18 @@
                 </tr>
                 <tr>
                     <td>
-                        <label for="chatBubbleWidth">Bubble Width %:</label>
+                        <label for="chatBubbleWidthPercent">Chat Width:</label>
                     </td>
                     <td>
-                        <input id="chatBubbleWidth" class="range" type="range" min="0.01" max="0.99" step="0.01"/>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <label for="fontSize">Font Size:</label>
-                    </td>
-                    <td>
-                        <input id="fontSize" class="range" type="range" min="8" max="72" step="1"/>
+                        <input id="chatBubbleWidthPercent" class="range" type="range" min="0.01" max="0.99" step="0.01"/>
                     </td>
                 </tr>
                 <tr>
                     <td>
-                        <label for="canvasWidth">Canvas Width:</label>
+                        <label for="spacing">Spacing:</label>
                     </td>
                     <td>
-                        <input id="canvasWidth" class="range" type="range" min="100" max="1000" step="10"/>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <label for="canvasHeight">Canvas Height:</label>
-                    </td>
-                    <td>
-                        <input id="canvasHeight" class="range" type="range" min="100" max="1200" step="10"/>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <label for="textLineHeight">Text Line Height:</label>
-                    </td>
-                    <td>
-                        <input id="textLineHeight" class="range" type="range" min="10" max="100" step="1"/>
+                        <input id="spacing" class="range" type="range" min="0.0" max="100.0" step="1.0"/>
                     </td>
                 </tr>
                 <tr>
@@ -79,7 +54,15 @@
                         <label for="startDelay">Start Delay:</label>
                     </td>
                     <td>
-                        <input id="startDelay" class="range" type="range" min="0.01" max="5.0" step="0.01"/>
+                        <input id="startDelay" class="range" type="range" min="0.0" max="5.0" step="0.1"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label for="fontSize">Font Size:</label>
+                    </td>
+                    <td>
+                        <input id="fontSize" class="range" type="range" min="4.0" max="100.0" step="1.0"/>
                     </td>
                 </tr>
                 <tr>
@@ -92,29 +75,47 @@
                 </tr>
                 <tr>
                     <td>
-                        <label for="canvasColor">Canvas Color:</label>
+                        <label for="backgroundType">Background:</label>
                     </td>
                     <td>
-                        <input id="canvasColor" class="picker" type="color"/>
+                        <select id="backgroundType" name="backgroundType">
+                            <option value="color">Color</option>
+                            <option value="image">Image</option>
+                        </select>
                     </td>
                 </tr>
-                <tr>
+                <tr class="colorBackgroundOptions">
                     <td>
-                        <label for="canvasImage">Canvas Image:</label>
+                        <label for="backgroundColor">Background Color:</label>
                     </td>
                     <td>
-                        <input id="canvasImage" type="file" accept="image/*"/>
+                        <input id="backgroundColor" class="picker" type="color"/>
+                    </td>
+                </tr>
+                <tr class="imageBackgroundOptions">
+                    <td>
+                        <label for="backgroundImage">Background Image:</label>
+                    </td>
+                    <td>
+                        <button id="backgroundImageButton">Choose Image</button>
                     </td>
                 </tr>
             </table>
+            <br>
             <div id="profilesParentDiv">
-                <div id="profiles">
+                <div id="profilesHeader" class="horizontalCenter">
+                    <h2>Profiles</h2>
+                </div>
+                <div id="profiles" class="horizontalCenter">
                 </div>
                 <div class="horizontalCenter">
                     <button id="newProfile" class="newThing"><img src='./images/plus.svg' alt="a plus symbol"/></button>
                 </div>
             </div>
             <div id="textFieldsParent">
+                <div id="textFieldsHeader" class="horizontalCenter">
+                    <h2>Messages</h2>
+                </div>
                 <div id="textFields">
                 </div>
                 <div class="horizontalCenter">
@@ -139,16 +140,10 @@
         
         <script type="module" src="script.js"></script>
         </div>
-	<!--
-        <div id="wrapper2" class="wrapper">
-            <video id="video" autoplay="true" loop muted>
-                <source src="./Amorn-mimi-pixabay-overlay.mp4"/>
-                Your browser does not support video elements.
-            </video>
-            <script>
-                document.getElementById('video').play();
-            </script>
-        </div>
-	-->
+	<style>
+		.imageBackgroundOptions {
+			display: none;
+		}
+	</style>
     </body>
 </html>
