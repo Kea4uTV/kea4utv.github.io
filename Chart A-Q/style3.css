@@ -1,0 +1,265 @@
+{
+margin: 0;
+padding: 0;
+}
+
+body {
+background: #ffcd85;
+padding: 0 40px 80px 40px;
+}
+
+h1 {
+display: none;
+}
+
+#wrapper {
+padding: 10px 40px;
+width: min-content;
+}
+.wrapper {
+margin: 20px auto;
+background-color: #f5f7fb;
+display: flex;
+flex-direction: row;
+align-items: top;
+color: #141122;
+font-family: Battambang;
+box-shadow: 40px 28px 15px #00000030;
+border-radius: 50px;
+}
+
+table, #profilesParentDiv, #textFieldsParent, #description {
+background: white;
+border-radius: 40px;
+padding: 10px 20px;
+}
+
+#description {
+color: #707070;
+}
+
+table {
+margin: 40px 0 0 auto;
+}
+td:first-of-type {
+text-align: right;
+}
+td {
+padding: 3px 6px;
+}
+
+td button {
+cursor: pointer;
+background-color: #eee;
+padding: 4px 8px;
+border: 1px solid #ccc;
+border-radius: 5px;
+}
+
+.newThing {
+background-color: #eee;
+border: 1px solid #ccc;
+border-radius: 50%;
+width: 30px;
+height: 30px;
+cursor: pointer;
+margin: 10px auto;
+}
+
+.newThing img {
+height: 10px;
+margin-bottom: 2px;
+}
+
+#controlsDiv {
+display: flex;
+flex-direction: column;
+margin: 20px 0 20px 20px;
+}
+
+#profilesParentDiv {
+margin-top: 20px;
+}
+
+#textFieldsParent {
+margin-top: 20px;
+}
+
+#profiles, #textFields {
+display: flex;
+flex-direction: row;
+flex-wrap: wrap;
+align-items: center;
+justify-content: center;
+}
+
+.horizontalCenter {
+display: flex;
+justify-content: center;
+}
+
+.profileDiv, .textEntryRow {
+padding: 10px;
+margin: 10px;
+display: flex;
+flex-direction: row;
+align-items: center;
+border-radius: 20px;
+background-color: #f0f0f0;
+}
+
+.profileDiv img, .profileDiv svg {
+border-radius: 50%;
+width: 40px;
+height: 40px;
+padding: 3px;
+border: 2px solid white;
+}
+
+.profileDiv input, .profileDiv button {
+margin: 0 4px;
+}
+
+.textEntryRow {
+padding: 10px;
+background-color: #e0e0e0;
+}
+
+.textEntryRow textarea {
+min-height: 22px;
+border-radius: 10px;
+padding: 4px 8px;
+resize: none;
+border: none;
+background-color: #fafafa;
+min-width: 200px;
+}
+
+.textEntryRow button {
+margin: 0 4px;
+}
+
+#chatMessageProfiles button {
+border: none;
+background: none;
+cursor: pointer;
+}
+
+#chatMessageProfiles button img, #chatMessageProfiles button svg {
+border-radius: 50%;
+width: 30px;
+height: 30px;
+}
+
+.deleteButton {
+background-color: red;
+color: white;
+border: none;
+border-radius: 50%;
+width: 20px;
+height: 20px;
+cursor: pointer;
+font-weight: bold;
+font-size: 1em;
+padding: 0;
+margin-left: 8px;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+
+.range {
+-webkit-appearance: none;
+appearance: none;
+background: transparent;
+cursor: pointer;
+width: 150px;
+}
+
+.range::-webkit-slider-runnable-track {
+background: linear-gradient(0deg, #666 0%, #333 35%);
+border-radius: 3px;
+height: 6px;
+}
+
+.range::-moz-range-track {
+background: linear-gradient(0deg, #666 0%, #333 35%);
+border-radius: 3px;
+height: 6px;
+}
+
+.range::-webkit-slider-thumb {
+-webkit-appearance: none;
+appearance: none;
+background-color: #fff;
+border: 1px solid #999;
+border-radius: 50%;
+height: 16px;
+width: 16px;
+margin-top: -5px;
+}
+
+.range::-moz-range-thumb {
+-webkit-appearance: none;
+appearance: none;
+background-color: #fff;
+border: 1px solid #999;
+border-radius: 50%;
+height: 16px;
+width: 16px;
+margin-top: -5px;
+}
+
+#canvasAndSaveButtons {
+display: flex;
+flex-direction: column;
+align-items: center;
+margin: 20px 20px 20px 0;
+}
+
+#animCanvas {
+box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+border-radius: 20px;
+background-color: #FFFFFF;
+}
+
+#saveButtons {
+display: flex;
+flex-direction: row;
+justify-content: center;
+gap: 10px;
+}
+
+.saveButton {
+background-color: #4CAF50;
+color: white;
+padding: 10px 20px;
+border: none;
+border-radius: 5px;
+cursor: pointer;
+font-size: 16px;
+transition: background-color 0.3s ease;
+}
+
+.saveButton:hover {
+background-color: #45a049;
+}
+
+@keyframes spin {
+from {
+transform: rotate(0deg);
+}
+to {
+transform: rotate(360deg);
+}
+}
+.recordingSpinner {
+animation: spin 1s infinite linear;
+}
+
+.imageBackgroundOptions {
+display: none;
+}
+.colorBackgroundOptions {
+display: table-row;
+}
