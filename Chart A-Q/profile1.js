@@ -1,5 +1,5 @@
 import { playAnimationFromStart } from './animation.js';
-
+ 
 export class Profile {
     constructor(profileName, imageLink, backColor = '#d8d8d8', isMainPerson = false, color = '#333333') {
         this.profileName = profileName;
