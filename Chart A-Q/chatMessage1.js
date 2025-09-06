@@ -4,10 +4,10 @@ import { ChatMessage } from './chatMessage1.js';
 import { startRecording, convertAndDownloadMp4 } from './recording1.js';
 
 var chatProfiles = [];
-chatProfiles.push(new Profile('Grump', './images/char1.svg', '#218aff', true, '#ffffff'));
-chatProfiles.push(new Profile('Olivia', './images/senior-transparent.svg', '#d8d8d8'));
-chatProfiles.push(new Profile('Chad', './images/char2.svg'));
-chatProfiles.push(new Profile('Tischman', './images/char3.svg'));
+chatProfiles.push(new Profile1('Grump', './images/char1.svg', '#218aff', true, '#ffffff'));
+chatProfiles.push(new Profile1('Olivia', './images/senior-transparent.svg', '#d8d8d8'));
+chatProfiles.push(new Profile1('Chad', './images/char2.svg'));
+chatProfiles.push(new Profile1('Tischman', './images/char3.svg'));
 
 var allChatMessages = [];
 allChatMessages.push(new ChatMessage("Have you heard about chat-animator?", chatProfiles[0]));
@@ -93,8 +93,8 @@ function deleteProfile(profile) {
     if (chatProfiles.length > 1) {
         const index = chatProfiles.indexOf(profile);
         for (var message of allChatMessages) {
-            if (message.profile == profile) {
-                message.profile = chatProfiles[0];
+            if (message.profile == profile1) {
+                message.profile = chatProfiles1[0];
             }
         }
         chatProfiles.splice(index, 1);
