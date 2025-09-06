@@ -1,0 +1,162 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: #ffcd85;
+    padding: 0 40px 80px 40px;
+}
+
+h1 {
+    display: none;
+}
+
+#wrapper {
+    padding: 10px 40px;
+    width: min-content;
+}
+
+.wrapper {
+    margin: 20px auto;
+    background-color: #f5f7fb;
+    display: flex;
+    flex-direction: row;
+    align-items: top;
+    color: #141122;
+    font-family: Battambang;
+    box-shadow: 40px 28px 15px #00000030;
+    border-radius: 50px;
+}
+
+table, #profilesParentDiv, #textFieldsParent, #description {
+    background: white;
+    border-radius: 40px;
+    padding: 10px 20px;
+}
+
+#description {
+    color: #707070;
+}
+
+table {
+    margin: 40px 0 0 auto;
+}
+
+td:first-of-type {
+    text-align: right;
+}
+
+td {
+    padding: 3px 6px;
+}
+
+td:last-of-type {
+    padding: 0 0 0 6px;
+}
+
+#profilesParentDiv, #textFieldsParent {
+    margin: 20px auto;
+}
+
+.profileDiv, .textFieldsDiv {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 5px 0;
+}
+
+.profileDiv button, .textFieldsDiv button {
+    height: 30px;
+    width: 30px;
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
+.profileDiv button img, .textFieldsDiv button img {
+    height: 30px;
+}
+
+.profilePic {
+    height: 40px;
+    width: 40px;
+    border-radius: 20px;
+    object-fit: cover;
+    margin: 0 5px;
+}
+
+.newThing {
+    height: 40px;
+    width: 40px;
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
+.newThing img {
+    height: 40px;
+}
+
+.profileNameInput {
+    border-radius: 5px;
+    border: 1px solid gray;
+    padding: 3px;
+}
+
+.textMessageInput {
+    border-radius: 5px;
+    border: 1px solid gray;
+    padding: 3px;
+    width: 100%;
+}
+
+.horizontalCenter {
+    display: flex;
+    justify-content: center;
+}
+
+.horizontalCenter button {
+    margin: 0 5px;
+}
+
+.controlButton {
+    visibility: hidden;
+    margin: 0 16px 0 0;
+}
+
+input.picker {
+    width: 24px;
+    height: 24px;
+}
+
+#canvasParent {
+    display: flex;
+    justify-content: center;
+    margin: 30px auto;
+    width: 290px;
+    height: 640px;
+}
+
+.saveButton {
+    padding: 4px 8px;
+}
+
+.recording {
+    color: red;
+}
+
+#wrapper2 {
+    width: 80vw;
+    overflow: hidden;
+}
+
+video {
+    margin: auto;
+    width: 85vw;
+}
