@@ -1,7 +1,7 @@
-import { Profile, showProfiles } from './profile.js';
-import { playAnimationFromStart, drawFrame, AnimationSettings, canvas } from './animation.js';
-import { ChatMessage } from './chatMessage.js';
-import { startRecording, convertAndDownloadMp4 } from './recording.js';
+import { Profile, showProfiles } from './profile1.js';
+import { playAnimationFromStart, drawFrame, AnimationSettings, canvas } from './animation1.js';
+import { ChatMessage } from './chatMessage1.js';
+import { startRecording, convertAndDownloadMp4 } from './recording1.js';
 
 var chatProfiles = [];
 chatProfiles.push(new Profile('Grump', './images/char1.svg', '#218aff', true, '#ffffff'));
