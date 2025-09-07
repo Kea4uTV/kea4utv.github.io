@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ឧបករណ៍កាត់ WAV</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+Khmer:wght@400;700&display=swap');
+        body {
+            font-family: 'Noto Serif Khmer', serif;
+            background-color: #1a202c;
+            color: #e2e8f0;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+        }
+        .card {
+            background-color: #2d3748;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+        button, .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-primary {
+            background-color: #4a5568;
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background-color: #2c3440;
+        }
+        .btn-secondary {
+            background-color: #a0aec0;
+            color: #2d3748;
+        }
+        .btn-secondary:hover {
+            background-color: #718096;
+        }
+        .btn-download {
+            background-color: #38a169;
+            color: #fff;
+        }
+        .btn-download:hover {
+            background-color: #2f855a;
+        }
+        .btn-delete {
+            background-color: #ef4444;
+            color: #fff;
+        }
+        .btn-delete:hover {
+            background-color: #dc2626;
+        }
+        .btn-save {
+            background-color: #3b82f6;
+            color: #fff;
+        }
+        .btn-save:hover {
+            background-color: #2563eb;
+        }
+        .btn-load {
+            background-color: #9333ea;
+            color: #fff;
+        }
+        .btn-load:hover {
+            background-color: #7e22ce;
+        }
+        .input-field {
+            background-color: #4a5568;
+            border: 1px solid #4a5568;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            color: #e2e8f0;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #a0aec0;
+        }
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 0.5rem;
+        }
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+        }
+        th {
+            background-color: #4a5568;
+            color: #e2e8f0;
+        }
+        td {
+            background-color: #2d3748;
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #fff;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .modal {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.75);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            z-index: 50;
+        }
+        .modal-content {
+            background-color: #2d3748;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body class="p-8">
+
+    <div id="app" class="container mx-auto p-4 md:p-8 space-y-8">
+        <div class="text-center">
+            <h1 class="text-3xl font-bold mb-2">ឧបករណ៍កាត់ WAV</h1>
+            <p class="text-gray-400">សូមជ្រើសរើសឯកសារអូឌីយ៉ូដើម្បីចាប់ផ្តើម</p>
+        </div>
+
+        <!-- File Input and Audio Player -->
+        <div class="card p-6 space-y-4">
+            <div>
+                <label for="fileInput" class="block mb-2 font-bold">ជ្រើសរើសឯកសារអូឌីយ៉ូ (WAV, MP3...)</label>
+                <input type="file" id="fileInput" accept="audio/*" class="block w-full text-sm text-gray-500
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-full file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-violet-50 file:text-violet-700
+                    hover:file:bg-violet-100 cursor-pointer"/>
+            </div>
+            
+            <div id="audioControls" class="hidden space-y-4">
+                <audio id="audioPlayer" class="w-full" controls></audio>
+                <div class="flex items-center space-x-4">
+                    <button id="addSplitBtn" class="btn btn-primary" title="បន្ថែមចំណុចកាត់នៅទីតាំងបច្ចុប្បន្ន">
+                        <svg class="h-5 w-5 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                        បន្ថែមចំណុចកាត់
+                    </button>
+                    <p class="text-sm text-gray-400" id="currentTimeDisplay"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Segment List -->
+        <div id="segmentsContainer" class="hidden space-y-4">
+            <h2 class="text-xl font-bold">ផ្នែកសម្លេងដែលបានកាត់</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead>
+                        <tr>
+                            <th>ចាប់ផ្តើម</th>
+                            <th>បញ្ចប់</th>
+                            <th>ចំណងជើងរង</th>
+                            <th>សកម្មភាព</th>
+                        </tr>
+                    </thead>
+                    <tbody id="segmentsTableBody">
+                    </tbody>
+                </table>
+            </div>
+            <div class="flex justify-end space-x-4">
+                <button id="loadProjectBtn" class="btn btn-load">
+                    <svg class="h-5 w-5 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+                    បញ្ចូលគម្រោង (ZIP)
+                </button>
+                <input type="file" id="loadFileInput" accept=".zip" class="hidden">
+                <button id="saveProjectBtn" class="btn btn-save">
+                    <svg class="h-5 w-5 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-4 5l4 4m0 0l4-4m-4 4V3"></path></svg>
+                    រក្សាទុកគម្រោង (ZIP)
+                </button>
+                <button id="downloadAllBtn" class="btn btn-download">
+                    <svg class="h-5 w-5 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    ទាញយកទាំងអស់ (MP3)
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal for messages -->
+        <div id="modal" class="modal">
+            <div class="bg-gray-800 rounded-xl p-6 shadow-xl max-w-sm w-full">
+                <p id="modalMessage" class="text-center font-bold text-lg mb-4">សារ</p>
+                <button onclick="document.getElementById('modal').style.display='none';" class="w-full btn btn-primary">យល់ព្រម</button>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="loading-overlay">
+            <div class="spinner mb-4"></div>
+            <p id="loadingMessage">កំពុងដំណើរការ...</p>
+        </div>
+    </div>
+
+    <script>
+        // Global variables for audio processing
+        let audioContext;
+        let audioBuffer;
+        let segments = [];
+        let audioSourceNode = null;
+        let audioFileDuration = 0;
+        let originalFileName = 'project';
+
+        const fileInput = document.getElementById('fileInput');
+        const loadFileInput = document.getElementById('loadFileInput');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const addSplitBtn = document.getElementById('addSplitBtn');
+        const downloadAllBtn = document.getElementById('downloadAllBtn');
+        const saveProjectBtn = document.getElementById('saveProjectBtn');
+        const loadProjectBtn = document.getElementById('loadProjectBtn');
+        const segmentsTableBody = document.getElementById('segmentsTableBody');
+        const audioControls = document.getElementById('audioControls');
+        const segmentsContainer = document.getElementById('segmentsContainer');
+        const currentTimeDisplay = document.getElementById('currentTimeDisplay');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingMessage = document.getElementById('loadingMessage');
+        const modal = document.getElementById('modal');
+        const modalMessage = document.getElementById('modalMessage');
+
+        // Show a message to the user
+        function showMessage(message) {
+            modalMessage.textContent = message;
+            modal.style.display = 'flex';
+        }
+
+        // Helper function to format time in seconds to mm:ss format
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+        
+        // Helper function to format time for SRT (HH:MM:SS,mmm)
+        function formatSrtTime(seconds) {
+            const date = new Date(null);
+            date.setSeconds(seconds);
+            const hh = String(date.getUTCHours()).padStart(2, '0');
+            const mm = String(date.getUTCMinutes()).padStart(2, '0');
+            const ss = String(date.getUTCSeconds()).padStart(2, '0');
+            const ms = String(Math.floor((seconds - Math.floor(seconds)) * 1000)).padStart(3, '0');
+            return `${hh}:${mm}:${ss},${ms}`;
+        }
+
+        // Helper function to parse time from mm:ss string to seconds
+        function parseTime(timeString) {
+            const parts = timeString.split(':');
+            if (parts.length === 2) {
+                const minutes = parseInt(parts[0], 10);
+                const seconds = parseInt(parts[1], 10);
+                if (!isNaN(minutes) && !isNaN(seconds)) {
+                    return minutes * 60 + seconds;
+                }
+            }
+            return NaN;
+        }
+
+        // Event listener for audio player's time update
+        audioPlayer.addEventListener('timeupdate', () => {
+            currentTimeDisplay.textContent = `ទីតាំងបច្ចុប្បន្ន: ${formatTime(audioPlayer.currentTime)}`;
+        });
+
+        // Event listener for file input
+        fileInput.addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (!file) {
+                return;
+            }
+
+            loadingOverlay.style.display = 'flex';
+            loadingMessage.textContent = "កំពុងផ្ទុកឯកសារអូឌីយ៉ូ...";
+            originalFileName = file.name.split('.').slice(0, -1).join('.');
+
+            if (audioSourceNode) {
+                audioSourceNode.disconnect();
+                audioSourceNode = null;
+            }
+
+            // Create AudioContext if it doesn't exist
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            // Read the file as an ArrayBuffer
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const arrayBuffer = e.target.result;
+                try {
+                    // Decode the audio data
+                    audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                    audioFileDuration = audioBuffer.duration;
+                    
+                    // Display audio player and controls
+                    audioPlayer.src = URL.createObjectURL(file);
+                    audioControls.classList.remove('hidden');
+                    segmentsContainer.classList.remove('hidden');
+                    
+                    // Reset segments if not loading from a project file
+                    if (segments.length === 0 || (segments.length === 1 && segments[0].start === 0 && segments[0].end === audioFileDuration)) {
+                        segments = [{
+                            start: 0,
+                            end: audioFileDuration,
+                            subtitle: 'ផ្នែកទី 1'
+                        }];
+                    } else {
+                        // If segments were loaded, update their end time to match the new audio duration
+                        segments[segments.length - 1].end = audioFileDuration;
+                    }
+                    updateSegmentsUI();
+
+                } catch (error) {
+                    console.error('Error decoding audio data:', error);
+                    showMessage("មានបញ្ហាក្នុងការផ្ទុកឯកសារអូឌីយ៉ូ។ សូមសាកល្បងម្ដងទៀត។");
+                } finally {
+                    loadingOverlay.style.display = 'none';
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        // Add a split point at the current playback time
+        addSplitBtn.addEventListener('click', () => {
+            if (!audioBuffer) {
+                showMessage("សូមផ្ទុកឯកសារអូឌីយ៉ូជាមុនសិន។");
+                return;
+            }
+            
+            const currentTime = audioPlayer.currentTime;
+            
+            // Find the segment that the current time falls into
+            const segmentIndex = segments.findIndex(seg => currentTime > seg.start && currentTime < seg.end);
+            
+            if (segmentIndex !== -1) {
+                const currentSegment = segments[segmentIndex];
+                const newSegment = {
+                    start: currentTime,
+                    end: currentSegment.end,
+                    subtitle: `ផ្នែកទី ${segments.length + 1}`
+                };
+                
+                currentSegment.end = currentTime;
+                
+                segments.splice(segmentIndex + 1, 0, newSegment);
+                
+                updateSegmentsUI();
+            }
+        });
+        
+        // Update the UI with the current segments
+        function updateSegmentsUI() {
+            segmentsTableBody.innerHTML = '';
+            segments.forEach((segment, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <input type="text" class="input-field w-24 text-center" 
+                               value="${formatTime(segment.start)}" 
+                               onchange="updateSegmentTime(${index}, 'start', this.value)"/>
+                    </td>
+                    <td>
+                        <input type="text" class="input-field w-24 text-center" 
+                               value="${formatTime(segment.end)}" 
+                               onchange="updateSegmentTime(${index}, 'end', this.value)"/>
+                    </td>
+                    <td>
+                        <input type="text" class="input-field w-full" value="${segment.subtitle}" 
+                               oninput="segments[${index}].subtitle = this.value;"/>
+                    </td>
+                    <td class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2">
+                        <button class="btn btn-secondary text-sm" onclick="playSegment(${index})">
+                            <svg class="h-4 w-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197 2.132A1 1 0 0010 14.28V9.72a1 1 0 001.555-.832l3.197 2.132z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            លេង
+                        </button>
+                        <button class="btn btn-download text-sm" onclick="downloadSegment(${index})">
+                            <svg class="h-4 w-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            ទាញយក (MP3)
+                        </button>
+                        <button class="btn btn-delete text-sm" onclick="deleteSegment(${index})">
+                            <svg class="h-4 w-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.035 21H7.965a2 2 0 01-1.996-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            លុប
+                        </button>
+                    </td>
+                `;
+                segmentsTableBody.appendChild(row);
+            });
+        }
+        
+        // Play a specific segment
+        function playSegment(index) {
+            if (!audioBuffer) {
+                showMessage("សូមផ្ទុកឯកសារអូឌីយ៉ូដើមឡើងវិញដើម្បីលេងផ្នែកនេះ។");
+                return;
+            }
+
+            if (audioPlayer.paused) {
+                audioPlayer.currentTime = segments[index].start;
+                audioPlayer.play();
+                const segmentEnd = segments[index].end;
+                const checkEnd = setInterval(() => {
+                    if (audioPlayer.currentTime >= segmentEnd) {
+                        audioPlayer.pause();
+                        clearInterval(checkEnd);
+                    }
+                }, 100);
+            } else {
+                audioPlayer.pause();
+            }
+        }
+        
+        // Update segment time from user input
+        function updateSegmentTime(index, type, value) {
+            const newTime = parseTime(value);
+            if (isNaN(newTime)) {
+                showMessage("ទ្រង់ទ្រាយពេលវេលាមិនត្រឹមត្រូវ។ សូមប្រើទ្រង់ទ្រាយ 'នាទី:វិនាទី' (ឧ. 01:30)។");
+                updateSegmentsUI(); // Revert to original value
+                return;
+            }
+
+            // Validation
+            if (type === 'start') {
+                if (newTime >= segments[index].end || (index > 0 && newTime < segments[index-1].end)) {
+                    showMessage("ពេលវេលាចាប់ផ្តើមមិនត្រឹមត្រូវ។ វាមិនអាចត្រួតលើគ្នា ឬធំជាងពេលវេលាបញ្ចប់បានទេ។");
+                } else {
+                    segments[index].start = newTime;
+                    if (index > 0) {
+                        segments[index-1].end = newTime;
+                    }
+                }
+            } else if (type === 'end') {
+                if (newTime <= segments[index].start || (index < segments.length - 1 && newTime > segments[index+1].start)) {
+                    showMessage("ពេលវេលាបញ្ចប់មិនត្រឹមត្រូវ។ វាមិនអាចត្រួតលើគ្នា ឬតូចជាងពេលវេលាចាប់ផ្តើមបានទេ។");
+                } else {
+                    segments[index].end = newTime;
+                    if (index < segments.length - 1) {
+                        segments[index+1].start = newTime;
+                    }
+                }
+            }
+            updateSegmentsUI();
+        }
+
+        // Delete a segment and merge with the previous one
+        function deleteSegment(index) {
+            if (segments.length <= 1) {
+                showMessage("អ្នកមិនអាចលុបផ្នែកចុងក្រោយបានទេ។");
+                return;
+            }
+
+            if (index === 0) {
+                // If deleting the first segment, merge with the next one
+                segments[1].start = 0;
+                segments.splice(0, 1);
+            } else {
+                // Merge the current segment with the previous one
+                segments[index - 1].end = segments[index].end;
+                segments.splice(index, 1);
+            }
+            
+            // Renumber the tracks after deletion
+            for(let i = 0; i < segments.length; i++) {
+                segments[i].subtitle = `ផ្នែកទី ${i + 1}`;
+            }
+
+            updateSegmentsUI();
+        }
+        
+        /**
+         * Converts a float32 array of audio data to an Int16 array.
+         * @param {Float32Array} float32Data
+         * @returns {Int16Array}
+         */
+        function float32ToInt16(float32Data) {
+            const int16Data = new Int16Array(float32Data.length);
+            for (let i = 0; i < float32Data.length; i++) {
+                int16Data[i] = Math.max(-1, Math.min(1, float32Data[i])) * 0x7FFF;
+            }
+            return int16Data;
+        }
+
+        /**
+         * Encodes a segment of audio data to MP3 format.
+         * @param {number} index
+         * @returns {Promise<Blob>}
+         */
+        function getSegmentMp3Blob(index) {
+            return new Promise((resolve, reject) => {
+                if (!audioBuffer) {
+                    return reject("No audio buffer loaded.");
+                }
+
+                const segment = segments[index];
+                const startSample = Math.floor(segment.start * audioBuffer.sampleRate);
+                const endSample = Math.floor(segment.end * audioBuffer.sampleRate);
+                
+                // Get the audio data for the segment
+                const left = audioBuffer.getChannelData(0).subarray(startSample, endSample);
+                const right = audioBuffer.numberOfChannels > 1 ? audioBuffer.getChannelData(1).subarray(startSample, endSample) : null;
+
+                // Convert to Int16
+                const left16 = float32ToInt16(left);
+                const right16 = right ? float32ToInt16(right) : null;
+
+                // Create Lame.js encoder
+                const mp3encoder = new lamejs.Mp3Encoder(audioBuffer.numberOfChannels, audioBuffer.sampleRate, 128);
+                const mp3Data = [];
+
+                // Encode in chunks to prevent memory issues
+                const chunkSize = 1152;
+                for (let i = 0; i < left16.length; i += chunkSize) {
+                    const leftChunk = left16.subarray(i, i + chunkSize);
+                    const rightChunk = right16 ? right16.subarray(i, i + chunkSize) : null;
+                    const mp3buf = mp3encoder.encodeBuffer(leftChunk, rightChunk);
+                    if (mp3buf.length > 0) {
+                        mp3Data.push(mp3buf);
+                    }
+                }
+
+                // Flush the encoder
+                const mp3buf = mp3encoder.flush();
+                if (mp3buf.length > 0) {
+                    mp3Data.push(mp3buf);
+                }
+
+                // Create a Blob from the encoded data
+                const blob = new Blob(mp3Data, { type: 'audio/mpeg' });
+                resolve(blob);
+            });
+        }
+        
+        // Function to download a single segment
+        async function downloadSegment(index) {
+            loadingOverlay.style.display = 'flex';
+            loadingMessage.textContent = "កំពុងបម្លែងជា MP3...";
+
+            try {
+                const blob = await getSegmentMp3Blob(index);
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const fileName = segments[index].subtitle.replace(/\s/g, '_') || `segment_${index + 1}`;
+                a.download = `${fileName}.mp3`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error("MP3 encoding error:", error);
+                showMessage("មានបញ្ហាក្នុងការបម្លែងជា MP3។ សូមសាកល្បងម្ដងទៀត។");
+            } finally {
+                loadingOverlay.style.display = 'none';
+            }
+        }
+        
+        // Generate SRT content from segments
+        function generateSrtContent() {
+            let srt = '';
+            segments.forEach((segment, index) => {
+                const startTime = formatSrtTime(segment.start);
+                const endTime = formatSrtTime(segment.end);
+                srt += `${index + 1}\n`;
+                srt += `${startTime} --> ${endTime}\n`;
+                srt += `${segment.subtitle}\n\n`;
+            });
+            return srt;
+        }
+
+        // Save the entire project as a ZIP file
+        saveProjectBtn.addEventListener('click', async () => {
+            if (!audioBuffer) {
+                showMessage("សូមផ្ទុកឯកសារអូឌីយ៉ូជាមុនសិន។");
+                return;
+            }
+
+            loadingOverlay.style.display = 'flex';
+            loadingMessage.textContent = "កំពុងបង្កើតឯកសារ ZIP...";
+            
+            const zip = new JSZip();
+            const segmentsFolder = zip.folder("segments");
+            
+            // Add all MP3 files to the zip
+            for (let i = 0; i < segments.length; i++) {
+                try {
+                    const blob = await getSegmentMp3Blob(i);
+                    const fileName = segments[i].subtitle.replace(/\s/g, '_') || `segment_${i + 1}`;
+                    segmentsFolder.file(`${fileName}.mp3`, blob);
+                } catch (error) {
+                    console.error(`Error encoding segment ${i} to MP3:`, error);
+                    // Continue to the next segment even if one fails
+                }
+            }
+            
+            // Add the SRT file
+            const srtContent = generateSrtContent();
+            zip.file("subtitles.srt", srtContent);
+
+            // Add the project JSON file
+            zip.file("project.json", JSON.stringify(segments, null, 2));
+
+            // Generate and download the zip file
+            zip.generateAsync({ type: "blob" }).then(function(content) {
+                const url = URL.createObjectURL(content);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${originalFileName}_project.zip`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                loadingOverlay.style.display = 'none';
+            }).catch(e => {
+                loadingOverlay.style.display = 'none';
+                showMessage("មានបញ្ហាក្នុងការបង្កើតឯកសារ ZIP។ សូមសាកល្បងម្ដងទៀត។");
+            });
+        });
+
+        // Trigger the hidden file input when "Load Project" is clicked
+        loadProjectBtn.addEventListener('click', () => {
+            loadFileInput.click();
+        });
+
+        // Event listener to load a project from a ZIP file
+        loadFileInput.addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            loadingOverlay.style.display = 'flex';
+            loadingMessage.textContent = "កំពុងផ្ទុកគម្រោង...";
+
+            try {
+                const zip = await JSZip.loadAsync(file);
+                const jsonFile = zip.file("project.json");
+
+                if (jsonFile) {
+                    const jsonContent = await jsonFile.async("string");
+                    segments = JSON.parse(jsonContent);
+                    updateSegmentsUI();
+                    showMessage("គម្រោងត្រូវបានផ្ទុកដោយជោគជ័យ។ សូមផ្ទុកឯកសារអូឌីយ៉ូដើមឡើងវិញ។");
+                } else {
+                    showMessage("រកមិនឃើញឯកសារ project.json នៅក្នុង ZIP ទេ។ សូមប្រាកដថាអ្នកកំពុងផ្ទុកឯកសារគម្រោងត្រឹមត្រូវ។");
+                }
+            } catch (error) {
+                console.error("Error loading ZIP file:", error);
+                showMessage("មានបញ្ហាក្នុងការផ្ទុកឯកសារ ZIP។ សូមប្រាកដថាវាជាឯកសារគម្រោងត្រឹមត្រូវ។");
+            } finally {
+                loadingOverlay.style.display = 'none';
+                // Reset the input to allow loading the same file again
+                loadFileInput.value = '';
+            }
+        });
+
+        // Download all segments
+        downloadAllBtn.addEventListener('click', async () => {
+            if (segments.length === 0) {
+                showMessage("មិនមានផ្នែកណាមួយត្រូវទាញយកទេ។");
+                return;
+            }
+            
+            for (let i = 0; i < segments.length; i++) {
+                await downloadSegment(i);
+            }
+        });
+        
+        window.addEventListener('load', () => {
+            showMessage("សូមជ្រើសរើសឯកសារអូឌីយ៉ូដើម្បីចាប់ផ្តើមប្រើឧបករណ៍កាត់នេះ។");
+        });
+    </script>
+</body>
+</html>
