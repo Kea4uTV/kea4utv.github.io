@@ -34,14 +34,14 @@
         }
         .table-header {
             display: grid;
-            grid-template-columns: 30px 1fr 150px 150px 1fr 150px 50px;
+            grid-template-columns: 30px 1fr 150px 1fr 1fr 1fr 150px 50px;
             gap: 1rem;
             padding: 1rem 0;
             border-bottom: 1px solid #333;
         }
         .table-row {
             display: grid;
-            grid-template-columns: 30px 1fr 150px 150px 1fr 150px 50px;
+            grid-template-columns: 30px 1fr 150px 1fr 1fr 1fr 150px 50px;
             gap: 1rem;
             padding: 1rem 0;
             border-bottom: 1px solid #282828;
@@ -114,10 +114,13 @@
             from { opacity: 0; transform: translateY(-20px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .toggle-text {
+        .toggle-text, .copyable-text {
             cursor: pointer;
             color: #4285F4;
             text-decoration: underline;
+        }
+        .copyable-text:hover {
+            opacity: 0.8;
         }
     </style>
 </head>
@@ -164,6 +167,7 @@
                             <th class="py-3 px-2">ឈ្មោះ</th>
                             <th class="py-3 px-2">ស្ថានភាព</th>
                             <th class="py-3 px-2">កំណត់ចំណាំ</th>
+                            <th class="py-3 px-2">អ្នកកែសម្រួល</th>
                             <th class="py-3 px-2">ស្លាក</th>
                             <th class="py-3 px-2">សារខ្លី</th>
                             <th class="py-3 px-2 rounded-r-lg"></th>
@@ -215,12 +219,28 @@
                     <textarea id="profileNotes" name="profileNotes" rows="3" class="w-full bg-[#333] border border-[#444] rounded-lg px-3 py-2"></textarea>
                 </div>
                 <div>
+                    <label for="profileEditor" class="block text-sm font-medium mb-1">អ្នកកែសម្រួល</label>
+                    <input type="text" id="profileEditor" name="profileEditor" class="w-full bg-[#333] border border-[#444] rounded-lg px-3 py-2">
+                </div>
+                <div>
                     <label for="profileTags" class="block text-sm font-medium mb-1">ស្លាក (បំបែកដោយសញ្ញា ,)</label>
                     <input type="text" id="profileTags" name="profileTags" class="w-full bg-[#333] border border-[#444] rounded-lg px-3 py-2">
                 </div>
                 <div>
                     <label for="shortMessage" class="block text-sm font-medium mb-1">សារខ្លី (អក្សរ 50)</label>
-                    <input type="text" id="shortMessage" name="shortMessage" maxlength="50" class="w-full bg-[#333] border border-[#444] rounded-lg px-3 py-2">
+                    <div class="relative">
+                        <input type="password" id="shortMessage" name="shortMessage" maxlength="50" class="w-full bg-[#333] border border-[#444] rounded-lg px-3 py-2 cursor-not-allowed opacity-50" disabled>
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center space-x-2">
+                             <button type="button" id="editMessageBtn" class="text-gray-400 hover:text-white transition-colors">
+                                <!-- Pen Icon -->
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                             </button>
+                            <button type="button" id="toggleMessageBtn" class="text-gray-400 hover:text-white transition-colors">
+                                <!-- Eye Icon -->
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 0 12c2.73 4.39 7 7.5 12 7.5s9.27-3.11 12-7.5c-2.73-4.39-7-7.5-12-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 <div class="flex justify-end space-x-4 mt-4">
                     <button type="button" id="deleteBtn" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors hidden">លុប</button>
@@ -278,12 +298,15 @@
         const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
         const importBtn = document.getElementById('importBtn');
         const exportBtn = document.getElementById('exportBtn');
+        const shortMessageInput = document.getElementById('shortMessage');
+        const toggleMessageBtn = document.getElementById('toggleMessageBtn');
+        const editMessageBtn = document.getElementById('editMessageBtn');
 
         // Function to render the table rows based on data
         function renderTable(mails) {
             mailListBody.innerHTML = ''; // Clear existing rows
             if (mails.length === 0) {
-                mailListBody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-gray-500">គ្មានគណនីអ៊ីម៉ែលនៅឡើយទេ។</td></tr>`;
+                mailListBody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-gray-500">គ្មានគណនីអ៊ីម៉ែលនៅឡើយទេ។</td></tr>`;
                 return;
             }
             mails.forEach(mail => {
@@ -312,12 +335,13 @@
                             ${mail.service === 'google' ? `<img src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" alt="Google" class="h-4 w-4">` : ''}
                             ${mail.service === 'apple' ? `<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Apple_logo_grey.svg/100px-Apple_logo_grey.svg.png" alt="Apple" class="h-4 w-4">` : ''}
                         </div>
-                        <span class="font-bold">${mail.name}</span>
+                        <span class="font-bold copyable-text" data-copy-text="${mail.name}">${mail.name}</span>
                     </td>
                     <td class="py-3 px-2">
                         ${statusButton}
                     </td>
                     <td class="py-3 px-2 text-gray-400">${mail.notes || 'គ្មានកំណត់ចំណាំ'}</td>
+                    <td class="py-3 px-2 text-gray-400">${mail.editor || 'គ្មានអ្នកកែសម្រួល'}</td>
                     <td class="py-3 px-2">${tagsHtml}</td>
                     <td class="py-3 px-2">${shortMessageHtml}</td>
                     <td class="py-3 px-2 text-right">
@@ -327,14 +351,17 @@
                     </td>
                 `;
                 row.addEventListener('click', (e) => {
-                    if (e.target.classList.contains('toggle-text')) {
+                    // Check if the click target is the copyable text span
+                    if (e.target.classList.contains('copyable-text')) {
+                        const textToCopy = e.target.dataset.copyText;
+                        if (textToCopy) {
+                            copyToClipboard(textToCopy);
+                        }
+                    } else if (e.target.classList.contains('toggle-text')) {
                         const span = e.target;
                         const originalMessage = span.dataset.originalMessage;
-                        if (span.textContent.includes('*')) {
-                            span.textContent = originalMessage;
-                        } else {
-                            span.textContent = '*'.repeat(originalMessage.length);
-                        }
+                        // Copy to clipboard
+                        copyToClipboard(originalMessage);
                     } else if (!e.target.closest('.profile-checkbox')) {
                         openModal(mail);
                     }
@@ -344,12 +371,65 @@
             updateBulkDeleteButtonVisibility();
         }
 
+        // Helper function to copy text to clipboard
+        function copyToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            console.log("Copied to clipboard: " + text);
+        }
+        
+        // Toggle message visibility in modal
+        toggleMessageBtn.addEventListener('click', () => {
+            if (shortMessageInput.type === 'password') {
+                shortMessageInput.type = 'text';
+                toggleMessageBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 7.73C9.44 7.73 7.21 9.38 6.03 12c1.18 2.62 3.41 4.27 5.97 4.27 2.56 0 4.79-1.65 5.97-4.27C16.79 9.38 14.56 7.73 12 7.73zm0 6.64c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/>
+                        <path d="M2 4.27l2.12 2.12c-2.36 1.76-4.14 4.07-4.14 6.11 0 5.52 4.48 10 10 10 2.25 0 4.36-.75 6.03-2.03L19.73 22l1.41-1.41-18.14-18.14zM12 16.5c-1.38 0-2.5-.94-2.92-2.22l2.92 2.92z"/>
+                    </svg>
+                `;
+            } else {
+                shortMessageInput.type = 'password';
+                toggleMessageBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 4.5C7 4.5 2.73 7.61 0 12c2.73 4.39 7 7.5 12 7.5s9.27-3.11 12-7.5c-2.73-4.39-7-7.5-12-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                    </svg>
+                `;
+            }
+        });
+
+        // Toggle short message input field disabled state
+        editMessageBtn.addEventListener('click', () => {
+            if (shortMessageInput.disabled) {
+                shortMessageInput.disabled = false;
+                shortMessageInput.classList.remove('cursor-not-allowed', 'opacity-50');
+                editMessageBtn.innerHTML = `
+                    <!-- Lock Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/>
+                    </svg>
+                `;
+            } else {
+                shortMessageInput.disabled = true;
+                shortMessageInput.classList.add('cursor-not-allowed', 'opacity-50');
+                editMessageBtn.innerHTML = `
+                    <!-- Pen Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                `;
+            }
+        });
+
         // Search functionality
         searchInput.addEventListener('input', (e) => {
             const searchTerm = e.target.value.toLowerCase();
             const filteredMails = allMailProfiles.filter(mail =>
                 mail.name.toLowerCase().includes(searchTerm) ||
                 (mail.notes && mail.notes.toLowerCase().includes(searchTerm)) ||
+                (mail.editor && mail.editor.toLowerCase().includes(searchTerm)) ||
                 (mail.tags && mail.tags.some(tag => tag.toLowerCase().includes(searchTerm))) ||
                 (mail.shortMessage && mail.shortMessage.toLowerCase().includes(searchTerm))
             );
@@ -413,14 +493,26 @@
             mailForm.reset();
             deleteBtn.classList.add('hidden');
             currentEditingId = null;
+            shortMessageInput.type = 'password';
+            shortMessageInput.disabled = true;
+            shortMessageInput.classList.add('cursor-not-allowed', 'opacity-50');
+            toggleMessageBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 4.5C7 4.5 2.73 7.61 0 12c2.73 4.39 7 7.5 12 7.5s9.27-3.11 12-7.5c-2.73-4.39-7-7.5-12-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                </svg>
+            `;
+            editMessageBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+            `;
 
             if (mail) {
                 modalTitle.textContent = "កែសម្រួលគណនី";
                 document.getElementById('profileName').value = mail.name;
                 document.getElementById('profileStatus').value = mail.status;
                 document.getElementById('profileNotes').value = mail.notes;
+                document.getElementById('profileEditor').value = mail.editor || '';
                 document.getElementById('profileTags').value = (mail.tags || []).join(', ');
-                document.getElementById('shortMessage').value = mail.shortMessage || '';
+                shortMessageInput.value = mail.shortMessage || '';
                 currentEditingId = mail.id;
                 deleteBtn.classList.remove('hidden');
             } else {
@@ -439,6 +531,7 @@
             const name = document.getElementById('profileName').value;
             const status = document.getElementById('profileStatus').value;
             const notes = document.getElementById('profileNotes').value;
+            const editor = document.getElementById('profileEditor').value;
             const tags = document.getElementById('profileTags').value.split(',').map(tag => tag.trim()).filter(tag => tag);
             const shortMessage = document.getElementById('shortMessage').value;
 
@@ -447,6 +540,7 @@
                 name,
                 status,
                 notes,
+                editor,
                 tags,
                 shortMessage,
                 service: name.toLowerCase().includes('apple') ? 'apple' : 'google', // Simple logic for demo
@@ -527,7 +621,7 @@
                 return;
             }
 
-            const headers = ["name", "status", "notes", "service", "tags", "shortMessage"];
+            const headers = ["name", "status", "notes", "editor", "service", "tags", "shortMessage"];
             const csvRows = [];
             csvRows.push(headers.join(','));
 
@@ -536,6 +630,7 @@
                     `"${profile.name}"`,
                     `"${profile.status}"`,
                     `"${profile.notes}"`,
+                    `"${profile.editor || ''}"`,
                     `"${profile.service}"`,
                     `"${(profile.tags || []).join(';')}"`,
                     `"${profile.shortMessage || ''}"`
