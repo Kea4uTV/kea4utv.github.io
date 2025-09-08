@@ -145,11 +145,6 @@
             </div>
         </div>
 
-        <!-- User ID display -->
-        <div class="bg-[#1f1f1f] text-gray-400 text-sm p-3 rounded-xl mb-4 text-center">
-            <span class="font-bold">ID អ្នកប្រើប្រាស់:</span> <span id="userIdDisplay">Loading...</span>
-        </div>
-
         <!-- Bulk action button -->
         <div class="flex justify-end mb-4">
             <button id="deleteSelectedBtn" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors hidden">
@@ -236,23 +231,40 @@
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        
-        // Firebase initialization variables
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        let userId = null;
-        let currentEditingId = null;
+    <script>
+        // អថេរសំរាប់រក្សាទុកទិន្នន័យ
         let allMailProfiles = [];
+        let currentEditingId = null;
+
+        // មុខងារសម្រាប់រក្សាទុកទិន្នន័យទៅក្នុង localStorage
+        function saveData() {
+            try {
+                localStorage.setItem('mailProfiles', JSON.stringify(allMailProfiles));
+            } catch (error) {
+                console.error("Error saving to localStorage:", error);
+            }
+        }
+
+        // មុខងារសម្រាប់ទាញយកទិន្នន័យពី localStorage
+        function loadData() {
+            try {
+                const data = localStorage.getItem('mailProfiles');
+                if (data) {
+                    allMailProfiles = JSON.parse(data);
+                } else {
+                    allMailProfiles = []; // បើគ្មានទិន្នន័យ ប្រើអារេទទេ
+                }
+            } catch (error) {
+                console.error("Error loading from localStorage:", error);
+                allMailProfiles = [];
+            }
+            renderTable(allMailProfiles);
+        }
+
+        // មុខងារសម្រាប់បង្កើត ID តែមួយគត់
+        function generateUniqueId() {
+            return '_' + Math.random().toString(36).substr(2, 9);
+        }
 
         const mailListBody = document.getElementById('mailListBody');
         const searchInput = document.getElementById('searchInput');
@@ -262,36 +274,10 @@
         const modalTitle = document.getElementById('modalTitle');
         const deleteBtn = document.getElementById('deleteBtn');
         const cancelBtn = document.getElementById('cancelBtn');
-        const userIdDisplay = document.getElementById('userIdDisplay');
         const selectAllCheckbox = document.getElementById('selectAllCheckbox');
         const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
         const importBtn = document.getElementById('importBtn');
         const exportBtn = document.getElementById('exportBtn');
-
-        // Check for user authentication status
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                userId = user.uid;
-            } else {
-                try {
-                    if (initialAuthToken) {
-                        await signInWithCustomToken(auth, initialAuthToken);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                } catch (error) {
-                    console.error("Firebase auth error:", error);
-                }
-            }
-            if (userId) {
-                userIdDisplay.textContent = userId;
-                // Once authenticated, start listening to the database
-                onSnapshot(collection(db, `artifacts/${appId}/users/${userId}/mail_profiles`), (snapshot) => {
-                    allMailProfiles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    renderTable(allMailProfiles);
-                });
-            }
-        });
 
         // Function to render the table rows based on data
         function renderTable(mails) {
@@ -303,7 +289,7 @@
             mails.forEach(mail => {
                 const row = document.createElement('tr');
                 row.className = 'table-row text-sm border-b border-[#282828] transition-colors hover:bg-[#282828] cursor-pointer';
-                row.dataset.id = mail.id; // Store Firestore document ID
+                row.dataset.id = mail.id; // Store unique ID
 
                 const statusButton = mail.status === 'START'
                     ? `<button class="status-start">ចាប់ផ្ដើម</button>`
@@ -396,22 +382,16 @@
         }
 
         // Bulk delete handler
-        deleteSelectedBtn.addEventListener('click', async () => {
+        deleteSelectedBtn.addEventListener('click', () => {
             const checkedCheckboxes = document.querySelectorAll('.profile-checkbox:checked');
             if (checkedCheckboxes.length === 0) return;
 
-            const batch = writeBatch(db);
-            checkedCheckboxes.forEach(checkbox => {
-                const docId = checkbox.closest('tr').dataset.id;
-                batch.delete(doc(db, `artifacts/${appId}/users/${userId}/mail_profiles`, docId));
-            });
-
-            try {
-                await batch.commit();
-                console.log("Selected documents successfully deleted!");
-            } catch (e) {
-                console.error("Error batch deleting documents: ", e);
-            }
+            const idsToDelete = Array.from(checkedCheckboxes).map(checkbox => checkbox.closest('tr').dataset.id);
+            allMailProfiles = allMailProfiles.filter(profile => !idsToDelete.includes(profile.id));
+            
+            saveData();
+            renderTable(allMailProfiles);
+            console.log("Selected documents successfully deleted from local storage!");
         });
 
         // Modal functions
@@ -454,7 +434,7 @@
         }
 
         // Form submission handler
-        mailForm.addEventListener('submit', async (e) => {
+        mailForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const name = document.getElementById('profileName').value;
             const status = document.getElementById('profileStatus').value;
@@ -463,41 +443,39 @@
             const shortMessage = document.getElementById('shortMessage').value;
 
             const mailData = {
+                id: currentEditingId || generateUniqueId(),
                 name,
                 status,
                 notes,
                 tags,
                 shortMessage,
                 service: name.toLowerCase().includes('apple') ? 'apple' : 'google', // Simple logic for demo
-                createdAt: new Date()
             };
 
-            try {
-                if (currentEditingId) {
-                    // Update existing document
-                    await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/mail_profiles`, currentEditingId), mailData);
-                    console.log("Document updated with ID: ", currentEditingId);
-                } else {
-                    // Add new document
-                    await addDoc(collection(db, `artifacts/${appId}/users/${userId}/mail_profiles`), mailData);
-                    console.log("Document added successfully!");
+            if (currentEditingId) {
+                // Update existing document
+                const index = allMailProfiles.findIndex(profile => profile.id === currentEditingId);
+                if (index !== -1) {
+                    allMailProfiles[index] = mailData;
                 }
-            } catch (e) {
-                console.error("Error adding/updating document: ", e);
+            } else {
+                // Add new document
+                allMailProfiles.push(mailData);
             }
+            
+            saveData();
+            renderTable(allMailProfiles);
             closeModal();
         });
 
         // Delete button handler (for single record)
-        deleteBtn.addEventListener('click', async () => {
+        deleteBtn.addEventListener('click', () => {
             if (currentEditingId) {
-                try {
-                    await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/mail_profiles`, currentEditingId));
-                    console.log("Document successfully deleted!");
-                    closeModal();
-                } catch (e) {
-                    console.error("Error removing document: ", e);
-                }
+                allMailProfiles = allMailProfiles.filter(profile => profile.id !== currentEditingId);
+                saveData();
+                renderTable(allMailProfiles);
+                console.log("Document successfully deleted from local storage!");
+                closeModal();
             }
         });
 
@@ -511,32 +489,32 @@
                 if (!file) return;
 
                 const reader = new FileReader();
-                reader.onload = async (event) => {
+                reader.onload = (event) => {
                     const csvText = event.target.result;
                     const lines = csvText.trim().split('\n');
                     const headers = lines[0].split(',').map(h => h.trim());
                     const data = lines.slice(1);
 
-                    const batch = writeBatch(db);
+                    const importedProfiles = [];
                     data.forEach(line => {
                         const values = line.split(',').map(v => v.trim());
                         if (values.length === headers.length) {
-                            const profile = {};
+                            const profile = { id: generateUniqueId() };
                             headers.forEach((header, i) => {
-                                profile[header] = values[i];
+                                if (header === 'tags') {
+                                    profile[header] = values[i].split(';').map(t => t.trim()).filter(t => t);
+                                } else {
+                                    profile[header] = values[i];
+                                }
                             });
-                            profile.tags = profile.tags ? profile.tags.split(';') : [];
-                            const newDocRef = doc(collection(db, `artifacts/${appId}/users/${userId}/mail_profiles`));
-                            batch.set(newDocRef, profile);
+                            importedProfiles.push(profile);
                         }
                     });
 
-                    try {
-                        await batch.commit();
-                        console.log("CSV imported successfully!");
-                    } catch (e) {
-                        console.error("Error importing CSV:", e);
-                    }
+                    allMailProfiles = [...allMailProfiles, ...importedProfiles];
+                    saveData();
+                    renderTable(allMailProfiles);
+                    console.log("CSV imported successfully!");
                 };
                 reader.readAsText(file);
             };
@@ -573,6 +551,9 @@
             link.click();
             console.log("Data exported as CSV.");
         });
+
+        // Load data on initial page load
+        window.onload = loadData;
     </script>
 </body>
 </html>
