@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ឧបករណ៍បន្ថែមអក្សររត់ MP3</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: All Khmer fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Khmer+Battambang:wght@400;700&family=Suwannaphum:wght@400;700&family=Freehand:wght@400;700&family=Hanuman:wght@400;700&family=Bayon:wght@400;700&family=Kantumruy:wght@400;700&family=Khmer:wght@400;700&family=Moul:wght@400;700&family=Moulpali:wght@400;400&family=Preahvihear:wght@400;700&family=Battambang:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Khmer Battambang', 'Suwannaphum', sans-serif;
+            background-color: #f0f4f8;
+        }
+        .canva-view {
+            transition: all 0.3s ease-in-out;
+            border: 2px dashed #9ca3af;
+            background-color: #e2e8f0;
+            position: relative;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        .message-box {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #4CAF50;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden p-6 md:p-10">
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-800 text-center mb-6">ឧបករណ៍បន្ថែមអក្សររត់ MP3</h1>
+        
+        <!-- Loading state -->
+        <div id="loading" class="text-center p-8 text-lg text-blue-500 font-semibold hidden">កំពុងផ្ទុក...</div>
+
+        <!-- Main application content -->
+        <div id="mainApp" class="space-y-6">
+            
+            <!-- Project Management -->
+            <div class="bg-gray-50 p-6 rounded-lg shadow-inner flex flex-wrap items-center justify-center gap-4">
+                <div class="flex-1 min-w-[200px] text-center md:text-left">
+                    <h2 class="text-xl font-bold text-gray-800">ការគ្រប់គ្រងគម្រោង</h2>
+                    <p class="text-sm text-gray-500">រក្សាទុកឬផ្ទុកគម្រោងរបស់អ្នក។</p>
+                </div>
+                <div class="flex flex-col md:flex-row gap-4">
+                    <button id="saveProjectBtn" class="px-6 py-2 bg-green-600 text-white rounded-full shadow-lg hover:bg-green-700 transition-transform transform hover:scale-105">រក្សាទុកទៅក្នុងកុំព្យូទ័រ</button>
+                    <label for="fileInput" class="px-6 py-2 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105 cursor-pointer flex items-center justify-center">
+                        ផ្ទុកពីកុំព្យូទ័រ
+                    </label>
+                    <input type="file" id="fileInput" accept=".json" class="hidden">
+                </div>
+            </div>
+
+            <!-- Quick Edit Section -->
+            <div id="quickEditContainer" class="p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 rounded-lg shadow-inner hidden">
+                <div class="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4">
+                    <span class="font-semibold">កែសម្រួលអត្ថបទ:</span>
+                    <textarea id="quickEditTextarea" class="flex-grow p-2 border border-yellow-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 resize-none h-16"></textarea>
+                    <button id="quickSaveBtn" class="px-6 py-2 bg-yellow-600 text-white rounded-full shadow-lg hover:bg-yellow-700">រក្សាទុក</button>
+                    <button id="quickCancelBtn" class="px-6 py-2 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-100">បោះបង់</button>
+                </div>
+            </div>
+
+            <!-- Canva View Section -->
+            <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">ផ្ទាំងទិដ្ឋភាព Canva</h2>
+                <div class="flex flex-wrap justify-center items-center gap-4 mb-6">
+                    <h3 class="font-semibold text-gray-700 w-full text-center">ជ្រើសរើសទំហំ</h3>
+                    <button class="size-btn px-4 py-2 text-sm bg-gray-200 rounded-full hover:bg-gray-300" data-size="square">ការ៉េ</button>
+                    <button class="size-btn px-4 py-2 text-sm bg-gray-200 rounded-full hover:bg-gray-300" data-size="portrait">បញ្ឈរ</button>
+                    <button class="size-btn px-4 py-2 text-sm bg-gray-200 rounded-full hover:bg-gray-300" data-size="landscape">ផ្ដេក</button>
+                    <button class="size-btn px-4 py-2 text-sm bg-gray-200 rounded-full hover:bg-gray-300" data-size="7680x4320">8K</button>
+                    <button class="size-btn px-4 py-2 text-sm bg-gray-200 rounded-full hover:bg-gray-300" data-size="3840x2160">4K</button>
+                    <button class="size-btn px-4 py-2 text-sm bg-gray-200 rounded-full hover:bg-gray-300" data-size="2560x1440">2K</button>
+                    <button class="size-btn px-4 py-2 text-sm bg-gray-200 rounded-full hover:bg-gray-300" data-size="1920x1080">1080p</button>
+                    <button class="size-btn px-4 py-2 text-sm bg-gray-200 rounded-full hover:bg-gray-300" data-size="1280x720">720p</button>
+                    <button class="size-btn px-4 py-2 text-sm bg-gray-200 rounded-full hover:bg-gray-300" data-size="854x480">480p</button>
+                    <button class="size-btn px-4 py-2 text-sm bg-gray-200 rounded-full hover:bg-gray-300" data-size="640x360">360p</button>
+                    <button class="size-btn px-4 py-2 text-sm bg-gray-200 rounded-full hover:bg-gray-300" data-size="426x240">240p</button>
+                </div>
+                <div id="canvaView" class="canva-view w-full mx-auto relative rounded-xl flex items-center justify-center p-4 cursor-grab">
+                    <p id="canvaSubtitle" class="text-white text-xl md:text-3xl lg:text-4xl text-center font-bold tracking-wide leading-relaxed drop-shadow-lg" style="text-shadow: 2px 2px 4px #000000;"></p>
+                </div>
+            </div>
+            
+            <!-- New Section for Background Image -->
+            <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">ផ្ទៃខាងក្រោយ</h2>
+                <div class="flex flex-col items-center space-y-4">
+                    <label for="bgImageFile" class="text-xl font-semibold text-gray-700">ផ្ទុកឯកសាររូបភាព</label>
+                    <input type="file" id="bgImageFile" accept="image/*" class="w-full text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100 cursor-pointer">
+                </div>
+                
+                <div id="backgroundModeControls" class="mt-6 hidden">
+                    <h3 class="font-semibold text-gray-700 mb-2 text-center">របៀបផ្ទៃខាងក្រោយ</h3>
+                    <div class="flex flex-wrap justify-center gap-2">
+                        <button class="bg-mode-btn px-4 py-2 text-sm bg-gray-200 rounded-full hover:bg-gray-300" data-mode="fit">Fit</button>
+                        <button class="bg-mode-btn px-4 py-2 text-sm bg-gray-200 rounded-full hover:bg-gray-300" data-mode="stretch">Stretch</button>
+                        <button class="bg-mode-btn px-4 py-2 text-sm bg-gray-200 rounded-full hover:bg-gray-300" data-mode="tile">Tile</button>
+                        <button class="bg-mode-btn px-4 py-2 text-sm bg-gray-200 rounded-full hover:bg-gray-300" data-mode="center">Center</button>
+                        <button class="bg-mode-btn px-4 py-2 text-sm bg-gray-200 rounded-full hover:bg-gray-300" data-mode="span">Span</button>
+                        <button id="clearBgBtn" class="px-4 py-2 text-sm bg-red-200 text-red-700 rounded-full hover:bg-red-300">លុប</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audio Player Section -->
+            <div class="flex flex-col items-center p-4 bg-gray-50 rounded-lg shadow-inner">
+                <label for="mp3File" class="text-xl font-semibold text-gray-700 mb-4">ផ្ទុកឯកសារ MP3</label>
+                <input type="file" id="mp3File" accept="audio/mpeg" class="w-full text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100 cursor-pointer">
+            </div>
+
+            <div class="flex flex-col items-center space-y-4">
+                <audio id="audioPlayer" class="w-full rounded-lg" controls></audio>
+                <div class="flex items-center space-x-4">
+                    <button id="addSubtitleBtn" class="px-6 py-2 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-transform transform hover:scale-105 disabled:bg-gray-400" disabled>
+                        បន្ថែមអក្សររត់
+                    </button>
+                </div>
+            </div>
+
+            <!-- General Subtitle Settings -->
+            <details class="bg-gray-50 p-6 rounded-lg shadow-inner">
+                <summary class="text-2xl font-bold text-gray-800 cursor-pointer select-none">ការកំណត់អក្សរទូទៅ</summary>
+                <div id="generalSettings" class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                    <!-- Font Selection -->
+                    <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex flex-col">
+                            <label for="generalGoogleFontSelect" class="text-gray-700 mb-2 font-semibold">Google Fonts:</label>
+                            <select id="generalGoogleFontSelect" class="w-full p-3 border border-gray-300 rounded-lg">
+                                <option value="Khmer Battambang" selected>Khmer Battambang</option>
+                                <option value="Suwannaphum">Suwannaphum</option>
+                                <option value="Freehand">Freehand</option>
+                                <option value="Hanuman">Hanuman</option>
+                                <option value="Bayon">Bayon</option>
+                                <option value="Kantumruy">Kantumruy</option>
+                                <option value="Khmer">Khmer</option>
+                                <option value="Moul">Moul</option>
+                                <option value="Moulpali">Moulpali</option>
+                                <option value="Preahvihear">Preahvihear</option>
+                                <option value="Battambang">Battambang</option>
+                            </select>
+                        </div>
+                        <div class="flex flex-col">
+                            <label for="generalLocalFontUpload" class="text-gray-700 mb-2 font-semibold">ផ្ទុក Font ពីកុំព្យូទ័រ:</label>
+                            <input type="file" id="generalLocalFontUpload" accept=".ttf,.otf,.woff,.woff2" class="w-full text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100 cursor-pointer">
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col">
+                        <label for="generalFontSize" class="text-gray-700 mb-2">ទំហំអក្សរ: <span id="generalFontSizeValue" class="font-mono">48</span>px</label>
+                        <input type="range" id="generalFontSize" min="10" max="100" value="48" class="w-full">
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="generalRotation" class="text-gray-700 mb-2">បង្វិល: <span id="generalRotationValue" class="font-mono">0</span>°</label>
+                        <input type="range" id="generalRotation" min="-180" max="180" value="0" class="w-full">
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="generalFontColor" class="text-gray-700 mb-2">ពណ៌អក្សរ:</label>
+                        <input type="color" id="generalFontColor" value="#ffffff" class="w-full h-10 rounded-lg">
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="generalPositionX" class="text-gray-700 mb-2">ទីតាំងផ្តេក: <span id="generalPositionXValue" class="font-mono">50</span>%</label>
+                        <input type="range" id="generalPositionX" min="0" max="100" value="50" class="w-full">
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="generalPositionY" class="text-gray-700 mb-2">ទីតាំងបញ្ឈរ: <span id="generalPositionYValue" class="font-mono">90</span>%</label>
+                        <input type="range" id="generalPositionY" min="0" max="100" value="90" class="w-full">
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="generalShadow" class="text-gray-700 mb-2">ស្រមោលអក្សរ:</label>
+                        <input type="checkbox" id="generalShadow" checked class="accent-blue-500">
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="generalShadowColor" class="text-gray-700 mb-2">ពណ៌ស្រមោល:</label>
+                        <input type="color" id="generalShadowColor" value="#000000" class="w-full h-10 rounded-lg">
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="generalOutline" class="text-gray-700 mb-2">គ្រោងអក្សរ:</label>
+                        <input type="checkbox" id="generalOutline" class="accent-blue-500">
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="generalOutlineColor" class="text-gray-700 mb-2">ពណ៌គ្រោង:</label>
+                        <input type="color" id="generalOutlineColor" value="#000000" class="w-full h-10 rounded-lg">
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="generalOutlineWidth" class="text-gray-700 mb-2">ទទឹងគ្រោង: <span id="generalOutlineWidthValue" class="font-mono">0</span>px</label>
+                        <input type="range" id="generalOutlineWidth" min="0" max="5" value="0" step="0.5" class="w-full">
+                    </div>
+                    <!-- New position quick-set buttons -->
+                    <div class="md:col-span-2">
+                        <h4 class="font-semibold text-gray-700 mb-2">កំណត់ទីតាំងរហ័ស:</h4>
+                        <div class="flex flex-wrap gap-2">
+                            <button class="pos-btn px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600" data-pos="top-left">ឆ្វេង-លើ</button>
+                            <button class="pos-btn px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600" data-pos="top-right">ស្ដាំ-លើ</button>
+                            <button class="pos-btn px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600" data-pos="bottom-left">ឆ្វេង-ក្រោម</button>
+                            <button class="pos-btn px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600" data-pos="bottom-right">ស្ដាំ-ក្រោម</button>
+                            <button class="pos-btn px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600" data-pos="center">កណ្តាល</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Buttons for Save and Cancel -->
+                <div class="flex flex-row space-x-4 mt-6 justify-end">
+                    <button id="saveGeneralSettingsBtn" class="bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        រក្សាទុក
+                    </button>
+                    <button id="cancelGeneralSettingsBtn" class="bg-gray-300 text-gray-800 font-semibold py-3 px-6 rounded-xl shadow-lg hover:bg-gray-400 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2">
+                        បោះបង់
+                    </button>
+                </div>
+            </details>
+            
+
+            <!-- Subtitle List -->
+            <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold text-gray-800">បញ្ជីអក្សររត់</h2>
+                    <button id="exportSrtBtn" class="px-6 py-2 bg-purple-600 text-white rounded-full shadow-lg hover:bg-purple-700 transition-transform transform hover:scale-105">នាំចេញជា SRT</button>
+                </div>
+                <div id="subtitleList" class="space-y-3">
+                    <p class="text-gray-500" id="noSubtitlesMsg">មិនទាន់មានអក្សររត់បន្ថែមនៅឡើយទេ។</p>
+                </div>
+            </div>
+
+            <!-- Subtitle Modal -->
+            <div id="subtitleModal" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center p-4 hidden">
+                <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg">
+                    <h3 class="text-2xl font-bold mb-4">កែសម្រួលអក្សររត់</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div class="flex flex-col">
+                            <label for="modalTime" class="block text-gray-700">ពេលវេលា (វិនាទី):</label>
+                            <input type="number" step="0.01" id="modalTime" class="mt-2 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" readonly>
+                        </div>
+                        <div class="flex flex-col">
+                            <label for="subtitleText" class="block text-gray-700">អត្ថបទអក្សររត់:</label>
+                            <textarea id="subtitleText" class="mt-2 w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y" placeholder="បញ្ចូលអក្សររត់របស់អ្នកនៅទីនេះ"></textarea>
+                        </div>
+                    </div>
+                    
+                    <details class="mt-4 bg-gray-100 p-4 rounded-lg">
+                        <summary class="text-xl font-bold text-gray-700 cursor-pointer select-none">កំណត់រចនាប័ទ្មពិសេស</summary>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <!-- Font Selection for Modal -->
+                            <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="flex flex-col">
+                                    <label for="modalGoogleFontSelect" class="text-gray-700 mb-2 font-semibold">Google Fonts:</label>
+                                    <select id="modalGoogleFontSelect" class="w-full p-3 border border-gray-300 rounded-lg">
+                                        <option value="Khmer Battambang" selected>Khmer Battambang</option>
+                                        <option value="Suwannaphum">Suwannaphum</option>
+                                        <option value="Freehand">Freehand</option>
+                                        <option value="Hanuman">Hanuman</option>
+                                        <option value="Bayon">Bayon</option>
+                                        <option value="Kantumruy">Kantumruy</option>
+                                        <option value="Khmer">Khmer</option>
+                                        <option value="Moul">Moul</option>
+                                        <option value="Moulpali">Moulpali</option>
+                                        <option value="Preahvihear">Preahvihear</option>
+                                        <option value="Battambang">Battambang</option>
+                                    </select>
+                                </div>
+                                <div class="flex flex-col">
+                                    <label for="modalLocalFontUpload" class="text-gray-700 mb-2 font-semibold">ផ្ទុក Font ពីកុំព្យូទ័រ:</label>
+                                    <input type="file" id="modalLocalFontUpload" accept=".ttf,.otf,.woff,.woff2" class="w-full text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100 cursor-pointer">
+                                </div>
+                            </div>
+                            
+                            <div class="flex flex-col">
+                                <label for="modalFontSize" class="text-gray-700 mb-2">ទំហំអក្សរ: <span id="modalFontSizeValue" class="font-mono"></span>px</label>
+                                <input type="range" id="modalFontSize" min="10" max="100" class="w-full">
+                            </div>
+                            <div class="flex flex-col">
+                                <label for="modalRotation" class="text-gray-700 mb-2">បង្វិល: <span id="modalRotationValue" class="font-mono"></span>°</label>
+                                <input type="range" id="modalRotation" min="-180" max="180" class="w-full">
+                            </div>
+                            <div class="flex flex-col">
+                                <label for="modalFontColor" class="text-gray-700 mb-2">ពណ៌អក្សរ:</label>
+                                <input type="color" id="modalFontColor" class="w-full h-10 rounded-lg">
+                            </div>
+                            <div class="flex flex-col">
+                                <label for="modalPositionX" class="text-gray-700 mb-2">ទីតាំងផ្តេក: <span id="modalPositionXValue" class="font-mono"></span>%</label>
+                                <input type="range" id="modalPositionX" min="0" max="100" class="w-full">
+                            </div>
+                            <div class="flex flex-col">
+                                <label for="modalPositionY" class="text-gray-700 mb-2">ទីតាំងបញ្ឈរ: <span id="modalPositionYValue" class="font-mono"></span>%</label>
+                                <input type="range" id="modalPositionY" min="0" max="100" class="w-full">
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="modalShadow" class="accent-blue-500 mr-2">
+                                <label for="modalShadow" class="text-gray-700">ស្រមោលអក្សរ</label>
+                            </div>
+                            <div class="flex flex-col">
+                                <label for="modalShadowColor" class="text-gray-700 mb-2">ពណ៌ស្រមោល:</label>
+                                <input type="color" id="modalShadowColor" class="w-full h-10 rounded-lg">
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="modalOutline" class="accent-blue-500 mr-2">
+                                <label for="modalOutline" class="text-gray-700">គ្រោងអក្សរ</label>
+                            </div>
+                            <div class="flex flex-col">
+                                <label for="modalOutlineColor" class="text-gray-700 mb-2">ពណ៌គ្រោង:</label>
+                                <input type="color" id="modalOutlineColor" class="w-full h-10 rounded-lg">
+                            </div>
+                            <div class="flex flex-col">
+                                <label for="modalOutlineWidth" class="text-gray-700 mb-2">ទទឹងគ្រោង: <span id="modalOutlineWidthValue" class="font-mono"></span>px</label>
+                                <input type="range" id="modalOutlineWidth" min="0" max="5" step="0.5" class="w-full">
+                            </div>
+                            <!-- New position quick-set buttons for modal -->
+                            <div class="md:col-span-2">
+                                <h4 class="font-semibold text-gray-700 mb-2">កំណត់ទីតាំងរហ័ស:</h4>
+                                <div class="flex flex-wrap gap-2">
+                                    <button class="modal-pos-btn px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600" data-pos="top-left">ឆ្វេង-លើ</button>
+                                    <button class="modal-pos-btn px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600" data-pos="top-right">ស្ដាំ-លើ</button>
+                                    <button class="modal-pos-btn px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600" data-pos="bottom-left">ឆ្វេង-ក្រោម</button>
+                                    <button class="modal-pos-btn px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600" data-pos="bottom-right">ស្ដាំ-ក្រោម</button>
+                                    <button class="modal-pos-btn px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600" data-pos="center">កណ្តាល</button>
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+                    
+                    <div class="flex justify-end space-x-4 mt-6">
+                        <button id="cancelModal" class="px-6 py-2 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-100">បោះបង់</button>
+                        <button id="saveSubtitle" class="px-6 py-2 rounded-full bg-blue-600 text-white hover:bg-blue-700">រក្សាទុក</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message box for user feedback -->
+    <div id="messageBox" class="message-box"></div>
+
+    <script>
+        let subtitles = [];
+        let editingSubtitleId = null;
+        
+        const mainApp = document.getElementById('mainApp');
+        const mp3File = document.getElementById('mp3File');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const addSubtitleBtn = document.getElementById('addSubtitleBtn');
+        const subtitleList = document.getElementById('subtitleList');
+        const noSubtitlesMsg = document.getElementById('noSubtitlesMsg');
+        const subtitleModal = document.getElementById('subtitleModal');
+        const modalTime = document.getElementById('modalTime');
+        const subtitleText = document.getElementById('subtitleText');
+        const saveSubtitleBtn = document.getElementById('saveSubtitle');
+        const cancelModalBtn = document.getElementById('cancelModal');
+        const sizeButtons = document.querySelectorAll('.size-btn');
+        const canvaView = document.getElementById('canvaView');
+        const canvaSubtitle = document.getElementById('canvaSubtitle');
+        const messageBox = document.getElementById('messageBox');
+        
+        // Project Management
+        const saveProjectBtn = document.getElementById('saveProjectBtn');
+        const fileInput = document.getElementById('fileInput');
+        
+        // New Background elements
+        const bgImageFile = document.getElementById('bgImageFile');
+        const backgroundModeControls = document.getElementById('backgroundModeControls');
+        const bgModeButtons = document.querySelectorAll('.bg-mode-btn');
+        const clearBgBtn = document.getElementById('clearBgBtn');
+        
+        // Export SRT button
+        const exportSrtBtn = document.getElementById('exportSrtBtn');
+
+        // Quick Edit elements
+        const quickEditContainer = document.getElementById('quickEditContainer');
+        const quickEditTextarea = document.getElementById('quickEditTextarea');
+        const quickSaveBtn = document.getElementById('quickSaveBtn');
+        const quickCancelBtn = document.getElementById('quickCancelBtn');
+
+        // General Font controls
+        const generalGoogleFontSelect = document.getElementById('generalGoogleFontSelect');
+        const generalLocalFontUpload = document.getElementById('generalLocalFontUpload');
+        
+        // Modal Font controls
+        const modalGoogleFontSelect = document.getElementById('modalGoogleFontSelect');
+        const modalLocalFontUpload = document.getElementById('modalLocalFontUpload');
+
+        // General settings controls
+        const generalFontSize = document.getElementById('generalFontSize');
+        const generalFontSizeValue = document.getElementById('generalFontSizeValue');
+        const generalRotation = document.getElementById('generalRotation');
+        const generalRotationValue = document.getElementById('generalRotationValue');
+        const generalFontColor = document.getElementById('generalFontColor');
+        const generalPositionX = document.getElementById('generalPositionX');
+        const generalPositionXValue = document.getElementById('generalPositionXValue');
+        const generalPositionY = document.getElementById('generalPositionY');
+        const generalPositionYValue = document.getElementById('generalPositionYValue');
+        const generalShadow = document.getElementById('generalShadow');
+        const generalShadowColor = document.getElementById('generalShadowColor');
+        const generalOutline = document.getElementById('generalOutline');
+        const generalOutlineColor = document.getElementById('generalOutlineColor');
+        const generalOutlineWidth = document.getElementById('generalOutlineWidth');
+        const generalOutlineWidthValue = document.getElementById('generalOutlineWidthValue');
+        const generalPosBtns = document.querySelectorAll('.pos-btn');
+
+        // General settings Save/Cancel buttons
+        const saveGeneralSettingsBtn = document.getElementById('saveGeneralSettingsBtn');
+        const cancelGeneralSettingsBtn = document.getElementById('cancelGeneralSettingsBtn');
+
+        // Modal settings controls
+        const modalFontSize = document.getElementById('modalFontSize');
+        const modalFontSizeValue = document.getElementById('modalFontSizeValue');
+        const modalRotation = document.getElementById('modalRotation');
+        const modalRotationValue = document.getElementById('modalRotationValue');
+        const modalFontColor = document.getElementById('modalFontColor');
+        const modalPositionX = document.getElementById('modalPositionX');
+        const modalPositionXValue = document.getElementById('modalPositionXValue');
+        const modalPositionY = document.getElementById('modalPositionY');
+        const modalPositionYValue = document.getElementById('modalPositionYValue');
+        const modalShadow = document.getElementById('modalShadow');
+        const modalShadowColor = document.getElementById('modalShadowColor');
+        const modalOutline = document.getElementById('modalOutline');
+        const modalOutlineColor = document.getElementById('modalOutlineColor');
+        const modalOutlineWidth = document.getElementById('modalOutlineWidth');
+        const modalOutlineWidthValue = document.getElementById('modalOutlineWidthValue');
+        const modalPosBtns = document.querySelectorAll('.modal-pos-btn');
+
+        // General subtitle styles
+        let generalStyles = {
+            fontFamily: 'Khmer Battambang',
+            fontSize: 48,
+            rotation: 0,
+            fontColor: '#ffffff',
+            positionX: 50,
+            positionY: 90,
+            shadow: true,
+            shadowColor: '#000000',
+            outline: false,
+            outlineColor: '#000000',
+            outlineWidth: 0,
+        };
+
+        // Dragging state variables
+        let isDragging = false;
+        let startX, startY;
+        let originalPosX, originalPosY;
+        let currentQuickEditIndex = -1;
+
+        // Function to show a temporary message
+        function showMessage(text, isError = false) {
+            messageBox.textContent = text;
+            messageBox.style.backgroundColor = isError ? '#f44336' : '#4CAF50';
+            messageBox.style.display = 'block';
+            setTimeout(() => {
+                messageBox.style.display = 'none';
+            }, 3000);
+        }
+
+        // Function to update Canva with new styles
+        function updateCanvaStyle(styles) {
+            let textShadow = '';
+            if (styles.shadow) {
+                textShadow = `2px 2px 4px ${styles.shadowColor}`;
+            }
+            let webkitTextStroke = '';
+            if (styles.outline) {
+                webkitTextStroke = `${styles.outlineWidth}px ${styles.outlineColor}`;
+            }
+
+            canvaSubtitle.style.cssText = `
+                font-family: '${styles.fontFamily}', 'Khmer Battambang', sans-serif;
+                font-size: ${styles.fontSize}px;
+                color: ${styles.fontColor};
+                left: ${styles.positionX}%;
+                top: ${styles.positionY}%;
+                transform: translate(-50%, -50%) rotate(${styles.rotation}deg);
+                text-shadow: ${textShadow};
+                -webkit-text-stroke: ${webkitTextStroke};
+                position: absolute;
+                max-width: 90%;
+                white-space: pre-wrap;
+                text-align: center;
+                font-weight: bold;
+                transition: all 0.2s ease-in-out;
+            `;
+        }
+        
+        // Function to update UI controls from generalStyles object
+        function updateGeneralSettingsUI() {
+            generalGoogleFontSelect.value = generalStyles.fontFamily;
+            generalFontSize.value = generalStyles.fontSize;
+            generalFontSizeValue.textContent = generalStyles.fontSize;
+            generalRotation.value = generalStyles.rotation;
+            generalRotationValue.textContent = generalStyles.rotation;
+            generalFontColor.value = generalStyles.fontColor;
+            generalPositionX.value = generalStyles.positionX;
+            generalPositionXValue.textContent = generalStyles.positionX;
+            generalPositionY.value = generalStyles.positionY;
+            generalPositionYValue.textContent = generalStyles.positionY;
+            generalShadow.checked = generalStyles.shadow;
+            generalShadowColor.value = generalStyles.shadowColor;
+            generalOutline.checked = generalStyles.outline;
+            generalOutlineColor.value = generalStyles.outlineColor;
+            generalOutlineWidth.value = generalStyles.outlineWidth;
+            generalOutlineWidthValue.textContent = generalStyles.outlineWidth;
+            updateCanvaStyle(generalStyles);
+        }
+
+        // Function to set background mode
+        function setCanvaBackgroundMode(mode) {
+            canvaView.style.backgroundRepeat = 'no-repeat';
+            canvaView.style.backgroundPosition = 'center';
+            switch(mode) {
+                case 'fit':
+                    canvaView.style.backgroundSize = 'contain';
+                    break;
+                case 'stretch':
+                    canvaView.style.backgroundSize = '100% 100%';
+                    break;
+                case 'tile':
+                    canvaView.style.backgroundSize = 'auto';
+                    canvaView.style.backgroundRepeat = 'repeat';
+                    break;
+                case 'center':
+                    canvaView.style.backgroundSize = 'auto';
+                    break;
+                case 'span':
+                    canvaView.style.backgroundSize = 'cover';
+                    break;
+            }
+        }
+        
+        // Function to update background image from local storage
+        function updateBackground(imageData) {
+            if (imageData && imageData.url) {
+                canvaView.style.backgroundImage = `url(${imageData.url})`;
+                backgroundModeControls.classList.remove('hidden');
+                setCanvaBackgroundMode(imageData.mode);
+            } else {
+                canvaView.style.backgroundImage = 'none';
+                backgroundModeControls.classList.add('hidden');
+            }
+        }
+
+        // --- Drag-and-drop functionality ---
+        canvaSubtitle.addEventListener('mousedown', (e) => {
+            if (editingSubtitleId) {
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                const rect = canvaView.getBoundingClientRect();
+                const subtitleRect = canvaSubtitle.getBoundingClientRect();
+                originalPosX = ((subtitleRect.left - rect.left) / rect.width) * 100;
+                originalPosY = ((subtitleRect.top - rect.top) / rect.height) * 100;
+                canvaView.style.cursor = 'grabbing';
+                e.preventDefault();
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            
+            const canvaRect = canvaView.getBoundingClientRect();
+            const newX = (e.clientX - canvaRect.left) / canvaRect.width * 100;
+            const newY = (e.clientY - canvaRect.top) / canvaRect.height * 100;
+            const newPositionX = Math.max(0, Math.min(100, newX));
+            const newPositionY = Math.max(0, Math.min(100, newY));
+
+            modalPositionX.value = newPositionX.toFixed(0);
+            modalPositionY.value = newPositionY.toFixed(0);
+            modalPositionXValue.textContent = modalPositionX.value;
+            modalPositionYValue.textContent = modalPositionY.value;
+            canvaSubtitle.style.left = `${newPositionX}%`;
+            canvaSubtitle.style.top = `${newPositionY}%`;
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (!isDragging || editingSubtitleId === null) return;
+            isDragging = false;
+            canvaView.style.cursor = 'grab';
+            
+            const newPositionX = parseInt(modalPositionX.value);
+            const newPositionY = parseInt(modalPositionY.value);
+            
+            const subtitle = subtitles.find(sub => sub.id === editingSubtitleId);
+            if (subtitle) {
+                if (!subtitle.style) subtitle.style = {};
+                subtitle.style.positionX = newPositionX;
+                subtitle.style.positionY = newPositionY;
+                saveToLocalStorage();
+            }
+        });
+        
+        // Function to load a custom font and add to dropdowns
+        function loadCustomFont(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const fontName = `LocalCustomFont_${Date.now()}`;
+                    const fontFace = new FontFace(fontName, `url(${event.target.result})`);
+                    fontFace.load().then(loadedFont => {
+                        document.fonts.add(loadedFont);
+                        const generalOption = document.createElement('option');
+                        generalOption.value = fontName;
+                        generalOption.textContent = 'Font ផ្ទាល់ខ្លួន (Local Font)';
+                        generalGoogleFontSelect.add(generalOption);
+                        generalGoogleFontSelect.value = fontName;
+                        
+                        const modalOption = document.createElement('option');
+                        modalOption.value = fontName;
+                        modalOption.textContent = 'Font ផ្ទាល់ខ្លួន (Local Font)';
+                        modalGoogleFontSelect.add(modalOption);
+                        modalGoogleFontSelect.value = fontName;
+                        resolve(fontName);
+                    }).catch(error => {
+                        console.error('Error loading font:', error);
+                        reject(error);
+                    });
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        // General Font Selection Logic
+        generalGoogleFontSelect.addEventListener('change', (e) => {
+            generalStyles.fontFamily = e.target.value;
+            updateCanvaStyle(generalStyles);
+        });
+        generalLocalFontUpload.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                try {
+                    const fontName = await loadCustomFont(file);
+                    generalStyles.fontFamily = fontName;
+                    updateCanvaStyle(generalStyles);
+                } catch (error) {
+                    console.error("Failed to load local font for general settings:", error);
+                }
+            }
+        });
+        
+        // Modal Font Selection Logic
+        function updateCanvaFromModal() {
+             const styles = {
+                fontFamily: modalGoogleFontSelect.value,
+                fontSize: parseInt(modalFontSize.value),
+                rotation: parseInt(modalRotation.value),
+                fontColor: modalFontColor.value,
+                positionX: parseInt(modalPositionX.value),
+                positionY: parseInt(modalPositionY.value),
+                shadow: modalShadow.checked,
+                shadowColor: modalShadowColor.value,
+                outline: modalOutline.checked,
+                outlineColor: modalOutlineColor.value,
+                outlineWidth: parseFloat(modalOutlineWidth.value),
+            };
+            updateCanvaStyle(styles);
+        }
+        
+        modalGoogleFontSelect.addEventListener('change', updateCanvaFromModal);
+        modalLocalFontUpload.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                try {
+                    const fontName = await loadCustomFont(file);
+                    modalGoogleFontSelect.value = fontName;
+                    updateCanvaFromModal();
+                } catch (error) {
+                    console.error("Failed to load local font for modal:", error);
+                }
+            }
+        });
+        
+        // Event listeners for modal settings inputs (real-time updates)
+        modalFontSize.addEventListener('input', updateCanvaFromModal);
+        modalRotation.addEventListener('input', updateCanvaFromModal);
+        modalFontColor.addEventListener('input', updateCanvaFromModal);
+        modalPositionX.addEventListener('input', updateCanvaFromModal);
+        modalPositionY.addEventListener('input', updateCanvaFromModal);
+        modalShadow.addEventListener('change', updateCanvaFromModal);
+        modalShadowColor.addEventListener('input', updateCanvaFromModal);
+        modalOutline.addEventListener('change', updateCanvaFromModal);
+        modalOutlineColor.addEventListener('input', updateCanvaFromModal);
+        modalOutlineWidth.addEventListener('input', updateCanvaFromModal);
+        subtitleText.addEventListener('input', (e) => {
+            canvaSubtitle.textContent = e.target.value;
+        });
+
+        // Event listeners for general settings inputs
+        generalFontSize.addEventListener('input', () => {
+            generalStyles.fontSize = parseInt(generalFontSize.value);
+            generalFontSizeValue.textContent = generalFontSize.value;
+            updateCanvaStyle(generalStyles);
+        });
+        generalRotation.addEventListener('input', () => {
+            generalStyles.rotation = parseInt(generalRotation.value);
+            generalRotationValue.textContent = generalRotation.value;
+            updateCanvaStyle(generalStyles);
+        });
+        generalFontColor.addEventListener('input', () => {
+            generalStyles.fontColor = generalFontColor.value;
+            updateCanvaStyle(generalStyles);
+        });
+        generalPositionX.addEventListener('input', () => {
+            generalStyles.positionX = parseInt(generalPositionX.value);
+            generalPositionXValue.textContent = generalPositionX.value;
+            updateCanvaStyle(generalStyles);
+        });
+        generalPositionY.addEventListener('input', () => {
+            generalStyles.positionY = parseInt(generalPositionY.value);
+            generalPositionYValue.textContent = generalPositionY.value;
+            updateCanvaStyle(generalStyles);
+        });
+        generalShadow.addEventListener('change', () => {
+            generalStyles.shadow = generalShadow.checked;
+            updateCanvaStyle(generalStyles);
+        });
+        generalShadowColor.addEventListener('input', () => {
+            generalStyles.shadowColor = generalShadowColor.value;
+            updateCanvaStyle(generalStyles);
+        });
+        generalOutline.addEventListener('change', () => {
+            generalStyles.outline = generalOutline.checked;
+            updateCanvaStyle(generalStyles);
+        });
+        generalOutlineColor.addEventListener('input', () => {
+            generalStyles.outlineColor = generalOutlineColor.value;
+            updateCanvaStyle(generalStyles);
+        });
+        generalOutlineWidth.addEventListener('input', () => {
+            generalStyles.outlineWidth = parseFloat(generalOutlineWidth.value);
+            generalOutlineWidthValue.textContent = generalOutlineWidth.value;
+            updateCanvaStyle(generalStyles);
+        });
+
+        // Event listener for general quick-set position buttons
+        generalPosBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const pos = btn.dataset.pos;
+                switch (pos) {
+                    case 'top-left':
+                        generalStyles.positionX = 10;
+                        generalStyles.positionY = 10;
+                        break;
+                    case 'top-right':
+                        generalStyles.positionX = 90;
+                        generalStyles.positionY = 10;
+                        break;
+                    case 'bottom-left':
+                        generalStyles.positionX = 10;
+                        generalStyles.positionY = 90;
+                        break;
+                    case 'bottom-right':
+                        generalStyles.positionX = 90;
+                        generalStyles.positionY = 90;
+                        break;
+                    case 'center':
+                        generalStyles.positionX = 50;
+                        generalStyles.positionY = 50;
+                        break;
+                }
+                generalPositionX.value = generalStyles.positionX;
+                generalPositionY.value = generalStyles.positionY;
+                generalPositionXValue.textContent = generalStyles.positionX;
+                generalPositionYValue.textContent = generalStyles.positionY;
+                updateCanvaStyle(generalStyles);
+            });
+        });
+
+        // Event listener for modal quick-set position buttons
+        modalPosBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const pos = btn.dataset.pos;
+                let newX, newY;
+                switch (pos) {
+                    case 'top-left': newX = 10; newY = 10; break;
+                    case 'top-right': newX = 90; newY = 10; break;
+                    case 'bottom-left': newX = 10; newY = 90; break;
+                    case 'bottom-right': newX = 90; newY = 90; break;
+                    case 'center': newX = 50; newY = 50; break;
+                }
+                modalPositionX.value = newX;
+                modalPositionY.value = newY;
+                modalPositionXValue.textContent = newX;
+                modalPositionYValue.textContent = newY;
+                updateCanvaFromModal(); // Update canva
+            });
+        });
+
+        // Save and Cancel buttons for general settings
+        saveGeneralSettingsBtn.addEventListener('click', () => {
+            saveToLocalStorage();
+            showMessage('ការកំណត់ទូទៅត្រូវបានរក្សាទុក');
+        });
+
+        cancelGeneralSettingsBtn.addEventListener('click', () => {
+            loadFromLocalStorage();
+            showMessage('ការកំណត់ទូទៅត្រូវបានបោះបង់');
+        });
+
+        // Function to save project data to local storage and a file
+        function saveToLocalStorage() {
+            const projectData = {
+                subtitles: subtitles,
+                background: {
+                    url: canvaView.style.backgroundImage.replace(/url\(\"|\"\)/g, ''),
+                    mode: canvaView.style.backgroundSize === 'contain' ? 'fit' : canvaView.style.backgroundSize === '100% 100%' ? 'stretch' : canvaView.style.backgroundRepeat === 'repeat' ? 'tile' : canvaView.style.backgroundSize === 'cover' ? 'span' : 'center'
+                },
+                generalStyles: generalStyles
+            };
+            localStorage.setItem('subtitleProject', JSON.stringify(projectData));
+            renderSubtitles();
+        }
+
+        // Function to load project data from local storage
+        function loadFromLocalStorage() {
+            const savedData = localStorage.getItem('subtitleProject');
+            if (savedData) {
+                const projectData = JSON.parse(savedData);
+                subtitles = projectData.subtitles || [];
+                generalStyles = projectData.generalStyles || generalStyles;
+                updateGeneralSettingsUI();
+                updateBackground(projectData.background);
+                renderSubtitles();
+            }
+        }
+        
+        // Function to render the list of subtitles
+        function renderSubtitles() {
+            subtitleList.innerHTML = '';
+            if (subtitles.length === 0) {
+                noSubtitlesMsg.classList.remove('hidden');
+                subtitleList.appendChild(noSubtitlesMsg);
+            } else {
+                noSubtitlesMsg.classList.add('hidden');
+                subtitles.forEach((sub, index) => {
+                    const subItem = document.createElement('div');
+                    subItem.className = "flex items-center justify-between p-3 bg-white rounded-lg shadow-sm cursor-pointer hover:bg-gray-100 transition-colors duration-200";
+                    subItem.setAttribute('data-index', index);
+                    subItem.innerHTML = `
+                        <span class="font-mono text-gray-600">${sub.time.toFixed(2)}s</span>
+                        <p class="text-gray-800 flex-1 mx-4 whitespace-pre-wrap">${sub.text || 'គ្មានអត្ថបទ'}</p>
+                        <div class="space-x-2">
+                            <button class="text-blue-500 hover:text-blue-700 edit-btn" data-index="${index}">កែសម្រួល</button>
+                            <button class="text-red-500 hover:text-red-700 delete-btn" data-index="${index}">លុប</button>
+                        </div>
+                    `;
+                    subtitleList.appendChild(subItem);
+
+                    subItem.addEventListener('click', (e) => {
+                        if (e.target.tagName !== 'BUTTON') {
+                            const subToEdit = subtitles[index];
+                            if (subToEdit) {
+                                quickEditContainer.classList.remove('hidden');
+                                quickEditTextarea.value = subToEdit.text || '';
+                                currentQuickEditIndex = index;
+                                quickEditTextarea.focus();
+                                const stylesToApply = subToEdit.style || generalStyles;
+                                updateCanvaStyle(stylesToApply);
+                            }
+                        }
+                    });
+                });
+                
+                document.querySelectorAll('.edit-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const subIndex = parseInt(e.target.dataset.index);
+                        const subToEdit = subtitles[subIndex];
+                        if (subToEdit) {
+                            editingSubtitleId = subToEdit.id;
+                            modalTime.value = subToEdit.time.toFixed(2);
+                            subtitleText.value = subToEdit.text || '';
+                            
+                            const subStyle = subToEdit.style || {};
+                            const currentStyle = { ...generalStyles, ...subStyle };
+                            
+                            modalGoogleFontSelect.value = currentStyle.fontFamily;
+                            modalFontSize.value = currentStyle.fontSize;
+                            modalRotation.value = currentStyle.rotation;
+                            modalFontColor.value = currentStyle.fontColor;
+                            modalPositionX.value = currentStyle.positionX;
+                            modalPositionY.value = currentStyle.positionY;
+                            modalShadow.checked = currentStyle.shadow;
+                            modalShadowColor.value = currentStyle.shadowColor;
+                            modalOutline.checked = currentStyle.outline;
+                            modalOutlineColor.value = currentStyle.outlineColor;
+                            modalOutlineWidth.value = currentStyle.outlineWidth;
+
+                            modalFontSizeValue.textContent = modalFontSize.value;
+                            modalRotationValue.textContent = modalRotation.value;
+                            modalPositionXValue.textContent = modalPositionX.value;
+                            modalPositionYValue.textContent = modalPositionY.value;
+                            modalOutlineWidthValue.textContent = modalOutlineWidth.value;
+
+                            subtitleModal.classList.remove('hidden');
+                            subtitleText.focus();
+                            updateCanvaFromModal(); // Initial update to canva with subtitle's styles
+                        }
+                    });
+                });
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const subIndex = parseInt(e.target.dataset.index);
+                        subtitles.splice(subIndex, 1);
+                        saveToLocalStorage();
+                        quickEditContainer.classList.add('hidden');
+                        currentQuickEditIndex = -1;
+                    });
+                });
+            }
+        }
+
+        quickSaveBtn.addEventListener('click', () => {
+            if (currentQuickEditIndex !== -1) {
+                subtitles[currentQuickEditIndex].text = quickEditTextarea.value;
+                saveToLocalStorage();
+                quickEditContainer.classList.add('hidden');
+                currentQuickEditIndex = -1;
+            }
+        });
+        
+        quickCancelBtn.addEventListener('click', () => {
+            quickEditContainer.classList.add('hidden');
+            currentQuickEditIndex = -1;
+        });
+
+        modalFontSize.addEventListener('input', () => { modalFontSizeValue.textContent = modalFontSize.value; updateCanvaFromModal(); });
+        modalRotation.addEventListener('input', () => { modalRotationValue.textContent = modalRotation.value; updateCanvaFromModal(); });
+        modalPositionX.addEventListener('input', () => { modalPositionXValue.textContent = modalPositionX.value; updateCanvaFromModal(); });
+        modalPositionY.addEventListener('input', () => { modalPositionYValue.textContent = modalPositionY.value; updateCanvaFromModal(); });
+        modalOutlineWidth.addEventListener('input', () => { modalOutlineWidthValue.textContent = modalOutlineWidth.value; updateCanvaFromModal(); });
+
+        modalPosBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const pos = btn.dataset.pos;
+                let newX, newY;
+                switch (pos) {
+                    case 'top-left': newX = 10; newY = 10; break;
+                    case 'top-right': newX = 90; newY = 10; break;
+                    case 'bottom-left': newX = 10; newY = 90; break;
+                    case 'bottom-right': newX = 90; newY = 90; break;
+                    case 'center': newX = 50; newY = 50; break;
+                }
+                modalPositionX.value = newX;
+                modalPositionY.value = newY;
+                modalPositionXValue.textContent = newX;
+                modalPositionYValue.textContent = newY;
+                updateCanvaFromModal(); // Update canva
+            });
+        });
+
+        // Background Image functionality
+        bgImageFile.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const imageUrl = URL.createObjectURL(file);
+                canvaView.style.backgroundImage = `url(${imageUrl})`;
+                backgroundModeControls.classList.remove('hidden');
+                setCanvaBackgroundMode('fit'); // Set a default mode
+                saveToLocalStorage();
+            }
+        });
+
+        bgModeButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                const mode = e.target.dataset.mode;
+                setCanvaBackgroundMode(mode);
+                saveToLocalStorage();
+            });
+        });
+
+        clearBgBtn.addEventListener('click', () => {
+            canvaView.style.backgroundImage = 'none';
+            backgroundModeControls.classList.add('hidden');
+            saveToLocalStorage();
+        });
+
+
+        mp3File.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const fileURL = URL.createObjectURL(file);
+                audioPlayer.src = fileURL;
+                addSubtitleBtn.disabled = false;
+                canvaSubtitle.textContent = '';
+                quickEditContainer.classList.add('hidden');
+                currentQuickEditIndex = -1;
+            }
+        });
+
+        addSubtitleBtn.addEventListener('click', () => {
+            const currentTime = audioPlayer.currentTime;
+            subtitles.push({
+                time: currentTime,
+                text: '',
+                style: { ...generalStyles },
+                id: Date.now() // Simple unique ID
+            });
+            subtitles.sort((a, b) => a.time - b.time);
+            saveToLocalStorage();
+        });
+
+        saveSubtitleBtn.addEventListener('click', () => {
+            const time = parseFloat(modalTime.value);
+            const text = subtitleText.value.trim();
+            const specificStyles = {
+                fontFamily: modalGoogleFontSelect.value,
+                fontSize: parseInt(modalFontSize.value),
+                rotation: parseInt(modalRotation.value),
+                fontColor: modalFontColor.value,
+                positionX: parseInt(modalPositionX.value),
+                positionY: parseInt(modalPositionY.value),
+                shadow: modalShadow.checked,
+                shadowColor: modalShadowColor.value,
+                outline: modalOutline.checked,
+                outlineColor: modalOutlineColor.value,
+                outlineWidth: parseFloat(modalOutlineWidth.value),
+            };
+
+            const index = subtitles.findIndex(sub => sub.id === editingSubtitleId);
+            if (index !== -1) {
+                subtitles[index].time = time;
+                subtitles[index].text = text;
+                subtitles[index].style = specificStyles;
+                subtitles.sort((a, b) => a.time - b.time);
+                saveToLocalStorage();
+            }
+            subtitleModal.classList.add('hidden');
+            subtitleText.value = '';
+            editingSubtitleId = null;
+        });
+
+        cancelModalBtn.addEventListener('click', () => {
+            subtitleModal.classList.add('hidden');
+            subtitleText.value = '';
+            editingSubtitleId = null;
+        });
+
+        audioPlayer.addEventListener('timeupdate', () => {
+            const currentTime = audioPlayer.currentTime;
+            if (!audioPlayer.paused) {
+                const currentSub = subtitles.find((sub, index, arr) => {
+                    const nextSub = arr[index + 1];
+                    return currentTime >= sub.time && (!nextSub || currentTime < nextSub.time);
+                });
+
+                const subtitleItems = document.querySelectorAll('#subtitleList > div');
+                subtitleItems.forEach(item => item.classList.remove('bg-blue-200'));
+
+                if (currentSub) {
+                    const activeIndex = subtitles.findIndex(sub => sub.id === currentSub.id);
+                    if (activeIndex !== -1) {
+                        canvaSubtitle.textContent = currentSub.text;
+                        const activeItem = subtitleItems[activeIndex];
+                        if (activeItem) {
+                            activeItem.classList.add('bg-blue-200');
+                        }
+                        const stylesToApply = currentSub.style || generalStyles;
+                        updateCanvaStyle(stylesToApply);
+                    }
+                } else {
+                    canvaSubtitle.textContent = '';
+                    updateCanvaStyle(generalStyles);
+                }
+            }
+        });
+
+        audioPlayer.addEventListener('pause', () => {
+            if (subtitleModal.classList.contains('hidden') && quickEditContainer.classList.contains('hidden')) {
+                canvaSubtitle.textContent = '';
+                updateCanvaStyle(generalStyles);
+            }
+        });
+
+        audioPlayer.addEventListener('ended', () => {
+            if (subtitleModal.classList.contains('hidden') && quickEditContainer.classList.contains('hidden')) {
+                canvaSubtitle.textContent = '';
+                updateCanvaStyle(generalStyles);
+            }
+        });
+
+        sizeButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                const size = e.target.dataset.size;
+                canvaView.classList.remove('aspect-square', 'aspect-[9/16]', 'aspect-[16/9]');
+                canvaView.style.aspectRatio = '';
+                switch (size) {
+                    case 'square': canvaView.classList.add('aspect-square', 'max-w-[800px]'); break;
+                    case 'portrait': canvaView.classList.add('aspect-[9/16]', 'max-w-[450px]'); break;
+                    case 'landscape': canvaView.classList.add('aspect-[16/9]'); break;
+                    case '7680x4320': canvaView.classList.add('aspect-[16/9]'); break;
+                    case '3840x2160': canvaView.classList.add('aspect-[16/9]'); break;
+                    case '2560x1440': canvaView.classList.add('aspect-[16/9]'); break;
+                    case '1920x1080': canvaView.classList.add('aspect-[16/9]'); break;
+                    case '1280x720': canvaView.classList.add('aspect-[16/9]'); break;
+                    case '854x480': canvaView.classList.add('aspect-[16/9]'); break;
+                    case '640x360': canvaView.classList.add('aspect-[16/9]'); break;
+                    case '426x240': canvaView.classList.add('aspect-[16/9]'); break;
+                    default: canvaView.classList.add('aspect-[16/9]'); break;
+                }
+            });
+        });
+        
+        // Export SRT functionality
+        function formatTime(seconds) {
+            const hours = Math.floor(seconds / 3600).toString().padStart(2, '0');
+            const minutes = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+            const remainingSeconds = Math.floor(seconds % 60).toString().padStart(2, '0');
+            const milliseconds = (seconds * 1000 % 1000).toFixed(0).toString().padStart(3, '0');
+            return `${hours}:${minutes}:${remainingSeconds},${milliseconds}`;
+        }
+        
+        exportSrtBtn.addEventListener('click', () => {
+            let srtContent = '';
+            const sortedSubtitles = [...subtitles].sort((a, b) => a.time - b.time);
+            
+            sortedSubtitles.forEach((sub, index) => {
+                const startTime = sub.time;
+                const endTime = index < sortedSubtitles.length - 1 ? sortedSubtitles[index + 1].time : startTime + 2; // Default to 2s if no next subtitle
+                
+                srtContent += `${index + 1}\n`;
+                srtContent += `${formatTime(startTime)} --> ${formatTime(endTime)}\n`;
+                srtContent += `${sub.text}\n\n`;
+            });
+            
+            const blob = new Blob([srtContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'subtitles.srt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showMessage('ឯកសារ SRT ត្រូវបាននាំចេញ!');
+        });
+        
+        // Project button event listeners
+        saveProjectBtn.addEventListener('click', () => {
+            const projectData = {
+                subtitles: subtitles,
+                background: {
+                    url: canvaView.style.backgroundImage.replace(/url\(\"|\"\)/g, ''),
+                    mode: canvaView.style.backgroundSize === 'contain' ? 'fit' : canvaView.style.backgroundSize === '100% 100%' ? 'stretch' : canvaView.style.backgroundRepeat === 'repeat' ? 'tile' : canvaView.style.backgroundSize === 'cover' ? 'span' : 'center'
+                },
+                generalStyles: generalStyles
+            };
+
+            const json = JSON.stringify(projectData, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'subtitle_project.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            showMessage('គម្រោងត្រូវបានរក្សាទុកទៅក្នុងកុំព្យូទ័រ!');
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const projectData = JSON.parse(event.target.result);
+                        subtitles = projectData.subtitles || [];
+                        generalStyles = projectData.generalStyles || generalStyles;
+                        updateGeneralSettingsUI();
+                        updateBackground(projectData.background);
+                        saveToLocalStorage(); // Save to local storage for session persistence
+                        showMessage('គម្រោងត្រូវបានផ្ទុក!');
+                    } catch (error) {
+                        showMessage('ឯកសារមិនត្រឹមត្រូវទេ។ សូមជ្រើសរើសឯកសារ JSON ត្រឹមត្រូវ។', true);
+                        console.error("Error loading file: ", error);
+                    }
+                };
+                reader.readAsText(file);
+            }
+        });
+        
+        window.onload = loadFromLocalStorage;
+    </script>
+</body>
+</html>
