@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ឧបករណ៍គណនាការបង់រំលស់</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer:wght@100..900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Noto Sans Khmer', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .container {
+            max-width: 900px;
+        }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        .input-group {
+            position: relative;
+        }
+        .input-group span {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+        @media (max-width: 768px) {
+            .input-group {
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center py-12">
+
+    <div class="container bg-white rounded-2xl shadow-xl p-8 md:p-12 space-y-8">
+        <h1 class="text-3xl font-bold text-center text-gray-800">ឧបករណ៍គណនាការបង់រំលស់</h1>
+        <p class="text-center text-gray-600">សូមបញ្ចូលព័ត៌មានលម្អិតអំពីកម្ចីដើម្បីមើលកាលវិភាគនៃការបង់រំលស់</p>
+
+        <!-- Inputs Section -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="flex flex-col space-y-2">
+                <label for="borrowAmount" class="text-sm font-medium text-gray-700">ចំនួនកម្ចី</label>
+                <div class="input-group">
+                    <input type="number" id="borrowAmount" value="10000" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <span class="text-gray-500">USD</span>
+                </div>
+            </div>
+            <div class="flex flex-col space-y-2">
+                <label for="interestRate" class="text-sm font-medium text-gray-700">អត្រាការប្រាក់ (ប្រចាំឆ្នាំ)</label>
+                <div class="input-group">
+                    <input type="number" id="interestRate" value="5" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <span class="text-gray-500">%</span>
+                </div>
+            </div>
+            <div class="flex flex-col space-y-2">
+                <label for="loanTerm" class="text-sm font-medium text-gray-700">កម្ចី (ខែ)</label>
+                <div class="input-group">
+                    <input type="number" id="loanTerm" value="12" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <span class="text-gray-500">ខែ</span>
+                </div>
+            </div>
+            <div class="flex flex-col space-y-2">
+                <label for="periodsPerYear" class="text-sm font-medium text-gray-700">ចំនួនខែក្នុង១ឆ្នាំ</label>
+                <div class="input-group">
+                    <input type="number" id="periodsPerYear" value="12" class="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <span class="text-gray-500">ខែ</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-center mt-6">
+            <button id="calculateBtn" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-blue-700 transition duration-300">
+                គណនា
+            </button>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results" class="hidden mt-8 space-y-6">
+            <div class="text-center bg-blue-50 p-6 rounded-xl">
+                <h3 class="text-xl font-bold text-gray-800">ការបង់ប្រចាំខែ: <span id="monthlyPayment" class="text-blue-600"></span></h3>
+            </div>
+
+            <div class="overflow-x-auto bg-gray-50 p-6 rounded-xl shadow-inner">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider rounded-tl-xl">ការបង់ #</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">ការបង់</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">ប្រាក់ដើម</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">ការប្រាក់</th>
+                            <th class="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider rounded-tr-xl">សមតុល្យ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="paymentTableBody" class="bg-white divide-y divide-gray-200">
+                        <!-- Table rows will be inserted here by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const borrowAmountInput = document.getElementById('borrowAmount');
+            const interestRateInput = document.getElementById('interestRate');
+            const loanTermInput = document.getElementById('loanTerm');
+            const periodsPerYearInput = document.getElementById('periodsPerYear');
+            const calculateBtn = document.getElementById('calculateBtn');
+            const resultsDiv = document.getElementById('results');
+            const monthlyPaymentSpan = document.getElementById('monthlyPayment');
+            const paymentTableBody = document.getElementById('paymentTableBody');
+
+            // Set up a number formatter for USD
+            const formatter = new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            });
+
+            // Function to format the number
+            function formatCurrency(amount) {
+                return formatter.format(amount);
+            }
+
+            // Function to check if inputs are valid
+            function validateInputs(amount, rate, term, periods) {
+                if (amount <= 0 || rate < 0 || term <= 0 || periods <= 0) {
+                    alert('សូមបញ្ចូលលេខវិជ្ជមានសម្រាប់តម្លៃទាំងអស់។');
+                    return false;
+                }
+                return true;
+            }
+
+            // Main calculation function
+            function calculateLoan() {
+                const borrowAmount = parseFloat(borrowAmountInput.value);
+                const interestRate = parseFloat(interestRateInput.value);
+                const loanTerm = parseInt(loanTermInput.value, 10);
+                const periodsPerYear = parseInt(periodsPerYearInput.value, 10);
+
+                if (!validateInputs(borrowAmount, interestRate, loanTerm, periodsPerYear)) {
+                    return;
+                }
+
+                // Convert annual rate to monthly rate and percentage to decimal
+                const monthlyInterestRate = (interestRate / 100) / periodsPerYear;
+                const totalPayments = loanTerm;
+
+                let monthlyPayment;
+                // Avoid division by zero if interest rate is 0
+                if (monthlyInterestRate === 0) {
+                    monthlyPayment = borrowAmount / totalPayments;
+                } else {
+                    const numerator = monthlyInterestRate * Math.pow(1 + monthlyInterestRate, totalPayments);
+                    const denominator = Math.pow(1 + monthlyInterestRate, totalPayments) - 1;
+                    monthlyPayment = borrowAmount * (numerator / denominator);
+                }
+
+                // Display monthly payment
+                monthlyPaymentSpan.textContent = formatCurrency(monthlyPayment);
+                resultsDiv.classList.remove('hidden');
+
+                // Generate amortization table
+                let balance = borrowAmount;
+                paymentTableBody.innerHTML = ''; // Clear previous table data
+
+                for (let i = 1; i <= totalPayments; i++) {
+                    const interest = balance * monthlyInterestRate;
+                    const principal = monthlyPayment - interest;
+                    balance -= principal;
+
+                    // Create and append table row
+                    const row = document.createElement('tr');
+                    row.classList.add('hover:bg-gray-100');
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${i}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatCurrency(monthlyPayment)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatCurrency(principal)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatCurrency(interest)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatCurrency(Math.max(balance, 0))}</td>
+                    `;
+                    paymentTableBody.appendChild(row);
+                }
+            }
+
+            // Event listener for the calculate button
+            calculateBtn.addEventListener('click', calculateLoan);
+
+            // Calculate on initial page load with default values
+            calculateLoan();
+        });
+    </script>
+
+</body>
+</html>
