@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>កម្មវិធីគ្រប់គ្រង Mail List</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            padding: 2rem;
+        }
+        .header {
+            background-color: #1f1f1f;
+            border-radius: 12px;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        .table-container {
+            background-color: #1f1f1f;
+            border-radius: 12px;
+            padding: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        .table-header {
+            display: grid;
+            grid-template-columns: 30px 1fr 150px 150px 1fr 150px 50px;
+            gap: 1rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid #333;
+        }
+        .table-row {
+            display: grid;
+            grid-template-columns: 30px 1fr 150px 150px 1fr 150px 50px;
+            gap: 1rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid #282828;
+            align-items: center;
+            transition: background-color 0.2s;
+        }
+        .table-row:hover {
+            background-color: #282828;
+            cursor: pointer;
+        }
+        .status-start {
+            background-color: #33a133;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .status-nostatus {
+            background-color: #333;
+            color: #ccc;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .icon {
+            font-size: 1.5rem;
+        }
+        .button {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: transform 0.2s, background-color 0.2s;
+        }
+        .button:hover {
+            transform: translateY(-2px);
+        }
+        input[type="text"] {
+            background-color: #333;
+            border: 1px solid #444;
+            padding: 0.5rem;
+            border-radius: 8px;
+            color: white;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #1f1f1f;
+            padding: 2rem;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .toggle-text {
+            cursor: pointer;
+            color: #4285F4;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body class="bg-[#121212] text-gray-200">
+
+    <div class="container mx-auto p-4">
+        
+        <!-- Header Section -->
+        <div class="header bg-[#1f1f1f] rounded-xl p-4 flex items-center justify-between mb-8 shadow-lg">
+            <h1 class="text-2xl font-bold">ប្រវត្តិរូបទាំងអស់</h1>
+            <div class="flex items-center space-x-4">
+                <button id="importBtn" class="bg-[#333] text-gray-200 px-4 py-2 rounded-xl shadow-md hover:bg-[#444] transition-colors">
+                    នាំចូល
+                </button>
+                <button id="exportBtn" class="bg-[#333] text-gray-200 px-4 py-2 rounded-xl shadow-md hover:bg-[#444] transition-colors">
+                    នាំចេញ
+                </button>
+                <button id="addProfileBtn" class="bg-[#4285F4] text-white px-4 py-2 rounded-xl shadow-md hover:bg-[#346dc2] transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                </button>
+                <div class="relative">
+                    <input id="searchInput" type="text" placeholder="ស្វែងរក (ចុច /)" class="w-64 bg-[#333] border border-[#444] rounded-xl pl-4 pr-10 py-2 focus:outline-none focus:ring-2 focus:ring-[#4285F4] transition-colors">
+                    <span class="absolute right-3 top-2.5 text-gray-400">/</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- User ID display -->
+        <div class="bg-[#1f1f1f] text-gray-400 text-sm p-3 rounded-xl mb-4 text-center">
+            <span class="font-bold">ID អ្នកប្រើប្រាស់:</span> <span id="userIdDisplay">Loading...</span>
+        </div>
+
+        <!-- Bulk action button -->
+        <div class="flex justify-end mb-4">
+            <button id="deleteSelectedBtn" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors hidden">
+                លុបគណនីដែលបានជ្រើសរើស
+            </button>
+        </div>
+
+        <!-- Mail List Table -->
+        <div class="table-container bg-[#1f1f1f] rounded-xl p-4 shadow-lg">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="text-gray-400 border-b border-[#333] uppercase text-sm">
+                            <th class="py-3 px-2 rounded-l-lg">
+                                <input type="checkbox" id="selectAllCheckbox" class="form-checkbox h-4 w-4 text-[#4285F4] bg-gray-600 border-gray-500 rounded focus:ring-2 focus:ring-[#4285F4]">
+                            </th>
+                            <th class="py-3 px-2">ឈ្មោះ</th>
+                            <th class="py-3 px-2">ស្ថានភាព</th>
+                            <th class="py-3 px-2">កំណត់ចំណាំ</th>
+                            <th class="py-3 px-2">ស្លាក</th>
+                            <th class="py-3 px-2">សារខ្លី</th>
+                            <th class="py-3 px-2 rounded-r-lg"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="mailListBody">
+                        <!-- Table rows will be inserted here by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Pagination -->
+        <div class="flex items-center justify-between mt-4 text-sm">
+            <div class="text-gray-400">គ្មាន Tags</div>
+            <div class="flex items-center space-x-2">
+                <select class="bg-[#1f1f1f] border border-[#333] text-gray-200 rounded-lg px-2 py-1">
+                    <option>100</option>
+                    <option>50</option>
+                    <option>20</option>
+                </select>
+                <span class="text-gray-400">ធាតុក្នុងមួយទំព័រ</span>
+                <span class="text-gray-400">ទំព័រ 1</span>
+                <span class="text-gray-400">1-9 ក្នុងចំណោម 9</span>
+                <button class="p-2 rounded-full hover:bg-[#282828] transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg></button>
+                <button class="p-2 rounded-full hover:bg-[#282828] transition-colors"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6l-1.41 1.41L13.17 12l-4.58 4.59L10 18l6-6z"/></svg></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Adding/Editing Mail Profile -->
+    <div id="mailModal" class="modal hidden">
+        <div class="modal-content">
+            <h2 id="modalTitle" class="text-xl font-bold mb-4">បន្ថែមគណនីថ្មី</h2>
+            <form id="mailForm" class="space-y-4">
+                <div>
+                    <label for="profileName" class="block text-sm font-medium mb-1">ឈ្មោះគណនី</label>
+                    <input type="text" id="profileName" name="profileName" class="w-full bg-[#333] border border-[#444] rounded-lg px-3 py-2" required>
+                </div>
+                <div>
+                    <label for="profileStatus" class="block text-sm font-medium mb-1">ស្ថានភាព</label>
+                    <select id="profileStatus" name="profileStatus" class="w-full bg-[#333] border border-[#444] rounded-lg px-3 py-2">
+                        <option value="START">ចាប់ផ្ដើម</option>
+                        <option value="NO_STATUS">គ្មានស្ថានភាព</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="profileNotes" class="block text-sm font-medium mb-1">កំណត់ចំណាំ</label>
+                    <textarea id="profileNotes" name="profileNotes" rows="3" class="w-full bg-[#333] border border-[#444] rounded-lg px-3 py-2"></textarea>
+                </div>
+                <div>
+                    <label for="profileTags" class="block text-sm font-medium mb-1">ស្លាក (បំបែកដោយសញ្ញា ,)</label>
+                    <input type="text" id="profileTags" name="profileTags" class="w-full bg-[#333] border border-[#444] rounded-lg px-3 py-2">
+                </div>
+                <div>
+                    <label for="shortMessage" class="block text-sm font-medium mb-1">សារខ្លី (អក្សរ 50)</label>
+                    <input type="text" id="shortMessage" name="shortMessage" maxlength="50" class="w-full bg-[#333] border border-[#444] rounded-lg px-3 py-2">
+                </div>
+                <div class="flex justify-end space-x-4 mt-4">
+                    <button type="button" id="deleteBtn" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors hidden">លុប</button>
+                    <button type="button" id="cancelBtn" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">បោះបង់</button>
+                    <button type="submit" id="saveBtn" class="bg-[#4285F4] text-white px-4 py-2 rounded-lg hover:bg-[#346dc2] transition-colors">រក្សាទុក</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // Firebase initialization variables
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let userId = null;
+        let currentEditingId = null;
+        let allMailProfiles = [];
+
+        const mailListBody = document.getElementById('mailListBody');
+        const searchInput = document.getElementById('searchInput');
+        const mailModal = document.getElementById('mailModal');
+        const addProfileBtn = document.getElementById('addProfileBtn');
+        const mailForm = document.getElementById('mailForm');
+        const modalTitle = document.getElementById('modalTitle');
+        const deleteBtn = document.getElementById('deleteBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const userIdDisplay = document.getElementById('userIdDisplay');
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+        const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+        const importBtn = document.getElementById('importBtn');
+        const exportBtn = document.getElementById('exportBtn');
+
+        // Check for user authentication status
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                userId = user.uid;
+            } else {
+                try {
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (error) {
+                    console.error("Firebase auth error:", error);
+                }
+            }
+            if (userId) {
+                userIdDisplay.textContent = userId;
+                // Once authenticated, start listening to the database
+                onSnapshot(collection(db, `artifacts/${appId}/users/${userId}/mail_profiles`), (snapshot) => {
+                    allMailProfiles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderTable(allMailProfiles);
+                });
+            }
+        });
+
+        // Function to render the table rows based on data
+        function renderTable(mails) {
+            mailListBody.innerHTML = ''; // Clear existing rows
+            if (mails.length === 0) {
+                mailListBody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-gray-500">គ្មានគណនីអ៊ីម៉ែលនៅឡើយទេ។</td></tr>`;
+                return;
+            }
+            mails.forEach(mail => {
+                const row = document.createElement('tr');
+                row.className = 'table-row text-sm border-b border-[#282828] transition-colors hover:bg-[#282828] cursor-pointer';
+                row.dataset.id = mail.id; // Store Firestore document ID
+
+                const statusButton = mail.status === 'START'
+                    ? `<button class="status-start">ចាប់ផ្ដើម</button>`
+                    : `<button class="status-nostatus">គ្មានស្ថានភាព</button>`;
+
+                const tagsHtml = (mail.tags || []).map(tag => 
+                    `<span class="bg-gray-700 text-gray-300 text-xs font-semibold px-2 py-0.5 rounded-full mr-1">${tag}</span>`
+                ).join('');
+
+                const shortMessageHtml = mail.shortMessage
+                    ? `<span class="toggle-text" data-original-message="${mail.shortMessage}">` + '*'.repeat(mail.shortMessage.length) + `</span>`
+                    : 'គ្មានសារ';
+
+                row.innerHTML = `
+                    <td class="py-3 px-2">
+                        <input type="checkbox" class="profile-checkbox h-4 w-4 text-[#4285F4] bg-gray-600 border-gray-500 rounded focus:ring-2 focus:ring-[#4285F4]">
+                    </td>
+                    <td class="py-3 px-2 flex items-center space-x-2">
+                        <div class="flex items-center space-x-1">
+                            ${mail.service === 'google' ? `<img src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" alt="Google" class="h-4 w-4">` : ''}
+                            ${mail.service === 'apple' ? `<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Apple_logo_grey.svg/100px-Apple_logo_grey.svg.png" alt="Apple" class="h-4 w-4">` : ''}
+                        </div>
+                        <span class="font-bold">${mail.name}</span>
+                    </td>
+                    <td class="py-3 px-2">
+                        ${statusButton}
+                    </td>
+                    <td class="py-3 px-2 text-gray-400">${mail.notes || 'គ្មានកំណត់ចំណាំ'}</td>
+                    <td class="py-3 px-2">${tagsHtml}</td>
+                    <td class="py-3 px-2">${shortMessageHtml}</td>
+                    <td class="py-3 px-2 text-right">
+                        <button class="text-gray-400 hover:text-white transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                        </button>
+                    </td>
+                `;
+                row.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('toggle-text')) {
+                        const span = e.target;
+                        const originalMessage = span.dataset.originalMessage;
+                        if (span.textContent.includes('*')) {
+                            span.textContent = originalMessage;
+                        } else {
+                            span.textContent = '*'.repeat(originalMessage.length);
+                        }
+                    } else if (!e.target.closest('.profile-checkbox')) {
+                        openModal(mail);
+                    }
+                });
+                mailListBody.appendChild(row);
+            });
+            updateBulkDeleteButtonVisibility();
+        }
+
+        // Search functionality
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const filteredMails = allMailProfiles.filter(mail =>
+                mail.name.toLowerCase().includes(searchTerm) ||
+                (mail.notes && mail.notes.toLowerCase().includes(searchTerm)) ||
+                (mail.tags && mail.tags.some(tag => tag.toLowerCase().includes(searchTerm))) ||
+                (mail.shortMessage && mail.shortMessage.toLowerCase().includes(searchTerm))
+            );
+            renderTable(filteredMails);
+        });
+
+        // Bulk select functionality
+        selectAllCheckbox.addEventListener('change', (e) => {
+            const checkboxes = document.querySelectorAll('.profile-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = e.target.checked;
+            });
+            updateBulkDeleteButtonVisibility();
+        });
+
+        // Listen for individual checkbox changes to show/hide bulk delete button
+        mailListBody.addEventListener('change', (e) => {
+            if (e.target.classList.contains('profile-checkbox')) {
+                updateBulkDeleteButtonVisibility();
+            }
+        });
+
+        function updateBulkDeleteButtonVisibility() {
+            const checkedCount = document.querySelectorAll('.profile-checkbox:checked').length;
+            if (checkedCount > 0) {
+                deleteSelectedBtn.classList.remove('hidden');
+            } else {
+                deleteSelectedBtn.classList.add('hidden');
+            }
+        }
+
+        // Bulk delete handler
+        deleteSelectedBtn.addEventListener('click', async () => {
+            const checkedCheckboxes = document.querySelectorAll('.profile-checkbox:checked');
+            if (checkedCheckboxes.length === 0) return;
+
+            const batch = writeBatch(db);
+            checkedCheckboxes.forEach(checkbox => {
+                const docId = checkbox.closest('tr').dataset.id;
+                batch.delete(doc(db, `artifacts/${appId}/users/${userId}/mail_profiles`, docId));
+            });
+
+            try {
+                await batch.commit();
+                console.log("Selected documents successfully deleted!");
+            } catch (e) {
+                console.error("Error batch deleting documents: ", e);
+            }
+        });
+
+        // Modal functions
+        addProfileBtn.addEventListener('click', () => {
+            openModal();
+        });
+
+        cancelBtn.addEventListener('click', () => {
+            closeModal();
+        });
+        
+        mailModal.addEventListener('click', (e) => {
+            if (e.target === mailModal) {
+                closeModal();
+            }
+        });
+
+        function openModal(mail = null) {
+            mailForm.reset();
+            deleteBtn.classList.add('hidden');
+            currentEditingId = null;
+
+            if (mail) {
+                modalTitle.textContent = "កែសម្រួលគណនី";
+                document.getElementById('profileName').value = mail.name;
+                document.getElementById('profileStatus').value = mail.status;
+                document.getElementById('profileNotes').value = mail.notes;
+                document.getElementById('profileTags').value = (mail.tags || []).join(', ');
+                document.getElementById('shortMessage').value = mail.shortMessage || '';
+                currentEditingId = mail.id;
+                deleteBtn.classList.remove('hidden');
+            } else {
+                modalTitle.textContent = "បន្ថែមគណនីថ្មី";
+            }
+            mailModal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            mailModal.style.display = 'none';
+        }
+
+        // Form submission handler
+        mailForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('profileName').value;
+            const status = document.getElementById('profileStatus').value;
+            const notes = document.getElementById('profileNotes').value;
+            const tags = document.getElementById('profileTags').value.split(',').map(tag => tag.trim()).filter(tag => tag);
+            const shortMessage = document.getElementById('shortMessage').value;
+
+            const mailData = {
+                name,
+                status,
+                notes,
+                tags,
+                shortMessage,
+                service: name.toLowerCase().includes('apple') ? 'apple' : 'google', // Simple logic for demo
+                createdAt: new Date()
+            };
+
+            try {
+                if (currentEditingId) {
+                    // Update existing document
+                    await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/mail_profiles`, currentEditingId), mailData);
+                    console.log("Document updated with ID: ", currentEditingId);
+                } else {
+                    // Add new document
+                    await addDoc(collection(db, `artifacts/${appId}/users/${userId}/mail_profiles`), mailData);
+                    console.log("Document added successfully!");
+                }
+            } catch (e) {
+                console.error("Error adding/updating document: ", e);
+            }
+            closeModal();
+        });
+
+        // Delete button handler (for single record)
+        deleteBtn.addEventListener('click', async () => {
+            if (currentEditingId) {
+                try {
+                    await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/mail_profiles`, currentEditingId));
+                    console.log("Document successfully deleted!");
+                    closeModal();
+                } catch (e) {
+                    console.error("Error removing document: ", e);
+                }
+            }
+        });
+
+        // Import/Export functionality
+        importBtn.addEventListener('click', () => {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.csv';
+            fileInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    const csvText = event.target.result;
+                    const lines = csvText.trim().split('\n');
+                    const headers = lines[0].split(',').map(h => h.trim());
+                    const data = lines.slice(1);
+
+                    const batch = writeBatch(db);
+                    data.forEach(line => {
+                        const values = line.split(',').map(v => v.trim());
+                        if (values.length === headers.length) {
+                            const profile = {};
+                            headers.forEach((header, i) => {
+                                profile[header] = values[i];
+                            });
+                            profile.tags = profile.tags ? profile.tags.split(';') : [];
+                            const newDocRef = doc(collection(db, `artifacts/${appId}/users/${userId}/mail_profiles`));
+                            batch.set(newDocRef, profile);
+                        }
+                    });
+
+                    try {
+                        await batch.commit();
+                        console.log("CSV imported successfully!");
+                    } catch (e) {
+                        console.error("Error importing CSV:", e);
+                    }
+                };
+                reader.readAsText(file);
+            };
+            fileInput.click();
+        });
+
+        exportBtn.addEventListener('click', () => {
+            if (allMailProfiles.length === 0) {
+                console.warn("No data to export.");
+                return;
+            }
+
+            const headers = ["name", "status", "notes", "service", "tags", "shortMessage"];
+            const csvRows = [];
+            csvRows.push(headers.join(','));
+
+            allMailProfiles.forEach(profile => {
+                const row = [
+                    `"${profile.name}"`,
+                    `"${profile.status}"`,
+                    `"${profile.notes}"`,
+                    `"${profile.service}"`,
+                    `"${(profile.tags || []).join(';')}"`,
+                    `"${profile.shortMessage || ''}"`
+                ];
+                csvRows.push(row.join(','));
+            });
+
+            const csvString = csvRows.join('\n');
+            const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'mail_profiles.csv';
+            link.click();
+            console.log("Data exported as CSV.");
+        });
+    </script>
+</body>
+</html>
