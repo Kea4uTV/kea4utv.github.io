@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ឧបករណ៍បំលែងស្គ្រីបវីដេអូ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1e293b;
+            color: #f8fafc;
+        }
+        .container {
+            max-width: 960px;
+        }
+        textarea {
+            background-color: #334155;
+            border-color: #475569;
+            color: #cbd5e1;
+        }
+        .btn {
+            background-color: #38bdf8;
+            color: #0c4a6e;
+            transition: transform 0.2s ease-in-out;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        .random-btn {
+            background-color: #a855f7;
+            color: #f3e8ff;
+            transition: transform 0.2s ease-in-out;
+        }
+        .random-btn:hover {
+            transform: translateY(-2px);
+        }
+        .copy-btn {
+            background-color: #4ade80;
+            color: #14532d;
+        }
+        .copy-btn.copied {
+            background-color: #22c55e;
+        }
+        #output {
+            min-height: 250px;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 flex items-center justify-center min-h-screen">
+    <div class="container mx-auto p-6 bg-slate-800 rounded-2xl shadow-xl space-y-6">
+        <h1 class="text-3xl font-bold text-center text-sky-400">ឧបករណ៍បំលែងអត្ថបទទៅជា JSON Script</h1>
+        <p class="text-center text-slate-400">
+            ឧបករណ៍នេះបំលែងអត្ថបទពីរប្រអប់បញ្ចូលទៅជាទម្រង់ JSON ដូចដែលបានស្នើសុំ។
+        </p>
+        
+        <div class="grid md:grid-cols-2 gap-6">
+            <div>
+                <label for="fullText" class="block text-sm font-medium mb-2 text-slate-300">
+                    បញ្ចូលអក្សរពេញ (Full text)
+                </label>
+                <textarea id="fullText" rows="6" class="w-full p-3 rounded-xl border border-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
+            </div>
+            <div>
+                <label for="wordByWordText" class="block text-sm font-medium mb-2 text-slate-300">
+                    បញ្ចូលអក្សរដាច់ៗ (Word-by-word text)
+                </label>
+                <textarea id="wordByWordText" rows="6" class="w-full p-3 rounded-xl border border-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
+            </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row justify-center items-center gap-4">
+            <button id="convertBtn" class="btn px-8 py-3 rounded-full font-semibold shadow-md hover:shadow-lg">
+                បម្លែង (Convert)
+            </button>
+            <button id="randomBtn" class="random-btn px-8 py-3 rounded-full font-semibold shadow-md hover:shadow-lg">
+                ចៃដន្យ (Random)
+            </button>
+            <button id="copyBtn" class="copy-btn px-8 py-3 rounded-full font-semibold shadow-md hover:shadow-lg">
+                ចម្លង (Copy)
+            </button>
+        </div>
+
+        <div>
+            <label for="output" class="block text-sm font-medium mb-2 text-slate-300">
+                លទ្ធផល JSON (JSON Output)
+            </label>
+            <textarea id="output" readonly class="w-full p-3 rounded-xl border border-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const fullTextEl = document.getElementById('fullText');
+            const wordByWordTextEl = document.getElementById('wordByWordText');
+            const convertBtn = document.getElementById('convertBtn');
+            const randomBtn = document.getElementById('randomBtn');
+            const copyBtn = document.getElementById('copyBtn');
+            const outputEl = document.getElementById('output');
+            
+            // Predefined colors and sizes for randomization
+            const colors = ['#f87171', '#fbbf24', '#a3e635', '#2dd4bf', '#38bdf8', '#818cf8', '#e879f9'];
+            const sizes = ['12px', '14px', '16px', '18px', '20px'];
+            
+            // Function to generate JSON output with or without random properties
+            const generateOutput = (randomize) => {
+                const fullText = fullTextEl.value.trim();
+                const wordByWordText = wordByWordTextEl.value.trim();
+
+                if (!fullText || !wordByWordText) {
+                    outputEl.value = JSON.stringify({ error: "សូមបំពេញប្រអប់ទាំងពីរ" }, null, 2);
+                    return;
+                }
+
+                const fullLines = fullText.split('\n');
+                const wordLines = wordByWordText.split('\n');
+
+                if (fullLines.length !== wordLines.length) {
+                    outputEl.value = JSON.stringify({ error: "ចំនួនបន្ទាត់នៃអត្ថបទមិនត្រូវគ្នាទេ។" }, null, 2);
+                    return;
+                }
+                
+                const lines = [];
+                for (let i = 0; i < fullLines.length; i++) {
+                    const fullLine = fullLines[i].trim();
+                    const wordsForLine = wordLines[i].trim().split(/\s+/);
+                    
+                    const wordsArray = wordsForLine.map(word => {
+                        const wordObject = {
+                            "text": word,
+                            "time": 1.0,
+                            "color": "",
+                            "size": ""
+                        };
+                        if (randomize) {
+                            wordObject.color = colors[Math.floor(Math.random() * colors.length)];
+                            wordObject.size = sizes[Math.floor(Math.random() * sizes.length)];
+                        }
+                        return wordObject;
+                    });
+
+                    lines.push({
+                        "text": fullLine,
+                        "words": wordsArray
+                    });
+                }
+                
+                const result = [{
+                    "startTime": 0.5,
+                    "endTime": 3.0,
+                    "lines": lines
+                }];
+                
+                outputEl.value = JSON.stringify(result, null, 2);
+            };
+
+            convertBtn.addEventListener('click', () => generateOutput(false));
+            randomBtn.addEventListener('click', () => generateOutput(true));
+
+            copyBtn.addEventListener('click', () => {
+                outputEl.select();
+                try {
+                    document.execCommand('copy');
+                    copyBtn.textContent = 'បានចម្លងទៅ Clipboard!';
+                    copyBtn.classList.add('copied');
+                    setTimeout(() => {
+                        copyBtn.textContent = 'ចម្លង (Copy)';
+                        copyBtn.classList.remove('copied');
+                    }, 2000);
+                } catch (err) {
+                    console.error('Failed to copy text: ', err);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
