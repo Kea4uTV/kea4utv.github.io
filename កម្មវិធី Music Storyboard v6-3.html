@@ -418,6 +418,7 @@
         let selectedGroupIndex = -1;
         let selectedStoryboardIndex = -1;
         let uploadedMusicFile = null; // Store the main music file object for export
+        let currentPdfObjectURL = null; // New global variable to manage object URL
 
         const APP_ID = 'music_storyboard_app_v1.0'; // A unique ID for file validation
 
@@ -549,6 +550,23 @@
             return `${formattedMinutes}:${formattedSeconds}`;
         }
 
+        /**
+         * Converts a Base64 data URL to a Blob object.
+         * @param {string} base64 - The Base64 encoded string.
+         * @param {string} mimeType - The MIME type of the data.
+         * @returns {Blob} The created Blob object.
+         */
+        function base64ToBlob(base64, mimeType) {
+            const byteString = atob(base64.split(',')[1]);
+            const ab = new ArrayBuffer(byteString.length);
+            const ia = new Uint8Array(ab);
+            for (let i = 0; i < byteString.length; i++) {
+                ia[i] = byteString.charCodeAt(i);
+            }
+            return new Blob([ab], { type: mimeType });
+        }
+
+
         // --- File Handling Functions (Export/Import) ---
         async function exportAsZip() {
             if (!uploadedMusicFile) {
@@ -593,7 +611,7 @@
                             
                             // Handle PDFs
                             if (storyboard.pdfUrl && storyboard.pdfUrl.startsWith('data:application/pdf')) {
-                                const blob = await (await fetch(storyboard.pdfUrl)).blob();
+                                const blob = base64ToBlob(storyboard.pdfUrl, 'application/pdf');
                                 const fileName = storyboard.pdfName || `pdf_${Date.now()}.pdf`;
                                 filesToZip.set(fileName, new File([blob], fileName, { type: 'application/pdf' }));
                                 storyboard.pdfUrl = `pdfs/${fileName}`;
@@ -1067,8 +1085,19 @@
             if (selectedGroupIndex !== -1 && selectedStoryboardIndex !== -1) {
                 const sb = groups[selectedGroupIndex].storyboards[selectedStoryboardIndex];
                 if (sb.pdfUrl) {
-                    pdfViewerIframe.src = sb.pdfUrl;
-                    pdfViewerModal.style.display = 'flex';
+                    try {
+                        // Use the Base64 to Blob conversion
+                        const blob = base64ToBlob(sb.pdfUrl, 'application/pdf');
+                        if (currentPdfObjectURL) {
+                            URL.revokeObjectURL(currentPdfObjectURL);
+                        }
+                        currentPdfObjectURL = URL.createObjectURL(blob);
+                        pdfViewerIframe.src = currentPdfObjectURL;
+                        pdfViewerModal.style.display = 'flex';
+                    } catch (error) {
+                        console.error("Failed to load PDF:", error);
+                        showCustomAlert("មិនអាចបង្ហាញឯកសារ PDF បានទេ។");
+                    }
                 }
             }
         });
@@ -1076,7 +1105,11 @@
         // Close PDF viewer modal
         pdfViewerCloseBtn.addEventListener('click', () => {
             pdfViewerModal.style.display = 'none';
-            pdfViewerIframe.src = ''; // Clear iframe to stop memory usage
+            pdfViewerIframe.src = ''; // Clear iframe src
+            if (currentPdfObjectURL) {
+                URL.revokeObjectURL(currentPdfObjectURL); // Clean up the object URL
+                currentPdfObjectURL = null;
+            }
         });
 
         // Event listener for storyboard audio upload
