@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ឧបករណ៍គណនាតារាងបង់រំលស់ប្រចាំខែ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Preahvihear&display=swap');
+        body {
+            font-family: 'Preahvihear', sans-serif;
+            background-color: #f3f4f6;
+        }
+        @media print {
+            .no-print {
+                display: none;
+            }
+            .container {
+                box-shadow: none;
+                border: none;
+                max-width: none;
+                padding: 0;
+                margin: 0;
+            }
+            body {
+                background-color: #fff;
+            }
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8 bg-gray-100 min-h-screen flex items-center justify-center">
+
+    <div class="container mx-auto p-6 bg-white shadow-xl rounded-2xl max-w-4xl border border-gray-200">
+        <h1 class="text-3xl sm:text-4xl font-bold text-center text-blue-700 mb-8 rounded-full p-2">ឧបករណ៍គណនាតារាងបង់រំលស់</h1>
+
+        <!-- Loan Details Input Form -->
+        <div class="p-6 bg-blue-50 rounded-2xl shadow-inner mb-6 no-print">
+            <h2 class="text-xl sm:text-2xl font-semibold mb-4 text-blue-600">ព័ត៌មានលម្អិតអំពីកម្ចី</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm sm:text-base">
+                <div class="space-y-2">
+                    <div class="flex flex-col">
+                        <label for="customerName" class="font-medium text-gray-700 mb-1">ឈ្មោះអតិថិជន</label>
+                        <input type="text" id="customerName" class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="flex flex-col">
+                        <label class="font-medium text-gray-700 mb-1">ប្រភេទរំលស់</label>
+                        <p class="p-3 bg-white border border-gray-300 rounded-lg">រំលស់ថេរ</p>
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="collateral" class="font-medium text-gray-700 mb-1">ទ្រព្យដែលបញ្ចាំ</label>
+                        <input type="text" id="collateral" class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="loanPurpose" class="font-medium text-gray-700 mb-1">ប្រើប្រាស់កម្ចីសម្រាប់</label>
+                        <input type="text" id="loanPurpose" class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <div class="flex flex-col">
+                        <label for="loanDate" class="font-medium text-gray-700 mb-1">កាលបរិច្ឆេទខ្ចីប្រាក់</label>
+                        <input type="date" id="loanDate" class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <p><strong>អត្រាការប្រាក់ (ប្រចាំឆ្នាំ):</strong> <span id="display-rate">...</span>%</p>
+                    <p><strong>ប្រាក់ដើមដែលបានខ្ចី:</strong> <span id="display-principal">...</span>$</p>
+                    <p><strong>រយៈពេលខ្ចី:</strong> <span id="display-term">...</span>ខែ</p>
+                </div>
+            </div>
+            <div class="mt-6 border-t pt-4 border-gray-300">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="flex flex-col">
+                        <label for="loanAmount" class="font-medium text-gray-700 mb-1">ប្រាក់ដើមដែលបានខ្ចី ($)</label>
+                        <input type="number" id="loanAmount" class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="10000" oninput="calculateAmortization()">
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="interestRate" class="font-medium text-gray-700 mb-1">អត្រាការប្រាក់ (ប្រចាំឆ្នាំ %)</label>
+                        <input type="number" id="interestRate" step="0.01" class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="7.5" oninput="calculateAmortization()">
+                    </div>
+                    <div class="flex flex-col">
+                        <label for="loanTerm" class="font-medium text-gray-700 mb-1">រយៈពេលខ្ចី (ខែ)</label>
+                        <input type="number" id="loanTerm" class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="36" oninput="calculateAmortization()">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Print Button -->
+        <div class="flex justify-center my-6 no-print">
+            <button onclick="window.print()" class="px-6 py-3 bg-blue-600 text-white font-bold rounded-full shadow-lg hover:bg-blue-700 transition-colors duration-200">
+                បោះពុម្ព
+            </button>
+        </div>
+
+        <!-- Amortization Schedule Table -->
+        <div class="overflow-x-auto relative shadow-md sm:rounded-lg">
+            <h2 class="text-xl sm:text-2xl font-semibold mb-4 text-center text-blue-600">តារាងបង់រំលស់ប្រចាំខែ</h2>
+            <div id="monthlyPaymentDisplay" class="text-center text-lg sm:text-xl font-bold mb-4 text-green-600 p-2 rounded-lg bg-green-50 hidden"></div>
+            <table class="w-full text-sm text-left text-gray-500 rounded-lg">
+                <thead class="text-xs text-gray-700 uppercase bg-blue-200">
+                    <tr>
+                        <th scope="col" class="py-3 px-2 sm:px-4 text-center rounded-tl-lg">ល.រ</th>
+                        <th scope="col" class="py-3 px-2 sm:px-4 text-center">កាលបរិច្ឆេទ</th>
+                        <th scope="col" class="py-3 px-2 sm:px-4 text-center">Workday</th>
+                        <th scope="col" class="py-3 px-2 sm:px-4 text-center">ប្រាក់ត្រូវបង់ប្រចាំខែ</th>
+                        <th scope="col" class="py-3 px-2 sm:px-4 text-center">រំលស់ប្រាក់ដើម</th>
+                        <th scope="col" class="py-3 px-2 sm:px-4 text-center">ការប្រាក់</th>
+                        <th scope="col" class="py-3 px-2 sm:px-4 text-center rounded-tr-lg">ប្រាក់នៅជំពាក់</th>
+                    </tr>
+                </thead>
+                <tbody id="amortizationTableBody">
+                    <!-- Table rows will be generated here by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Global variables for display updates
+        const displayPrincipal = document.getElementById('display-principal');
+        const displayRate = document.getElementById('display-rate');
+        const displayTerm = document.getElementById('display-term');
+        const monthlyPaymentDisplay = document.getElementById('monthlyPaymentDisplay');
+        const amortizationTableBody = document.getElementById('amortizationTableBody');
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
+        }
+
+        function calculateAmortization() {
+            // Get user input values
+            const principal = parseFloat(document.getElementById('loanAmount').value);
+            const annualInterestRate = parseFloat(document.getElementById('interestRate').value);
+            const loanTermMonths = parseInt(document.getElementById('loanTerm').value);
+
+            // Update display details
+            displayPrincipal.textContent = principal > 0 ? formatCurrency(principal).replace('$', '') : '...';
+            displayRate.textContent = annualInterestRate > 0 ? annualInterestRate.toFixed(2) : '...';
+            displayTerm.textContent = loanTermMonths > 0 ? loanTermMonths : '...';
+
+            // Clear previous results
+            amortizationTableBody.innerHTML = '';
+            monthlyPaymentDisplay.style.display = 'none';
+
+            // Validate inputs
+            if (isNaN(principal) || isNaN(annualInterestRate) || isNaN(loanTermMonths) || principal <= 0 || annualInterestRate < 0 || loanTermMonths <= 0) {
+                return;
+            }
+
+            // Convert annual rate to monthly rate
+            const monthlyInterestRate = (annualInterestRate / 100) / 12;
+
+            // Calculate the fixed monthly payment using the amortization formula
+            const fixedMonthlyPayment = principal * (monthlyInterestRate * Math.pow(1 + monthlyInterestRate, loanTermMonths)) / (Math.pow(1 + monthlyInterestRate, loanTermMonths) - 1);
+
+            // Display the calculated monthly payment
+            monthlyPaymentDisplay.textContent = `ប្រាក់ត្រូវបង់ប្រចាំខែ: ${formatCurrency(fixedMonthlyPayment)}`;
+            monthlyPaymentDisplay.style.display = 'block';
+
+            let remainingBalance = principal;
+            const startDate = new Date(); // Using current date for example
+
+            // Generate the amortization schedule table rows
+            for (let i = 1; i <= loanTermMonths; i++) {
+                const interestPayment = remainingBalance * monthlyInterestRate;
+                const principalPayment = fixedMonthlyPayment - interestPayment;
+                remainingBalance -= principalPayment;
+
+                // Handle final month rounding
+                if (i === loanTermMonths) {
+                    remainingBalance = 0;
+                }
+
+                // Calculate next payment date
+                const paymentDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, startDate.getDate());
+                const formattedDate = paymentDate.toLocaleDateString('km-KH', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+                // Create the table row
+                const row = document.createElement('tr');
+                row.className = 'bg-white border-b hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="py-3 px-2 sm:px-4 text-center font-medium text-gray-900 whitespace-nowrap">${i}</td>
+                    <td class="py-3 px-2 sm:px-4 text-center">${formattedDate}</td>
+                    <td class="py-3 px-2 sm:px-4 text-center">${formattedDate}</td>
+                    <td class="py-3 px-2 sm:px-4 text-center">${formatCurrency(fixedMonthlyPayment)}</td>
+                    <td class="py-3 px-2 sm:px-4 text-center">${formatCurrency(principalPayment)}</td>
+                    <td class="py-3 px-2 sm:px-4 text-center">${formatCurrency(interestPayment)}</td>
+                    <td class="py-3 px-2 sm:px-4 text-center">${formatCurrency(remainingBalance < 0.01 ? 0 : remainingBalance)}</td>
+                `;
+                amortizationTableBody.appendChild(row);
+            }
+        }
+    </script>
+
+</body>
+</html>
