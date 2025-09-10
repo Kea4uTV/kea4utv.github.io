@@ -49,6 +49,18 @@
         .btn-primary:hover {
             background-color: #4338ca;
         }
+        .btn-green {
+            background-color: #10B981;
+        }
+        .btn-green:hover {
+            background-color: #059669;
+        }
+        .btn-red {
+            background-color: #EF4444;
+        }
+        .btn-red:hover {
+            background-color: #DC2626;
+        }
         .form-input {
             width: 100%;
             padding: 0.75rem;
@@ -66,6 +78,32 @@
         }
         .new-data-btn:hover {
             background-color: #dc2626;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+        .hidden {
+            display: none;
         }
         
         /* === Styles for the Invoice Template === */
@@ -131,6 +169,9 @@
         <!-- Action Buttons Section -->
         <div class="flex flex-wrap justify-center gap-4 mb-8">
             <button id="newDataBtn" class="btn new-data-btn">ទិន្នន័យថ្មី</button>
+            <button id="saveDataBtn" class="btn btn-primary">រក្សាទុកទិន្នន័យ</button>
+            <button id="loadDataBtn" class="btn btn-primary">Load ទិន្នន័យ</button>
+            <input type="file" id="fileInput" class="hidden" accept=".json">
             <button id="saveExcelBtn" class="btn btn-primary">រក្សាទុកជា Excel</button>
             <button id="printBtn" class="btn print-btn">បោះពុម្ព</button>
             <button id="savePdfBtn" class="btn print-btn">រក្សាទុកជា PDF</button>
@@ -144,7 +185,7 @@
                 <input type="text" id="itemName" class="form-input" placeholder="មុខទំនិញ (Item Name)" required>
                 <input type="number" id="totalQuantity" class="form-input" placeholder="ចំនួនសរុប (Total Qty)" required min="0">
                 <input type="number" id="sellingPrice" class="form-input" placeholder="តម្លៃលក់ចេញ (Price)" required min="0" step="0.01">
-                <button type="submit" class="btn btn-primary">បន្ថែមទំនិញ</button>
+                <button type="submit" id="addUpdateBtn" class="btn btn-green">បន្ថែមទំនិញ</button>
             </form>
             
             <div class="table-container">
@@ -157,6 +198,7 @@
                             <th>តម្លៃលក់ចេញ</th>
                             <th>ចំនួននៅសល់</th>
                             <th>សរុបលក់ចេញ</th>
+                            <th>សកម្មភាព</th>
                         </tr>
                     </thead>
                     <tbody id="stockTableBody" class="bg-white divide-y divide-gray-200">
@@ -180,7 +222,8 @@
                 <table id="salesTable" class="min-w-full divide-y divide-gray-200">
                     <thead>
                         <tr>
-                            <th>លេខប័ណ្ណ</th>
+                            <th>លេខសម្គាល់</th>
+                            <th>លេខរៀង</th>
                             <th>កាលបរិច្ឆេទ</th>
                             <th>លេខកូដ</th>
                             <th>មុខទំនិញ</th>
@@ -198,7 +241,19 @@
 
         <!-- Message Box -->
         <div id="messageBox" class="fixed bottom-4 right-4 p-4 rounded-lg shadow-lg text-white font-semibold hidden"></div>
-
+        
+        <!-- Password Modal -->
+        <div id="passwordModal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <h3 class="text-xl font-bold mb-4" id="modalTitle">បញ្ចូលលេខសម្ងាត់</h3>
+                <p class="text-gray-600 mb-4" id="modalText">សូមបញ្ចូលលេខសម្ងាត់ដើម្បីបន្ត</p>
+                <input type="password" id="modalPasswordInput" class="form-input mb-4" placeholder="លេខសម្ងាត់">
+                <div class="flex justify-center gap-4">
+                    <button id="modalConfirmBtn" class="btn btn-green">បញ្ជាក់</button>
+                    <button id="modalCancelBtn" class="btn btn-red">បោះបង់</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- === Invoice Template (Hidden) === -->
@@ -226,6 +281,7 @@
             <thead>
                 <tr class="bg-gray-200">
                     <th>ល.រ</th>
+                    <th>លេខសម្គាល់</th>
                     <th>មុខទំនិញ</th>
                     <th>លេខកូដ</th>
                     <th>ចំនួន</th>
@@ -252,8 +308,24 @@
     </div>
 
     <script>
-        let stockItems = JSON.parse(localStorage.getItem('stockItems')) || [];
-        let salesTransactions = JSON.parse(localStorage.getItem('salesTransactions')) || [];
+        // Use a single data object to manage everything, including the password
+        let appData = JSON.parse(localStorage.getItem('storeManagementData')) || {
+            stockItems: [],
+            salesTransactions: [],
+            passwordHash: null // null if no password is set
+        };
+        let isEditing = false;
+        let currentItemCode = null;
+
+        // Function to handle password hashing
+        async function hashPassword(password) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            return hashHex;
+        }
 
         function showMessage(message, type = 'success') {
             const messageBox = document.getElementById('messageBox');
@@ -266,14 +338,13 @@
         }
 
         function saveToLocalStorage() {
-            localStorage.setItem('stockItems', JSON.stringify(stockItems));
-            localStorage.setItem('salesTransactions', JSON.stringify(salesTransactions));
+            localStorage.setItem('storeManagementData', JSON.stringify(appData));
         }
 
         function renderStockItems() {
             const stockTableBody = document.getElementById('stockTableBody');
             stockTableBody.innerHTML = '';
-            stockItems.forEach(item => {
+            appData.stockItems.forEach(item => {
                 const remainingQty = item.totalQuantity - (item.totalSold || 0);
                 const totalSoldPrice = (item.totalSold || 0) * item.sellingPrice;
                 const row = `
@@ -284,19 +355,32 @@
                         <td>$${item.sellingPrice.toFixed(2)}</td>
                         <td>${remainingQty}</td>
                         <td>$${totalSoldPrice.toFixed(2)}</td>
+                        <td>
+                            <button class="btn btn-primary btn-sm edit-btn" data-code="${item.itemCode}">កែ</button>
+                            <button class="btn btn-red btn-sm delete-btn" data-code="${item.itemCode}">លុប</button>
+                        </td>
                     </tr>
                 `;
                 stockTableBody.innerHTML += row;
+            });
+
+            // Add event listeners for edit and delete buttons
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => handleEditDeleteAction(e, 'edit'));
+            });
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => handleEditDeleteAction(e, 'delete'));
             });
         }
 
         function renderSalesTransactions() {
             const salesTableBody = document.getElementById('salesTableBody');
             salesTableBody.innerHTML = '';
-            salesTransactions.forEach((transaction, index) => {
+            appData.salesTransactions.forEach((transaction, index) => {
                 const total = transaction.quantitySold * transaction.price;
                 const row = `
                     <tr class="hover:bg-gray-50">
+                        <td>${transaction.transactionId}</td>
                         <td>${index + 1}</td>
                         <td>${transaction.date}</td>
                         <td>${transaction.itemCode}</td>
@@ -308,6 +392,92 @@
                 `;
                 salesTableBody.innerHTML += row;
             });
+        }
+
+        // --- Functions for Edit and Delete Actions ---
+        function handleEditDeleteAction(event, action) {
+            const itemCode = event.target.dataset.code;
+            if (appData.passwordHash) {
+                showPasswordModal("កែប្រែ/លុបទិន្នន័យ", "សូមបញ្ចូលលេខសម្ងាត់ដើម្បីបន្ត។", async (password) => {
+                    const hashedPassword = await hashPassword(password);
+                    if (hashedPassword === appData.passwordHash) {
+                        performAction(itemCode, action);
+                        hidePasswordModal();
+                    } else {
+                        showMessage("លេខសម្ងាត់មិនត្រឹមត្រូវទេ!", "error");
+                    }
+                });
+            } else {
+                performAction(itemCode, action);
+            }
+        }
+
+        function performAction(itemCode, action) {
+            const item = appData.stockItems.find(i => i.itemCode === itemCode);
+            if (!item) return;
+
+            if (action === 'edit') {
+                document.getElementById('itemCode').value = item.itemCode;
+                document.getElementById('itemName').value = item.itemName;
+                document.getElementById('totalQuantity').value = item.totalQuantity;
+                document.getElementById('sellingPrice').value = item.sellingPrice;
+                document.getElementById('itemCode').disabled = true; // Prevent changing item code
+                document.getElementById('addUpdateBtn').textContent = "កែប្រែទំនិញ";
+                document.getElementById('addUpdateBtn').classList.remove('btn-green');
+                document.getElementById('addUpdateBtn').classList.add('btn-primary');
+                isEditing = true;
+                currentItemCode = itemCode;
+                showMessage("កែប្រែទិន្នន័យ។ សូមកែព័ត៌មានរួចចុច 'កែប្រែទំនិញ'", "success");
+            } else if (action === 'delete') {
+                if (window.confirm("តើអ្នកពិតជាចង់លុបទំនិញនេះមែនទេ?")) {
+                    appData.stockItems = appData.stockItems.filter(i => i.itemCode !== itemCode);
+                    saveToLocalStorage();
+                    renderStockItems();
+                    showMessage("ទំនិញត្រូវបានលុបដោយជោគជ័យ!", "success");
+                }
+            }
+        }
+
+        // --- Password Modal Functions ---
+        const passwordModal = document.getElementById('passwordModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalText = document.getElementById('modalText');
+        const modalPasswordInput = document.getElementById('modalPasswordInput');
+        const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+        const modalCancelBtn = document.getElementById('modalCancelBtn');
+        let currentCallback = null;
+
+        function showPasswordModal(title, text, callback) {
+            modalTitle.textContent = title;
+            modalText.textContent = text;
+            modalPasswordInput.value = '';
+            passwordModal.classList.remove('hidden');
+            currentCallback = callback;
+        }
+
+        function hidePasswordModal() {
+            passwordModal.classList.add('hidden');
+        }
+
+        modalConfirmBtn.addEventListener('click', () => {
+            if (currentCallback) {
+                currentCallback(modalPasswordInput.value);
+            }
+        });
+        modalCancelBtn.addEventListener('click', hidePasswordModal);
+
+        // --- Functions for file handling ---
+        function downloadJSON(data, filename) {
+            const dataStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         // Function to create and download a CSV file from a table
@@ -343,13 +513,14 @@
             invoiceBody.innerHTML = '';
             let totalInvoiceSum = 0;
 
-            salesTransactions.forEach((transaction, index) => {
+            appData.salesTransactions.forEach((transaction, index) => {
                 const total = transaction.quantitySold * transaction.price;
                 totalInvoiceSum += total;
                 
                 const row = `
                     <tr>
                         <td>${index + 1}</td>
+                        <td>${transaction.transactionId}</td>
                         <td>${transaction.itemName}</td>
                         <td>${transaction.itemCode}</td>
                         <td>${transaction.quantitySold}</td>
@@ -364,7 +535,7 @@
             // Add the total sum row
             const totalRow = `
                 <tr>
-                    <td colspan="4" class="text-right">សរុប</td>
+                    <td colspan="5" class="text-right">សរុប</td>
                     <td colspan="2" class="font-bold">$${totalInvoiceSum.toFixed(2)}</td>
                     <td></td>
                 </tr>
@@ -375,7 +546,7 @@
             const now = new Date();
             const formattedDate = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear()} / ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
             document.getElementById('invoiceDate').textContent = formattedDate;
-            document.getElementById('invoiceNumber').textContent = salesTransactions.length;
+            document.getElementById('invoiceNumber').textContent = appData.salesTransactions.length;
 
             // Trigger the browser's print dialog
             window.print();
@@ -383,14 +554,95 @@
 
         // --- Event Listeners for new buttons ---
         document.getElementById('newDataBtn').addEventListener('click', () => {
-            if (confirm("តើអ្នកពិតជាចង់លុបទិន្នន័យចាស់ទាំងអស់មែនទេ? ប្រតិបត្តិការនេះមិនអាចដកថយវិញបានទេ!")) {
-                stockItems = [];
-                salesTransactions = [];
-                saveToLocalStorage();
-                renderStockItems();
-                renderSalesTransactions();
-                showMessage("ទិន្នន័យត្រូវបានលុបដោយជោគជ័យ!", "success");
-            }
+            const passwordPrompt = appData.passwordHash ? "សូមបញ្ចូលលេខសម្ងាត់ដើម្បីលុបទិន្នន័យ។" : "តើអ្នកចង់លុបទិន្នន័យចាស់ទាំងអស់មែនទេ? បើចង់កំណត់លេខសម្ងាត់ សូមបញ្ចូលលេខសម្ងាត់។";
+            showPasswordModal("ទិន្នន័យថ្មី", passwordPrompt, async (password) => {
+                if (appData.passwordHash && await hashPassword(password) !== appData.passwordHash) {
+                    showMessage("លេខសម្ងាត់មិនត្រឹមត្រូវទេ!", "error");
+                    return;
+                }
+
+                if (password) {
+                    const newHash = await hashPassword(password);
+                    if (window.confirm("តើអ្នកប្រាកដថាចង់លុបមែនទេ? លេខសម្ងាត់ថ្មីនឹងត្រូវបានកំណត់។")) {
+                        appData = {
+                            stockItems: [],
+                            salesTransactions: [],
+                            passwordHash: newHash
+                        };
+                        saveToLocalStorage();
+                        renderStockItems();
+                        renderSalesTransactions();
+                        hidePasswordModal();
+                        showMessage("ទិន្នន័យត្រូវបានលុប និងកំណត់លេខសម្ងាត់ថ្មី!", "success");
+                    }
+                } else {
+                    if (window.confirm("តើអ្នកប្រាកដថាចង់លុបទិន្នន័យទាំងអស់ដោយគ្មានលេខសម្ងាត់មែនទេ?")) {
+                        appData = {
+                            stockItems: [],
+                            salesTransactions: [],
+                            passwordHash: null
+                        };
+                        saveToLocalStorage();
+                        renderStockItems();
+                        renderSalesTransactions();
+                        hidePasswordModal();
+                        showMessage("ទិន្នន័យត្រូវបានលុបដោយជោគជ័យ!", "success");
+                    }
+                }
+            });
+        });
+
+        document.getElementById('saveDataBtn').addEventListener('click', () => {
+            showPasswordModal("រក្សាទុកទិន្នន័យ", "សូមបញ្ចូលលេខសម្ងាត់ដើម្បីការពារឯកសារ។ ទុកចោលបើមិនចង់ដាក់។", async (password) => {
+                const dataToSave = {
+                    stockItems: appData.stockItems,
+                    salesTransactions: appData.salesTransactions,
+                    passwordHash: password ? await hashPassword(password) : null
+                };
+                downloadJSON(dataToSave, 'store_data.json');
+                hidePasswordModal();
+                showMessage("ឯកសារត្រូវបានរក្សាទុក!", "success");
+            });
+        });
+
+        document.getElementById('loadDataBtn').addEventListener('click', () => {
+            document.getElementById('fileInput').click();
+        });
+
+        document.getElementById('fileInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                try {
+                    const loadedData = JSON.parse(event.target.result);
+                    if (loadedData.passwordHash) {
+                        showPasswordModal("Load ទិន្នន័យ", "ឯកសារនេះត្រូវបានការពារដោយលេខសម្ងាត់។", async (password) => {
+                            if (await hashPassword(password) === loadedData.passwordHash) {
+                                appData = loadedData;
+                                saveToLocalStorage();
+                                renderStockItems();
+                                renderSalesTransactions();
+                                hidePasswordModal();
+                                showMessage("ទិន្នន័យត្រូវបាន Load ដោយជោគជ័យ!", "success");
+                            } else {
+                                showMessage("លេខសម្ងាត់មិនត្រឹមត្រូវទេ!", "error");
+                            }
+                        });
+                    } else {
+                        appData = loadedData;
+                        saveToLocalStorage();
+                        renderStockItems();
+                        renderSalesTransactions();
+                        showMessage("ទិន្នន័យត្រូវបាន Load ដោយជោគជ័យ!", "success");
+                    }
+                } catch (error) {
+                    showMessage("ឯកសារមិនត្រឹមត្រូវទេ!", "error");
+                    console.error("Error loading file:", error);
+                }
+            };
+            reader.readAsText(file);
         });
 
         document.getElementById('saveExcelBtn').addEventListener('click', () => {
@@ -407,7 +659,7 @@
             generateAndPrintInvoice();
         });
 
-        // Add new stock item
+        // Add or Update stock item
         document.getElementById('addStockForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const itemCode = document.getElementById('itemCode').value.trim();
@@ -420,22 +672,44 @@
                 return;
             }
 
-            const existingItem = stockItems.find(item => item.itemCode === itemCode);
-            if (existingItem) {
-                showMessage("លេខកូដទំនិញនេះមានរួចហើយ។", "error");
-                return;
+            if (isEditing) {
+                // Update existing item
+                const itemIndex = appData.stockItems.findIndex(item => item.itemCode === currentItemCode);
+                if (itemIndex !== -1) {
+                    appData.stockItems[itemIndex].itemName = itemName;
+                    appData.stockItems[itemIndex].totalQuantity = totalQuantity;
+                    appData.stockItems[itemIndex].sellingPrice = sellingPrice;
+                    saveToLocalStorage();
+                    renderStockItems();
+                    showMessage("ទំនិញត្រូវបានកែប្រែដោយជោគជ័យ!", "success");
+                }
+                
+                // Reset form to Add mode
+                document.getElementById('itemCode').disabled = false;
+                document.getElementById('addUpdateBtn').textContent = "បន្ថែមទំនិញ";
+                document.getElementById('addUpdateBtn').classList.remove('btn-primary');
+                document.getElementById('addUpdateBtn').classList.add('btn-green');
+                isEditing = false;
+                currentItemCode = null;
+            } else {
+                // Add new item
+                const existingItem = appData.stockItems.find(item => item.itemCode === itemCode);
+                if (existingItem) {
+                    showMessage("លេខកូដទំនិញនេះមានរួចហើយ។", "error");
+                    return;
+                }
+                
+                appData.stockItems.push({
+                    itemCode: itemCode,
+                    itemName: itemName,
+                    totalQuantity: totalQuantity,
+                    sellingPrice: sellingPrice,
+                    totalSold: 0
+                });
+                saveToLocalStorage();
+                renderStockItems();
+                showMessage("ទំនិញត្រូវបានបន្ថែមដោយជោគជ័យ!", "success");
             }
-            
-            stockItems.push({
-                itemCode: itemCode,
-                itemName: itemName,
-                totalQuantity: totalQuantity,
-                sellingPrice: sellingPrice,
-                totalSold: 0
-            });
-            saveToLocalStorage();
-            renderStockItems();
-            showMessage("ទំនិញត្រូវបានបន្ថែមដោយជោគជ័យ!", "success");
             e.target.reset();
         });
 
@@ -451,7 +725,7 @@
                 return;
             }
 
-            const stockItem = stockItems.find(item => item.itemCode === salesItemCode);
+            const stockItem = appData.stockItems.find(item => item.itemCode === salesItemCode);
 
             if (!stockItem) {
                 showMessage("រកមិនឃើញលេខកូដទំនិញនេះទេ។", "error");
@@ -469,8 +743,12 @@
             // Update the stock item's totalSold
             stockItem.totalSold = newTotalSold;
 
+            // Generate a unique transaction ID
+            const transactionId = Date.now().toString();
+
             // Add the sales transaction
-            salesTransactions.push({
+            appData.salesTransactions.push({
+                transactionId: transactionId,
                 date: salesDate,
                 itemCode: stockItem.itemCode,
                 itemName: stockItem.itemName,
