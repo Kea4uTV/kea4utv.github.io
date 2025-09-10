@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ឧបករណ៍គ្រប់គ្រងហាង</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer:wght@400;700&display=swap');
+        body {
+            font-family: 'Noto Sans Khmer', sans-serif;
+            background-color: #f3f4f6;
+            color: #1f2937;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .card {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        th {
+            background-color: #f9fafb;
+            font-weight: 700;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            color: white;
+            transition: background-color 0.3s;
+        }
+        .btn-primary {
+            background-color: #4f46e5;
+        }
+        .btn-primary:hover {
+            background-color: #4338ca;
+        }
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid #d1d5db;
+        }
+        .print-btn {
+            background-color: #6b7280;
+        }
+        .print-btn:hover {
+            background-color: #4b5563;
+        }
+        .new-data-btn {
+            background-color: #ef4444;
+        }
+        .new-data-btn:hover {
+            background-color: #dc2626;
+        }
+        
+        /* === Styles for the Invoice Template === */
+        #invoiceTemplate {
+            display: none; /* Hide by default */
+            font-size: 14px;
+            width: 8.5in;
+            height: 11in;
+            padding: 0.5in;
+            box-sizing: border-box;
+        }
+        .invoice-header {
+            background-color: #fcd34d;
+            border: 1px solid #eab308;
+            padding: 1rem;
+            text-align: center;
+            font-weight: 700;
+            font-size: 1.5rem;
+            line-height: 1.25;
+        }
+        .invoice-info-box {
+            background-color: #fef08a;
+            border: 1px solid #eab308;
+            padding: 0.5rem;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        .invoice-table th, .invoice-table td {
+            border: 1px solid #374151;
+            padding: 0.5rem;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+        .invoice-table th {
+            background-color: #f3f4f6;
+            font-weight: 700;
+        }
+        
+        /* === Print-specific styles === */
+        @media print {
+            body > *:not(#invoiceTemplate) {
+                display: none;
+            }
+            #invoiceTemplate {
+                display: block;
+                position: absolute;
+                left: 0;
+                top: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- User ID Display -->
+        <div class="mb-4 text-sm text-gray-600">
+            <p>លេខសម្គាល់អ្នកប្រើប្រាស់ (User ID): <span id="userIdDisplay" class="font-mono text-gray-800">...</span></p>
+        </div>
+
+        <h1 class="text-4xl font-bold text-center mb-8 text-indigo-700">ឧបករណ៍គ្រប់គ្រងហាង</h1>
+
+        <!-- Action Buttons Section -->
+        <div class="flex flex-wrap justify-center gap-4 mb-8">
+            <button id="newDataBtn" class="btn new-data-btn">ទិន្នន័យថ្មី</button>
+            <button id="saveExcelBtn" class="btn btn-primary">រក្សាទុកជា Excel</button>
+            <button id="printBtn" class="btn print-btn">បោះពុម្ព</button>
+            <button id="savePdfBtn" class="btn print-btn">រក្សាទុកជា PDF</button>
+        </div>
+
+        <!-- Stock Management Section -->
+        <div class="card printable-area">
+            <h2 class="text-2xl font-bold mb-4">ការគ្រប់គ្រងស្តុក (Stock Management)</h2>
+            <form id="addStockForm" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+                <input type="text" id="itemCode" class="form-input" placeholder="លេខកូដ (ID)" required>
+                <input type="text" id="itemName" class="form-input" placeholder="មុខទំនិញ (Item Name)" required>
+                <input type="number" id="totalQuantity" class="form-input" placeholder="ចំនួនសរុប (Total Qty)" required min="0">
+                <input type="number" id="sellingPrice" class="form-input" placeholder="តម្លៃលក់ចេញ (Price)" required min="0" step="0.01">
+                <button type="submit" class="btn btn-primary">បន្ថែមទំនិញ</button>
+            </form>
+            
+            <div class="table-container">
+                <table id="stockTable" class="min-w-full divide-y divide-gray-200">
+                    <thead>
+                        <tr>
+                            <th>លេខកូដ</th>
+                            <th>មុខទំនិញ</th>
+                            <th>ចំនួនសរុប</th>
+                            <th>តម្លៃលក់ចេញ</th>
+                            <th>ចំនួននៅសល់</th>
+                            <th>សរុបលក់ចេញ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stockTableBody" class="bg-white divide-y divide-gray-200">
+                        <!-- Stock items will be rendered here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Sales Management Section -->
+        <div class="card printable-area">
+            <h2 class="text-2xl font-bold mb-4">ការគ្រប់គ្រងការលក់ (Sales Management)</h2>
+            <form id="addSalesForm" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
+                <input type="text" id="salesItemCode" class="form-input" placeholder="លេខកូដទំនិញ (Item ID)" required>
+                <input type="number" id="salesQuantity" class="form-input" placeholder="ចំនួនលក់ចេញ (Qty)" required min="1">
+                <input type="date" id="salesDate" class="form-input" required>
+                <button type="submit" class="btn btn-primary">កត់ត្រាការលក់</button>
+            </form>
+
+            <div class="table-container">
+                <table id="salesTable" class="min-w-full divide-y divide-gray-200">
+                    <thead>
+                        <tr>
+                            <th>លេខប័ណ្ណ</th>
+                            <th>កាលបរិច្ឆេទ</th>
+                            <th>លេខកូដ</th>
+                            <th>មុខទំនិញ</th>
+                            <th>ចំនួនលក់ចេញ</th>
+                            <th>តម្លៃ</th>
+                            <th>សរុប</th>
+                        </tr>
+                    </thead>
+                    <tbody id="salesTableBody" class="bg-white divide-y divide-gray-200">
+                        <!-- Sales transactions will be rendered here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Message Box -->
+        <div id="messageBox" class="fixed bottom-4 right-4 p-4 rounded-lg shadow-lg text-white font-semibold hidden"></div>
+
+    </div>
+
+    <!-- === Invoice Template (Hidden) === -->
+    <div id="invoiceTemplate">
+        <div class="invoice-header">
+            <p>ហាងលក់សម្ភារៈកុំព្យូទ័រ KS COMPUTER</p>
+            <p class="font-normal text-sm">អាស័យដ្ឋានៈ ភូមិអូរឬស្សី ឃុំអូរឬស្សី ស្រុក-បវេល ខេត្តបាត់ដំបង / ០១២ ៣៤៥៦៧៨ - ០៩៦ ៣៤៥៦៧៨</p>
+        </div>
+
+        <div class="text-center font-bold text-xl my-4">វិក្កយបត្រ</div>
+
+        <div class="grid grid-cols-3 gap-2">
+            <div>
+                <div class="invoice-info-box">កាលបរិច្ឆេទ</div>
+                <div id="invoiceDate" class="text-center mt-1"></div>
+            </div>
+            <div></div>
+            <div>
+                <div class="invoice-info-box">លេខវិក្កយបត្រ</div>
+                <div id="invoiceNumber" class="text-center mt-1"></div>
+            </div>
+        </div>
+
+        <table class="w-full mt-8 invoice-table">
+            <thead>
+                <tr class="bg-gray-200">
+                    <th>ល.រ</th>
+                    <th>មុខទំនិញ</th>
+                    <th>លេខកូដ</th>
+                    <th>ចំនួន</th>
+                    <th>តម្លៃមណេយ្យ</th>
+                    <th>តម្លៃសរុប</th>
+                    <th>សម្គាល់</th>
+                </tr>
+            </thead>
+            <tbody id="invoiceTableBody">
+                <!-- Invoice items will be dynamically added here -->
+            </tbody>
+        </table>
+
+        <div class="grid grid-cols-2 gap-4 mt-8">
+            <div class="text-center font-bold">
+                <div class="text-gray-600 mb-8">អ្នកគិតលុយ</div>
+                <div class="border-b border-gray-400 mx-16"></div>
+            </div>
+            <div class="text-center font-bold">
+                <div class="text-gray-600 mb-8">អ្នកលក់</div>
+                <div class="border-b border-gray-400 mx-16"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, doc, updateDoc, onSnapshot, query, where, getDocs, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // IMPORTANT: Use the provided global variables for Firebase setup
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Display user ID
+        const userIdDisplay = document.getElementById('userIdDisplay');
+
+        // Initialize Firebase
+        let app;
+        let db;
+        let auth;
+        let userId;
+
+        function showMessage(message, type = 'success') {
+            const messageBox = document.getElementById('messageBox');
+            messageBox.textContent = message;
+            messageBox.style.backgroundColor = type === 'success' ? '#22c55e' : '#ef4444';
+            messageBox.classList.remove('hidden');
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Initialize Firebase and set up auth listener
+        async function initializeAndAuthenticate() {
+            try {
+                if (Object.keys(firebaseConfig).length === 0) {
+                    console.error("Firebase config is empty. Please provide a valid configuration.");
+                    showMessage("Error: Firebase config is missing.", "error");
+                    return;
+                }
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                setLogLevel('debug');
+                
+                // Sign in with custom token if available, otherwise sign in anonymously
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        userIdDisplay.textContent = userId;
+                        setupRealtimeListeners();
+                        console.log("User authenticated:", userId);
+                    } else {
+                        console.log("No user is authenticated.");
+                        userIdDisplay.textContent = 'Guest';
+                    }
+                });
+
+            } catch (error) {
+                console.error("Firebase initialization or authentication failed:", error);
+                showMessage("Error: Initialization failed. See console.", "error");
+            }
+        }
+
+        // Set up real-time listeners for data
+        function setupRealtimeListeners() {
+            if (!userId) {
+                console.log("User not authenticated, skipping listeners setup.");
+                return;
+            }
+
+            // --- Stock Items Listener ---
+            const stockCollectionPath = `/artifacts/${appId}/users/${userId}/stock_items`;
+            onSnapshot(collection(db, stockCollectionPath), (snapshot) => {
+                const stockTableBody = document.getElementById('stockTableBody');
+                stockTableBody.innerHTML = '';
+                snapshot.forEach((doc) => {
+                    const item = doc.data();
+                    const remainingQty = item.totalQuantity - (item.totalSold || 0);
+                    const totalSoldPrice = (item.totalSold || 0) * item.sellingPrice;
+                    const row = `
+                        <tr class="hover:bg-gray-50">
+                            <td>${item.itemCode}</td>
+                            <td>${item.itemName}</td>
+                            <td>${item.totalQuantity}</td>
+                            <td>$${item.sellingPrice.toFixed(2)}</td>
+                            <td>${remainingQty}</td>
+                            <td>$${totalSoldPrice.toFixed(2)}</td>
+                        </tr>
+                    `;
+                    stockTableBody.innerHTML += row;
+                });
+            }, (error) => {
+                console.error("Error fetching stock data:", error);
+                showMessage("Error loading stock data.", "error");
+            });
+
+            // --- Sales Transactions Listener ---
+            const salesCollectionPath = `/artifacts/${appId}/users/${userId}/sales_transactions`;
+            onSnapshot(collection(db, salesCollectionPath), (snapshot) => {
+                const salesTableBody = document.getElementById('salesTableBody');
+                salesTableBody.innerHTML = '';
+                let salesCount = 0;
+                let totalInvoiceSum = 0;
+                snapshot.forEach((doc) => {
+                    const transaction = doc.data();
+                    const total = transaction.quantitySold * transaction.price;
+                    totalInvoiceSum += total;
+                    salesCount++;
+                    const row = `
+                        <tr class="hover:bg-gray-50">
+                            <td>${salesCount}</td>
+                            <td>${transaction.date}</td>
+                            <td>${transaction.itemCode}</td>
+                            <td>${transaction.itemName}</td>
+                            <td>${transaction.quantitySold}</td>
+                            <td>$${transaction.price.toFixed(2)}</td>
+                            <td>$${total.toFixed(2)}</td>
+                        </tr>
+                    `;
+                    salesTableBody.innerHTML += row;
+                });
+            }, (error) => {
+                console.error("Error fetching sales data:", error);
+                showMessage("Error loading sales data.", "error");
+            });
+        }
+        
+        // --- Action Button Functions ---
+
+        // Function to create and download a CSV file from a table
+        function downloadCSV(tableId, filename) {
+            const table = document.getElementById(tableId);
+            let csv = [];
+            const rows = table.querySelectorAll("tr");
+            
+            for (const row of rows) {
+                const rowData = [];
+                const cols = row.querySelectorAll("th, td");
+                for (const col of cols) {
+                    rowData.push('"' + col.innerText.replace(/"/g, '""') + '"');
+                }
+                csv.push(rowData.join(","));
+            }
+            
+            const csvString = csv.join('\n');
+            const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // --- Invoice Generation and Print Function ---
+        async function generateAndPrintInvoice() {
+            // Fetch all sales transactions to build the invoice
+            const salesCollectionPath = `/artifacts/${appId}/users/${userId}/sales_transactions`;
+            const salesSnapshot = await getDocs(collection(db, salesCollectionPath));
+            
+            const invoiceBody = document.getElementById('invoiceTableBody');
+            invoiceBody.innerHTML = '';
+            let salesCount = 0;
+            let totalInvoiceSum = 0;
+
+            salesSnapshot.forEach((doc) => {
+                const transaction = doc.data();
+                const total = transaction.quantitySold * transaction.price;
+                totalInvoiceSum += total;
+                salesCount++;
+                
+                const row = `
+                    <tr>
+                        <td>${salesCount}</td>
+                        <td>${transaction.itemName}</td>
+                        <td>${transaction.itemCode}</td>
+                        <td>${transaction.quantitySold}</td>
+                        <td>$${transaction.price.toFixed(2)}</td>
+                        <td>$${total.toFixed(2)}</td>
+                        <td></td>
+                    </tr>
+                `;
+                invoiceBody.innerHTML += row;
+            });
+            
+            // Add the total sum row
+            const totalRow = `
+                <tr>
+                    <td colspan="4" class="text-right">សរុប</td>
+                    <td colspan="2" class="font-bold">$${totalInvoiceSum.toFixed(2)}</td>
+                </tr>
+            `;
+            invoiceBody.innerHTML += totalRow;
+
+            // Update the invoice header with dynamic data
+            const now = new Date();
+            const formattedDate = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear()} / ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+            document.getElementById('invoiceDate').textContent = formattedDate;
+            document.getElementById('invoiceNumber').textContent = salesCount;
+
+            // Trigger the browser's print dialog
+            window.print();
+        }
+
+        // --- Event Listeners for new buttons ---
+        document.getElementById('newDataBtn').addEventListener('click', async () => {
+            if (!userId) {
+                showMessage("សូមចូលដោយប្រើគណនីរបស់អ្នកជាមុនសិន។", "error");
+                return;
+            }
+            if (window.confirm("តើអ្នកពិតជាចង់លុបទិន្នន័យចាស់ទាំងអស់មែនទេ? ប្រតិបត្តិការនេះមិនអាចដកថយវិញបានទេ!")) {
+                 try {
+                    // Delete all stock items
+                    const stockRef = collection(db, `/artifacts/${appId}/users/${userId}/stock_items`);
+                    const stockSnapshot = await getDocs(stockRef);
+                    const stockDeletes = stockSnapshot.docs.map(d => deleteDoc(doc(db, stockRef.path, d.id)));
+
+                    // Delete all sales transactions
+                    const salesRef = collection(db, `/artifacts/${appId}/users/${userId}/sales_transactions`);
+                    const salesSnapshot = await getDocs(salesRef);
+                    const salesDeletes = salesSnapshot.docs.map(d => deleteDoc(doc(db, salesRef.path, d.id)));
+
+                    await Promise.all([...stockDeletes, ...salesDeletes]);
+                    showMessage("ទិន្នន័យត្រូវបានលុបដោយជោគជ័យ!", "success");
+                } catch (error) {
+                    console.error("Error clearing data:", error);
+                    showMessage("មានបញ្ហាក្នុងការលុបទិន្នន័យ។", "error");
+                }
+            }
+        });
+
+        document.getElementById('saveExcelBtn').addEventListener('click', () => {
+            if (!userId) {
+                showMessage("សូមចូលដោយប្រើគណនីរបស់អ្នកជាមុនសិន។", "error");
+                return;
+            }
+            downloadCSV('stockTable', 'ទំនិញក្នុងស្តុក.csv');
+            downloadCSV('salesTable', 'របាយការណ៍លក់.csv');
+            showMessage("ឯកសារត្រូវបានរក្សាទុក!", "success");
+        });
+
+        document.getElementById('printBtn').addEventListener('click', () => {
+            if (!userId) {
+                showMessage("សូមចូលដោយប្រើគណនីរបស់អ្នកជាមុនសិន។", "error");
+                return;
+            }
+            generateAndPrintInvoice();
+        });
+
+        document.getElementById('savePdfBtn').addEventListener('click', () => {
+            if (!userId) {
+                showMessage("សូមចូលដោយប្រើគណនីរបស់អ្នកជាមុនសិន។", "error");
+                return;
+            }
+            generateAndPrintInvoice();
+        });
+
+
+        // Add new stock item
+        document.getElementById('addStockForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const itemCode = document.getElementById('itemCode').value.trim();
+            const itemName = document.getElementById('itemName').value.trim();
+            const totalQuantity = parseInt(document.getElementById('totalQuantity').value, 10);
+            const sellingPrice = parseFloat(document.getElementById('sellingPrice').value);
+
+            if (!itemCode || !itemName || isNaN(totalQuantity) || isNaN(sellingPrice)) {
+                showMessage("សូមបំពេញព័ត៌មានទំនិញឲ្យបានគ្រប់គ្រាន់!", "error");
+                return;
+            }
+
+            try {
+                // Check if itemCode already exists
+                const q = query(collection(db, `/artifacts/${appId}/users/${userId}/stock_items`), where("itemCode", "==", itemCode));
+                const querySnapshot = await getDocs(q);
+                if (!querySnapshot.empty) {
+                    showMessage("លេខកូដទំនិញនេះមានរួចហើយ។", "error");
+                    return;
+                }
+                
+                await addDoc(collection(db, `/artifacts/${appId}/users/${userId}/stock_items`), {
+                    itemCode: itemCode,
+                    itemName: itemName,
+                    totalQuantity: totalQuantity,
+                    sellingPrice: sellingPrice,
+                    totalSold: 0
+                });
+                showMessage("ទំនិញត្រូវបានបន្ថែមដោយជោគជ័យ!", "success");
+                e.target.reset();
+            } catch (error) {
+                console.error("Error adding stock item: ", error);
+                showMessage("Error adding item.", "error");
+            }
+        });
+
+        // Add new sales transaction
+        document.getElementById('addSalesForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const salesItemCode = document.getElementById('salesItemCode').value.trim();
+            const salesQuantity = parseInt(document.getElementById('salesQuantity').value, 10);
+            const salesDate = document.getElementById('salesDate').value;
+
+            if (!salesItemCode || isNaN(salesQuantity) || salesQuantity <= 0 || !salesDate) {
+                showMessage("សូមបំពេញព័ត៌មានការលក់ឲ្យបានគ្រប់គ្រាន់!", "error");
+                return;
+            }
+
+            try {
+                // Find the stock item by its code
+                const q = query(collection(db, `/artifacts/${appId}/users/${userId}/stock_items`), where("itemCode", "==", salesItemCode));
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                    showMessage("រកមិនឃើញលេខកូដទំនិញនេះទេ។", "error");
+                    return;
+                }
+
+                const stockDoc = querySnapshot.docs[0];
+                const stockItem = stockDoc.data();
+                const currentTotalSold = stockItem.totalSold || 0;
+                const newTotalSold = currentTotalSold + salesQuantity;
+
+                if (newTotalSold > stockItem.totalQuantity) {
+                    showMessage("ចំនួនទំនិញនៅក្នុងស្តុកមិនគ្រប់គ្រាន់ទេ!", "error");
+                    return;
+                }
+
+                // Add the sales transaction
+                await addDoc(collection(db, `/artifacts/${appId}/users/${userId}/sales_transactions`), {
+                    date: salesDate,
+                    itemCode: stockItem.itemCode,
+                    itemName: stockItem.itemName,
+                    quantitySold: salesQuantity,
+                    price: stockItem.sellingPrice,
+                });
+
+                // Update the stock item's totalSold
+                await updateDoc(doc(db, `/artifacts/${appId}/users/${userId}/stock_items`, stockDoc.id), {
+                    totalSold: newTotalSold
+                });
+
+                showMessage("ការលក់ត្រូវបានកត់ត្រាដោយជោគជ័យ!", "success");
+                e.target.reset();
+            } catch (error) {
+                console.error("Error adding sales transaction: ", error);
+                showMessage("Error adding sales.", "error");
+            }
+        });
+
+        // Start the application
+        window.onload = initializeAndAuthenticate;
+    </script>
+</body>
+</html>
