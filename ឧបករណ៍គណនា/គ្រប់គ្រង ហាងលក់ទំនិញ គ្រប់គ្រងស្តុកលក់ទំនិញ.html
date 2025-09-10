@@ -121,9 +121,9 @@
 </head>
 <body>
     <div class="container">
-        <!-- User ID Display -->
+        <!-- User ID Display - Not applicable with localStorage, but kept for consistency -->
         <div class="mb-4 text-sm text-gray-600">
-            <p>លេខសម្គាល់អ្នកប្រើប្រាស់ (User ID): <span id="userIdDisplay" class="font-mono text-gray-800">...</span></p>
+            <p>លេខសម្គាល់អ្នកប្រើប្រាស់ (User ID): <span id="userIdDisplay" class="font-mono text-gray-800">Local Storage</span></p>
         </div>
 
         <h1 class="text-4xl font-bold text-center mb-8 text-indigo-700">ឧបករណ៍គ្រប់គ្រងហាង</h1>
@@ -251,26 +251,9 @@
         </div>
     </div>
 
-    <!-- Firebase Scripts -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, doc, updateDoc, onSnapshot, query, where, getDocs, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // IMPORTANT: Use the provided global variables for Firebase setup
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        // Display user ID
-        const userIdDisplay = document.getElementById('userIdDisplay');
-
-        // Initialize Firebase
-        let app;
-        let db;
-        let auth;
-        let userId;
+    <script>
+        let stockItems = JSON.parse(localStorage.getItem('stockItems')) || [];
+        let salesTransactions = JSON.parse(localStorage.getItem('salesTransactions')) || [];
 
         function showMessage(message, type = 'success') {
             const messageBox = document.getElementById('messageBox');
@@ -282,109 +265,50 @@
             }, 3000);
         }
 
-        // Initialize Firebase and set up auth listener
-        async function initializeAndAuthenticate() {
-            try {
-                if (Object.keys(firebaseConfig).length === 0) {
-                    console.error("Firebase config is empty. Please provide a valid configuration.");
-                    showMessage("Error: Firebase config is missing.", "error");
-                    return;
-                }
-                app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-                setLogLevel('debug');
-                
-                // Sign in with custom token if available, otherwise sign in anonymously
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
-                
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        userIdDisplay.textContent = userId;
-                        setupRealtimeListeners();
-                        console.log("User authenticated:", userId);
-                    } else {
-                        console.log("No user is authenticated.");
-                        userIdDisplay.textContent = 'Guest';
-                    }
-                });
-
-            } catch (error) {
-                console.error("Firebase initialization or authentication failed:", error);
-                showMessage("Error: Initialization failed. See console.", "error");
-            }
+        function saveToLocalStorage() {
+            localStorage.setItem('stockItems', JSON.stringify(stockItems));
+            localStorage.setItem('salesTransactions', JSON.stringify(salesTransactions));
         }
 
-        // Set up real-time listeners for data
-        function setupRealtimeListeners() {
-            if (!userId) {
-                console.log("User not authenticated, skipping listeners setup.");
-                return;
-            }
-
-            // --- Stock Items Listener ---
-            const stockCollectionPath = `/artifacts/${appId}/users/${userId}/stock_items`;
-            onSnapshot(collection(db, stockCollectionPath), (snapshot) => {
-                const stockTableBody = document.getElementById('stockTableBody');
-                stockTableBody.innerHTML = '';
-                snapshot.forEach((doc) => {
-                    const item = doc.data();
-                    const remainingQty = item.totalQuantity - (item.totalSold || 0);
-                    const totalSoldPrice = (item.totalSold || 0) * item.sellingPrice;
-                    const row = `
-                        <tr class="hover:bg-gray-50">
-                            <td>${item.itemCode}</td>
-                            <td>${item.itemName}</td>
-                            <td>${item.totalQuantity}</td>
-                            <td>$${item.sellingPrice.toFixed(2)}</td>
-                            <td>${remainingQty}</td>
-                            <td>$${totalSoldPrice.toFixed(2)}</td>
-                        </tr>
-                    `;
-                    stockTableBody.innerHTML += row;
-                });
-            }, (error) => {
-                console.error("Error fetching stock data:", error);
-                showMessage("Error loading stock data.", "error");
-            });
-
-            // --- Sales Transactions Listener ---
-            const salesCollectionPath = `/artifacts/${appId}/users/${userId}/sales_transactions`;
-            onSnapshot(collection(db, salesCollectionPath), (snapshot) => {
-                const salesTableBody = document.getElementById('salesTableBody');
-                salesTableBody.innerHTML = '';
-                let salesCount = 0;
-                let totalInvoiceSum = 0;
-                snapshot.forEach((doc) => {
-                    const transaction = doc.data();
-                    const total = transaction.quantitySold * transaction.price;
-                    totalInvoiceSum += total;
-                    salesCount++;
-                    const row = `
-                        <tr class="hover:bg-gray-50">
-                            <td>${salesCount}</td>
-                            <td>${transaction.date}</td>
-                            <td>${transaction.itemCode}</td>
-                            <td>${transaction.itemName}</td>
-                            <td>${transaction.quantitySold}</td>
-                            <td>$${transaction.price.toFixed(2)}</td>
-                            <td>$${total.toFixed(2)}</td>
-                        </tr>
-                    `;
-                    salesTableBody.innerHTML += row;
-                });
-            }, (error) => {
-                console.error("Error fetching sales data:", error);
-                showMessage("Error loading sales data.", "error");
+        function renderStockItems() {
+            const stockTableBody = document.getElementById('stockTableBody');
+            stockTableBody.innerHTML = '';
+            stockItems.forEach(item => {
+                const remainingQty = item.totalQuantity - (item.totalSold || 0);
+                const totalSoldPrice = (item.totalSold || 0) * item.sellingPrice;
+                const row = `
+                    <tr class="hover:bg-gray-50">
+                        <td>${item.itemCode}</td>
+                        <td>${item.itemName}</td>
+                        <td>${item.totalQuantity}</td>
+                        <td>$${item.sellingPrice.toFixed(2)}</td>
+                        <td>${remainingQty}</td>
+                        <td>$${totalSoldPrice.toFixed(2)}</td>
+                    </tr>
+                `;
+                stockTableBody.innerHTML += row;
             });
         }
-        
-        // --- Action Button Functions ---
+
+        function renderSalesTransactions() {
+            const salesTableBody = document.getElementById('salesTableBody');
+            salesTableBody.innerHTML = '';
+            salesTransactions.forEach((transaction, index) => {
+                const total = transaction.quantitySold * transaction.price;
+                const row = `
+                    <tr class="hover:bg-gray-50">
+                        <td>${index + 1}</td>
+                        <td>${transaction.date}</td>
+                        <td>${transaction.itemCode}</td>
+                        <td>${transaction.itemName}</td>
+                        <td>${transaction.quantitySold}</td>
+                        <td>$${transaction.price.toFixed(2)}</td>
+                        <td>$${total.toFixed(2)}</td>
+                    </tr>
+                `;
+                salesTableBody.innerHTML += row;
+            });
+        }
 
         // Function to create and download a CSV file from a table
         function downloadCSV(tableId, filename) {
@@ -414,25 +338,18 @@
         }
 
         // --- Invoice Generation and Print Function ---
-        async function generateAndPrintInvoice() {
-            // Fetch all sales transactions to build the invoice
-            const salesCollectionPath = `/artifacts/${appId}/users/${userId}/sales_transactions`;
-            const salesSnapshot = await getDocs(collection(db, salesCollectionPath));
-            
+        function generateAndPrintInvoice() {
             const invoiceBody = document.getElementById('invoiceTableBody');
             invoiceBody.innerHTML = '';
-            let salesCount = 0;
             let totalInvoiceSum = 0;
 
-            salesSnapshot.forEach((doc) => {
-                const transaction = doc.data();
+            salesTransactions.forEach((transaction, index) => {
                 const total = transaction.quantitySold * transaction.price;
                 totalInvoiceSum += total;
-                salesCount++;
                 
                 const row = `
                     <tr>
-                        <td>${salesCount}</td>
+                        <td>${index + 1}</td>
                         <td>${transaction.itemName}</td>
                         <td>${transaction.itemCode}</td>
                         <td>${transaction.quantitySold}</td>
@@ -449,6 +366,7 @@
                 <tr>
                     <td colspan="4" class="text-right">សរុប</td>
                     <td colspan="2" class="font-bold">$${totalInvoiceSum.toFixed(2)}</td>
+                    <td></td>
                 </tr>
             `;
             invoiceBody.innerHTML += totalRow;
@@ -457,68 +375,40 @@
             const now = new Date();
             const formattedDate = `${now.getDate().toString().padStart(2, '0')}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getFullYear()} / ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
             document.getElementById('invoiceDate').textContent = formattedDate;
-            document.getElementById('invoiceNumber').textContent = salesCount;
+            document.getElementById('invoiceNumber').textContent = salesTransactions.length;
 
             // Trigger the browser's print dialog
             window.print();
         }
 
         // --- Event Listeners for new buttons ---
-        document.getElementById('newDataBtn').addEventListener('click', async () => {
-            if (!userId) {
-                showMessage("សូមចូលដោយប្រើគណនីរបស់អ្នកជាមុនសិន។", "error");
-                return;
-            }
-            if (window.confirm("តើអ្នកពិតជាចង់លុបទិន្នន័យចាស់ទាំងអស់មែនទេ? ប្រតិបត្តិការនេះមិនអាចដកថយវិញបានទេ!")) {
-                 try {
-                    // Delete all stock items
-                    const stockRef = collection(db, `/artifacts/${appId}/users/${userId}/stock_items`);
-                    const stockSnapshot = await getDocs(stockRef);
-                    const stockDeletes = stockSnapshot.docs.map(d => deleteDoc(doc(db, stockRef.path, d.id)));
-
-                    // Delete all sales transactions
-                    const salesRef = collection(db, `/artifacts/${appId}/users/${userId}/sales_transactions`);
-                    const salesSnapshot = await getDocs(salesRef);
-                    const salesDeletes = salesSnapshot.docs.map(d => deleteDoc(doc(db, salesRef.path, d.id)));
-
-                    await Promise.all([...stockDeletes, ...salesDeletes]);
-                    showMessage("ទិន្នន័យត្រូវបានលុបដោយជោគជ័យ!", "success");
-                } catch (error) {
-                    console.error("Error clearing data:", error);
-                    showMessage("មានបញ្ហាក្នុងការលុបទិន្នន័យ។", "error");
-                }
+        document.getElementById('newDataBtn').addEventListener('click', () => {
+            if (confirm("តើអ្នកពិតជាចង់លុបទិន្នន័យចាស់ទាំងអស់មែនទេ? ប្រតិបត្តិការនេះមិនអាចដកថយវិញបានទេ!")) {
+                stockItems = [];
+                salesTransactions = [];
+                saveToLocalStorage();
+                renderStockItems();
+                renderSalesTransactions();
+                showMessage("ទិន្នន័យត្រូវបានលុបដោយជោគជ័យ!", "success");
             }
         });
 
         document.getElementById('saveExcelBtn').addEventListener('click', () => {
-            if (!userId) {
-                showMessage("សូមចូលដោយប្រើគណនីរបស់អ្នកជាមុនសិន។", "error");
-                return;
-            }
             downloadCSV('stockTable', 'ទំនិញក្នុងស្តុក.csv');
             downloadCSV('salesTable', 'របាយការណ៍លក់.csv');
             showMessage("ឯកសារត្រូវបានរក្សាទុក!", "success");
         });
 
         document.getElementById('printBtn').addEventListener('click', () => {
-            if (!userId) {
-                showMessage("សូមចូលដោយប្រើគណនីរបស់អ្នកជាមុនសិន។", "error");
-                return;
-            }
             generateAndPrintInvoice();
         });
 
         document.getElementById('savePdfBtn').addEventListener('click', () => {
-            if (!userId) {
-                showMessage("សូមចូលដោយប្រើគណនីរបស់អ្នកជាមុនសិន។", "error");
-                return;
-            }
             generateAndPrintInvoice();
         });
 
-
         // Add new stock item
-        document.getElementById('addStockForm').addEventListener('submit', async (e) => {
+        document.getElementById('addStockForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const itemCode = document.getElementById('itemCode').value.trim();
             const itemName = document.getElementById('itemName').value.trim();
@@ -530,32 +420,27 @@
                 return;
             }
 
-            try {
-                // Check if itemCode already exists
-                const q = query(collection(db, `/artifacts/${appId}/users/${userId}/stock_items`), where("itemCode", "==", itemCode));
-                const querySnapshot = await getDocs(q);
-                if (!querySnapshot.empty) {
-                    showMessage("លេខកូដទំនិញនេះមានរួចហើយ។", "error");
-                    return;
-                }
-                
-                await addDoc(collection(db, `/artifacts/${appId}/users/${userId}/stock_items`), {
-                    itemCode: itemCode,
-                    itemName: itemName,
-                    totalQuantity: totalQuantity,
-                    sellingPrice: sellingPrice,
-                    totalSold: 0
-                });
-                showMessage("ទំនិញត្រូវបានបន្ថែមដោយជោគជ័យ!", "success");
-                e.target.reset();
-            } catch (error) {
-                console.error("Error adding stock item: ", error);
-                showMessage("Error adding item.", "error");
+            const existingItem = stockItems.find(item => item.itemCode === itemCode);
+            if (existingItem) {
+                showMessage("លេខកូដទំនិញនេះមានរួចហើយ។", "error");
+                return;
             }
+            
+            stockItems.push({
+                itemCode: itemCode,
+                itemName: itemName,
+                totalQuantity: totalQuantity,
+                sellingPrice: sellingPrice,
+                totalSold: 0
+            });
+            saveToLocalStorage();
+            renderStockItems();
+            showMessage("ទំនិញត្រូវបានបន្ថែមដោយជោគជ័យ!", "success");
+            e.target.reset();
         });
 
         // Add new sales transaction
-        document.getElementById('addSalesForm').addEventListener('submit', async (e) => {
+        document.getElementById('addSalesForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const salesItemCode = document.getElementById('salesItemCode').value.trim();
             const salesQuantity = parseInt(document.getElementById('salesQuantity').value, 10);
@@ -566,50 +451,44 @@
                 return;
             }
 
-            try {
-                // Find the stock item by its code
-                const q = query(collection(db, `/artifacts/${appId}/users/${userId}/stock_items`), where("itemCode", "==", salesItemCode));
-                const querySnapshot = await getDocs(q);
+            const stockItem = stockItems.find(item => item.itemCode === salesItemCode);
 
-                if (querySnapshot.empty) {
-                    showMessage("រកមិនឃើញលេខកូដទំនិញនេះទេ។", "error");
-                    return;
-                }
-
-                const stockDoc = querySnapshot.docs[0];
-                const stockItem = stockDoc.data();
-                const currentTotalSold = stockItem.totalSold || 0;
-                const newTotalSold = currentTotalSold + salesQuantity;
-
-                if (newTotalSold > stockItem.totalQuantity) {
-                    showMessage("ចំនួនទំនិញនៅក្នុងស្តុកមិនគ្រប់គ្រាន់ទេ!", "error");
-                    return;
-                }
-
-                // Add the sales transaction
-                await addDoc(collection(db, `/artifacts/${appId}/users/${userId}/sales_transactions`), {
-                    date: salesDate,
-                    itemCode: stockItem.itemCode,
-                    itemName: stockItem.itemName,
-                    quantitySold: salesQuantity,
-                    price: stockItem.sellingPrice,
-                });
-
-                // Update the stock item's totalSold
-                await updateDoc(doc(db, `/artifacts/${appId}/users/${userId}/stock_items`, stockDoc.id), {
-                    totalSold: newTotalSold
-                });
-
-                showMessage("ការលក់ត្រូវបានកត់ត្រាដោយជោគជ័យ!", "success");
-                e.target.reset();
-            } catch (error) {
-                console.error("Error adding sales transaction: ", error);
-                showMessage("Error adding sales.", "error");
+            if (!stockItem) {
+                showMessage("រកមិនឃើញលេខកូដទំនិញនេះទេ។", "error");
+                return;
             }
+
+            const currentTotalSold = stockItem.totalSold || 0;
+            const newTotalSold = currentTotalSold + salesQuantity;
+
+            if (newTotalSold > stockItem.totalQuantity) {
+                showMessage("ចំនួនទំនិញនៅក្នុងស្តុកមិនគ្រប់គ្រាន់ទេ!", "error");
+                return;
+            }
+
+            // Update the stock item's totalSold
+            stockItem.totalSold = newTotalSold;
+
+            // Add the sales transaction
+            salesTransactions.push({
+                date: salesDate,
+                itemCode: stockItem.itemCode,
+                itemName: stockItem.itemName,
+                quantitySold: salesQuantity,
+                price: stockItem.sellingPrice,
+            });
+
+            saveToLocalStorage();
+            renderStockItems();
+            renderSalesTransactions();
+            showMessage("ការលក់ត្រូវបានកត់ត្រាដោយជោគជ័យ!", "success");
+            e.target.reset();
         });
 
-        // Start the application
-        window.onload = initializeAndAuthenticate;
+        window.onload = () => {
+            renderStockItems();
+            renderSalesTransactions();
+        };
     </script>
 </body>
 </html>
