@@ -15,6 +15,9 @@
             .no-print {
                 display: none;
             }
+            .print-only {
+                display: block !important;
+            }
             .container {
                 box-shadow: none;
                 border: none;
@@ -26,6 +29,9 @@
                 background-color: #fff;
             }
         }
+        .print-only {
+            display: none;
+        }
     </style>
 </head>
 <body class="p-4 sm:p-8 bg-gray-100 min-h-screen flex items-center justify-center">
@@ -33,7 +39,7 @@
     <div class="container mx-auto p-6 bg-white shadow-xl rounded-2xl max-w-4xl border border-gray-200">
         <h1 class="text-3xl sm:text-4xl font-bold text-center text-blue-700 mb-8 rounded-full p-2">ឧបករណ៍គណនាតារាងបង់រំលស់</h1>
 
-        <!-- Loan Details Input Form -->
+        <!-- Loan Details Input Form (Hidden when printing) -->
         <div class="p-6 bg-blue-50 rounded-2xl shadow-inner mb-6 no-print">
             <h2 class="text-xl sm:text-2xl font-semibold mb-4 text-blue-600">ព័ត៌មានលម្អិតអំពីកម្ចី</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm sm:text-base">
@@ -43,8 +49,11 @@
                         <input type="text" id="customerName" class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div class="flex flex-col">
-                        <label class="font-medium text-gray-700 mb-1">ប្រភេទរំលស់</label>
-                        <p class="p-3 bg-white border border-gray-300 rounded-lg">រំលស់ថេរ</p>
+                        <label for="loanType" class="font-medium text-gray-700 mb-1">ប្រភេទរំលស់</label>
+                        <select id="loanType" class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="calculateAmortization()">
+                            <option value="fixed">រំលស់ថេរ</option>
+                            <option value="reducing">រំលស់ថយ</option>
+                        </select>
                     </div>
                     <div class="flex flex-col">
                         <label for="collateral" class="font-medium text-gray-700 mb-1">ទ្រព្យដែលបញ្ចាំ</label>
@@ -79,6 +88,25 @@
                         <label for="loanTerm" class="font-medium text-gray-700 mb-1">រយៈពេលខ្ចី (ខែ)</label>
                         <input type="number" id="loanTerm" class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="36" oninput="calculateAmortization()">
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Printable Loan Details (Hidden by default, shown when printing) -->
+        <div id="printableDetailsSection" class="print-only mb-6 border-b-2 border-dashed border-gray-300 pb-4">
+            <h2 class="text-2xl font-bold text-blue-700 mb-4">ព័ត៌មានកម្ចី</h2>
+            <div class="grid grid-cols-2 gap-4 text-sm sm:text-base">
+                <div>
+                    <p><strong>ឈ្មោះអតិថិជន:</strong> <span id="print-customerName"></span></p>
+                    <p><strong>ប្រភេទរំលស់:</strong> <span id="print-loanType"></span></p>
+                    <p><strong>ទ្រព្យដែលបញ្ចាំ:</strong> <span id="print-collateral"></span></p>
+                    <p><strong>ប្រើប្រាស់កម្ចីសម្រាប់:</strong> <span id="print-loanPurpose"></span></p>
+                </div>
+                <div>
+                    <p><strong>កាលបរិច្ឆេទខ្ចីប្រាក់:</strong> <span id="print-loanDate"></span></p>
+                    <p><strong>អត្រាការប្រាក់ (ប្រចាំឆ្នាំ):</strong> <span id="print-interestRate"></span>%</p>
+                    <p><strong>ប្រាក់ដើមដែលបានខ្ចី:</strong> <span id="print-loanAmount"></span>$</p>
+                    <p><strong>រយៈពេលខ្ចី:</strong> <span id="print-loanTerm"></span>ខែ</p>
                 </div>
             </div>
         </div>
@@ -120,6 +148,18 @@
         const displayTerm = document.getElementById('display-term');
         const monthlyPaymentDisplay = document.getElementById('monthlyPaymentDisplay');
         const amortizationTableBody = document.getElementById('amortizationTableBody');
+        const loanTypeSelect = document.getElementById('loanType');
+        
+        // Printable detail elements
+        const printCustomerName = document.getElementById('print-customerName');
+        const printLoanType = document.getElementById('print-loanType');
+        const printCollateral = document.getElementById('print-collateral');
+        const printLoanPurpose = document.getElementById('print-loanPurpose');
+        const printLoanDate = document.getElementById('print-loanDate');
+        const printInterestRate = document.getElementById('print-interestRate');
+        const printLoanAmount = document.getElementById('print-loanAmount');
+        const printLoanTerm = document.getElementById('print-loanTerm');
+
 
         function formatCurrency(amount) {
             return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
@@ -130,11 +170,22 @@
             const principal = parseFloat(document.getElementById('loanAmount').value);
             const annualInterestRate = parseFloat(document.getElementById('interestRate').value);
             const loanTermMonths = parseInt(document.getElementById('loanTerm').value);
+            const loanType = loanTypeSelect.value;
 
             // Update display details
             displayPrincipal.textContent = principal > 0 ? formatCurrency(principal).replace('$', '') : '...';
             displayRate.textContent = annualInterestRate > 0 ? annualInterestRate.toFixed(2) : '...';
             displayTerm.textContent = loanTermMonths > 0 ? loanTermMonths : '...';
+
+            // Update printable details
+            printCustomerName.textContent = document.getElementById('customerName').value;
+            printLoanType.textContent = loanTypeSelect.options[loanTypeSelect.selectedIndex].text;
+            printCollateral.textContent = document.getElementById('collateral').value;
+            printLoanPurpose.textContent = document.getElementById('loanPurpose').value;
+            printLoanDate.textContent = document.getElementById('loanDate').value;
+            printInterestRate.textContent = annualInterestRate > 0 ? annualInterestRate.toFixed(2) : '';
+            printLoanAmount.textContent = principal > 0 ? formatCurrency(principal).replace('$', '') : '';
+            printLoanTerm.textContent = loanTermMonths > 0 ? loanTermMonths : '';
 
             // Clear previous results
             amortizationTableBody.innerHTML = '';
@@ -148,44 +199,71 @@
             // Convert annual rate to monthly rate
             const monthlyInterestRate = (annualInterestRate / 100) / 12;
 
-            // Calculate the fixed monthly payment using the amortization formula
-            const fixedMonthlyPayment = principal * (monthlyInterestRate * Math.pow(1 + monthlyInterestRate, loanTermMonths)) / (Math.pow(1 + monthlyInterestRate, loanTermMonths) - 1);
-
-            // Display the calculated monthly payment
-            monthlyPaymentDisplay.textContent = `ប្រាក់ត្រូវបង់ប្រចាំខែ: ${formatCurrency(fixedMonthlyPayment)}`;
-            monthlyPaymentDisplay.style.display = 'block';
-
             let remainingBalance = principal;
             const startDate = new Date(); // Using current date for example
 
-            // Generate the amortization schedule table rows
-            for (let i = 1; i <= loanTermMonths; i++) {
-                const interestPayment = remainingBalance * monthlyInterestRate;
-                const principalPayment = fixedMonthlyPayment - interestPayment;
-                remainingBalance -= principalPayment;
+            // Fixed Amortization
+            if (loanType === 'fixed') {
+                const fixedMonthlyPayment = principal * (monthlyInterestRate * Math.pow(1 + monthlyInterestRate, loanTermMonths)) / (Math.pow(1 + monthlyInterestRate, loanTermMonths) - 1);
+                
+                monthlyPaymentDisplay.textContent = `ប្រាក់ត្រូវបង់ប្រចាំខែ: ${formatCurrency(fixedMonthlyPayment)}`;
+                monthlyPaymentDisplay.style.display = 'block';
 
-                // Handle final month rounding
-                if (i === loanTermMonths) {
-                    remainingBalance = 0;
+                for (let i = 1; i <= loanTermMonths; i++) {
+                    const interestPayment = remainingBalance * monthlyInterestRate;
+                    const principalPayment = fixedMonthlyPayment - interestPayment;
+                    remainingBalance -= principalPayment;
+                    
+                    if (i === loanTermMonths) {
+                        remainingBalance = 0;
+                    }
+
+                    const paymentDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, startDate.getDate());
+                    const formattedDate = paymentDate.toLocaleDateString('km-KH', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+                    const row = document.createElement('tr');
+                    row.className = 'bg-white border-b hover:bg-gray-50';
+                    row.innerHTML = `
+                        <td class="py-3 px-2 sm:px-4 text-center font-medium text-gray-900 whitespace-nowrap">${i}</td>
+                        <td class="py-3 px-2 sm:px-4 text-center">${formattedDate}</td>
+                        <td class="py-3 px-2 sm:px-4 text-center">${formattedDate}</td>
+                        <td class="py-3 px-2 sm:px-4 text-center">${formatCurrency(fixedMonthlyPayment)}</td>
+                        <td class="py-3 px-2 sm:px-4 text-center">${formatCurrency(principalPayment)}</td>
+                        <td class="py-3 px-2 sm:px-4 text-center">${formatCurrency(interestPayment)}</td>
+                        <td class="py-3 px-2 sm:px-4 text-center">${formatCurrency(remainingBalance < 0.01 ? 0 : remainingBalance)}</td>
+                    `;
+                    amortizationTableBody.appendChild(row);
                 }
+            } 
+            // Reducing Amortization
+            else if (loanType === 'reducing') {
+                const fixedPrincipalPayment = principal / loanTermMonths;
 
-                // Calculate next payment date
-                const paymentDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, startDate.getDate());
-                const formattedDate = paymentDate.toLocaleDateString('km-KH', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                for (let i = 1; i <= loanTermMonths; i++) {
+                    const interestPayment = remainingBalance * monthlyInterestRate;
+                    const totalMonthlyPayment = fixedPrincipalPayment + interestPayment;
+                    remainingBalance -= fixedPrincipalPayment;
 
-                // Create the table row
-                const row = document.createElement('tr');
-                row.className = 'bg-white border-b hover:bg-gray-50';
-                row.innerHTML = `
-                    <td class="py-3 px-2 sm:px-4 text-center font-medium text-gray-900 whitespace-nowrap">${i}</td>
-                    <td class="py-3 px-2 sm:px-4 text-center">${formattedDate}</td>
-                    <td class="py-3 px-2 sm:px-4 text-center">${formattedDate}</td>
-                    <td class="py-3 px-2 sm:px-4 text-center">${formatCurrency(fixedMonthlyPayment)}</td>
-                    <td class="py-3 px-2 sm:px-4 text-center">${formatCurrency(principalPayment)}</td>
-                    <td class="py-3 px-2 sm:px-4 text-center">${formatCurrency(interestPayment)}</td>
-                    <td class="py-3 px-2 sm:px-4 text-center">${formatCurrency(remainingBalance < 0.01 ? 0 : remainingBalance)}</td>
-                `;
-                amortizationTableBody.appendChild(row);
+                    if (i === loanTermMonths) {
+                        remainingBalance = 0;
+                    }
+
+                    const paymentDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, startDate.getDate());
+                    const formattedDate = paymentDate.toLocaleDateString('km-KH', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+                    const row = document.createElement('tr');
+                    row.className = 'bg-white border-b hover:bg-gray-50';
+                    row.innerHTML = `
+                        <td class="py-3 px-2 sm:px-4 text-center font-medium text-gray-900 whitespace-nowrap">${i}</td>
+                        <td class="py-3 px-2 sm:px-4 text-center">${formattedDate}</td>
+                        <td class="py-3 px-2 sm:px-4 text-center">${formattedDate}</td>
+                        <td class="py-3 px-2 sm:px-4 text-center">${formatCurrency(totalMonthlyPayment)}</td>
+                        <td class="py-3 px-2 sm:px-4 text-center">${formatCurrency(fixedPrincipalPayment)}</td>
+                        <td class="py-3 px-2 sm:px-4 text-center">${formatCurrency(interestPayment)}</td>
+                        <td class="py-3 px-2 sm:px-4 text-center">${formatCurrency(remainingBalance < 0.01 ? 0 : remainingBalance)}</td>
+                    `;
+                    amortizationTableBody.appendChild(row);
+                }
             }
         }
     </script>
