@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ឧបករណ៍រចនារូបភាព</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for Khmer -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bayon&family=Battambang&family=Kantumruy+Pro&family=Khmer&family=Khmer+OS&family=Moul&family=Odor+Mean+Chey&family=Siemreap&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Kantumruy Pro', sans-serif;
+            background-color: #1f2937;
+            color: #d1d5db;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        @media (min-width: 768px) {
+            .container {
+                flex-direction: row;
+            }
+        }
+        .sidebar {
+            width: 100%;
+            padding: 1rem;
+            background-color: #111827;
+            border-bottom: 1px solid #374151;
+            overflow-y: auto;
+        }
+        @media (min-width: 768px) {
+            .sidebar {
+                width: 350px;
+                min-width: 350px;
+                border-right: 1px solid #374151;
+                border-bottom: none;
+            }
+        }
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+            background-color: #1f2937;
+        }
+        .canvas-container {
+            width: 100%;
+            max-width: 100%;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border: 3px solid #4b5563;
+            border-radius: 1rem;
+            overflow: hidden;
+            position: relative;
+            margin-top: 1rem;
+        }
+        #canvas {
+            display: block;
+        }
+        .control-section {
+            background-color: #374151;
+            padding: 1rem;
+            border-radius: 1rem;
+            margin-bottom: 1rem;
+        }
+        .control-label {
+            display: block;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+            color: #e5e7eb;
+        }
+        input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            height: 8px;
+            border-radius: 9999px;
+            background: #4b5563;
+            outline: none;
+            transition: background 0.2s;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            border: 3px solid #e5e7eb;
+        }
+        .btn {
+            @apply px-5 py-2.5 rounded-xl font-semibold transition-transform transform hover:scale-105 shadow-md;
+        }
+        .btn-primary {
+            @apply bg-blue-600 text-white hover:bg-blue-700;
+        }
+        .btn-secondary {
+            @apply bg-gray-600 text-white hover:bg-gray-700;
+        }
+        .file-upload {
+            @apply block w-full text-sm text-gray-300 bg-gray-700 rounded-lg cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100;
+        }
+        .select-group select, .select-group input, .select-group textarea {
+            @apply w-full px-4 py-2 rounded-lg bg-gray-700 text-white border-none focus:outline-none focus:ring-2 focus:ring-blue-500;
+        }
+        .slider-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .tab-button {
+            @apply flex-1 py-3 text-sm font-medium border-b-2 border-transparent transition-colors duration-300;
+        }
+        .tab-button.active {
+            @apply border-blue-500 text-blue-300;
+        }
+        .tab-content {
+            @apply mt-6;
+        }
+        .btn-delete {
+            @apply bg-red-600 text-white hover:bg-red-700;
+        }
+        
+        /* New Mobile-friendly styles */
+        details.control-group summary {
+            @apply cursor-pointer py-3 text-lg font-bold text-blue-300 list-none;
+        }
+        details.control-group summary::-webkit-details-marker {
+            display: none;
+        }
+        details.control-group summary::after {
+            content: '+';
+            font-size: 1.5rem;
+            float: right;
+            transition: transform 0.2s;
+        }
+        details.control-group[open] summary::after {
+            content: '-';
+            transform: rotate(180deg);
+        }
+        .control-group > div {
+            padding-top: 1rem;
+        }
+        
+        /* Fixed mobile layout */
+        .fixed-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #111827;
+            padding: 1rem;
+            box-shadow: 0 -5px 10px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Sidebar for Controls (Top on mobile) -->
+    <div class="sidebar">
+        <h1 class="text-3xl font-bold text-center text-blue-400 mb-2">ឧបករណ៍រចនារូបភាព</h1>
+        <p class="text-center text-sm text-gray-400 mb-6">បង្កើតនិងកែសម្រួលរូបភាពរបស់អ្នកប្រកបដោយភាពងាយស្រួល</p>
+
+        <!-- Tab Navigation -->
+        <div class="flex justify-around mb-6 border-b border-gray-700">
+            <button class="tab-button active" id="tab-canvas-image">ផ្ទាំង &amp; រូបភាព</button>
+            <button class="tab-button" id="tab-text">អក្សរ</button>
+            <button class="tab-button" id="tab-pen">គំនូរ</button>
+            <button class="tab-button" id="tab-bg-logo">ផ្ទៃខាងក្រោយ &amp; Logo</button>
+        </div>
+
+        <!-- Tab Content Sections -->
+        
+        <!-- Canvas & Image Tab -->
+        <div class="tab-content" id="content-canvas-image">
+            <details class="control-group" open>
+                <summary>ទំហំផ្ទាំង</summary>
+                <div>
+                    <div class="select-group">
+                        <select id="canvas-size" class="w-full">
+                            <option value="custom">ផ្ទាល់ខ្លួន</option>
+                            <optgroup label="Square">
+                                <option value="1080x1080" selected>1080x1080 (IG/FB Post)</option>
+                                <option value="1200x1200">1200x1200 (Square)</option>
+                            </optgroup>
+                            <optgroup label="Portrait">
+                                <option value="1080x1350">1080x1350 (IG Portrait)</option>
+                                <option value="1080x1920">1080x1920 (Story/Reel)</option>
+                            </optgroup>
+                            <optgroup label="Landscape">
+                                <option value="1920x1080">1920x1080 (HD 1080p)</option>
+                                <option value="1280x720">1280x720 (HD 720p)</option>
+                            </optgroup>
+                            <optgroup label="Resolutions">
+                                <option value="7680x4320">7680x4320 (8K)</option>
+                                <option value="3840x2160">3840x2160 (4K)</option>
+                                <option value="2560x1440">2560x1440 (2K)</option>
+                                <option value="1920x1080">1920x1080 (HD 1080p)</option>
+                                <option value="1280x720">1280x720 (HD 720p)</option>
+                                <option value="854x480">854x480 (SD 480p)</option>
+                                <option value="640x360">640x360 (SD 360p)</option>
+                                <option value="426x240">426x240 (SD 240p)</option>
+                            </optgroup>
+                        </select>
+                        <div id="custom-size-inputs" class="flex gap-4 mt-4 hidden">
+                            <input type="number" id="custom-width" placeholder="ទទឹង" class="w-1/2">
+                            <input type="number" id="custom-height" placeholder="បណ្ដោយ" class="w-1/2">
+                        </div>
+                    </div>
+                </div>
+            </details>
+
+            <details class="control-group">
+                <summary>រូបភាព</summary>
+                <div>
+                    <label class="control-label">ផ្ទុករូបភាព</label>
+                    <input type="file" id="main-image-upload" accept="image/*" multiple class="file-upload">
+                    <div id="slideshow-controls" class="flex justify-between mt-4 hidden">
+                        <button id="prev-image" class="btn btn-secondary text-sm">មុន</button>
+                        <span id="image-count" class="text-sm self-center text-gray-400">រូបភាព ១/១</span>
+                        <button id="next-image" class="btn btn-secondary text-sm">បន្ទាប់</button>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="control-label">បែបផែន</label>
+                    <div class="flex flex-col gap-4">
+                        <div class="slider-group">
+                            <span class="text-sm w-16">ព្រាល:</span>
+                            <input type="range" id="blur-slider" min="0" max="10" value="0">
+                        </div>
+                        <div class="slider-group">
+                            <span class="text-sm w-16">បង្វិល:</span>
+                            <input type="range" id="rotate-slider" min="0" max="360" value="0">
+                        </div>
+                        <div class="slider-group">
+                            <span class="text-sm w-16">ភាពថ្លា:</span>
+                            <input type="range" id="opacity-slider" min="0" max="100" value="100">
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <span class="text-sm w-16">ពណ៌:</span>
+                            <input type="color" id="tint-color" value="#000000" class="w-10 h-10 rounded-lg">
+                            <input type="range" id="tint-opacity" min="0" max="100" value="0">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="control-label">ទីតាំង</label>
+                    <select id="main-image-fit" class="w-full select-group">
+                        <option value="fill">Fill</option>
+                        <option value="fit" selected>Fit</option>
+                        <option value="stretch">Stretch</option>
+                        <option value="tile">Tile</option>
+                        <option value="center">Center</option>
+                        <option value="span">Span</option>
+                    </select>
+                </div>
+            </details>
+            
+            <details class="control-group">
+                <summary>ការកែសម្រួល</summary>
+                <div>
+                    <div class="flex flex-col gap-4">
+                        <div class="slider-group">
+                            <span class="text-sm w-24">ពន្លឺ:</span>
+                            <input type="range" id="brightness-slider" min="0" max="200" value="100">
+                        </div>
+                        <div class="slider-group">
+                            <span class="text-sm w-24">កម្រិតពណ៌:</span>
+                            <input type="range" id="contrast-slider" min="0" max="200" value="100">
+                        </div>
+                        <div class="slider-group">
+                            <span class="text-sm w-24">តិត្ថិភាព:</span>
+                            <input type="range" id="saturation-slider" min="0" max="200" value="100">
+                        </div>
+                        <div class="slider-group">
+                            <span class="text-sm w-24">ពណ៌:</span>
+                            <input type="range" id="hue-slider" min="0" max="360" value="0">
+                        </div>
+                        <div class="slider-group">
+                            <span class="text-sm w-24">សីតុណ្ហភាព:</span>
+                            <input type="range" id="temp-slider" min="-100" max="100" value="0">
+                        </div>
+                        <div class="slider-group">
+                            <span class="text-sm w-24">ពន្លឺរំលេច:</span>
+                            <input type="range" id="highlights-slider" min="-100" max="100" value="0">
+                        </div>
+                        <div class="slider-group">
+                            <span class="text-sm w-24">ស្រមោល:</span>
+                            <input type="range" id="shadows-slider" min="-100" max="100" value="0">
+                        </div>
+                        <div class="slider-group">
+                            <span class="text-sm w-24">ធ្វើឱ្យច្បាស់:</span>
+                            <input type="range" id="sharpen-slider" min="0" max="100" value="0">
+                        </div>
+                        <div class="slider-group">
+                            <span class="text-sm w-24">បន្ថយ:</span>
+                            <input type="range" id="fade-slider" min="0" max="100" value="0">
+                        </div>
+                        <div class="slider-group">
+                            <span class="text-sm w-24">Vignette:</span>
+                            <input type="range" id="vignette-slider" min="0" max="100" value="0">
+                        </div>
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <!-- Text Overlay Tab -->
+        <div class="tab-content hidden" id="content-text">
+            <details class="control-group" open>
+                <summary>អក្សរ</summary>
+                <div>
+                    <div class="flex gap-4 mb-4">
+                        <button id="add-text-btn" class="btn btn-primary w-full">បន្ថែមអក្សរថ្មី</button>
+                    </div>
+
+                    <div class="control-group">
+                        <label class="control-label">បញ្ចូលអក្សរ</label>
+                        <textarea id="text-input" rows="3" placeholder="វាយអក្សរនៅទីនេះ..." class="select-group resize-none mb-4" disabled>វាយអក្សរនៅទីនេះ</textarea>
+                    </div>
+                    
+                    <div class="flex flex-col gap-4">
+                        <div class="select-group">
+                            <label class="control-label">ពុម្ពអក្សរ</label>
+                            <select id="font-family" class="w-full" disabled>
+                                <option value="'Kantumruy Pro', sans-serif">Kantumruy Pro</option>
+                                <option value="'Khmer', serif">Khmer</option>
+                                <option value="'Khmer OS', sans-serif">Khmer OS</option>
+                                <option value="'Battambang', sans-serif">Battambang</option>
+                                <option value="'Bayon', serif">Bayon</option>
+                                <option value="'Moul', serif">Moul</option>
+                                <option value="'Odor Mean Chey', serif">Odor Mean Chey</option>
+                                <option value="'Siemreap', sans-serif">Siemreap</option>
+                            </select>
+                        </div>
+                        
+                        <div class="slider-group">
+                            <span class="text-sm w-16">ទំហំ:</span>
+                            <input type="range" id="font-size" min="10" max="200" value="48" disabled>
+                        </div>
+
+                        <div class="slider-group">
+                            <span class="text-sm w-16">បង្វិល:</span>
+                            <input type="range" id="text-rotate-slider" min="0" max="360" value="0" disabled>
+                        </div>
+                        
+                        <div class="flex items-center gap-4">
+                            <span class="text-sm w-16">ពណ៌:</span>
+                            <input type="color" id="font-color" value="#000000" class="w-10 h-10 rounded-lg" disabled>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="control-label">បែបផែនអក្សរ</label>
+                        <div class="flex flex-col gap-4">
+                            <div class="slider-group">
+                                <span class="text-sm w-16">ស្រមោល:</span>
+                                <input type="range" id="shadow-blur" min="0" max="20" value="0" disabled>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <span class="text-sm w-16">ពណ៌ស្រមោល:</span>
+                                <input type="color" id="shadow-color" value="#000000" class="w-10 h-10 rounded-lg" disabled>
+                            </div>
+                            <div class="slider-group">
+                                <span class="text-sm w-16">គ្រោង:</span>
+                                <input type="range" id="outline-width" min="0" max="10" value="0" disabled>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <span class="text-sm w-16">ពណ៌គ្រោង:</span>
+                                <input type="color" id="outline-color" value="#ffffff" class="w-10 h-10 rounded-lg" disabled>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="control-label">ទីតាំងអក្សរ</label>
+                        <div class="flex flex-col gap-4">
+                            <div class="slider-group">
+                                <span class="text-sm w-16">បញ្ឈរ:</span>
+                                <input type="range" id="text-y-pos" min="0" max="100" value="90" disabled>
+                            </div>
+                            <div class="slider-group">
+                                <span class="text-sm w-16">ផ្តេក:</span>
+                                <input type="range" id="text-x-pos" min="0" max="100" value="50" disabled>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="text-actions" class="mt-4 hidden">
+                        <button id="delete-text-btn" class="btn btn-delete w-full">លុបអក្សរដែលបានជ្រើសរើស</button>
+                    </div>
+                </div>
+            </details>
+        </div>
+        
+        <!-- NEW: Pen Drawing Tab -->
+        <div class="tab-content hidden" id="content-pen">
+            <details class="control-group" open>
+                <summary>គំនូរ</summary>
+                <div>
+                    <div class="flex flex-col gap-4">
+                        <div class="slider-group">
+                            <span class="text-sm w-16">ទំហំប៊ិច:</span>
+                            <input type="range" id="pen-size" min="1" max="50" value="5">
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <span class="text-sm w-16">ពណ៌ប៊ិច:</span>
+                            <input type="color" id="pen-color" value="#000000" class="w-10 h-10 rounded-lg">
+                        </div>
+                        <div class="flex gap-4">
+                            <button id="toggle-pen-btn" class="btn btn-primary flex-1">ចាប់ផ្តើមគូរ</button>
+                            <button id="toggle-eraser-btn" class="btn btn-secondary flex-1">ចាប់ផ្តើមលុប</button>
+                        </div>
+                        <button id="clear-drawings-btn" class="btn btn-delete mt-2">លុបទាំងអស់</button>
+                    </div>
+                </div>
+            </details>
+        </div>
+
+
+        <!-- Background & Logo Tab -->
+        <div class="tab-content hidden" id="content-bg-logo">
+            <details class="control-group" open>
+                <summary>ផ្ទៃខាងក្រោយ &amp; Logo</summary>
+                <div>
+                    <label class="control-label">ពណ៌ផ្ទៃខាងក្រោយ</label>
+                    <div class="flex items-center gap-4">
+                        <input type="color" id="bg-color" value="#ffffff" class="w-12 h-12 rounded-lg">
+                        <span class="text-sm text-gray-400">ជ្រើសរើសពណ៌</span>
+                    </div>
+                </div>
+                <div>
+                    <label class="control-label">រូបភាពផ្ទៃខាងក្រោយ</label>
+                    <input type="file" id="bg-image-upload" accept="image/*" class="file-upload">
+                </div>
+                <div>
+                    <label class="control-label">ជម្រើសរូបភាពផ្ទៃខាងក្រោយ</label>
+                    <select id="bg-image-fit" class="w-full select-group">
+                        <option value="fill">Fill</option>
+                        <option value="fit" selected>Fit</option>
+                        <option value="stretch">Stretch</option>
+                        <option value="tile">Tile</option>
+                        <option value="center">Center</option>
+                        <option value="span">Span</option>
+                    </select>
+                </div>
+            </details>
+            <details class="control-group">
+                <summary>ការកំណត់ Logo</summary>
+                <div>
+                    <div class="control-group">
+                        <label class="control-label">ផ្ទុក Logo</label>
+                        <input type="file" id="logo-upload" accept="image/*" class="file-upload">
+                    </div>
+                    <div class="flex flex-col gap-4">
+                        <div class="slider-group">
+                            <span class="text-sm w-24">ពង្រីក/បង្រួម:</span>
+                            <input type="range" id="logo-width" min="10" max="500" value="50">
+                        </div>
+                        <div class="slider-group">
+                            <span class="text-sm w-24">ទីតាំង បញ្ឈរ:</span>
+                            <input type="range" id="logo-y-pos" min="0" max="100" value="10">
+                        </div>
+                        <div class="slider-group">
+                            <span class="text-sm w-24">ទីតាំង ផ្តេក:</span>
+                            <input type="range" id="logo-x-pos" min="0" max="100" value="10">
+                        </div>
+                    </div>
+                </div>
+            </details>
+        </div>
+    </div>
+
+    <!-- Main Canvas Area -->
+    <div class="main-content">
+        <div id="canvas-wrapper" class="canvas-container">
+            <canvas id="canvas"></canvas>
+        </div>
+    </div>
+
+    <!-- Fixed footer for Download buttons on mobile -->
+    <div class="fixed-footer md:hidden">
+        <h2 class="text-sm font-bold mb-2 text-blue-300">ទាញយក</h2>
+        <div class="flex gap-4">
+            <button id="download-jpg-btn" class="btn btn-primary w-1/2">ទាញយក JPG</button>
+            <button id="download-png-btn" class="btn btn-primary w-1/2">ទាញយក PNG</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Tab elements
+    const tabButtons = {
+        'canvas-image': document.getElementById('tab-canvas-image'),
+        'text': document.getElementById('tab-text'),
+        'pen': document.getElementById('tab-pen'),
+        'bg-logo': document.getElementById('tab-bg-logo')
+    };
+    const tabContents = {
+        'canvas-image': document.getElementById('content-canvas-image'),
+        'text': document.getElementById('content-text'),
+        'pen': document.getElementById('content-pen'),
+        'bg-logo': document.getElementById('content-bg-logo')
+    };
+
+    // UI elements
+    const canvasSizeSelect = document.getElementById('canvas-size');
+    const customWidthInput = document.getElementById('custom-width');
+    const customHeightInput = document.getElementById('custom-height');
+    const customSizeInputs = document.getElementById('custom-size-inputs');
+    const mainImageUpload = document.getElementById('main-image-upload');
+    const prevImageBtn = document.getElementById('prev-image');
+    const nextImageBtn = document.getElementById('next-image');
+    const imageCountSpan = document.getElementById('image-count');
+    const slideshowControls = document.getElementById('slideshow-controls');
+    const blurSlider = document.getElementById('blur-slider');
+    const rotateSlider = document.getElementById('rotate-slider');
+    const opacitySlider = document.getElementById('opacity-slider');
+    const tintColorInput = document.getElementById('tint-color');
+    const tintOpacitySlider = document.getElementById('tint-opacity');
+    const mainImageFitSelect = document.getElementById('main-image-fit');
+    const bgColorInput = document.getElementById('bg-color');
+    const bgImageUpload = document.getElementById('bg-image-upload');
+    const bgImageFitSelect = document = document.getElementById('bg-image-fit');
+    const textInput = document.getElementById('text-input');
+    const fontFamilySelect = document.getElementById('font-family');
+    const fontSizeSlider = document.getElementById('font-size');
+    const fontColorInput = document.getElementById('font-color');
+    const shadowBlurSlider = document.getElementById('shadow-blur');
+    const shadowColorInput = document.getElementById('shadow-color');
+    const outlineWidthSlider = document.getElementById('outline-width');
+    const outlineColorInput = document.getElementById('outline-color');
+    const textYPosSlider = document.getElementById('text-y-pos');
+    const textXPosSlider = document.getElementById('text-x-pos');
+    const textRotateSlider = document.getElementById('text-rotate-slider');
+    const addTextBtn = document.getElementById('add-text-btn');
+    const deleteTextBtn = document.getElementById('delete-text-btn');
+    const textActionsDiv = document.getElementById('text-actions');
+    const logoUpload = document.getElementById('logo-upload');
+    const logoWidthSlider = document.getElementById('logo-width');
+    const logoXPosSlider = document.getElementById('logo-x-pos');
+    const logoYPosSlider = document.getElementById('logo-y-pos');
+    const downloadJpgBtn = document.getElementById('download-jpg-btn');
+    const downloadPngBtn = document = document.getElementById('download-png-btn');
+    const canvasWrapper = document.getElementById('canvas-wrapper');
+    const penSizeSlider = document.getElementById('pen-size');
+    const penColorInput = document.getElementById('pen-color');
+    const togglePenBtn = document.getElementById('toggle-pen-btn');
+    const toggleEraserBtn = document.getElementById('toggle-eraser-btn');
+    const clearDrawingsBtn = document.getElementById('clear-drawings-btn');
+    const brightnessSlider = document.getElementById('brightness-slider');
+    const contrastSlider = document.getElementById('contrast-slider');
+    const saturationSlider = document.getElementById('saturation-slider');
+    const hueSlider = document.getElementById('hue-slider');
+    const tempSlider = document.getElementById('temp-slider');
+    const highlightsSlider = document.getElementById('highlights-slider');
+    const shadowsSlider = document.getElementById('shadows-slider');
+    const sharpenSlider = document.getElementById('sharpen-slider');
+    const fadeSlider = document.getElementById('fade-slider');
+    const vignetteSlider = document.getElementById('vignette-slider');
+
+    // State object to hold all canvas settings
+    const state = {
+        canvas: {
+            width: 1080,
+            height: 1080,
+            aspectRatio: 1
+        },
+        bg: {
+            color: '#ffffff',
+            image: null,
+            fit: 'fill'
+        },
+        mainImage: {
+            images: [],
+            currentImageIndex: 0,
+            fit: 'fit',
+            blur: 0,
+            rotate: 0,
+            opacity: 100,
+            tint: {
+                color: '#000000',
+                opacity: 0
+            },
+            adjustments: {
+                brightness: 100,
+                contrast: 100,
+                saturation: 100,
+                hue: 0,
+                temp: 0,
+                highlights: 0,
+                shadows: 0,
+                sharpen: 0,
+                fade: 0,
+                vignette: 0
+            }
+        },
+        texts: [],
+        selectedTextId: null,
+        logo: {
+            image: null,
+            x: 10,
+            y: 10,
+            width: 50
+        },
+        paths: [],
+        pen: {
+            size: 5,
+            color: '#000000'
+        },
+        isDrawingMode: false,
+        isErasingMode: false
+    };
+    
+    // Drag state
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let dragStartTextX = 0;
+    let dragStartTextY = 0;
+    let dragStartTextRotate = 0;
+
+    // Function to handle tab switching
+    function showTab(tabId) {
+        for (const key in tabButtons) {
+            tabButtons[key].classList.remove('active');
+            tabContents[key].classList.add('hidden');
+        }
+        tabButtons[tabId].classList.add('active');
+        tabContents[tabId].classList.remove('hidden');
+
+        if (state.isDrawingMode || state.isErasingMode) {
+            state.isDrawingMode = false;
+            state.isErasingMode = false;
+            togglePenBtn.textContent = 'ចាប់ផ្តើមគូរ';
+            toggleEraserBtn.textContent = 'ចាប់ផ្តើមលុប';
+            canvas.style.cursor = 'default';
+        }
+    }
+
+    // Function to draw everything on the canvas
+    function drawCanvas(drawCanvas, drawCtx, stateToUse) {
+        drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+        drawCtx.fillStyle = stateToUse.bg.color;
+        drawCtx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
+
+        if (stateToUse.bg.image) {
+            drawImage(stateToUse.bg.image, 0, 0, drawCanvas.width, drawCanvas.height, stateToUse.bg.fit, drawCtx);
+        }
+
+        if (stateToUse.mainImage.images.length > 0) {
+            const currentImage = stateToUse.mainImage.images[stateToUse.mainImage.currentImageIndex];
+            
+            drawCtx.save();
+            
+            const blur = stateToUse.mainImage.blur;
+            const rotate = stateToUse.mainImage.rotate * Math.PI / 180;
+            const opacity = stateToUse.mainImage.opacity / 100;
+            const brightness = stateToUse.mainImage.adjustments.brightness;
+            const contrast = stateToUse.mainImage.adjustments.contrast;
+            const saturation = stateToUse.mainImage.adjustments.saturation;
+            const hue = stateToUse.mainImage.adjustments.hue;
+            
+            drawCtx.filter = `blur(${blur}px) brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%) hue-rotate(${hue}deg)`;
+            drawCtx.globalAlpha = opacity;
+            
+            const centerX = drawCanvas.width / 2;
+            const centerY = drawCanvas.height / 2;
+            
+            drawCtx.translate(centerX, centerY);
+            drawCtx.rotate(rotate);
+            
+            drawImage(currentImage, -centerX, -centerY, drawCanvas.width, drawCanvas.height, stateToUse.mainImage.fit, drawCtx);
+            
+            const tintOpacity = stateToUse.mainImage.tint.opacity / 100;
+            if (tintOpacity > 0) {
+                drawCtx.fillStyle = stateToUse.mainImage.tint.color;
+                drawCtx.globalAlpha = tintOpacity;
+                drawCtx.fillRect(-centerX, -centerY, drawCanvas.width, drawCanvas.height);
+            }
+            
+            drawCtx.restore();
+        }
+
+        const scaleX = drawCanvas.width / state.canvas.width;
+        const scaleY = drawCanvas.height / state.canvas.height;
+        stateToUse.paths.forEach(path => {
+            drawCtx.beginPath();
+            drawCtx.strokeStyle = path.color;
+            drawCtx.lineWidth = path.size * scaleX;
+            drawCtx.lineCap = 'round';
+            drawCtx.lineJoin = 'round';
+            drawCtx.moveTo(path.points[0].x * scaleX, path.points[0].y * scaleY);
+            for (let i = 1; i < path.points.length; i++) {
+                drawCtx.lineTo(path.points[i].x * scaleX, path.points[i].y * scaleY);
+            }
+            drawCtx.stroke();
+        });
+
+        stateToUse.texts.forEach(text => {
+            const scaledFontSize = text.size * (drawCanvas.height / state.canvas.height);
+            drawCtx.font = `${scaledFontSize}px ${text.family}`;
+            drawCtx.fillStyle = text.color;
+            drawCtx.textAlign = 'center';
+            
+            const textX = drawCanvas.width * (text.x / 100);
+            const textY = drawCanvas.height * (text.y / 100);
+            
+            drawCtx.save();
+
+            drawCtx.translate(textX, textY);
+            drawCtx.rotate(text.rotate * Math.PI / 180);
+            
+            if (text.shadow.blur > 0) {
+                drawCtx.shadowColor = text.shadow.color;
+                drawCtx.shadowBlur = text.shadow.blur;
+                drawCtx.shadowOffsetX = 2;
+                drawCtx.shadowOffsetY = 2;
+            }
+
+            const lines = text.content.split('\n');
+            const lineHeight = scaledFontSize * 1.2;
+            const totalTextHeight = lines.length * lineHeight;
+            const startY = - (totalTextHeight / 2) + (lineHeight / 2);
+
+            lines.forEach((line, index) => {
+                const currentY = startY + index * lineHeight;
+                
+                if (text.outline.width > 0) {
+                    drawCtx.strokeStyle = text.outline.color;
+                    drawCtx.lineWidth = text.outline.width * 2;
+                    drawCtx.strokeText(line, 0, currentY);
+                }
+                
+                drawCtx.fillText(line, 0, currentY);
+            });
+
+            if (text.id === stateToUse.selectedTextId) {
+                const textMetrics = drawCtx.measureText(text.content);
+                const textWidth = textMetrics.width;
+                const textHeight = scaledFontSize * lines.length;
+                
+                drawCtx.strokeStyle = '#3b82f6';
+                drawCtx.lineWidth = 2;
+                drawCtx.shadowBlur = 0;
+                
+                const boxX = - textWidth / 2;
+                const boxY = - (scaledFontSize * (lines.length / 2));
+                drawCtx.strokeRect(boxX, boxY, textWidth, textHeight);
+            }
+            
+            drawCtx.restore();
+        });
+        
+        if (stateToUse.logo.image) {
+            const logo = stateToUse.logo.image;
+            const logoWidth = stateToUse.logo.width * (drawCanvas.width / state.canvas.width);
+            const logoHeight = (logo.height / logo.width) * logoWidth;
+            const logoX = drawCanvas.width * (stateToUse.logo.x / 100);
+            const logoY = drawCanvas.height * (stateToUse.logo.y / 100);
+
+            drawCtx.drawImage(logo, logoX, logoY, logoWidth, logoHeight);
+        }
+        
+        if (stateToUse.mainImage.adjustments.vignette > 0) {
+            drawCtx.save();
+            const gradient = drawCtx.createRadialGradient(
+                drawCanvas.width / 2, drawCanvas.height / 2, 0,
+                drawCanvas.width / 2, drawCanvas.height / 2, Math.max(drawCanvas.width, drawCanvas.height) * 0.7
+            );
+            const vignetteOpacity = stateToUse.mainImage.adjustments.vignette / 100;
+            gradient.addColorStop(0, `rgba(0,0,0,0)`);
+            gradient.addColorStop(0.5, `rgba(0,0,0,0)`);
+            gradient.addColorStop(1, `rgba(0,0,0,${vignetteOpacity})`);
+            drawCtx.fillStyle = gradient;
+            drawCtx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
+            drawCtx.restore();
+        }
+
+        if (stateToUse.mainImage.adjustments.fade > 0) {
+            drawCtx.save();
+            const fadeOpacity = stateToUse.mainImage.adjustments.fade / 100;
+            drawCtx.fillStyle = `rgba(255, 255, 255, ${fadeOpacity})`;
+            drawCtx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
+            drawCtx.restore();
+        }
+    }
+
+    function drawImage(img, x, y, width, height, fit, drawCtx) {
+        let sourceX = 0;
+        let sourceY = 0;
+        let sourceWidth = img.width;
+        let sourceHeight = img.height;
+        let destX = x;
+        let destY = y;
+        let destWidth = width;
+        let destHeight = height;
+
+        const imgRatio = img.width / img.height;
+        const canvasRatio = width / height;
+
+        switch (fit) {
+            case 'fit':
+                if (imgRatio > canvasRatio) {
+                    destHeight = destWidth / imgRatio;
+                    destY += (height - destHeight) / 2;
+                } else {
+                    destWidth = destHeight * imgRatio;
+                    destX += (width - destWidth) / 2;
+                }
+                drawCtx.drawImage(img, destX, destY, destWidth, destHeight);
+                break;
+            case 'fill':
+                if (imgRatio > canvasRatio) {
+                    sourceWidth = img.height * canvasRatio;
+                    sourceX = (img.width - sourceWidth) / 2;
+                } else {
+                    sourceHeight = img.width / canvasRatio;
+                    sourceY = (img.height - sourceHeight) / 2;
+                }
+                drawCtx.drawImage(img, sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
+                break;
+            case 'stretch':
+                drawCtx.drawImage(img, destX, destY, destWidth, destHeight);
+                break;
+            case 'tile':
+                const pattern = drawCtx.createPattern(img, 'repeat');
+                drawCtx.fillStyle = pattern;
+                drawCtx.fillRect(destX, destY, destWidth, destHeight);
+                break;
+            case 'center':
+                destWidth = img.width;
+                destHeight = img.height;
+                destX = x + (width - destWidth) / 2;
+                destY = y + (height - destHeight) / 2;
+                drawCtx.drawImage(img, destX, destY, destWidth, destHeight);
+                break;
+            case 'span':
+                if (imgRatio > canvasRatio) {
+                    destWidth = destHeight * imgRatio;
+                    destX += (width - destWidth) / 2;
+                } else {
+                    destHeight = destWidth / imgRatio;
+                    destY += (height - destHeight) / 2;
+                }
+                drawCtx.drawImage(img, destX, destY, destWidth, destHeight);
+                break;
+        }
+    }
+
+    function updateTextControls() {
+        const selectedText = state.texts.find(t => t.id === state.selectedTextId);
+        const controls = [textInput, fontFamilySelect, fontSizeSlider, fontColorInput, shadowBlurSlider, shadowColorInput, outlineWidthSlider, outlineColorInput, textYPosSlider, textXPosSlider, textRotateSlider];
+
+        if (selectedText) {
+            controls.forEach(control => control.disabled = false);
+            textActionsDiv.classList.remove('hidden');
+            textInput.value = selectedText.content;
+            fontFamilySelect.value = selectedText.family;
+            fontSizeSlider.value = selectedText.size;
+            textRotateSlider.value = selectedText.rotate;
+            fontColorInput.value = selectedText.color;
+            shadowBlurSlider.value = selectedText.shadow.blur;
+            shadowColorInput.value = selectedText.shadow.color;
+            outlineWidthSlider.value = selectedText.outline.width;
+            outlineColorInput.value = selectedText.outline.color;
+            textYPosSlider.value = selectedText.y;
+            textXPosSlider.value = selectedText.x;
+        } else {
+            controls.forEach(control => control.disabled = true);
+            textActionsDiv.classList.add('hidden');
+            textInput.value = '';
+        }
+    }
+    
+    // Event Listeners for tabs
+    tabButtons['canvas-image'].addEventListener('click', () => showTab('canvas-image'));
+    tabButtons['text'].addEventListener('click', () => showTab('text'));
+    tabButtons['pen'].addEventListener('click', () => showTab('pen'));
+    tabButtons['bg-logo'].addEventListener('click', () => showTab('bg-logo'));
+
+    // Other Event Listeners
+    canvasSizeSelect.addEventListener('change', (e) => {
+        if (e.target.value === 'custom') {
+            customSizeInputs.classList.remove('hidden');
+        } else {
+            customSizeInputs.classList.add('hidden');
+            const [width, height] = e.target.value.split('x').map(Number);
+            state.canvas.width = width;
+            state.canvas.height = height;
+            state.canvas.aspectRatio = width / height;
+            resizeCanvas();
+        }
+    });
+
+    customWidthInput.addEventListener('input', () => {
+        state.canvas.width = parseInt(customWidthInput.value) || state.canvas.width;
+        state.canvas.aspectRatio = state.canvas.width / state.canvas.height;
+        resizeCanvas();
+    });
+
+    customHeightInput.addEventListener('input', () => {
+        state.canvas.height = parseInt(customHeightInput.value) || state.canvas.height;
+        state.canvas.aspectRatio = state.canvas.width / state.canvas.height;
+        resizeCanvas();
+    });
+
+    mainImageUpload.addEventListener('change', (e) => {
+        state.mainImage.images = [];
+        state.mainImage.currentImageIndex = 0;
+        if (e.target.files.length > 0) {
+            for (const file of e.target.files) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        state.mainImage.images.push(img);
+                        if (state.mainImage.images.length === e.target.files.length) {
+                            slideshowControls.classList.remove('hidden');
+                            imageCountSpan.textContent = `រូបភាព ${state.mainImage.currentImageIndex + 1}/${state.mainImage.images.length}`;
+                            drawCanvas(canvas, ctx, state);
+                        }
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        } else {
+            slideshowControls.classList.add('hidden');
+            drawCanvas(canvas, ctx, state);
+        }
+    });
+
+    prevImageBtn.addEventListener('click', () => {
+        state.mainImage.currentImageIndex = (state.mainImage.currentImageIndex - 1 + state.mainImage.images.length) % state.mainImage.images.length;
+        imageCountSpan.textContent = `រូបភាព ${state.mainImage.currentImageIndex + 1}/${state.mainImage.images.length}`;
+        drawCanvas(canvas, ctx, state);
+    });
+
+    nextImageBtn.addEventListener('click', () => {
+        state.mainImage.currentImageIndex = (state.mainImage.currentImageIndex + 1) % state.mainImage.images.length;
+        imageCountSpan.textContent = `រូបភាព ${state.mainImage.currentImageIndex + 1}/${state.mainImage.images.length}`;
+        drawCanvas(canvas, ctx, state);
+    });
+    
+    blurSlider.addEventListener('input', (e) => {
+        state.mainImage.blur = parseFloat(e.target.value);
+        drawCanvas(canvas, ctx, state);
+    });
+    
+    rotateSlider.addEventListener('input', (e) => {
+        state.mainImage.rotate = parseFloat(e.target.value);
+        drawCanvas(canvas, ctx, state);
+    });
+    
+    opacitySlider.addEventListener('input', (e) => {
+        state.mainImage.opacity = parseFloat(e.target.value);
+        drawCanvas(canvas, ctx, state);
+    });
+    
+    tintColorInput.addEventListener('input', (e) => {
+        state.mainImage.tint.color = e.target.value;
+        drawCanvas(canvas, ctx, state);
+    });
+    
+    tintOpacitySlider.addEventListener('input', (e) => {
+        state.mainImage.tint.opacity = parseFloat(e.target.value);
+        drawCanvas(canvas, ctx, state);
+    });
+
+    mainImageFitSelect.addEventListener('change', (e) => {
+        state.mainImage.fit = e.target.value;
+        drawCanvas(canvas, ctx, state);
+    });
+    
+    bgColorInput.addEventListener('input', (e) => {
+        state.bg.color = e.target.value;
+        drawCanvas(canvas, ctx, state);
+    });
+
+    bgImageUpload.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    state.bg.image = img;
+                    drawCanvas(canvas, ctx, state);
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        } else {
+            state.bg.image = null;
+            drawCanvas(canvas, ctx, state);
+        }
+    });
+
+    bgImageFitSelect.addEventListener('change', (e) => {
+        state.bg.fit = e.target.value;
+        drawCanvas(canvas, ctx, state);
+    });
+    
+    // NEW: Text event listeners and functions
+    addTextBtn.addEventListener('click', () => {
+        const newText = {
+            id: Date.now(),
+            content: 'វាយអក្សរថ្មី',
+            size: 48,
+            family: "'Kantumruy Pro', sans-serif",
+            color: '#000000',
+            rotate: 0,
+            shadow: { blur: 0, color: '#000000' },
+            outline: { width: 0, color: '#ffffff' },
+            x: 50,
+            y: 50
+        };
+        state.texts.push(newText);
+        state.selectedTextId = newText.id;
+        updateTextControls();
+        drawCanvas(canvas, ctx, state);
+    });
+    
+    deleteTextBtn.addEventListener('click', () => {
+        if (state.selectedTextId) {
+            state.texts = state.texts.filter(t => t.id !== state.selectedTextId);
+            state.selectedTextId = null;
+            updateTextControls();
+            drawCanvas(canvas, ctx, state);
+        }
+    });
+
+    textInput.addEventListener('input', (e) => {
+        const selectedText = state.texts.find(t => t.id === state.selectedTextId);
+        if (selectedText) {
+            selectedText.content = e.target.value;
+            drawCanvas(canvas, ctx, state);
+        }
+    });
+
+    fontFamilySelect.addEventListener('change', (e) => {
+        const selectedText = state.texts.find(t => t.id === state.selectedTextId);
+        if (selectedText) {
+            selectedText.family = e.target.value;
+            drawCanvas(canvas, ctx, state);
+        }
+    });
+    
+    fontSizeSlider.addEventListener('input', (e) => {
+        const selectedText = state.texts.find(t => t.id === state.selectedTextId);
+        if (selectedText) {
+            selectedText.size = parseInt(e.target.value);
+            drawCanvas(canvas, ctx, state);
+        }
+    });
+    
+    textRotateSlider.addEventListener('input', (e) => {
+        const selectedText = state.texts.find(t => t.id === state.selectedTextId);
+        if (selectedText) {
+            selectedText.rotate = parseFloat(e.target.value);
+            drawCanvas(canvas, ctx, state);
+        }
+    });
+
+    fontColorInput.addEventListener('input', (e) => {
+        const selectedText = state.texts.find(t => t.id === state.selectedTextId);
+        if (selectedText) {
+            selectedText.color = e.target.value;
+            drawCanvas(canvas, ctx, state);
+        }
+    });
+
+    shadowBlurSlider.addEventListener('input', (e) => {
+        const selectedText = state.texts.find(t => t.id === state.selectedTextId);
+        if (selectedText) {
+            selectedText.shadow.blur = parseInt(e.target.value);
+            drawCanvas(canvas, ctx, state);
+        }
+    });
+
+    shadowColorInput.addEventListener('input', (e) => {
+        const selectedText = state.texts.find(t => t.id === state.selectedTextId);
+        if (selectedText) {
+            selectedText.shadow.color = e.target.value;
+            drawCanvas(canvas, ctx, state);
+        }
+    });
+
+    outlineWidthSlider.addEventListener('input', (e) => {
+        const selectedText = state.texts.find(t => t.id === state.selectedTextId);
+        if (selectedText) {
+            selectedText.outline.width = parseInt(e.target.value);
+            drawCanvas(canvas, ctx, state);
+        }
+    });
+
+    outlineColorInput.addEventListener('input', (e) => {
+        const selectedText = state.texts.find(t => t.id === state.selectedTextId);
+        if (selectedText) {
+            selectedText.outline.color = e.target.value;
+            drawCanvas(canvas, ctx, state);
+        }
+    });
+    
+    textYPosSlider.addEventListener('input', (e) => {
+        const selectedText = state.texts.find(t => t.id === state.selectedTextId);
+        if (selectedText) {
+            selectedText.y = parseFloat(e.target.value);
+            drawCanvas(canvas, ctx, state);
+        }
+    });
+    
+    textXPosSlider.addEventListener('input', (e) => {
+        const selectedText = state.texts.find(t => t.id === state.selectedTextId);
+        if (selectedText) {
+            selectedText.x = parseFloat(e.target.value);
+            drawCanvas(canvas, ctx, state);
+        }
+    });
+    
+    logoUpload.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    state.logo.image = img;
+                    drawCanvas(canvas, ctx, state);
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        } else {
+            state.logo.image = null;
+            drawCanvas(canvas, ctx, state);
+        }
+    });
+
+    logoWidthSlider.addEventListener('input', (e) => {
+        state.logo.width = parseFloat(e.target.value);
+        drawCanvas(canvas, ctx, state);
+    });
+
+    logoXPosSlider.addEventListener('input', (e) => {
+        state.logo.x = parseFloat(e.target.value);
+        drawCanvas(canvas, ctx, state);
+    });
+
+    logoYPosSlider.addEventListener('input', (e) => {
+        state.logo.y = parseFloat(e.target.value);
+        drawCanvas(canvas, ctx, state);
+    });
+
+    // Pen drawing logic
+    penSizeSlider.addEventListener('input', (e) => {
+        state.pen.size = parseInt(e.target.value);
+    });
+
+    penColorInput.addEventListener('input', (e) => {
+        state.pen.color = e.target.value;
+    });
+
+    togglePenBtn.addEventListener('click', () => {
+        state.isDrawingMode = true;
+        state.isErasingMode = false;
+        togglePenBtn.textContent = 'បិទការគូរ';
+        toggleEraserBtn.textContent = 'ចាប់ផ្តើមលុប';
+        canvas.style.cursor = 'crosshair';
+        state.selectedTextId = null;
+        updateTextControls();
+    });
+
+    toggleEraserBtn.addEventListener('click', () => {
+        state.isErasingMode = true;
+        state.isDrawingMode = false;
+        toggleEraserBtn.textContent = 'បិទការលុប';
+        togglePenBtn.textContent = 'ចាប់ផ្តើមគូរ';
+        canvas.style.cursor = 'pointer';
+        state.selectedTextId = null;
+        updateTextControls();
+    });
+
+    clearDrawingsBtn.addEventListener('click', () => {
+        state.paths = [];
+        drawCanvas(canvas, ctx, state);
+    });
+
+    // Adjustment event listeners
+    brightnessSlider.addEventListener('input', (e) => {
+        state.mainImage.adjustments.brightness = parseFloat(e.target.value);
+        drawCanvas(canvas, ctx, state);
+    });
+    contrastSlider.addEventListener('input', (e) => {
+        state.mainImage.adjustments.contrast = parseFloat(e.target.value);
+        drawCanvas(canvas, ctx, state);
+    });
+    saturationSlider.addEventListener('input', (e) => {
+        state.mainImage.adjustments.saturation = parseFloat(e.target.value);
+        drawCanvas(canvas, ctx, state);
+    });
+    hueSlider.addEventListener('input', (e) => {
+        state.mainImage.adjustments.hue = parseFloat(e.target.value);
+        drawCanvas(canvas, ctx, state);
+    });
+    tempSlider.addEventListener('input', (e) => {
+        state.mainImage.adjustments.temp = parseFloat(e.target.value);
+        drawCanvas(canvas, ctx, state);
+    });
+    highlightsSlider.addEventListener('input', (e) => {
+        state.mainImage.adjustments.highlights = parseFloat(e.target.value);
+        drawCanvas(canvas, ctx, state);
+    });
+    shadowsSlider.addEventListener('input', (e) => {
+        state.mainImage.adjustments.shadows = parseFloat(e.target.value);
+        drawCanvas(canvas, ctx, state);
+    });
+    sharpenSlider.addEventListener('input', (e) => {
+        state.mainImage.adjustments.sharpen = parseFloat(e.target.value);
+        drawCanvas(canvas, ctx, state);
+    });
+    fadeSlider.addEventListener('input', (e) => {
+        state.mainImage.adjustments.fade = parseFloat(e.target.value);
+        drawCanvas(canvas, ctx, state);
+    });
+    vignetteSlider.addEventListener('input', (e) => {
+        state.mainImage.adjustments.vignette = parseFloat(e.target.value);
+        drawCanvas(canvas, ctx, state);
+    });
+
+    // Function to handle text selection and dragging
+    canvas.addEventListener('mousedown', (e) => {
+        const { offsetX, offsetY } = e;
+        
+        if (state.isDrawingMode) {
+            isDragging = true;
+            const originalX = offsetX / (canvas.width / state.canvas.width);
+            const originalY = offsetY / (canvas.height / state.canvas.height);
+            state.paths.push({
+                color: state.pen.color,
+                size: state.pen.size,
+                points: [{ x: originalX, y: originalY }]
+            });
+            drawCanvas(canvas, ctx, state);
+            return;
+        }
+
+        if (state.isErasingMode) {
+            isDragging = true;
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.beginPath();
+            ctx.moveTo(offsetX, offsetY);
+            return;
+        }
+
+        let selected = false;
+
+        for (let i = state.texts.length - 1; i >= 0; i--) {
+            const text = state.texts[i];
+            
+            const scaledFontSize = text.size * (canvas.height / state.canvas.height);
+            ctx.font = `${scaledFontSize}px ${text.family}`;
+            const textMetrics = ctx.measureText(text.content);
+            const textWidth = textMetrics.width;
+            const textHeight = scaledFontSize * text.content.split('\n').length;
+            
+            const textX = canvas.width * (text.x / 100);
+            const textY = canvas.height * (text.y / 100);
+            
+            const boxX = textX - textWidth / 2;
+            const boxY = textY - (scaledFontSize * (text.content.split('\n').length / 2));
+
+            if (offsetX > boxX && offsetX < boxX + textWidth &&
+                offsetY > boxY && offsetY < boxY + textHeight) {
+                state.selectedTextId = text.id;
+                isDragging = true;
+                dragStartX = offsetX;
+                dragStartY = offsetY;
+                dragStartTextX = text.x;
+                dragStartTextY = text.y;
+                dragStartTextRotate = text.rotate;
+                selected = true;
+                break;
+            }
+        }
+
+        if (!selected) {
+            state.selectedTextId = null;
+        }
+
+        updateTextControls();
+        drawCanvas(canvas, ctx, state);
+    });
+    
+    canvas.addEventListener('mousemove', (e) => {
+        if (!isDragging) {
+            return;
+        }
+
+        const { offsetX, offsetY } = e;
+
+        if (state.isDrawingMode) {
+            const currentPath = state.paths[state.paths.length - 1];
+            const originalX = offsetX / (canvas.width / state.canvas.width);
+            const originalY = offsetY / (canvas.height / state.canvas.height);
+            currentPath.points.push({ x: originalX, y: originalY });
+            drawCanvas(canvas, ctx, state);
+            return;
+        }
+
+        if (state.isErasingMode) {
+            ctx.lineTo(offsetX, offsetY);
+            ctx.strokeStyle = 'rgba(0,0,0,1)';
+            ctx.lineWidth = state.pen.size * (canvas.width / state.canvas.width);
+            ctx.lineCap = 'round';
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(offsetX, offsetY);
+            return;
+        }
+
+        const selectedText = state.texts.find(t => t.id === state.selectedTextId);
+        if (selectedText) {
+            const deltaX = offsetX - dragStartX;
+            const deltaY = offsetY - dragStartY;
+
+            selectedText.x = dragStartTextX + (deltaX / canvas.width) * 100;
+            selectedText.y = dragStartTextY + (deltaY / canvas.height) * 100;
+
+            selectedText.x = Math.max(0, Math.min(100, selectedText.x));
+            selectedText.y = Math.max(0, Math.min(100, selectedText.y));
+
+            textXPosSlider.value = selectedText.x;
+            textYPosSlider.value = selectedText.y;
+
+            drawCanvas(canvas, ctx, state);
+        }
+    });
+
+    canvas.addEventListener('mouseup', () => {
+        isDragging = false;
+        if (state.isErasingMode) {
+            ctx.globalCompositeOperation = 'source-over';
+            drawCanvas(canvas, ctx, state);
+        }
+    });
+
+    canvas.addEventListener('mouseout', () => {
+        isDragging = false;
+        if (state.isErasingMode) {
+            ctx.globalCompositeOperation = 'source-over';
+            drawCanvas(canvas, ctx, state);
+        }
+    });
+    
+    // Mobile Touch Events
+    canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        const offsetX = touch.clientX - rect.left;
+        const offsetY = touch.clientY - rect.top;
+        canvas.dispatchEvent(new MouseEvent('mousedown', { clientX: touch.clientX, clientY: touch.clientY, offsetX: offsetX, offsetY: offsetY }));
+    });
+    canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        const offsetX = touch.clientX - rect.left;
+        const offsetY = touch.clientY - rect.top;
+        canvas.dispatchEvent(new MouseEvent('mousemove', { clientX: touch.clientX, clientY: touch.clientY, offsetX: offsetX, offsetY: offsetY }));
+    });
+    canvas.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        canvas.dispatchEvent(new MouseEvent('mouseup'));
+    });
+
+    function downloadImage(format) {
+        state.selectedTextId = null;
+        updateTextControls();
+        drawCanvas(canvas, ctx, state);
+        
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = state.canvas.width;
+        tempCanvas.height = state.canvas.height;
+        const tempCtx = tempCanvas.getContext('2d');
+
+        drawCanvas(tempCanvas, tempCtx, state);
+
+        const link = document.createElement('a');
+        link.download = `my-design.${format}`;
+        link.href = tempCanvas.toDataURL(`image/${format === 'jpg' ? 'jpeg' : 'png'}`);
+        link.click();
+    }
+
+    downloadJpgBtn.addEventListener('click', () => downloadImage('jpg'));
+    downloadPngBtn.addEventListener('click', () => downloadImage('png'));
+
+    function resizeCanvas() {
+        const parentWidth = canvasWrapper.clientWidth;
+        const parentRatio = parentWidth / state.canvas.height;
+        
+        let newWidth;
+        let newHeight;
+        
+        newWidth = parentWidth;
+        newHeight = parentWidth / state.canvas.aspectRatio;
+
+        canvas.width = newWidth;
+        canvas.height = newHeight;
+        drawCanvas(canvas, ctx, state);
+    }
+    
+    window.onload = () => {
+        state.canvas.aspectRatio = state.canvas.width / state.canvas.height;
+        resizeCanvas();
+        updateTextControls();
+    };
+    window.addEventListener('resize', resizeCanvas);
+</script>
+
+</body>
+</html>
+
