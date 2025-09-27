@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ឧបករណ៍ Audio Ducking ដោយឯកសារ</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for aesthetic appeal */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117;
+            color: #c9d1d9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .card {
+            background-color: #161b22;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        .status-pill {
+            transition: all 0.3s ease-in-out;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            text-align: center;
+        }
+        .status-idle {
+            background-color: #21262d;
+            color: #8b949e;
+        }
+        .status-ready {
+            background-color: #1a4220;
+            color: #94e3a2;
+        }
+        .status-ducking {
+            background-color: #a87201; /* Orange for ducking */
+            color: #f0f6fc;
+        }
+        .status-playing {
+            background-color: #238636;
+            color: #f0f6fc;
+        }
+        .status-recording {
+            background-color: #9b2c2c; /* Red for recording */
+            color: #f0f6fc;
+        }
+        /* Style for file inputs */
+        input[type="file"]::file-selector-button {
+            border: 1px solid #30363d;
+            padding: 0.5rem 0.75rem;
+            margin-right: 0.5rem;
+            border-radius: 0.375rem;
+            background-color: #21262d;
+            color: #c9d1d9;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        input[type="file"]::file-selector-button:hover {
+            background-color: #30363d;
+        }
+        /* Style for number input */
+        .number-input {
+            appearance: none;
+            -moz-appearance: textfield;
+        }
+        .number-input::-webkit-outer-spin-button,
+        .number-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+    </style>
+    <!-- We no longer need Tone.js, using standard Web Audio API -->
+</head>
+<body>
+
+    <div id="app" class="card p-6 md:p-10 max-w-lg w-full rounded-xl border border-gray-700">
+        <h1 class="text-3xl font-bold mb-2 text-white">ប្រព័ន្ធបន្ថយសំឡេងផ្ទៃក្រោយ (Audio Ducking)</h1>
+        <p class="text-gray-400 mb-6">ផ្ទុកឯកសារសំឡេងនិយាយ ឬប្រើ Microphone រួមជាមួយភ្លេងដើម្បីចាប់ផ្តើម និងកត់ត្រាលទ្ធផល។</p>
+
+        <!-- File Inputs -->
+        <div class="space-y-4 mb-6">
+            <div>
+                <label for="voice-file" class="block text-sm font-medium mb-1 text-white">1. ប្រភពសំឡេងនិយាយ (Voice Source)</label>
+                <!-- New Flex container for File/Mic buttons -->
+                <div class="flex space-x-2">
+                    <input type="file" id="voice-file" accept="audio/*" class="flex-1 text-sm text-gray-400 border border-gray-700 rounded-lg p-2 bg-gray-800">
+                    <button id="mic-button" class="px-4 py-2 text-sm font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white transition-colors duration-200">
+                        ប្រើ Microphone
+                    </button>
+                </div>
+                <p id="voice-status" class="text-xs text-gray-500 mt-1">រង់ចាំ...</p>
+            </div>
+            <div>
+                <label for="music-file" class="block text-sm font-medium mb-1 text-white">2. ឯកសារភ្លេងផ្ទៃខាងក្រោយ (Music Background)</label>
+                <input type="file" id="music-file" accept="audio/*" class="w-full text-sm text-gray-400 border border-gray-700 rounded-lg p-2 bg-gray-800">
+                <p id="music-status" class="text-xs text-gray-500 mt-1">រង់ចាំ...</p>
+            </div>
+        </div>
+
+        <!-- Status Display -->
+        <div class="flex justify-center items-center mb-6">
+            <span id="status-display" class="status-pill status-idle w-full">
+                សូមផ្ទុកឯកសារភ្លេង និងប្រភពសំឡេងនិយាយ
+            </span>
+        </div>
+        
+        <!-- Controls -->
+        <div class="space-y-4">
+            <!-- Voice Start Delay Control (Only visible/functional for file input) -->
+            <div id="voice-delay-container">
+                <label for="voice-delay" class="block text-sm font-medium mb-1">រយៈពេលពន្យាពេលសំឡេងនិយាយ (វិនាទី)</label>
+                <input type="number" id="voice-delay" min="0" max="300" value="0" step="0.5" class="w-full h-10 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white number-input">
+                <span id="voice-delay-val" class="text-xs text-gray-400"> (0.0 វិនាទី)</span>
+            </div>
+            
+            <!-- Music Volume Control -->
+            <div>
+                <label for="music-volume" class="block text-sm font-medium mb-1">កម្រិតសំឡេងភ្លេងធម្មតា</label>
+                <input type="range" id="music-volume" min="-30" max="0" value="-10" step="1" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                <span id="music-vol-val" class="text-xs text-gray-400">(-10 dB)</span>
+            </div>
+
+            <!-- Ducking Threshold Control -->
+            <div>
+                <label for="ducking-threshold" class="block text-sm font-medium mb-1">កម្រិតចាប់សំឡេងនិយាយ (Threshold)</label>
+                <input type="range" id="ducking-threshold" min="0.005" max="0.05" value="0.015" step="0.001" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                <span id="threshold-val" class="text-xs text-gray-400"> (0.015)</span>
+            </div>
+            
+            <!-- Ducking Level Control -->
+            <div>
+                <label for="ducking-level" class="block text-sm font-medium mb-1">កម្រិតបន្ថយសំឡេងភ្លេង (ពេលនិយាយ)</label>
+                <input type="range" id="ducking-level" min="-60" max="-10" value="-25" step="1" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                <span id="ducking-level-val" class="text-xs text-gray-400">(-25 dB)</span>
+            </div>
+            
+            <!-- RAMP TIME Control -->
+            <div>
+                <label for="ramp-time" class="block text-sm font-medium mb-1">ល្បឿននៃការឡើង/ចុះនៃសំឡេងភ្លេង (Ramp Time)</label>
+                <input type="range" id="ramp-time" min="0.05" max="1.0" value="0.2" step="0.05" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                <span id="ramp-time-val" class="text-xs text-gray-400">(0.20 វិនាទី)</span>
+            </div>
+
+            <!-- VOICE ECHO/REVERB Control -->
+            <div>
+                <label for="echo-level" class="block text-sm font-medium mb-1">កម្រិត Echo/Reverb (Wet Level)</label>
+                <input type="range" id="echo-level" min="0.0" max="1.0" value="0.3" step="0.05" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                <span id="echo-level-val" class="text-xs text-gray-400"> (30%)</span>
+            </div>
+        </div>
+        
+        <!-- Progress Bars -->
+        <div class="space-y-4 my-6 pt-4 border-t border-gray-700">
+            <div id="music-progress-container">
+                <label class="block text-sm font-medium mb-1 flex justify-between">
+                    <span>ភ្លេងផ្ទៃក្រោយ (Music Progress)</span>
+                    <span id="music-time" class="text-xs text-gray-400">0:00 / 0:00</span>
+                </label>
+                <div class="h-2 w-full bg-gray-600 rounded-full overflow-hidden">
+                    <div id="music-progress-bar" class="h-2 bg-green-500 transition-all duration-100 ease-linear" style="width: 0%;"></div>
+                </div>
+            </div>
+            <div id="voice-progress-container">
+                <label class="block text-sm font-medium mb-1 flex justify-between">
+                    <span>សំឡេងនិយាយ (Voice Progress)</span>
+                    <span id="voice-time" class="text-xs text-gray-400">0:00 / 0:00</span>
+                </label>
+                <div class="h-2 w-full bg-gray-600 rounded-full overflow-hidden">
+                    <div id="voice-progress-bar" class="h-2 bg-blue-500 transition-all duration-100 ease-linear" style="width: 0%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Button -->
+        <button id="toggle-button" class="mt-8 w-full py-3 px-4 text-lg font-semibold rounded-lg bg-gray-600 text-gray-400 cursor-not-allowed" disabled>
+            រង់ចាំឯកសារ...
+        </button>
+
+        <!-- Recording Controls -->
+        <div id="recording-controls" class="mt-4 flex space-x-2">
+            <button id="record-button" class="flex-1 py-2 px-4 font-semibold rounded-lg bg-red-800 hover:bg-red-700 text-white transition-colors duration-200 shadow-md shadow-red-900/50" disabled>
+                <span id="record-text">កត់ត្រា (Record)</span>
+            </button>
+            <button id="download-button" class="flex-1 py-2 px-4 font-semibold rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors duration-200 shadow-md shadow-blue-900/50" disabled>
+                ទាញយក (Download)
+            </button>
+        </div>
+        
+        <p class="text-xs text-gray-500 mt-4 text-center">**លទ្ធផលដែលបានកត់ត្រានឹងជាឯកសារ WebM (Opus) ។</p>
+    </div>
+
+    <script>
+        // Get references to DOM elements
+        const toggleButton = document.getElementById('toggle-button');
+        const recordButton = document.getElementById('record-button');
+        const downloadButton = document.getElementById('download-button');
+        const statusDisplay = document.getElementById('status-display');
+        const voiceFileInput = document.getElementById('voice-file');
+        const musicFileInput = document.getElementById('music-file');
+        const micButton = document.getElementById('mic-button'); // NEW
+        const voiceStatus = document.getElementById('voice-status');
+        const musicStatus = document.getElementById('music-status');
+        const voiceDelayInput = document.getElementById('voice-delay');
+        const voiceDelayVal = document.getElementById('voice-delay-val');
+        const voiceDelayContainer = document.getElementById('voice-delay-container'); // NEW
+        const musicVolumeInput = document.getElementById('music-volume');
+        const musicVolVal = document.getElementById('music-vol-val');
+        const thresholdInput = document.getElementById('ducking-threshold');
+        const thresholdVal = document.getElementById('threshold-val');
+        const duckingLevelInput = document.getElementById('ducking-level');
+        const duckingLevelVal = document.getElementById('ducking-level-val');
+        const rampTimeInput = document.getElementById('ramp-time');
+        const rampTimeVal = document.getElementById('ramp-time-val');
+        const echoLevelInput = document.getElementById('echo-level'); // NEW
+        const echoLevelVal = document.getElementById('echo-level-val'); // NEW
+        
+        // Progress Bar References
+        const musicProgressBar = document.getElementById('music-progress-bar'); 
+        const voiceProgressBar = document.getElementById('voice-progress-bar'); 
+        const musicTimeDisplay = document.getElementById('music-time'); 
+        const voiceTimeDisplay = document.getElementById('voice-time'); 
+
+        // --- Firebase/Auth Setup (Mandatory but not used for this local app logic) ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        
+        // --- Audio State Variables ---
+        let isRunning = false;
+        let audioContext;
+        let voiceBuffer = null; // Buffer for file input
+        let isMicActive = false; // NEW: Flag for microphone usage
+        let micStream = null; // NEW: MediaStream for mic
+        let musicBuffer = null;
+        
+        let voiceSource = null;
+        let musicSource = null;
+        let analyserNode = null;
+        let musicGainNode = null;
+        let audioLoopId; // Request Animation Frame ID for the loop
+        
+        // --- Echo/Reverb Nodes (NEW) ---
+        let echoDelayNode = null;
+        let echoFeedbackGainNode = null;
+        let echoWetGainNode = null;
+        const DEFAULT_ECHO_DELAY = 0.4; // 400ms delay for echo
+        const DEFAULT_FEEDBACK = 0.5; // 50% feedback for echo decay
+
+        // --- Recording Variables ---
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let isRecording = false;
+        let destinationStream = null; // MediaStreamDestinationNode for recording
+        let startTime = 0;
+        let recordingStartTime = 0; // NEW: Track the start time of the current recording
+
+        // Ducking parameters (initial values from UI)
+        let VOICE_START_DELAY = parseFloat(voiceDelayInput.value); 
+        let NORMAL_MUSIC_VOLUME = parseFloat(musicVolumeInput.value); 
+        let DUCKING_THRESHOLD = parseFloat(thresholdInput.value); 
+        let DUCKED_MUSIC_VOLUME = parseFloat(duckingLevelInput.value); 
+        let CURRENT_RAMP_TIME = parseFloat(rampTimeInput.value);
+        let CURRENT_ECHO_LEVEL = parseFloat(echoLevelInput.value); // NEW dynamic echo level
+
+        // --- Utility Functions ---
+
+        // Helper function to convert dB to gain linear value
+        function dbToGain(db) {
+            return Math.pow(10, db / 20);
+        }
+        
+        // Helper function to format seconds into M:SS
+        function formatTime(seconds) {
+            seconds = Math.max(0, seconds); 
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = Math.floor(seconds % 60);
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+        
+        // Function to update UI for volume values
+        function updateUIVolumes() {
+            VOICE_START_DELAY = parseFloat(voiceDelayInput.value);
+            NORMAL_MUSIC_VOLUME = parseFloat(musicVolumeInput.value);
+            DUCKING_THRESHOLD = parseFloat(thresholdInput.value);
+            DUCKED_MUSIC_VOLUME = parseFloat(duckingLevelInput.value);
+            CURRENT_RAMP_TIME = parseFloat(rampTimeInput.value);
+            CURRENT_ECHO_LEVEL = parseFloat(echoLevelInput.value); // Read new echo level
+
+            voiceDelayVal.textContent = ` (${VOICE_START_DELAY.toFixed(1)} វិនាទី)`;
+            musicVolVal.textContent = `(${NORMAL_MUSIC_VOLUME} dB)`;
+            thresholdVal.textContent = ` (${DUCKING_THRESHOLD.toFixed(3)})`;
+            duckingLevelVal.textContent = `(${DUCKED_MUSIC_VOLUME} dB)`;
+            rampTimeVal.textContent = `(${CURRENT_RAMP_TIME.toFixed(2)} វិនាទី)`;
+            echoLevelVal.textContent = ` (${(CURRENT_ECHO_LEVEL * 100).toFixed(0)}%)`; // Update echo display
+        }
+
+        // Event listeners for control updates
+        voiceDelayInput.addEventListener('input', updateUIVolumes); 
+        musicVolumeInput.addEventListener('input', updateUIVolumes);
+        thresholdInput.addEventListener('input', updateUIVolumes);
+        duckingLevelInput.addEventListener('input', updateUIVolumes);
+        rampTimeInput.addEventListener('input', updateUIVolumes);
+        
+        // NEW listener for echo level control
+        echoLevelInput.addEventListener('input', () => {
+            updateUIVolumes();
+            // Update the real-time gain node if it exists
+            if (echoWetGainNode) {
+                // We use setValueAtTime for immediate update without ramps, as this is a parameter setting.
+                echoWetGainNode.gain.setValueAtTime(CURRENT_ECHO_LEVEL, audioContext.currentTime);
+            }
+        }); 
+        
+        updateUIVolumes(); // Initial display
+
+        // --- Microphone Setup ---
+
+        async function setupMic() {
+            if (isMicActive) return;
+
+            try {
+                // Request microphone access
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: { 
+                        autoGainControl: false, 
+                        noiseSuppression: false, 
+                        echoCancellation: false 
+                    }
+                });
+                
+                micStream = stream;
+                isMicActive = true;
+                voiceBuffer = null; // Ensure file buffer is cleared if mic is chosen
+
+                voiceFileInput.disabled = true;
+                voiceDelayContainer.classList.add('hidden'); // Hide delay control for live mic
+
+                micButton.textContent = 'បិទ Microphone';
+                micButton.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+                micButton.classList.add('bg-gray-600', 'hover:bg-gray-700');
+                
+                voiceStatus.textContent = "Voice: ពី Microphone (Live)";
+                voiceStatus.classList.add('text-green-500');
+                
+            } catch (error) {
+                console.error("Microphone access denied or error:", error);
+                voiceStatus.textContent = "បរាជ័យក្នុងការប្រើ Mic";
+                voiceStatus.classList.remove('text-green-500');
+                isMicActive = false;
+            }
+            updateReadyState();
+        }
+
+        function stopMic() {
+            if (micStream) {
+                micStream.getTracks().forEach(track => track.stop());
+            }
+            isMicActive = false;
+            micStream = null;
+            
+            voiceFileInput.disabled = false;
+            voiceDelayContainer.classList.remove('hidden'); // Show delay control
+
+            micButton.textContent = 'ប្រើ Microphone';
+            micButton.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+            micButton.classList.remove('bg-gray-600', 'hover:bg-gray-700');
+            
+            voiceStatus.textContent = "រង់ចាំ...";
+            voiceStatus.classList.remove('text-green-500');
+            
+            updateReadyState();
+        }
+
+        // --- File Loading and Decoding ---
+
+        function updateReadyState() {
+            // Readiness now depends on musicBuffer AND (voiceBuffer OR isMicActive)
+            const isReady = musicBuffer && (voiceBuffer || isMicActive); 
+
+            if (isReady) {
+                toggleButton.disabled = false;
+                toggleButton.textContent = 'ចាប់ផ្តើម Audio Ducking';
+                toggleButton.className = 'mt-8 w-full py-3 px-4 text-lg font-semibold rounded-lg bg-green-600 hover:bg-green-700 text-white transition-colors duration-200 shadow-md shadow-green-900/50';
+                
+                recordButton.disabled = false;
+                
+                statusDisplay.className = 'status-pill status-ready w-full';
+                statusDisplay.textContent = 'ឯកសារទាំងពីរបានផ្ទុករួចរាល់';
+                
+                // Initialize time displays
+                if (musicBuffer) musicTimeDisplay.textContent = `0:00 / ${formatTime(musicBuffer.duration)}`;
+                
+                // Voice duration only shown if file is loaded
+                if (voiceBuffer) {
+                    voiceTimeDisplay.textContent = `0:00 / ${formatTime(voiceBuffer.duration)}`;
+                } else {
+                    voiceTimeDisplay.textContent = `Live Mic`; // Indicate live mic in time display
+                }
+
+            } else {
+                toggleButton.disabled = true;
+                toggleButton.textContent = 'រង់ចាំឯកសារ...';
+                toggleButton.className = 'mt-8 w-full py-3 px-4 text-lg font-semibold rounded-lg bg-gray-600 text-gray-400 cursor-not-allowed';
+
+                recordButton.disabled = true;
+
+                statusDisplay.className = 'status-pill status-idle w-full';
+                statusDisplay.textContent = 'សូមផ្ទុកឯកសារភ្លេង និងប្រភពសំឡេងនិយាយ';
+
+                // Reset voice status if neither file nor mic is active
+                if (!isMicActive && !voiceBuffer) {
+                    voiceStatus.textContent = "រង់ចាំ...";
+                    voiceStatus.classList.remove('text-green-500');
+                }
+            }
+            // Disable download button unless a recording is ready
+            downloadButton.disabled = recordedChunks.length === 0;
+            downloadButton.textContent = recordedChunks.length > 0 ? 'ទាញយកលទ្ធផល' : 'ទាញយក (Download)';
+        }
+
+        async function loadFile(file, statusElement) {
+            if (!file) {
+                if (statusElement === voiceStatus) voiceBuffer = null;
+                if (statusElement === musicStatus) musicBuffer = null;
+                statusElement.textContent = "មិនទាន់មានឯកសារ";
+                statusElement.classList.remove('text-green-500');
+                updateReadyState();
+                return;
+            }
+
+            statusElement.textContent = `កំពុងផ្ទុកឯកសារ៖ ${file.name}...`;
+            statusElement.classList.remove('text-green-500');
+
+            if (!audioContext) {
+                // Ensure context is resumed/started on user interaction
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const arrayBuffer = e.target.result;
+                    // Decode the audio file data
+                    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                    
+                    // Assign to global state
+                    if (statusElement === voiceStatus) {
+                        voiceBuffer = audioBuffer;
+                        statusElement.textContent = `Voice: បានផ្ទុក (${(audioBuffer.duration).toFixed(1)} វិ. )`;
+                        if (isMicActive) stopMic(); // Turn off mic if user loads a file
+                    } else {
+                        musicBuffer = audioBuffer;
+                        statusElement.textContent = `Music: បានផ្ទុក (${(audioBuffer.duration).toFixed(1)} វិ. )`;
+                    }
+                    statusElement.classList.add('text-green-500');
+                } catch (error) {
+                    console.error("Error decoding audio data:", error);
+                    statusElement.textContent = `បរាជ័យក្នុងការ decode៖ ${file.name}`;
+                    if (statusElement === voiceStatus) voiceBuffer = null; 
+                    if (statusElement === musicStatus) musicBuffer = null; 
+                }
+                updateReadyState();
+            };
+            reader.onerror = (error) => {
+                console.error("Error reading file:", error);
+                statusElement.textContent = `បរាជ័យក្នុងការអានឯកសារ៖ ${file.name}`;
+                if (statusElement === voiceStatus) voiceBuffer = null; 
+                if (statusElement === musicStatus) musicBuffer = null; 
+                updateReadyState();
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Attach event listeners to file inputs
+        voiceFileInput.addEventListener('change', (e) => {
+            if (isMicActive) stopMic(); // Stop mic if user selects a file
+            loadFile(e.target.files[0], voiceStatus);
+        });
+        musicFileInput.addEventListener('change', (e) => loadFile(e.target.files[0], musicStatus));
+
+        // NEW Mic Button handler
+        micButton.addEventListener('click', () => {
+            if (isMicActive) {
+                stopMic();
+            } else {
+                setupMic();
+                // Clear file input visually when mic is active
+                voiceFileInput.value = ''; 
+            }
+        });
+
+        // --- Audio Graph Setup and Processing ---
+
+        function setupAudioGraph() {
+            // 1. Create Audio Context (if not already created during loading)
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            // 2. Create Destination Node for Recording
+            destinationStream = audioContext.createMediaStreamDestination();
+
+            // 3. Music Track Setup
+            musicSource = audioContext.createBufferSource();
+            musicSource.buffer = musicBuffer;
+            musicSource.loop = true; // Music loops until manually stopped, as requested.
+
+            musicGainNode = audioContext.createGain();
+            // Ensure the initial volume is set based on the control value
+            musicGainNode.gain.setValueAtTime(dbToGain(NORMAL_MUSIC_VOLUME), audioContext.currentTime);
+
+            // Connect Music Source -> Music Gain Node 
+            musicSource.connect(musicGainNode);
+            // Connect Music Gain Node -> Destination for Playback AND Destination for Recording
+            musicGainNode.connect(audioContext.destination);
+            musicGainNode.connect(destinationStream);
+            
+            // 4. Voice Track Setup (Conditional: Buffer or Mic Stream)
+            if (isMicActive && micStream) {
+                voiceSource = audioContext.createMediaStreamSource(micStream);
+                // For live mic, no start delay is applied, and looping/onended is irrelevant.
+            } else if (voiceBuffer) {
+                voiceSource = audioContext.createBufferSource();
+                voiceSource.buffer = voiceBuffer;
+                
+                // Stop the voice source when it finishes
+                voiceSource.onended = () => {
+                    console.log("Voice track finished. Music and processing continue until manual stop.");
+                };
+            } else {
+                console.error("No valid voice source (file or mic) found in setup.");
+                return;
+            }
+
+            // 5. Analyser Setup (to detect voice volume)
+            analyserNode = audioContext.createAnalyser();
+            analyserNode.fftSize = 512;
+            
+            // Connect Voice Source -> Analyser (for RMS detection)
+            voiceSource.connect(analyserNode);
+            
+            // 6. Voice Signal Path (DRY signal)
+            // Connect Voice Source -> Destination for Playback AND Destination for Recording
+            voiceSource.connect(audioContext.destination);
+            voiceSource.connect(destinationStream);
+
+
+            // 7. Echo/Reverb Setup (Simple Delay/Feedback - WET signal)
+            echoDelayNode = audioContext.createDelay(1.0); // Max delay 1 second
+            echoDelayNode.delayTime.setValueAtTime(DEFAULT_ECHO_DELAY, audioContext.currentTime);
+
+            echoFeedbackGainNode = audioContext.createGain();
+            echoFeedbackGainNode.gain.setValueAtTime(DEFAULT_FEEDBACK, audioContext.currentTime);
+
+            echoWetGainNode = audioContext.createGain();
+            // Initialize wet gain based on UI input
+            echoWetGainNode.gain.setValueAtTime(CURRENT_ECHO_LEVEL, audioContext.currentTime);
+
+            // Connect Echo Path:
+            // a) Voice Source -> Delay
+            voiceSource.connect(echoDelayNode);
+            
+            // b) Delay -> Feedback Gain -> Delay (The Loop for sustained echo)
+            echoDelayNode.connect(echoFeedbackGainNode);
+            echoFeedbackGainNode.connect(echoDelayNode);
+
+            // c) Delay -> Wet Gain -> Output Destinations (WET signal)
+            echoDelayNode.connect(echoWetGainNode);
+            echoWetGainNode.connect(audioContext.destination);
+            echoWetGainNode.connect(destinationStream); 
+        }
+
+        let isDucking = false;
+        
+        function processAudio() {
+            if (!analyserNode) return;
+
+            // Get time domain data (raw waveform)
+            const bufferLength = analyserNode.fftSize;
+            const dataArray = new Float32Array(bufferLength);
+            analyserNode.getFloatTimeDomainData(dataArray);
+
+            // Calculate Root Mean Square (RMS) for volume detection
+            let sumOfSquares = 0;
+            for (let i = 0; i < bufferLength; i++) {
+                sumOfSquares += dataArray[i] * dataArray[i];
+            }
+            const rms = Math.sqrt(sumOfSquares / bufferLength);
+
+            const now = audioContext.currentTime;
+            
+            // --- PROGRESS TRACKING LOGIC ---
+            if (audioContext.state === 'running' && musicBuffer && startTime !== 0) {
+                const currentTime = audioContext.currentTime - startTime;
+                
+                // Music Progress (Looping)
+                const musicDuration = musicBuffer.duration;
+                // Calculate current time within the loop cycle
+                const currentMusicTime = currentTime % musicDuration; 
+                const musicProgressPercent = (currentMusicTime / musicDuration) * 100;
+                
+                musicProgressBar.style.width = `${musicProgressPercent.toFixed(1)}%`;
+                musicTimeDisplay.textContent = `${formatTime(currentMusicTime)} / ${formatTime(musicDuration)}`;
+
+
+                // Voice Progress (Only for File Buffer)
+                if (voiceBuffer && !isMicActive) {
+                    const voiceDuration = voiceBuffer.duration;
+                    const delay = VOICE_START_DELAY;
+                    
+                    let currentVoiceTime = 0;
+                    let voiceProgressPercent = 0;
+                    
+                    if (currentTime < delay) {
+                        // Before voice starts
+                        currentVoiceTime = 0;
+                        voiceProgressPercent = 0;
+                        
+                        const remainingDelay = delay - currentTime;
+                        // Update status display to show countdown (optional, but helpful)
+                        if (!isRecording) {
+                            statusDisplay.textContent = `កំពុងលេង (សំឡេងនិយាយចាប់ផ្តើមក្នុង ${formatTime(remainingDelay)})`;
+                        }
+
+                    } else if (currentTime >= delay && currentTime < delay + voiceDuration) {
+                        // Voice is playing
+                        currentVoiceTime = currentTime - delay;
+                        voiceProgressPercent = (currentVoiceTime / voiceDuration) * 100;
+                    } else {
+                        // Voice has finished
+                        currentVoiceTime = voiceDuration;
+                        voiceProgressPercent = 100;
+                    }
+                    
+                    voiceProgressBar.style.width = `${voiceProgressPercent.toFixed(1)}%`;
+                    voiceTimeDisplay.textContent = `${formatTime(currentVoiceTime)} / ${formatTime(voiceDuration)}`;
+                } else {
+                    // Live Mic
+                    voiceProgressBar.style.width = '100%'; 
+                    voiceTimeDisplay.textContent = `Live Mic`;
+                }
+            }
+            // --- END PROGRESS TRACKING ---
+
+            // 1. Ducking Logic (The core feature)
+            // Determine if voice input is ready to be analyzed (either mic is active or file delay passed)
+            const voiceReadyToDuck = isMicActive || (audioContext.currentTime - startTime >= VOICE_START_DELAY);
+
+            if (voiceReadyToDuck) { 
+                
+                // Get the current ramp time from the UI
+                const rampTime = CURRENT_RAMP_TIME; 
+
+                // Calculate recorded time if recording is active 
+                let recordingTimeText = '';
+                if (isRecording) {
+                    const elapsed = audioContext.currentTime - recordingStartTime;
+                    recordingTimeText = ` (${formatTime(elapsed)})`;
+                }
+                
+                if (rms > DUCKING_THRESHOLD) {
+                    // Voice detected: Duck the music
+                    if (!isDucking) {
+                        // Use linearRampToValueAtTime for a smooth transition over the user-defined ramp time
+                        musicGainNode.gain.linearRampToValueAtTime(dbToGain(DUCKED_MUSIC_VOLUME), now + rampTime);
+                        statusDisplay.className = `status-pill ${isRecording ? 'status-recording' : 'status-ducking'} w-full`;
+                        statusDisplay.textContent = `កំពុងបន្ថយសំឡេង (និយាយ...) ${isRecording ? '[កត់ត្រា]' : ''}${recordingTimeText}`;
+                        isDucking = true;
+                    }
+                } else {
+                    // No voice detected: Bring music back up
+                    if (isDucking) {
+                        // Use linearRampToValueAtTime for a smooth transition back up
+                        musicGainNode.gain.linearRampToValueAtTime(dbToGain(NORMAL_MUSIC_VOLUME), now + rampTime);
+                        isDucking = false;
+                    }
+                    
+                    // Update status
+                    if (!isDucking || isRecording) {
+                         statusDisplay.className = `status-pill ${isRecording ? 'status-recording' : 'status-playing'} w-full`;
+                         statusDisplay.textContent = `កំពុងលេង (លឺធម្មតា) ${isRecording ? '[កត់ត្រា]' : ''}${recordingTimeText}`;
+                    }
+                }
+            }
+            
+            // Re-request the frame for continuous processing
+            audioLoopId = requestAnimationFrame(processAudio);
+        }
+
+        // --- Recording Functions ---
+
+        function startRecording() {
+            // Check if the graph is set up
+            if (!destinationStream) {
+                console.error("Cannot start recording before playback begins (destination stream not initialized).");
+                return;
+            }
+            
+            recordedChunks = [];
+            
+            mediaRecorder = new MediaRecorder(destinationStream.stream, { 
+                mimeType: 'audio/webm;codecs=opus' 
+            });
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    recordedChunks.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = () => {
+                isRecording = false;
+                recordingStartTime = 0; // Reset recording time
+                updateReadyState();
+                if (!isRunning) {
+                     statusDisplay.className = 'status-pill status-ready w-full';
+                     statusDisplay.textContent = 'បានបញ្ឈប់ - រួចរាល់សម្រាប់ទាញយក';
+                }
+                document.getElementById('record-text').textContent = 'កត់ត្រា (Record)';
+            };
+
+            mediaRecorder.start();
+            isRecording = true;
+            // Set the start time for the timer
+            recordingStartTime = audioContext.currentTime; 
+            
+            document.getElementById('record-text').textContent = 'កំពុងកត់ត្រា...';
+            updateReadyState();
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+        }
+
+        function downloadRecording() {
+            if (recordedChunks.length === 0) {
+                console.error("No recorded audio data to download.");
+                return;
+            }
+
+            const blob = new Blob(recordedChunks, { type: 'audio/webm;codecs=opus' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            document.body.appendChild(a);
+            a.style = 'display: none';
+            a.href = url;
+            a.download = `audio_ducking_output_${new Date().toISOString()}.webm`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        // --- Start/Stop Functions ---
+
+        function startDucking() {
+            if (!musicBuffer || (!voiceBuffer && !isMicActive)) {
+                console.error("Music file must be loaded, and a voice source (file or mic) selected.");
+                return;
+            }
+
+            try {
+                if (audioContext.state !== 'running') {
+                    audioContext.resume();
+                }
+                
+                // 1. Setup Audio Graph and Connect Nodes
+                setupAudioGraph();
+                
+                // 2. Start Playback
+                startTime = audioContext.currentTime;
+                
+                // Start Music Immediately (will loop)
+                musicSource.start(startTime);
+                
+                // Start Voice (only if it's a buffer source)
+                if (voiceBuffer && !isMicActive) {
+                    const voiceStartTime = startTime + VOICE_START_DELAY;
+                    voiceSource.start(voiceStartTime);
+                }
+                // If it's a microphone, the MediaStreamSourceNode is already feeding data.
+
+                // 3. Start Ducking/Progress Loop
+                audioLoopId = requestAnimationFrame(processAudio);
+                
+                isRunning = true;
+                toggleButton.textContent = 'បញ្ឈប់ Audio Ducking';
+                toggleButton.classList.remove('bg-green-600', 'hover:bg-green-700');
+                toggleButton.classList.add('bg-red-600', 'hover:bg-red-700');
+                
+                recordButton.disabled = false;
+                
+                statusDisplay.className = 'status-pill status-playing w-full';
+                statusDisplay.textContent = 'កំពុងលេង (លឺធម្មតា)';
+
+            } catch (error) {
+                console.error("Error starting audio playback:", error);
+                statusDisplay.className = 'status-pill bg-red-800 text-white w-full';
+                statusDisplay.textContent = 'បរាជ័យ៖ មានកំហុសក្នុងការលេងសំឡេង។';
+            }
+        }
+
+        function stopDucking() {
+            // Stop RAF loop
+            cancelAnimationFrame(audioLoopId);
+            
+            // Stop audio sources
+            if (voiceSource && !isMicActive) { // Only stop if it's a buffer source
+                try { voiceSource.stop(); } catch (e) { /* Already stopped */ }
+            }
+            // Disconnect source node regardless of type
+            if (voiceSource) {
+                 voiceSource.disconnect();
+            }
+            if (musicSource) {
+                try { musicSource.stop(); } catch (e) { /* Already stopped */ }
+                musicSource.disconnect();
+            }
+            
+            // Disconnect all other nodes
+            if (analyserNode) analyserNode.disconnect();
+            if (musicGainNode) musicGainNode.disconnect();
+            if (echoDelayNode) echoDelayNode.disconnect();
+            if (echoFeedbackGainNode) echoFeedbackGainNode.disconnect();
+            if (echoWetGainNode) echoWetGainNode.disconnect();
+            if (destinationStream) destinationStream.disconnect();
+
+            // Stop recording if active
+            if (isRecording) {
+                stopRecording();
+            }
+            
+            // If mic is active, stop the stream tracks to release the mic light/resource
+            if (isMicActive) {
+                stopMic(); // Use the dedicated function to release mic and reset UI
+            }
+            
+            // Reset UI state
+            isRunning = false;
+            startTime = 0; // Reset start time
+            updateReadyState(); // Revert button/status to ready state
+            
+            // Reset progress bars/time display
+            musicProgressBar.style.width = '0%';
+            voiceProgressBar.style.width = '0%';
+            if (musicBuffer) musicTimeDisplay.textContent = `0:00 / ${formatTime(musicBuffer.duration)}`;
+            if (voiceBuffer) voiceTimeDisplay.textContent = `0:00 / ${formatTime(voiceBuffer.duration)}`;
+            else if (isMicActive) voiceTimeDisplay.textContent = `Live Mic`; // Re-set Live Mic status
+        }
+
+        // Main button handler (Start/Stop Playback)
+        toggleButton.addEventListener('click', () => {
+            if (isRunning) {
+                stopDucking();
+            } else {
+                startDucking();
+            }
+        });
+
+        // Record button handler
+        recordButton.addEventListener('click', () => {
+            if (!isRunning) {
+                // If not running, start playback and recording simultaneously
+                startDucking();
+                // Ensure recording starts after the audio graph is set up
+                setTimeout(startRecording, 50); 
+            } else {
+                if (isRecording) {
+                    stopRecording();
+                } else {
+                    // User starts recording while ducking is already running
+                    startRecording();
+                }
+            }
+        });
+
+        // Download button handler
+        downloadButton.addEventListener('click', downloadRecording);
+        
+    </script>
+</body>
+</html>
