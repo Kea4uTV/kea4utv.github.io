@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>កម្មវិធីរៀបចំតំណភ្ជាប់</title>
+    <!-- ប្រើ Tailwind CSS សម្រាប់ភាពស្រស់ស្អាតនិងការឆ្លើយតបទៅនឹងទំហំអេក្រង់ -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb; /* ផ្ទៃខាងក្រោយស្រាល */
+        }
+        .channel-card {
+            transition: transform 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
+            height: 96px; 
+            cursor: grab; /* បង្ហាញថាវាអាចអូសបាន */
+        }
+        .channel-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        /* Style សម្រាប់ពេលកំពុងអូស */
+        .dragging {
+            opacity: 0.4;
+            border: 2px dashed #3b82f6; /* border-blue-500 */
+        }
+        /* Style សម្រាប់ container ពេលកំពុងអូសពីលើ */
+        .channel-group-container.drag-over {
+            background-color: #eff6ff; /* bg-blue-50 */
+        }
+        /* កែសម្រួលរូបតំណាង Icon នៅក្នុង Form ពេលទំហំតូច */
+        .input-icon-preview {
+            max-width: 40px;
+            max-height: 40px;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen">
+
+    <div class="max-w-6xl mx-auto">
+        <!-- Form បញ្ចូល Channel ថ្មី -->
+        <div class="bg-white p-6 rounded-xl shadow-lg mb-4 border border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">បន្ថែមតំណភ្ជាប់ថ្មី</h2>
+            <!-- Message សម្រាប់បង្ហាញស្ថានភាព Title Auto-fetch -->
+            <div id="status-message" class="hidden p-3 mb-4 text-sm rounded-lg bg-yellow-100 text-yellow-800">
+                កំពុងទាញយកចំណងជើងវីដេអូ...
+            </div>
+
+            <form id="add-channel-form" class="space-y-4">
+                <!-- ជួរទី១: វាលបញ្ចូលទិន្នន័យ (Inputs) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                    
+                    <!-- Icon URL Input with Preview -->
+                    <div class="sm:col-span-1 flex items-center bg-gray-50 p-3 rounded-lg border border-gray-100">
+                        <input type="url" id="iconUrl" name="iconUrl" placeholder="URL រូបតំណាង (Icon)" 
+                               oninput="updateIconPreview(this.value)"
+                               class="flex-grow bg-transparent text-gray-700 focus:outline-none placeholder-gray-500">
+                        <div class="w-10 h-10 ml-3 flex items-center justify-center border rounded-lg bg-white p-1 flex-shrink-0">
+                            <img id="icon-preview" src="https://placehold.co/40x40/cccccc/333333?text=Icon"
+                                 class="input-icon-preview" alt="រូបភាព Icon">
+                        </div>
+                    </div>
+
+                    <!-- Title Input -->
+                    <div class="sm:col-span-1">
+                        <input type="text" id="title" name="title" placeholder="ចំណងជើង" required
+                               class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-700">
+                    </div>
+
+                    <!-- Link URL Input -->
+                    <div class="sm:col-span-1">
+                        <!-- Call handleLinkInput when Link URL changes -->
+                        <input type="url" id="linkUrl" name="linkUrl" placeholder="តំណភ្ជាប់ (Link URL)" required
+                               oninput="handleLinkInput(this.value)"
+                               class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-700">
+                    </div>
+                    
+                    <!-- Group Name Input -->
+                    <div class="sm:col-span-1">
+                        <input type="text" id="groupName" name="groupName" placeholder="ឈ្មោះក្រុម (Monetized, ទូទៅ, ...)" value="ទូទៅ"
+                               class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-700">
+                    </div>
+                </div>
+                
+                <!-- ជួរទី២: ប៊ូតុងបន្ថែម (Full Width) -->
+                <div class="mt-4">
+                    <button type="submit"
+                            class="w-full p-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-150 shadow-lg hover:shadow-xl">
+                        <span id="add-button-text">បន្ថែមចូលបញ្ជី</span>
+                        <span id="loading-spinner" class="hidden animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full ml-2"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Export/Import Buttons -->
+        <div class="flex flex-wrap gap-4 mb-10">
+            <button id="export-button" class="flex items-center p-3 bg-gray-500 text-white font-semibold rounded-lg hover:bg-gray-600 transition duration-150 shadow-md">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download-cloud mr-2"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.35"/><path d="M12 16v6"/><path d="m15 19-3 3-3-3"/></svg>
+                រក្សាទុកជាឯកសារ (Export JSON)
+            </button>
+            <label for="import-file" class="cursor-pointer flex items-center p-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition duration-150 shadow-md">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload-cloud mr-2"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.35"/><path d="M12 21v-8"/><path d="m15 18-3-3-3 3"/></svg>
+                ផ្ទុកឯកសារ (Import JSON)
+            </label>
+            <input type="file" id="import-file" accept=".json" class="hidden">
+        </div>
+
+        <!-- Channel Grid Display -->
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">បញ្ជីតំណភ្ជាប់របស់អ្នក</h2>
+            <p class="text-sm text-gray-500">
+                **ចំណាំ:** អ្នកអាចអូស (Drag) តំណភ្ជាប់ ដើម្បីប្ដូរលំដាប់លេខរៀងបាន **តែក្នុងក្រុមរបស់វាប៉ុណ្ណោះ**។
+            </p>
+        </div>
+        <div id="channels-grid" class="space-y-6"> 
+            <!-- Channels will be injected here by JavaScript, organized by group -->
+        </div>
+
+        <!-- Message Box for Feedback -->
+        <div id="message-box" class="fixed bottom-4 right-4 p-4 text-white rounded-lg shadow-xl hidden"></div>
+    </div>
+
+    <script>
+        // Global Variables
+        let allChannels = [];
+        let draggedElement = null;
+        let sourceGroupId = null;
+
+        // Local Storage Key
+        const STORAGE_KEY = 'channelOrganizerLinks';
+
+        // Elements
+        const form = document.getElementById('add-channel-form');
+        const channelsGrid = document.getElementById('channels-grid');
+        const addButtonText = document.getElementById('add-button-text');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const exportButton = document.getElementById('export-button');
+        const importFileInput = document.getElementById('import-file');
+        const statusMessage = document.getElementById('status-message');
+        const titleInput = document.getElementById('title');
+
+
+        // --- Utility Functions ---
+
+        /** មុខងារសម្រាប់បង្ហាញសារ */
+        function showMessage(text, isError = false) {
+            const box = document.getElementById('message-box');
+            box.textContent = text;
+            box.className = isError
+                ? 'fixed bottom-4 right-4 p-4 bg-red-500 text-white rounded-lg shadow-xl'
+                : 'fixed bottom-4 right-4 p-4 bg-green-500 text-white rounded-lg shadow-xl';
+            box.style.display = 'block';
+            setTimeout(() => {
+                box.style.display = 'none';
+            }, 3000);
+        }
+
+        /** មុខងារសម្រាប់ Retry ជាមួយនឹង Exponential Backoff */
+        async function fetchWithRetry(fn, retries = 5, delay = 1000) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    return await fn();
+                } catch (error) {
+                    if (i === retries - 1) throw error;
+                    await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
+                }
+            }
+        }
+
+        /** មុខងារសម្រាប់មើល Icon Preview */
+        window.updateIconPreview = function(url) {
+            const previewImg = document.getElementById('icon-preview');
+            previewImg.src = url || 'https://placehold.co/40x40/cccccc/333333?text=Icon';
+            previewImg.onerror = function() {
+                 this.src = 'https://placehold.co/40x40/cccccc/333333?text=Icon';
+            };
+        }
+
+        // --- LOCAL STORAGE FUNCTIONS (Replaces Firestore) ---
+
+        /** ផ្ទុក Channels ពី Local Storage */
+        function loadChannels() {
+            try {
+                const json = localStorage.getItem(STORAGE_KEY);
+                return json ? JSON.parse(json) : [];
+            } catch (error) {
+                console.error("Error loading from localStorage:", error);
+                return [];
+            }
+        }
+
+        /** រក្សាទុក Channels ទៅ Local Storage */
+        function saveChannels(channels) {
+            try {
+                // ធានាថា sortOrder ត្រូវបានធ្វើបច្ចុប្បន្នភាពត្រឹមត្រូវមុនពេលរក្សាទុក
+                const updatedChannels = channels.map((c, index) => ({...c, sortOrder: index + 1}));
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedChannels));
+                allChannels = updatedChannels; // Update global state
+                renderGroupedChannels(allChannels); // Re-render the UI
+            } catch (error) {
+                console.error("Error saving to localStorage:", error);
+                showMessage("កំហុសក្នុងការរក្សាទុកទិន្នន័យក្នុង Browser។", true);
+            }
+        }
+
+        /** បន្ថែម Channel ថ្មី */
+        function persistChannel(newChannelData) {
+            const channels = loadChannels();
+            
+            const currentGroupName = newChannelData.group || 'ទូទៅ';
+            
+            // គណនាលំដាប់លេខរៀងខ្ពស់បំផុតសម្រាប់ក្រុមនេះ
+            const currentMaxOrder = channels
+                .filter(c => (c.group || 'ទូទៅ') === currentGroupName)
+                .reduce((max, c) => Math.max(max, c.sortOrder || 0), 0);
+                
+            const newChannel = {
+                ...newChannelData,
+                id: crypto.randomUUID(), // Generate a unique ID
+                sortOrder: currentMaxOrder + 1,
+                createdAt: new Date().toISOString()
+            };
+
+            channels.push(newChannel);
+            // ត្រូវតម្រៀប Channels ឡើងវិញបន្ទាប់ពីបន្ថែម
+            sortAndSaveChannels(channels); 
+            showMessage("បានបន្ថែមតំណភ្ជាប់ថ្មីដោយជោគជ័យ!");
+        }
+        
+        /** លុប Channel */
+        function removeChannel(id) {
+            let channels = loadChannels();
+            channels = channels.filter(c => c.id !== id);
+            // រៀបចំលំដាប់ឡើងវិញ និងរក្សាទុក
+            sortAndSaveChannels(channels);
+            showMessage("បានលុបតំណភ្ជាប់ដោយជោគជ័យ។");
+        }
+
+        /** រៀបចំ Channels ឡើងវិញ និងរក្សាទុក */
+        function sortAndSaveChannels(channels) {
+             // 1. Group channels
+             const grouped = channels.reduce((acc, channel) => {
+                const groupKey = channel.group ? channel.group.trim() : 'ទូទៅ';
+                if (!acc[groupKey]) {
+                    acc[groupKey] = [];
+                }
+                acc[groupKey].push(channel);
+                return acc;
+             }, {});
+
+             let sortedChannels = [];
+             const sortedGroupKeys = Object.keys(grouped).sort();
+
+             // 2. Assign new sequential sortOrder within each group
+             sortedGroupKeys.forEach(groupName => {
+                 // Sort internal array by current sortOrder to maintain user-defined visual order (if any)
+                 grouped[groupName].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+                 
+                 let orderCounter = 1;
+                 grouped[groupName].forEach(channel => {
+                     // Update sortOrder sequentially
+                     channel.sortOrder = orderCounter++;
+                     sortedChannels.push(channel);
+                 });
+             });
+
+             // 3. Save the completely resorted list
+             localStorage.setItem(STORAGE_KEY, JSON.stringify(sortedChannels));
+             allChannels = sortedChannels;
+             renderGroupedChannels(allChannels);
+        }
+
+        // --- BACKEND (Gemini API Call) Logic ---
+
+        /**
+         * ប្រើ Gemini API ជាមួយ Google Search Tool ដើម្បីទាញយកចំណងជើងវីដេអូ YouTube។
+         * @param {string} videoId - ID របស់វីដេអូ (e.g., "dQw4w9WgXcQ")
+         * @returns {Promise<string|null>} ចំណងជើងវីដេអូ ឬ null ប្រសិនបើបរាជ័យ
+         */
+        async function fetchVideoTitle(videoId) {
+            const apiKey = ""; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            
+            const systemPrompt = "Act as a video metadata extractor. You are given a YouTube video ID. Use the Google Search tool to find the exact video title based on the ID. Respond only with the title text and nothing else, without any conversational filler or quotation marks. If the title is not found, respond with 'ចំណងជើងមិនឃើញ'.";
+            const userQuery = `Find the title of the YouTube video with ID: ${videoId}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                tools: [{ "google_search": {} }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+            };
+
+            statusMessage.textContent = 'កំពុងទាញយកចំណងជើងវីដេអូ...';
+            statusMessage.classList.remove('hidden');
+
+            try {
+                const response = await fetchWithRetry(() => fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }));
+                
+                const result = await response.json();
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+                if (text && text !== 'ចំណងជើងមិនឃើញ') {
+                    return text;
+                }
+            } catch (error) {
+                console.error("Gemini API call failed:", error);
+                return null;
+            } finally {
+                statusMessage.classList.add('hidden');
+            }
+            return null;
+        }
+
+        // --- FRONTEND Logic (Input Handling) ---
+
+        /**
+         * ពិនិត្យ Link ថាតើជា YouTube Link ដែរឬទេ ហើយទាញយក Thumbnail និង Title ដោយស្វ័យប្រវត្តិ
+         * @param {string} url - តំណភ្ជាប់ដែលបានបញ្ចូល
+         */
+        window.handleLinkInput = async function(url) {
+            const videoIdMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|v\/|embed\/|shorts\/))([\w-]{11})/);
+            const iconUrlInput = document.getElementById('iconUrl');
+
+            if (videoIdMatch && videoIdMatch[1]) {
+                const videoId = videoIdMatch[1];
+                // 1. Icon URL: ប្រើ thumbnail របស់ YouTube 
+                const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+                iconUrlInput.value = thumbnailUrl;
+                updateIconPreview(thumbnailUrl);
+                
+                // 2. Title: ហៅទៅ "Backend" (Gemini API)
+                const title = await fetchVideoTitle(videoId);
+
+                if (title) {
+                    titleInput.value = title;
+                    titleInput.placeholder = "ចំណងជើង";
+                } else {
+                    titleInput.value = ""; // Clear if previously filled
+                    titleInput.placeholder = "ចំណងជើង (មិនអាចទាញយកដោយស្វ័យប្រវត្តិ)";
+                }
+
+            } else {
+                 // Reset ទៅ default ប្រសិនបើតំណភ្ជាប់លែងជា YouTube
+                 iconUrlInput.value = '';
+                 updateIconPreview('');
+                 titleInput.value = "";
+                 titleInput.placeholder = "ចំណងជើង";
+            }
+        }
+
+
+        // --- Drag and Drop Logic ---
+
+        function getGroupIdFromGroupName(groupName) {
+            return 'group-container-' + (groupName || 'ទូទៅ').replace(/\s/g, '-').replace(/[^a-z0-9-]/g, '').toLowerCase();
+        }
+
+        function handleDragStart(e) {
+            draggedElement = this;
+            sourceGroupId = draggedElement.dataset.groupId;
+
+            e.dataTransfer.setData('text/plain', this.id);
+            e.dataTransfer.effectAllowed = 'move';
+            
+            setTimeout(() => this.classList.add('dragging'), 0);
+        }
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.channel-card:not(.dragging)')]; 
+
+            return draggableElements.reduce((closest, child) => {
+                const rect = child.getBoundingClientRect();
+                const offset = y - rect.top - rect.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault(); 
+            const dropTarget = e.currentTarget;
+
+            // 1. Check if the drop is within the original group
+            if (draggedElement && dropTarget.id === sourceGroupId) {
+                dropTarget.classList.add('drag-over');
+
+                // 2. Visual reordering
+                const afterElement = getDragAfterElement(dropTarget, e.clientY);
+                
+                if (afterElement == null) {
+                    if (dropTarget.lastElementChild !== draggedElement) {
+                        dropTarget.appendChild(draggedElement);
+                    }
+                } else {
+                    if (afterElement.previousElementSibling !== draggedElement) {
+                        dropTarget.insertBefore(draggedElement, afterElement);
+                    }
+                }
+            } else {
+                 e.dataTransfer.dropEffect = 'none';
+            }
+        }
+
+        function handleDragLeave(e) {
+             e.currentTarget.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const container = e.currentTarget;
+
+            container.classList.remove('drag-over');
+
+            if (!draggedElement || container.id !== sourceGroupId) {
+                 return;
+            }
+
+            // 1. Get the list of IDs in the new order from the DOM
+            const orderedIds = [...container.children]
+                .filter(el => el.id && el.id.startsWith('channel-'))
+                .map(el => el.id.replace('channel-', ''));
+            
+            // 2. Reconstruct the new channel array based on the new order
+            const updatedChannels = [];
+            const groupName = allChannels.find(c => getGroupIdFromGroupName(c.group) === sourceGroupId)?.group || 'ទូទៅ';
+            
+            // Channels in the affected group
+            const groupChannels = allChannels.filter(c => (c.group || 'ទូទៅ') === groupName);
+            
+            // Channels not in the affected group (must stay in place)
+            const otherChannels = allChannels.filter(c => (c.group || 'ទូទៅ') !== groupName);
+
+
+            // Merge: Add other channels first
+            updatedChannels.push(...otherChannels);
+            
+            // Merge: Add reordered group channels
+            orderedIds.forEach((id, index) => {
+                const channelToMove = groupChannels.find(c => c.id === id);
+                if (channelToMove) {
+                    // Update the sortOrder based on its position in the group only
+                    channelToMove.sortOrder = index + 1; 
+                    updatedChannels.push(channelToMove);
+                }
+            });
+            
+            // 3. Persist the changes
+            sortAndSaveChannels(updatedChannels);
+            showMessage("បានផ្លាស់ប្តូរលំដាប់តំណភ្ជាប់ដោយជោគជ័យ!");
+        }
+
+        function handleDragEnd() {
+            if (draggedElement) {
+                draggedElement.classList.remove('dragging');
+            }
+            draggedElement = null;
+            sourceGroupId = null;
+            document.querySelectorAll('.channel-group-container').forEach(c => c.classList.remove('drag-over'));
+        }
+
+        // --- Rendering Logic ---
+
+        /** មុខងារសម្រាប់បង្កើត Channel Card HTML */
+        function createChannelCard(channel) {
+            const card = document.createElement('div');
+            card.id = `channel-${channel.id}`;
+            card.className = 'channel-card bg-white p-4 rounded-xl shadow-md border border-gray-200 flex items-center justify-between cursor-pointer relative group';
+            card.onclick = () => window.open(channel.linkUrl, '_blank');
+            
+            card.setAttribute('draggable', 'true'); 
+            card.dataset.groupId = getGroupIdFromGroupName(channel.group);
+            card.addEventListener('dragstart', handleDragStart);
+            card.addEventListener('dragend', handleDragEnd);
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'flex items-center space-x-3 overflow-hidden flex-grow min-w-0'; 
+
+            const iconImg = document.createElement('img');
+            iconImg.className = 'w-8 h-8 md:w-10 md:h-10 rounded-lg flex-shrink-0 input-icon-preview';
+            iconImg.src = channel.iconUrl;
+            iconImg.alt = channel.title + ' icon';
+            iconImg.onerror = function() {
+                this.onerror = null;
+                this.src = `https://placehold.co/40x40/cccccc/333333?text=${channel.title.charAt(0).toUpperCase()}`;
+            };
+
+            const titleSpan = document.createElement('span');
+            titleSpan.id = `title-${channel.id}`;
+            titleSpan.className = 'text-gray-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis text-sm sm:text-base block min-w-0'; 
+            titleSpan.textContent = channel.title;
+
+            contentDiv.appendChild(iconImg);
+            contentDiv.appendChild(titleSpan);
+
+            const actionDiv = document.createElement('div');
+            actionDiv.className = 'flex items-center space-x-2 flex-shrink-0'; 
+
+            const deleteButton = document.createElement('button');
+            deleteButton.className = 'p-1.5 bg-red-500 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-red-600 focus:outline-none';
+            deleteButton.innerHTML = `<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>`;
+            deleteButton.title = 'លុបតំណភ្ជាប់';
+            deleteButton.onclick = (e) => {
+                e.stopPropagation();
+                if (window.confirm(`តើអ្នកពិតជាចង់លុប '${channel.title}' ទេ?`)) {
+                    removeChannel(channel.id);
+                }
+            };
+
+            const linkIcon = document.createElement('span');
+            linkIcon.className = 'text-blue-500 group-hover:text-blue-600 transition-colors flex items-center';
+            linkIcon.innerHTML = `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-external-link"><path d="M15 7h4v4"/><path d="M18 13V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8"/><path d="m18 7-7 7"/></svg>`;
+
+            actionDiv.appendChild(deleteButton);
+            actionDiv.appendChild(linkIcon);
+
+            card.appendChild(contentDiv);
+            card.appendChild(actionDiv);
+
+            return card;
+        }
+        
+        /** មុខងារសម្រាប់បង្ហាញ Channel ដែលបានដាក់ជាក្រុម */
+        function renderGroupedChannels(channels) {
+            channelsGrid.innerHTML = '';
+
+            if (channels.length === 0) {
+                channelsGrid.innerHTML = '<p class="text-center text-gray-500 p-8 bg-white rounded-xl shadow-sm border">មិនទាន់មានតំណភ្ជាប់ណាមួយនៅឡើយទេ។ សូមបន្ថែមថ្មី!</p>';
+                return;
+            }
+
+            const grouped = channels.reduce((acc, channel) => {
+                const groupKey = channel.group ? channel.group.trim() : 'ទូទៅ';
+                if (!acc[groupKey]) acc[groupKey] = [];
+                acc[groupKey].push(channel);
+                return acc;
+            }, {});
+
+            const sortedGroupKeys = Object.keys(grouped).sort();
+
+            const fragment = document.createDocumentFragment();
+
+            sortedGroupKeys.forEach(groupName => {
+                const groupTitle = document.createElement('h3');
+                groupTitle.className = 'text-xl font-bold text-gray-800 pt-3 border-b pb-1 mb-4';
+                groupTitle.textContent = groupName;
+                fragment.appendChild(groupTitle);
+
+                const groupContainer = document.createElement('div');
+                const groupId = getGroupIdFromGroupName(groupName);
+                groupContainer.id = groupId; 
+                groupContainer.className = 'channel-group-container grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-8 min-h-[100px] p-2 rounded-lg';
+                
+                groupContainer.addEventListener('dragover', handleDragOver);
+                groupContainer.addEventListener('drop', handleDrop);
+                groupContainer.addEventListener('dragleave', handleDragLeave);
+                groupContainer.addEventListener('dragenter', (e) => {
+                    if (draggedElement && groupContainer.id === draggedElement.dataset.groupId) {
+                        e.currentTarget.classList.add('drag-over');
+                    }
+                });
+
+                // តម្រៀប Channels នៅក្នុងក្រុមដោយប្រើ sortOrder (Ascending)
+                grouped[groupName].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+
+                grouped[groupName].forEach(channel => {
+                    groupContainer.appendChild(createChannelCard(channel));
+                });
+                
+                fragment.appendChild(groupContainer);
+            });
+
+            channelsGrid.appendChild(fragment);
+        }
+
+        // --- Export/Import Logic (Updated for Local Storage structure) ---
+
+        /** មុខងារសម្រាប់ Export ទិន្នន័យ */
+        function exportChannelsToJson() {
+            try {
+                const channels = loadChannels();
+                
+                // លុប ID និង createdAt ចេញដើម្បីងាយស្រួល Import មកវិញ
+                const cleanChannels = channels.map(c => {
+                    const { id, createdAt, ...data } = c;
+                    return data;
+                });
+
+                const jsonString = JSON.stringify(cleanChannels, null, 2);
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `channel_links_backup_${new Date().toISOString().substring(0, 10)}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                showMessage("បានរក្សាទុកឯកសារដោយជោគជ័យ។");
+
+            } catch (error) {
+                console.error("Error exporting channels:", error);
+                showMessage("កំហុសក្នុងការរក្សាទុកឯកសារ: " + error.message, true);
+            }
+        }
+
+        /** មុខងារសម្រាប់ Import ទិន្នន័យ */
+        function importChannelsFromJson(file) {
+            if (!window.confirm("ការផ្ទុកឯកសារ Import នឹងលុបតំណភ្ជាប់ដែលមានស្រាប់ទាំងអស់ ហើយជំនួសដោយតំណភ្ជាប់ថ្មី។ តើអ្នកយល់ព្រមទេ?")) {
+                importFileInput.value = ''; // Clear file input
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    showMessage("កំពុងផ្ទុកទិន្នន័យ... សូមរង់ចាំ!");
+                    
+                    const importedChannels = JSON.parse(event.target.result);
+
+                    if (!Array.isArray(importedChannels)) {
+                        showMessage("ឯកសារ JSON មិនត្រឹមត្រូវ (ត្រូវជា Array of Objects)។", true);
+                        return;
+                    }
+
+                    // 1. Prepare new data structure
+                    const newChannelList = [];
+                    importedChannels.forEach(channel => {
+                        if (channel.title && channel.linkUrl) {
+                            newChannelList.push({
+                                ...channel,
+                                id: crypto.randomUUID(), // Generate new IDs
+                                group: channel.group || 'ទូទៅ',
+                                sortOrder: 0 // Will be fixed by sortAndSaveChannels
+                            });
+                        }
+                    });
+
+                    // 2. Clear old and save new
+                    sortAndSaveChannels(newChannelList);
+                    
+                    showMessage(`បានផ្ទុកតំណភ្ជាប់ថ្មីចំនួន ${newChannelList.length} ដោយជោគជ័យ!`);
+
+                } catch (error) {
+                    console.error("Error importing channels:", error);
+                    showMessage("កំហុសក្នុងការផ្ទុកឯកសារ: ពិនិត្យមើលទ្រង់ទ្រាយ JSON។", true);
+                } finally {
+                     importFileInput.value = ''; // Clear file input
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // --- Event Listeners and Initial Load ---
+
+        // Event Listener សម្រាប់ Form Submission
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const iconUrl = document.getElementById('iconUrl').value.trim();
+            const title = document.getElementById('title').value.trim();
+            const linkUrl = document.getElementById('linkUrl').value.trim();
+            const groupName = document.getElementById('groupName').value.trim();
+
+            if (!title || !linkUrl) {
+                showMessage("សូមបំពេញចំណងជើង និងតំណភ្ជាប់។", true);
+                return;
+            }
+
+            persistChannel({ iconUrl, title, linkUrl, group: groupName }); 
+            form.reset();
+            document.getElementById('icon-preview').src = 'https://placehold.co/40x40/cccccc/333333?text=Icon';
+            document.getElementById('groupName').value = 'ទូទៅ';
+        });
+
+        // Event Listener សម្រាប់ Export
+        exportButton.addEventListener('click', exportChannelsToJson);
+
+        // Event Listener សម្រាប់ Import
+        importFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                importChannelsFromJson(file);
+            }
+        });
+        
+        /** Initial Load */
+        window.onload = function() {
+            // Load and render existing channels from Local Storage
+            allChannels = loadChannels();
+            renderGroupedChannels(allChannels);
+        }
+    </script>
+</body>
+</html>
