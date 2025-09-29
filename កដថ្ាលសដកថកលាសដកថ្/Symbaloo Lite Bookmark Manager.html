@@ -51,6 +51,12 @@
             width: auto;
             height: auto;
         }
+        /* Disable interaction when element is locked/disabled */
+        .disabled-interaction {
+            pointer-events: none;
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body class="min-h-screen">
@@ -68,14 +74,21 @@
         </header>
         
         <!-- Tools and File Management -->
-        <div class="flex justify-end space-x-4 mb-6">
+        <div class="flex flex-wrap justify-end space-x-3 sm:space-x-4 mb-6">
+            
+            <!-- Lock/Unlock Button -->
+            <button id="lock-toggle-btn" onclick="toggleLock()" class="flex items-center px-4 py-2 text-white font-semibold rounded-lg transition">
+                <!-- Icon and text will be updated by JS -->
+            </button>
+            
             <!-- Export Button -->
             <button onclick="exportData()" class="flex items-center px-4 py-2 bg-gray-300 text-gray-800 font-semibold rounded-lg hover:bg-gray-400 transition">
                 <i data-lucide="download" class="w-4 h-4 mr-2"></i>
                 <span>រក្សាទុកឯកសារ (Export)</span>
             </button>
+            
             <!-- Import Button -->
-            <label for="import-file" class="cursor-pointer flex items-center px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 transition">
+            <label for="import-file" id="import-label" class="cursor-pointer flex items-center px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 transition">
                 <i data-lucide="upload" class="w-4 h-4 mr-2"></i>
                 <span>បញ្ចូលឯកសារ (Import)</span>
             </label>
@@ -86,7 +99,7 @@
         <!-- Webmix Navigation (Tabs) -->
         <div id="webmix-tabs" class="flex flex-wrap border-b border-gray-200 mb-6 space-x-2 sm:space-x-4">
             <!-- Webmix tabs will be injected here -->
-            <button onclick="showAddWebmixModal()" class="flex items-center p-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition duration-150">
+            <button id="add-webmix-btn" onclick="showAddWebmixModal()" class="flex items-center p-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition duration-150">
                 <i data-lucide="plus" class="w-4 h-4 mr-1"></i>
                 <span class="hidden sm:inline">Webmix ថ្មី</span>
             </button>
@@ -121,12 +134,11 @@
                     <label for="tile-url" class="block text-sm font-medium text-gray-700 mb-1">URL (ឧ. https://example.com/)</label>
                     <input type="url" id="tile-url" required class="w-full p-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
                 </div>
-                <!-- START: NEW INPUT FOR CUSTOM ICON URL -->
+                <!-- Input for custom icon URL -->
                 <div class="mb-4">
                     <label for="tile-custom-icon" class="block text-sm font-medium text-gray-700 mb-1">រូបតំណាងផ្ទាល់ខ្លួន (URL រូបភាព - ស្រេចចិត្ត)</label>
                     <input type="url" id="tile-custom-icon" placeholder="https://cdn.example.com/logo.png" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
                 </div>
-                <!-- END: NEW INPUT FOR CUSTOM ICON URL -->
                 <div class="flex justify-end space-x-3">
                     <button type="button" onclick="closeModal('add-tile-modal')" class="px-4 py-2 bg-gray-300 text-gray-800 font-semibold rounded-lg hover:bg-gray-400 transition">បោះបង់</button>
                     <button type="submit" class="px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 transition" id="tile-submit-btn">បន្ថែម</button>
@@ -154,10 +166,11 @@
 
     <!-- 3. Context Menu for Tile (Hidden) -->
     <div id="tile-context-menu" class="absolute bg-white border border-gray-200 rounded-lg shadow-lg p-1 z-50 hidden">
-        <button onclick="editSelectedTile()" class="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+        <!-- CRITICAL FIX: The handler is now more robust to prevent early closing -->
+        <button onclick="handleTileAction(event, 'edit')" class="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
             <i data-lucide="pencil" class="w-4 h-4 mr-2"></i> កែប្រែ
         </button>
-        <button onclick="deleteSelectedTile()" class="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md">
+        <button onclick="handleTileAction(event, 'delete')" class="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md">
             <i data-lucide="trash-2" class="w-4 h-4 mr-2"></i> លុប
         </button>
     </div>
@@ -179,21 +192,22 @@
             currentWebmixId: 1,
             nextWebmixId: 3,
             nextTileId: 5,
+            isLocked: false, // State for locking the app
             webmixes: [
                 {
                     id: 1,
                     title: "សំខាន់ (Important)",
                     tiles: [
-                        { id: 1, url: "https://www.google.com/", title: "Google", color: "bg-blue-500" },
-                        { id: 2, url: "https://www.youtube.com/", title: "YouTube", color: "bg-red-500" },
+                        { id: 1, url: "https://www.google.com/", title: "Google", color: "bg-blue-500", customIconUrl: null },
+                        { id: 2, url: "https://www.youtube.com/", title: "YouTube", color: "bg-red-500", customIconUrl: null },
                     ]
                 },
                 {
                     id: 2,
                     title: "បណ្តាញសង្គម (Social)",
                     tiles: [
-                        { id: 3, url: "https://www.facebook.com/", title: "Facebook", color: "bg-indigo-500" },
-                        { id: 4, url: "https://x.com/", title: "X (Twitter)", color: "bg-black" },
+                        { id: 3, url: "https://www.facebook.com/", title: "Facebook", color: "bg-indigo-500", customIconUrl: null },
+                        { id: 4, url: "https://x.com/", title: "X (Twitter)", color: "bg-black", customIconUrl: null },
                     ]
                 }
             ]
@@ -230,12 +244,17 @@
             try {
                 const storedData = localStorage.getItem('symbalooLiteData');
                 if (storedData) {
-                    symbalooData = JSON.parse(storedData);
+                    const importedData = JSON.parse(storedData);
+                    symbalooData = importedData;
+                    
+                    // Load lock state, defaulting to false
+                    symbalooData.isLocked = importedData.isLocked !== undefined ? importedData.isLocked : false; 
+                    
                     // Ensure next IDs are properly calculated if data exists
                     symbalooData.nextWebmixId = symbalooData.webmixes.length > 0 ? Math.max(...symbalooData.webmixes.map(w => w.id)) + 1 : 1;
                     let maxTileId = 0;
                     symbalooData.webmixes.forEach(w => {
-                        if (w.tiles.length > 0) {
+                        if (w.tiles && w.tiles.length > 0) {
                             const currentMax = Math.max(...w.tiles.map(t => t.id));
                             if (currentMax > maxTileId) maxTileId = currentMax;
                         }
@@ -246,6 +265,10 @@
                 }
             } catch (error) {
                 console.error("Error loading data from LocalStorage:", error);
+                // Fallback to default data if loading fails
+                symbalooData.isLocked = false;
+                symbalooData.webmixes = []; 
+                symbalooData.currentWebmixId = null;
             }
         }
 
@@ -258,6 +281,48 @@
             }
         }
         
+        // --- LOCK LOGIC ---
+
+        /** Toggles the lock state and updates the UI. */
+        function toggleLock() {
+            symbalooData.isLocked = !symbalooData.isLocked;
+            saveData();
+            updateLockIcon();
+            renderAll(); // Re-render to disable/enable interactive elements
+            showCustomModal(
+                symbalooData.isLocked ? 'ចាក់សោរ' : 'ដោះសោរ',
+                symbalooData.isLocked ? 'កម្មវិធីត្រូវបានចាក់សោរ។ អ្នកមិនអាចបន្ថែម កែប្រែ ឬលុប Tiles/Webmixes បានទេ។' : 'កម្មវិធីត្រូវបានដោះសោរ។ ឥឡូវនេះអ្នកអាចកែប្រែបានហើយ។',
+                false
+            );
+        }
+
+        /** Updates the Lock button's icon and text based on the lock state. */
+        function updateLockIcon() {
+            const btn = document.getElementById('lock-toggle-btn');
+            const importLabel = document.getElementById('import-label');
+            const addWebmixBtn = document.getElementById('add-webmix-btn');
+
+            if (!btn) return;
+
+            const iconName = symbalooData.isLocked ? 'lock' : 'unlock';
+            const text = symbalooData.isLocked ? 'ចាក់សោរ (Locked)' : 'ដោះសោរ (Unlocked)';
+            const color = symbalooData.isLocked ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600';
+            
+            btn.className = `flex items-center px-4 py-2 text-white font-semibold rounded-lg transition ${color}`;
+            btn.innerHTML = `<i data-lucide="${iconName}" class="w-4 h-4 mr-2"></i> <span>${text}</span>`;
+            
+            // Apply disabled class to Import/Add Webmix buttons
+            if (symbalooData.isLocked) {
+                importLabel.classList.add('disabled-interaction');
+                addWebmixBtn.classList.add('disabled-interaction');
+            } else {
+                importLabel.classList.remove('disabled-interaction');
+                addWebmixBtn.classList.remove('disabled-interaction');
+            }
+
+            lucide.createIcons();
+        }
+
         // --- FILE MANAGEMENT FUNCTIONS ---
 
         /** Exports the current symbaloo data as a downloadable JSON file. */
@@ -268,7 +333,6 @@
             
             const link = document.createElement('a');
             link.href = url;
-            // Generate dynamic file name
             link.download = `symbaloo_lite_backup_${new Date().toISOString().slice(0, 10)}.json`;
             
             document.body.appendChild(link);
@@ -282,6 +346,13 @@
 
         /** Imports data from a selected JSON file, overwrites current data, and re-renders. */
         function importData(event) {
+            // Check lock state
+            if (symbalooData.isLocked) {
+                 showCustomModal('ចាក់សោរ', 'កម្មវិធីត្រូវបានចាក់សោរ។ សូមដោះសោរដើម្បីបញ្ចូលឯកសារថ្មី។', false);
+                 event.target.value = ''; // Clear file input
+                 return;
+            }
+
             const file = event.target.files[0];
             if (!file) return;
 
@@ -290,7 +361,6 @@
                 try {
                     const importedData = JSON.parse(e.target.result);
                     
-                    // Simple validation check for imported structure
                     if (!importedData || !Array.isArray(importedData.webmixes)) {
                         showCustomModal('ការបញ្ចូលបរាជ័យ', 'ឯកសារមិនត្រឹមត្រូវ។ សូមប្រាកដថាវាជាឯកសារបម្រុងទុក Symbaloo Lite JSON។', false, null, 'យល់ព្រម');
                         return;
@@ -314,13 +384,13 @@
                     );
 
                 } catch (error) {
-                    showCustomModal('ការបញ្ចូលបរាជ័យ', 'មានបញ្ហាក្នុងការអានឯកសារ។ សូមប្រាកដថាវាជាឯកសារ JSON ដែលមានទម្រង់ត្រឹមត្រូវ។', false, null, 'យល់ព្រម');
+                    showCustomModal('ការបញ្ចូលបរាជ័យ', 'មានបញ្ហាក្នុងការអានឯកសារ។ សូមប្រាកដថាវាជាឯកសារ JSON ដែលមានទម្រង់ត្រឹមត្រូវ។', false, null, 'យល់ព្រោម');
                 }
             };
             
             reader.readAsText(file);
             
-            // Clear the file input to allow uploading the same file again if needed
+            // Clear the file input
             event.target.value = ''; 
         }
 
@@ -337,13 +407,12 @@
                 document.getElementById('tile-id-edit').value = ''; // Clear edit ID
                 document.getElementById('tile-modal-title').textContent = 'បន្ថែម Tile ថ្មី';
                 document.getElementById('tile-submit-btn').textContent = 'បន្ថែម';
-                // Clear custom icon input as well
                 document.getElementById('tile-custom-icon').value = '';
             }
         }
         
         /** Reusable modal for alerts and confirmations (replaces alert/confirm). */
-        function showCustomModal(title, message, isConfirm = false, confirmCallback = null, confirmText = 'យល់ព្រម', cancelText = 'បោះបង់') {
+        function showCustomModal(title, message, isConfirm = false, confirmCallback = null, confirmText = 'យល់ព្រោម', cancelText = 'បោះបង់') {
             const modal = document.getElementById('custom-alert-modal');
             document.getElementById('custom-alert-title').textContent = title;
             document.getElementById('custom-alert-message').textContent = message;
@@ -361,7 +430,6 @@
 
                 const confirmButton = document.createElement('button');
                 confirmButton.type = 'button';
-                // Use red for destructive actions (like deleting)
                 const isDestructive = confirmText.includes('លុប') || confirmText.includes('Delete');
                 confirmButton.className = `px-4 py-2 ${isDestructive ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600'} text-white font-semibold rounded-lg transition`;
                 confirmButton.textContent = confirmText;
@@ -373,7 +441,6 @@
                 buttonsContainer.appendChild(cancelButton);
                 buttonsContainer.appendChild(confirmButton);
             } else {
-                // Alert mode
                 const okButton = document.createElement('button');
                 okButton.type = 'button';
                 okButton.className = 'px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 transition';
@@ -386,10 +453,19 @@
         }
 
         function showAddWebmixModal() {
+            if (symbalooData.isLocked) {
+                showCustomModal('ចាក់សោរ', 'កម្មវិធីត្រូវបានចាក់សោរ។ សូមដោះសោរដើម្បីបង្កើត Webmix ថ្មី។', false);
+                return;
+            }
             showModal('add-webmix-modal');
         }
 
         function showAddTileModal() {
+            // Check lock state
+            if (symbalooData.isLocked) {
+                showCustomModal('ចាក់សោរ', 'កម្មវិធីត្រូវបានចាក់សោរ។ សូមដោះសោរដើម្បីបន្ថែម Tile ថ្មី។', false);
+                return;
+            }
             // Check if there is any webmix to add to
             if (symbalooData.webmixes.length === 0) {
                 const createWebmixAction = () => showAddWebmixModal();
@@ -408,10 +484,13 @@
 
         /** Shows the tile context menu (Edit/Delete). */
         function showContextMenu(e, tileId) {
+            // Check lock state - Do not show menu if locked
+            if (symbalooData.isLocked) return;
+            
             selectedTileId = tileId;
             const menu = document.getElementById('tile-context-menu');
             
-            // Position the menu near the cursor/touch point
+            // Fix menu positioning and ensure it's on top
             menu.style.left = `${e.pageX}px`;
             menu.style.top = `${e.pageY}px`;
             
@@ -424,14 +503,40 @@
             selectedTileId = null;
         }
 
+        // --- CRITICAL FIX: NEW FUNCTION TO HANDLE CONTEXT MENU CLICKS ---
+        function handleTileAction(e, action) {
+            if (e) {
+                // 1. Stop propagation instantly. This is the first layer of defense.
+                e.stopPropagation(); 
+            }
+            
+            if (symbalooData.isLocked) return;
+
+            // 2. Use setTimeout(0) to defer the action. This ensures the current click event 
+            // is fully processed and the global click listener (which closes the menu) has finished 
+            // before the next modal/dialog attempts to open. This prevents the "race condition".
+            setTimeout(() => {
+                if (action === 'edit') {
+                    editSelectedTile(); 
+                } else if (action === 'delete') {
+                    deleteSelectedTile(); 
+                }
+            }, 0); 
+        }
+
         // --- RENDERING FUNCTIONS ---
 
         /** Renders the Webmix tabs navigation. */
         function renderWebmixTabs() {
             const tabsContainer = document.getElementById('webmix-tabs');
-            const addButton = tabsContainer.querySelector('button[onclick="showAddWebmixModal()"]');
-            tabsContainer.innerHTML = ''; // Clear existing tabs
-            tabsContainer.appendChild(addButton);
+            const addButton = tabsContainer.querySelector('#add-webmix-btn');
+            
+            // Temporarily detach add button
+            const parent = addButton.parentNode;
+            parent.removeChild(addButton);
+
+            // Clear existing tabs
+            tabsContainer.innerHTML = ''; 
 
             symbalooData.webmixes.forEach(webmix => {
                 const isActive = webmix.id === symbalooData.currentWebmixId;
@@ -440,8 +545,8 @@
                 button.className = `webmix-tab p-3 text-sm font-semibold rounded-t-lg transition-colors flex items-center ${isActive ? 'active text-emerald-500' : 'text-gray-500 hover:text-gray-700'}`;
                 button.textContent = webmix.title;
 
-                // Add context menu for Webmix (e.g., delete)
-                if (symbalooData.webmixes.length > 1) { // Only allow deletion if there is more than one webmix
+                // Add delete button only if NOT locked and more than one webmix exists
+                if (!symbalooData.isLocked && symbalooData.webmixes.length > 1) { 
                      const deleteButton = document.createElement('span');
                      deleteButton.innerHTML = `<i data-lucide="x" class="w-3 h-3 ml-1 text-gray-400 hover:text-red-500"></i>`;
                      deleteButton.onclick = (e) => {
@@ -459,8 +564,10 @@
                      button.appendChild(deleteButton);
                 }
 
-                tabsContainer.insertBefore(button, addButton);
+                tabsContainer.appendChild(button);
             });
+            tabsContainer.appendChild(addButton); // Re-attach add button
+
             lucide.createIcons(); // Re-render icons after DOM manipulation
         }
 
@@ -489,7 +596,6 @@
                     e.preventDefault();
                     showContextMenu(e, tile.id);
                 });
-                // Simple click event for navigation is handled by the <a> tag
 
                 // Icon selection logic: Custom URL > Favicon > Fallback Globe
                 const iconSourceUrl = tile.customIconUrl && tile.customIconUrl.trim() !== '' 
@@ -502,7 +608,7 @@
                 // Icon HTML with image and a Lucide fallback if the image fails to load
                 const iconHTML = `
                     <div class="tile-icon-container w-10 h-10 mb-2 flex items-center justify-center">
-                        <img src="${iconSourceUrl}" 
+                        <img src="${iconSourceUrl || ''}" 
                              alt="${tile.title} Icon" 
                              class="w-full h-full object-contain rounded-lg shadow-inner"
                              onerror="this.style.display='none'; this.closest('.tile-icon-container').querySelector('.fallback-icon').style.display='block';"
@@ -517,9 +623,9 @@
                 container.appendChild(tileElement);
             });
 
-            // Render 'Add Tile' placeholder (Cloning the template from outside the container)
+            // Render 'Add Tile' placeholder only if NOT locked
             const placeholderTemplate = document.getElementById('add-tile-placeholder');
-            if (placeholderTemplate) {
+            if (placeholderTemplate && !symbalooData.isLocked) {
                 const placeholder = placeholderTemplate.cloneNode(true);
                 placeholder.classList.remove('hidden');
                 placeholder.onclick = showAddTileModal;
@@ -534,6 +640,7 @@
         function renderAll() {
             renderWebmixTabs();
             renderTiles();
+            updateLockIcon(); // Update lock button state
         }
 
         // --- WEBMIX LOGIC ---
@@ -547,6 +654,12 @@
 
         /** Deletes a Webmix by ID. */
         function deleteWebmix(id) {
+            // Re-check lock state (Safety net, UI should prevent this)
+            if (symbalooData.isLocked) {
+                showCustomModal('ចាក់សោរ', 'កម្មវិធីត្រូវបានចាក់សោរ។ សូមដោះសោរដើម្បីលុប Webmix។', false);
+                return;
+            }
+
             symbalooData.webmixes = symbalooData.webmixes.filter(w => w.id !== id);
             
             // If the deleted webmix was the active one, switch to the first available one
@@ -560,6 +673,9 @@
         /** Handles the form submission for creating a new Webmix. */
         function handleAddWebmix(e) {
             e.preventDefault();
+            // Re-check lock state (Safety net, UI should prevent this)
+            if (symbalooData.isLocked) return;
+
             const title = document.getElementById('webmix-title').value.trim();
             if (!title) return;
 
@@ -582,9 +698,11 @@
         /** Handles the form submission for adding or editing a Tile. */
         function handleTileForm(e) {
             e.preventDefault();
+            // Re-check lock state (Safety net)
+            if (symbalooData.isLocked) return;
+            
             const url = document.getElementById('tile-url').value.trim();
             const title = document.getElementById('tile-title').value.trim();
-            // NEW: Get custom icon URL
             const customIconUrl = document.getElementById('tile-custom-icon').value.trim();
             const editId = document.getElementById('tile-id-edit').value;
 
@@ -599,7 +717,6 @@
                 if (tileToEdit) {
                     tileToEdit.url = url;
                     tileToEdit.title = title;
-                    // NEW: Save custom icon URL (use null if empty string)
                     tileToEdit.customIconUrl = customIconUrl || null; 
                 }
             } else {
@@ -609,7 +726,6 @@
                     url: url,
                     title: title,
                     color: COLORS[Math.floor(Math.random() * COLORS.length)], // Random color
-                    // NEW: Save custom icon URL (use null if empty string)
                     customIconUrl: customIconUrl || null
                 };
                 currentWebmix.tiles.push(newTile);
@@ -620,23 +736,35 @@
             renderTiles();
         }
 
-        /** Deletes the currently selected tile. */
+        /** Deletes the currently selected tile (via confirmation modal). */
         function deleteSelectedTile() {
-            closeContextMenu();
-            if (!selectedTileId) return;
+            // Show confirmation before deletion
+            const confirmAction = () => {
+                closeContextMenu(); // Closes the menu right before deletion
+                if (!selectedTileId) return;
+    
+                const currentWebmix = symbalooData.webmixes.find(w => w.id === symbalooData.currentWebmixId);
+                if (!currentWebmix) return;
+                
+                currentWebmix.tiles = currentWebmix.tiles.filter(t => t.id !== selectedTileId);
+                saveData();
+                renderTiles();
+                selectedTileId = null;
+            };
 
-            const currentWebmix = symbalooData.webmixes.find(w => w.id === symbalooData.currentWebmixId);
-            if (!currentWebmix) return;
-            
-            currentWebmix.tiles = currentWebmix.tiles.filter(t => t.id !== selectedTileId);
-            saveData();
-            renderTiles();
-            selectedTileId = null;
+            showCustomModal(
+                'បញ្ជាក់ការលុប Tile', 
+                'តើអ្នកពិតជាចង់លុប Tile នេះដែរឬទេ? ការផ្លាស់ប្តូរនេះមិនអាចដកថយបានទេ។', 
+                true, 
+                confirmAction,
+                'យល់ព្រមលុប',
+                'បោះបង់'
+            );
         }
 
         /** Opens the modal to edit the currently selected tile. */
         function editSelectedTile() {
-            closeContextMenu();
+            closeContextMenu(); // Always close menu before showing modal
             if (!selectedTileId) return;
 
             const currentWebmix = symbalooData.webmixes.find(w => w.id === symbalooData.currentWebmixId);
@@ -648,7 +776,6 @@
                 document.getElementById('tile-id-edit').value = tile.id;
                 document.getElementById('tile-title').value = tile.title;
                 document.getElementById('tile-url').value = tile.url;
-                // NEW: Load custom icon URL
                 document.getElementById('tile-custom-icon').value = tile.customIconUrl || '';
                 showModal('add-tile-modal');
             }
@@ -659,15 +786,15 @@
 
         window.onload = () => {
             loadData();
+            
+            // If the webmix list is empty, initialize a default webmix
             if (symbalooData.webmixes.length === 0) {
-                // If data is empty after load, initialize with a default one and prompt user
-                // Note: The original implementation in this file was calling a different function signature.
-                // Assuming "Webmix ខ្ញុំ" is the default title when initializing an empty state:
                 const newWebmixId = symbalooData.nextWebmixId++;
                 symbalooData.webmixes.push({ id: newWebmixId, title: "Webmix ខ្ញុំ", tiles: [] });
                 symbalooData.currentWebmixId = newWebmixId;
                 saveData(); 
 
+                // Show welcome message only if it was initially empty
                 showCustomModal(
                     'សូមស្វាគមន៍!',
                     'អ្នកត្រូវបង្កើត Webmix យ៉ាងហោចណាស់មួយដើម្បីចាប់ផ្តើមប្រើប្រាស់។',
@@ -676,14 +803,19 @@
                     'យល់ព្រម'
                 );
             }
+            
             renderAll();
             
             // Global click listener to hide context menu
             document.addEventListener('click', (e) => {
+                // Check if the click is outside the context menu
+                // Note: The action buttons inside the menu use e.stopPropagation() + setTimeout(0)
+                // to prevent this listener from interfering with their execution.
                 if (!e.target.closest('#tile-context-menu')) {
                     closeContextMenu();
                 }
             });
+            
             // Ensure context menu closes on resize
             window.addEventListener('resize', closeContextMenu);
         };
