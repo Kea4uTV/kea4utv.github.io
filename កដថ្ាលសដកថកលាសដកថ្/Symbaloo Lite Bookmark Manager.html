@@ -31,6 +31,7 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             transition: transform 0.1s, box-shadow 0.1s;
             cursor: pointer;
+            padding: 8px; /* Added padding to prevent title overflow */
         }
         .tile:hover {
             transform: translateY(-2px);
@@ -42,6 +43,13 @@
         .webmix-tab.active {
             border-bottom: 4px solid #10b981; /* Emerald 500 */
             color: #10b981;
+        }
+        /* Style for the favicon image */
+        .tile-icon-container img {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
         }
     </style>
 </head>
@@ -113,6 +121,12 @@
                     <label for="tile-url" class="block text-sm font-medium text-gray-700 mb-1">URL (ឧ. https://example.com/)</label>
                     <input type="url" id="tile-url" required class="w-full p-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
                 </div>
+                <!-- START: NEW INPUT FOR CUSTOM ICON URL -->
+                <div class="mb-4">
+                    <label for="tile-custom-icon" class="block text-sm font-medium text-gray-700 mb-1">រូបតំណាងផ្ទាល់ខ្លួន (URL រូបភាព - ស្រេចចិត្ត)</label>
+                    <input type="url" id="tile-custom-icon" placeholder="https://cdn.example.com/logo.png" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
+                </div>
+                <!-- END: NEW INPUT FOR CUSTOM ICON URL -->
                 <div class="flex justify-end space-x-3">
                     <button type="button" onclick="closeModal('add-tile-modal')" class="px-4 py-2 bg-gray-300 text-gray-800 font-semibold rounded-lg hover:bg-gray-400 transition">បោះបង់</button>
                     <button type="submit" class="px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 transition" id="tile-submit-btn">បន្ថែម</button>
@@ -193,6 +207,21 @@
             "bg-red-500", "bg-yellow-500", "bg-green-500", "bg-blue-500",
             "bg-indigo-500", "bg-purple-500", "bg-pink-500", "bg-teal-500"
         ];
+
+        // --- ICON GENERATION FUNCTION ---
+
+        /** Generates a favicon URL using Google's S2 service for reliable fetching. */
+        function getFaviconUrl(url) {
+            try {
+                const domain = new URL(url).hostname;
+                // Use Google's S2 service for reliable favicon fetching
+                return `https://s2.googleusercontent.com/s2/favicons?domain=${domain}&sz=48`;
+            } catch (e) {
+                console.warn("Invalid URL for favicon:", url);
+                return null;
+            }
+        }
+
 
         // --- LOCAL STORAGE FUNCTIONS ---
 
@@ -308,6 +337,8 @@
                 document.getElementById('tile-id-edit').value = ''; // Clear edit ID
                 document.getElementById('tile-modal-title').textContent = 'បន្ថែម Tile ថ្មី';
                 document.getElementById('tile-submit-btn').textContent = 'បន្ថែម';
+                // Clear custom icon input as well
+                document.getElementById('tile-custom-icon').value = '';
             }
         }
         
@@ -458,12 +489,29 @@
                     e.preventDefault();
                     showContextMenu(e, tile.id);
                 });
-                tileElement.addEventListener('click', (e) => {
-                    // Simple click event for navigation
-                });
+                // Simple click event for navigation is handled by the <a> tag
 
-                const iconHTML = `<i data-lucide="external-link" class="w-8 h-8 mb-2"></i>`;
-                const titleHTML = `<span class="text-xs font-medium">${tile.title}</span>`;
+                // Icon selection logic: Custom URL > Favicon > Fallback Globe
+                const iconSourceUrl = tile.customIconUrl && tile.customIconUrl.trim() !== '' 
+                    ? tile.customIconUrl 
+                    : getFaviconUrl(tile.url);
+
+                // Determine if the fallback globe should be shown initially
+                const fallbackDisplay = iconSourceUrl ? 'none' : 'block';
+                
+                // Icon HTML with image and a Lucide fallback if the image fails to load
+                const iconHTML = `
+                    <div class="tile-icon-container w-10 h-10 mb-2 flex items-center justify-center">
+                        <img src="${iconSourceUrl}" 
+                             alt="${tile.title} Icon" 
+                             class="w-full h-full object-contain rounded-lg shadow-inner"
+                             onerror="this.style.display='none'; this.closest('.tile-icon-container').querySelector('.fallback-icon').style.display='block';"
+                        >
+                        <i data-lucide="globe" class="w-8 h-8 text-white fallback-icon" style="display: ${fallbackDisplay};"></i>
+                    </div>
+                `;
+                
+                const titleHTML = `<span class="text-xs font-medium truncate w-full px-1">${tile.title}</span>`;
 
                 tileElement.innerHTML = iconHTML + titleHTML;
                 container.appendChild(tileElement);
@@ -536,6 +584,8 @@
             e.preventDefault();
             const url = document.getElementById('tile-url').value.trim();
             const title = document.getElementById('tile-title').value.trim();
+            // NEW: Get custom icon URL
+            const customIconUrl = document.getElementById('tile-custom-icon').value.trim();
             const editId = document.getElementById('tile-id-edit').value;
 
             if (!url || !title) return;
@@ -549,6 +599,8 @@
                 if (tileToEdit) {
                     tileToEdit.url = url;
                     tileToEdit.title = title;
+                    // NEW: Save custom icon URL (use null if empty string)
+                    tileToEdit.customIconUrl = customIconUrl || null; 
                 }
             } else {
                 // Add new tile
@@ -556,7 +608,9 @@
                     id: symbalooData.nextTileId++,
                     url: url,
                     title: title,
-                    color: COLORS[Math.floor(Math.random() * COLORS.length)] // Random color
+                    color: COLORS[Math.floor(Math.random() * COLORS.length)], // Random color
+                    // NEW: Save custom icon URL (use null if empty string)
+                    customIconUrl: customIconUrl || null
                 };
                 currentWebmix.tiles.push(newTile);
             }
@@ -594,6 +648,8 @@
                 document.getElementById('tile-id-edit').value = tile.id;
                 document.getElementById('tile-title').value = tile.title;
                 document.getElementById('tile-url').value = tile.url;
+                // NEW: Load custom icon URL
+                document.getElementById('tile-custom-icon').value = tile.customIconUrl || '';
                 showModal('add-tile-modal');
             }
             selectedTileId = null; // Clear selection after opening modal
@@ -605,7 +661,13 @@
             loadData();
             if (symbalooData.webmixes.length === 0) {
                 // If data is empty after load, initialize with a default one and prompt user
-                handleAddWebmix({ preventDefault: () => {} }, "Webmix ខ្ញុំ"); 
+                // Note: The original implementation in this file was calling a different function signature.
+                // Assuming "Webmix ខ្ញុំ" is the default title when initializing an empty state:
+                const newWebmixId = symbalooData.nextWebmixId++;
+                symbalooData.webmixes.push({ id: newWebmixId, title: "Webmix ខ្ញុំ", tiles: [] });
+                symbalooData.currentWebmixId = newWebmixId;
+                saveData(); 
+
                 showCustomModal(
                     'សូមស្វាគមន៍!',
                     'អ្នកត្រូវបង្កើត Webmix យ៉ាងហោចណាស់មួយដើម្បីចាប់ផ្តើមប្រើប្រាស់។',
