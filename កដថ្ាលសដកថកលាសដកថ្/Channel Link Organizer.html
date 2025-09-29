@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>កម្មវិធីរៀបចំតំណភ្ជាប់</title>
+    <!-- ប្រើ Tailwind CSS សម្រាប់ភាពស្រស់ស្អាតនិងការឆ្លើយតបទៅនឹងទំហំអេក្រង់ -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb; /* ផ្ទៃខាងក្រោយស្រាល */
+        }
+        .channel-card {
+            transition: transform 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
+            /* ធានាថាកម្ពស់ស្មើគ្នា */
+            height: 96px; /* H-24 equivalent */
+            cursor: grab; /* បង្ហាញថាវាអាចអូសបាន */
+        }
+        .channel-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        /* Style សម្រាប់ពេលកំពុងអូស */
+        .dragging {
+            opacity: 0.4;
+            border: 2px dashed #3b82f6; /* border-blue-500 */
+        }
+        /* Style សម្រាប់ container ពេលកំពុងអូសពីលើ */
+        .channel-group-container.drag-over {
+            background-color: #eff6ff; /* bg-blue-50 */
+        }
+        /* កែសម្រួលរូបតំណាង Icon នៅក្នុង Form ពេលទំហំតូច */
+        .input-icon-preview {
+            max-width: 40px;
+            max-height: 40px;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+        /* ធ្វើឱ្យ Input Icon Container មានកម្ពស់ដូច Input ផ្សេងទៀត */
+        .icon-input-container {
+             /* Set height slightly less than the other input height (3rem/48px) - p-3 = 48px, p-3 rounded-lg border */
+             height: 52px; /* Adjusted based on p-3 padding in surrounding div */
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen">
+
+    <div class="max-w-6xl mx-auto">
+        <!-- Form បញ្ចូល Channel ថ្មី -->
+        <div class="bg-white p-6 rounded-xl shadow-lg mb-4 border border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">បន្ថែមតំណភ្ជាប់ថ្មី</h2>
+            <form id="add-channel-form" class="space-y-4">
+                <!-- ជួរទី១: វាលបញ្ចូលទិន្នន័យ (Inputs) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                    
+                    <!-- Icon URL Input with Preview -->
+                    <div class="sm:col-span-1 flex items-center bg-gray-50 p-3 rounded-lg border border-gray-100">
+                        <input type="url" id="iconUrl" name="iconUrl" placeholder="URL រូបតំណាង (Icon)" 
+                               oninput="updateIconPreview(this.value)"
+                               class="flex-grow bg-transparent text-gray-700 focus:outline-none placeholder-gray-500">
+                        <div class="w-10 h-10 ml-3 flex items-center justify-center border rounded-lg bg-white p-1 flex-shrink-0">
+                            <img id="icon-preview" src="https://placehold.co/40x40/cccccc/333333?text=Icon"
+                                 class="input-icon-preview" alt="រូបភាព Icon">
+                        </div>
+                    </div>
+
+                    <!-- Title Input -->
+                    <div class="sm:col-span-1">
+                        <input type="text" id="title" name="title" placeholder="ចំណងជើង" required
+                               class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-700">
+                    </div>
+
+                    <!-- Link URL Input -->
+                    <div class="sm:col-span-1">
+                        <!-- UPDATED: Call handleLinkInput when Link URL changes -->
+                        <input type="url" id="linkUrl" name="linkUrl" placeholder="តំណភ្ជាប់ (Link URL)" required
+                               oninput="handleLinkInput(this.value)"
+                               class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-700">
+                    </div>
+                    
+                    <!-- NEW: Group Name Input -->
+                    <div class="sm:col-span-1">
+                        <input type="text" id="groupName" name="groupName" placeholder="ឈ្មោះក្រុម (Monetized, ទូទៅ, ...)" value="ទូទៅ"
+                               class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-700">
+                    </div>
+                </div>
+                
+                <!-- ជួរទី២: ប៊ូតុងបន្ថែម (Full Width) -->
+                <div class="mt-4">
+                    <button type="submit"
+                            class="w-full p-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-150 shadow-lg hover:shadow-xl">
+                        <span id="add-button-text">បន្ថែមចូលបញ្ជី</span>
+                        <span id="loading-spinner" class="hidden animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full ml-2"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Export/Import Buttons -->
+        <div class="flex flex-wrap gap-4 mb-10"> <!-- ប្រើ flex-wrap សម្រាប់អេក្រង់តូច -->
+            <button id="export-button" class="flex items-center p-3 bg-gray-500 text-white font-semibold rounded-lg hover:bg-gray-600 transition duration-150 shadow-md">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download-cloud mr-2"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.35"/><path d="M12 16v6"/><path d="m15 19-3 3-3-3"/></svg>
+                រក្សាទុកជាឯកសារ (Export JSON)
+            </button>
+            <label for="import-file" class="cursor-pointer flex items-center p-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition duration-150 shadow-md">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload-cloud mr-2"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.35"/><path d="M12 21v-8"/><path d="m15 18-3-3-3 3"/></svg>
+                ផ្ទុកឯកសារ (Import JSON)
+            </label>
+            <input type="file" id="import-file" accept=".json" class="hidden">
+        </div>
+
+        <!-- Channel Grid Display -->
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">បញ្ជីតំណភ្ជាប់របស់អ្នក</h2>
+            <p class="text-sm text-gray-500">
+                **ចំណាំ:** អ្នកអាចអូស (Drag) តំណភ្ជាប់ ដើម្បីប្ដូរលំដាប់លេខរៀងបាន **តែក្នុងក្រុមរបស់វាប៉ុណ្ណោះ**។
+            </p>
+        </div>
+        <!-- channels-grid ឥឡូវជា container ធម្មតាសម្រាប់ដាក់ Group Title និង Group Container -->
+        <div id="channels-grid" class="space-y-6"> 
+            <!-- Channels will be injected here by JavaScript, organized by group -->
+        </div>
+
+        <!-- Message Box for Feedback -->
+        <div id="message-box" class="fixed bottom-4 right-4 p-4 text-white rounded-lg shadow-xl hidden"></div>
+    </div>
+
+    <!-- Firebase SDK Imports -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        // ត្រូវបន្ថែម updateDoc សម្រាប់ការរក្សាលំដាប់លេខរៀង
+        import { getFirestore, doc, collection, query, onSnapshot, addDoc, deleteDoc, getDocs, updateDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // បិទបើកការត្រួតពិនិត្យ Log សម្រាប់ Firebase
+        setLogLevel('Debug');
+
+        // Global Variables
+        let db, auth, userId = null;
+        let appInitialized = false;
+        let allChannels = []; // ទិន្នន័យ Channels ចុងក្រោយបំផុតសម្រាប់ការគណនាលំដាប់និង D&D
+
+        // Global D&D state
+        let draggedElement = null;
+        let sourceGroupId = null;
+
+        // Firebase Configuration (MUST BE USED)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        const CHANNELS_COLLECTION = `artifacts/${appId}/users/`; // User-specific path prefix
+
+        // Elements
+        const form = document.getElementById('add-channel-form');
+        const channelsGrid = document.getElementById('channels-grid');
+        const addButtonText = document.getElementById('add-button-text');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const exportButton = document.getElementById('export-button');
+        const importFileInput = document.getElementById('import-file');
+
+        // --- Utility Functions ---
+
+        // មុខងារសម្រាប់បង្ហាញសារ
+        function showMessage(text, isError = false) {
+            const box = document.getElementById('message-box');
+            box.textContent = text;
+            box.className = isError
+                ? 'fixed bottom-4 right-4 p-4 bg-red-500 text-white rounded-lg shadow-xl'
+                : 'fixed bottom-4 right-4 p-4 bg-green-500 text-white rounded-lg shadow-xl';
+            box.style.display = 'block';
+            setTimeout(() => {
+                box.style.display = 'none';
+            }, 3000);
+        }
+
+        // មុខងារសម្រាប់ Retry ជាមួយនឹង Exponential Backoff
+        async function fetchWithRetry(fn, retries = 5, delay = 1000) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    return await fn();
+                } catch (error) {
+                    if (i === retries - 1) throw error;
+                    await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
+                }
+            }
+        }
+
+        // មុខងារសម្រាប់រៀបចំ Channels ជាក្រុម
+        function groupChannels(channels) {
+            return channels.reduce((acc, channel) => {
+                // យក groupName ពី channel data ឬប្រើ 'ទូទៅ' (General) ជាលំនាំដើម
+                const groupKey = channel.group ? channel.group.trim() : 'ទូទៅ';
+                if (!acc[groupKey]) {
+                    acc[groupKey] = [];
+                }
+                acc[groupKey].push(channel);
+                return acc;
+            }, {});
+        }
+        
+        // មុខងារសម្រាប់មើល Icon Preview
+        window.updateIconPreview = function(url) {
+            const previewImg = document.getElementById('icon-preview');
+            // ប្រើ URL ពី input ឬ Placeholder
+            previewImg.src = url || 'https://placehold.co/40x40/cccccc/333333?text=Icon';
+            previewImg.onerror = function() {
+                 // ប្រើ Placeholder ពេល Icon URL ខូច
+                 this.src = 'https://placehold.co/40x40/cccccc/333333?text=Icon';
+            };
+        }
+
+        // --- NEW: YouTube Auto-fill Logic ---
+        
+        /**
+         * ពិនិត្យ Link ថាតើជា YouTube Link ដែរឬទេ ហើយទាញយក Thumbnail
+         * @param {string} url - តំណភ្ជាប់ដែលបានបញ្ចូល
+         */
+        window.handleLinkInput = function(url) {
+            const videoIdMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|v\/|embed\/|shorts\/))([\w-]{11})/);
+            const iconUrlInput = document.getElementById('iconUrl');
+            const titleInput = document.getElementById('title');
+
+            if (videoIdMatch && videoIdMatch[1]) {
+                const videoId = videoIdMatch[1];
+                // ប្រើ thumbnail ដែលមានគុណភាពខ្ពស់បំផុត
+                const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+                
+                // បញ្ចូល Icon URL ដោយស្វ័យប្រវត្តិ
+                iconUrlInput.value = thumbnailUrl;
+                updateIconPreview(thumbnailUrl);
+                
+                // ចំណាំ: ការទាញយកចំណងជើងវីដេអូដោយស្វ័យប្រវត្តិពី client-side ត្រូវបានរារាំងដោយ CORS Policy។
+                // យើងត្រូវពឹងផ្អែកលើអ្នកប្រើប្រាស់ដើម្បីបញ្ចូលចំណងជើងដោយខ្លួនឯង។
+                console.log("ចំណាំ: មិនអាចទាញយកចំណងជើង YouTube ដោយស្វ័យប្រវត្តិដោយសារការរឹតត្បិត CORS ទេ។");
+                if (titleInput.value === "") {
+                    // ណែនាំឱ្យអ្នកប្រើប្រាស់វាយបញ្ចូលចំណងជើង ប្រសិនបើវានៅទទេ។
+                    titleInput.placeholder = "ចំណងជើង (ត្រូវវាយបញ្ចូលដោយខ្លួនឯង)";
+                }
+            } else if (iconUrlInput.value.includes('youtube.com') || iconUrlInput.value.includes('youtu.be')) {
+                 // Reset icon preview ទៅ default វិញ ប្រសិនបើតំណភ្ជាប់ត្រូវបានលុប
+                 iconUrlInput.value = '';
+                 updateIconPreview('');
+            }
+        }
+
+        // --- Drag and Drop Logic ---
+
+        function getGroupIdFromGroupName(groupName) {
+            return 'group-container-' + (groupName || 'ទូទៅ').replace(/\s/g, '-').replace(/[^a-z0-9-]/g, '').toLowerCase();
+        }
+
+        function handleDragStart(e) {
+            draggedElement = this;
+            sourceGroupId = draggedElement.dataset.groupId;
+
+            e.dataTransfer.setData('text/plain', this.id);
+            e.dataTransfer.effectAllowed = 'move';
+            
+            setTimeout(() => this.classList.add('dragging'), 0);
+        }
+
+        // មុខងារសម្រាប់កំណត់ធាតុណាដែលត្រូវទម្លាក់ពីលើ (Drop Target)
+        function getDragAfterElement(container, y) {
+            // យកតែ cards នៅក្នុង container នេះ ដែលមិនមែនជាធាតុដែលកំពុងអូស
+            const draggableElements = [...container.querySelectorAll('.channel-card:not(.dragging)')]; 
+
+            return draggableElements.reduce((closest, child) => {
+                const rect = child.getBoundingClientRect();
+                const offset = y - rect.top - rect.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault(); 
+            const dropTarget = e.currentTarget; // groupContainer គឺជា dropTarget
+
+            // 1. Check if the drop is within the original group
+            if (draggedElement && dropTarget.id === sourceGroupId) {
+                dropTarget.classList.add('drag-over');
+
+                // 2. Visual reordering
+                const afterElement = getDragAfterElement(dropTarget, e.clientY);
+                
+                if (afterElement == null) {
+                    // ទម្លាក់នៅចុងបញ្ចប់
+                    if (dropTarget.lastElementChild !== draggedElement) {
+                        dropTarget.appendChild(draggedElement);
+                    }
+                } else {
+                    // ទម្លាក់មុនធាតុផ្សេងទៀត
+                    if (afterElement.previousElementSibling !== draggedElement) {
+                        dropTarget.insertBefore(draggedElement, afterElement);
+                    }
+                }
+            } else {
+                 // ទម្លាក់ទៅក្រុមផ្សេង មិនអនុញ្ញាត
+                 e.dataTransfer.dropEffect = 'none';
+            }
+        }
+
+        function handleDragLeave(e) {
+             e.currentTarget.classList.remove('drag-over');
+        }
+
+        async function handleDrop(e) {
+            e.preventDefault();
+            const container = e.currentTarget;
+
+            container.classList.remove('drag-over');
+
+            if (!draggedElement || container.id !== sourceGroupId) {
+                 // បដិសេធការទម្លាក់ក្រៅក្រុម
+                 return;
+            }
+
+            // 1. Calculate new sort orders based on the current DOM order
+            const newOrderUpdates = [];
+            let currentOrder = 1;
+
+            // យកតែកូនៗដែលជា Channel Card សម្រាប់រាប់លំដាប់
+            [...container.children].forEach(card => {
+                if (card.id && card.id.startsWith('channel-')) {
+                     newOrderUpdates.push({
+                         id: card.id.replace('channel-', ''),
+                         sortOrder: currentOrder++
+                     });
+                }
+            });
+            
+            // 2. Update Firestore for all affected items in this group
+            const updatePromises = newOrderUpdates.map(item => {
+                const docRef = doc(db, `${CHANNELS_COLLECTION}${userId}/channels`, item.id);
+                // ប្រើ updateDoc ជំនួស setDoc ដើម្បីកែប្រែតែវាល sortOrder
+                return fetchWithRetry(() => updateDoc(docRef, { sortOrder: item.sortOrder }));
+            });
+
+            try {
+                 await Promise.all(updatePromises);
+                 showMessage("បានផ្លាស់ប្តូរលំដាប់តំណភ្ជាប់ដោយជោគជ័យ!");
+            } catch (error) {
+                console.error("Error updating sort order:", error);
+                showMessage("កំហុសក្នុងការកែប្រែលំដាប់: " + error.message, true);
+            }
+        }
+
+        function handleDragEnd() {
+            if (draggedElement) {
+                draggedElement.classList.remove('dragging');
+            }
+            draggedElement = null;
+            sourceGroupId = null;
+            // លុប drag-over ពី containers ទាំងអស់
+            document.querySelectorAll('.channel-group-container').forEach(c => c.classList.remove('drag-over'));
+        }
+
+        // --- Firebase Initialization and Auth ---
+
+        async function initFirebase() {
+            if (!firebaseConfig) {
+                console.error("Firebase configuration is missing.");
+                showMessage("កំហុស: កំណត់រចនាសម្ព័ន្ធ Firebase បាត់", true);
+                return;
+            }
+
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // ការផ្ទៀងផ្ទាត់សិទ្ធិ (Authentication)
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        // អ្នកប្រើប្រាស់បានចូល
+                        userId = user.uid;
+                        appInitialized = true;
+                        // ចាប់ផ្តើមការស្តាប់ទិន្នន័យ (Real-time listener)
+                        await fetchWithRetry(setupRealtimeListener);
+                        showMessage("ចូលប្រើមូលដ្ឋានទិន្នន័យបានជោគជ័យ។");
+                    } else {
+                        // ព្យាយាមចូលដោយប្រើ Custom Token ឬចូលដោយអនាមិក
+                        try {
+                            if (initialAuthToken) {
+                                await signInWithCustomToken(auth, initialAuthToken);
+                            } else {
+                                await signInAnonymously(auth);
+                            }
+                        } catch (error) {
+                            console.error("Auth failed:", error);
+                            // ប្រើ ID ចៃដន្យបើការផ្ទៀងផ្ទាត់បរាជ័យ
+                            userId = crypto.randomUUID();
+                            appInitialized = true;
+                            showMessage("មិនអាចចូលបានទេ, កំពុងប្រើ ID អនាមិក (ទិន្នន័យមិនរក្សាទុកសម្រាប់អ្នកប្រើប្រាស់ផ្សេងទៀត)។", true);
+                        }
+                    }
+                });
+
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+                showMessage("កំហុសក្នុងការចាប់ផ្ដើម Firebase។", true);
+            }
+        }
+
+        // --- Firestore Operations ---
+
+        // មុខងារសម្រាប់យក Collection Path
+        function getCollectionRef() {
+            // ប្រើការរក្សាទុកឯកជនសម្រាប់អ្នកប្រើប្រាស់ម្នាក់ៗ
+            return collection(db, `${CHANNELS_COLLECTION}${userId}/channels`);
+        }
+
+        // មុខងារសម្រាប់បន្ថែម Channel ថ្មី
+        async function saveChannel(iconUrl, title, linkUrl, groupName) {
+            if (!appInitialized || !db) {
+                showMessage("កំពុងរង់ចាំការចាប់ផ្តើមកម្មវិធី...", true);
+                return;
+            }
+
+            try {
+                addButtonText.textContent = 'កំពុងបន្ថែម...';
+                loadingSpinner.classList.remove('hidden');
+
+                const currentGroupName = groupName || 'ទូទៅ';
+                
+                // គណនាលំដាប់លេខរៀងខ្ពស់បំផុតសម្រាប់ក្រុមនេះ (Client-side determination)
+                const currentMaxOrder = allChannels
+                    .filter(c => (c.group || 'ទូទៅ') === currentGroupName)
+                    .reduce((max, c) => Math.max(max, c.sortOrder || 0), 0);
+
+                const newChannel = {
+                    iconUrl: iconUrl || 'https://placehold.co/40x40/cccccc/333333?text=Link',
+                    title: title,
+                    linkUrl: linkUrl,
+                    group: currentGroupName,
+                    sortOrder: currentMaxOrder + 1, // បន្ថែមលំដាប់បន្ទាប់
+                    createdAt: new Date().toISOString()
+                };
+
+                await fetchWithRetry(() => addDoc(getCollectionRef(), newChannel));
+
+                showMessage("បានបន្ថែមតំណភ្ជាប់ថ្មីដោយជោគជ័យ!");
+                form.reset();
+                // កំណត់ icon preview ទៅលំនាំដើមវិញ
+                document.getElementById('icon-preview').src = 'https://placehold.co/40x40/cccccc/333333?text=Icon';
+                document.getElementById('groupName').value = 'ទូទៅ'; // កំណត់ឈ្មោះក្រុមទៅលំនាំដើមវិញ
+
+            } catch (error) {
+                console.error("Error adding document:", error);
+                showMessage("កំហុសក្នុងការបន្ថែម: " + error.message, true);
+            } finally {
+                addButtonText.textContent = 'បន្ថែមចូលបញ្ជី';
+                loadingSpinner.classList.add('hidden');
+            }
+        }
+
+        // មុខងារសម្រាប់លុប Channel
+        async function deleteChannel(docId, title) {
+            // ជំនួស window.confirm
+            if (!window.confirm(`តើអ្នកពិតជាចង់លុប '${title}' ទេ?`)) {
+                return; 
+            }
+
+            if (!appInitialized || !db) return;
+
+            try {
+                const docRef = doc(db, `${CHANNELS_COLLECTION}${userId}/channels`, docId);
+                await fetchWithRetry(() => deleteDoc(docRef));
+                showMessage("បានលុបតំណភ្ជាប់ដោយជោគជ័យ។");
+            } catch (error) {
+                console.error("Error removing document:", error);
+                showMessage("កំហុសក្នុងការលុប: " + error.message, true);
+            }
+        }
+
+        // មុខងារសម្រាប់បង្កើត Channel Card HTML
+        function createChannelCard(channel) {
+            const card = document.createElement('div');
+            card.id = `channel-${channel.id}`;
+            card.className = 'channel-card bg-white p-4 rounded-xl shadow-md border border-gray-200 flex items-center justify-between cursor-pointer relative group';
+            card.onclick = () => window.open(channel.linkUrl, '_blank');
+            
+            // មុខងារ D&D
+            card.setAttribute('draggable', 'true'); 
+            card.dataset.groupId = getGroupIdFromGroupName(channel.group); // ID របស់ក្រុម
+            card.addEventListener('dragstart', handleDragStart);
+            card.addEventListener('dragend', handleDragEnd);
+
+            // 1. Icon & Title Area
+            const contentDiv = document.createElement('div');
+            // ប្រើ flex-grow និង min-w-0 ដើម្បីអនុញ្ញាតឱ្យ title ត្រូវកាត់ខ្លី (truncate)
+            contentDiv.className = 'flex items-center space-x-3 overflow-hidden flex-grow min-w-0'; 
+
+            // Icon
+            const iconImg = document.createElement('img');
+            iconImg.className = 'w-8 h-8 md:w-10 md:h-10 rounded-lg flex-shrink-0 input-icon-preview';
+            iconImg.src = channel.iconUrl;
+            iconImg.alt = channel.title + ' icon';
+            iconImg.onerror = function() {
+                // ជំនួសដោយ Placeholder ប្រសិនបើរូបភាពមានកំហុស
+                this.onerror = null;
+                // ប្រើអក្សរដំបូងនៃ Title ជំនួស icon
+                this.src = `https://placehold.co/40x40/cccccc/333333?text=${channel.title.charAt(0).toUpperCase()}`;
+            };
+
+            // Title
+            const titleSpan = document.createElement('span');
+            titleSpan.id = `title-${channel.id}`;
+            // ធានាថា title ត្រូវបានកាត់ខ្លី (truncate) ត្រឹមត្រូវ
+            titleSpan.className = 'text-gray-700 font-medium whitespace-nowrap overflow-hidden text-ellipsis text-sm sm:text-base block min-w-0'; 
+            titleSpan.textContent = channel.title;
+
+            contentDiv.appendChild(iconImg);
+            contentDiv.appendChild(titleSpan);
+
+            // 2. Action Buttons Area
+            const actionDiv = document.createElement('div');
+            // flex-shrink-0 ធានាថា buttons មិនត្រូវបានរុញច្រានដោយ title វែងទេ
+            actionDiv.className = 'flex items-center space-x-2 flex-shrink-0'; 
+
+            // Delete Button (លេចចេញនៅពេល Hover) - SVG របស់ Trash2
+            const deleteButton = document.createElement('button');
+            deleteButton.className = 'p-1.5 bg-red-500 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-red-600 focus:outline-none';
+            deleteButton.innerHTML = `<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>`;
+            deleteButton.title = 'លុបតំណភ្ជាប់';
+            deleteButton.onclick = (e) => {
+                e.stopPropagation(); // បញ្ឈប់ការបើក Link
+                deleteChannel(channel.id, channel.title);
+            };
+
+            // External Link Icon (ដូចក្នុងរូបភាព) - SVG របស់ ExternalLink
+            const linkIcon = document.createElement('span');
+            linkIcon.className = 'text-blue-500 group-hover:text-blue-600 transition-colors flex items-center';
+            linkIcon.innerHTML = `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-external-link"><path d="M15 7h4v4"/><path d="M18 13V5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8"/><path d="m18 7-7 7"/></svg>`;
+
+            actionDiv.appendChild(deleteButton);
+            actionDiv.appendChild(linkIcon);
+
+            card.appendChild(contentDiv);
+            card.appendChild(actionDiv);
+
+            return card;
+        }
+        
+        // មុខងារសម្រាប់បង្ហាញ Channel ដែលបានដាក់ជាក្រុម
+        function renderGroupedChannels(channels) {
+            channelsGrid.innerHTML = ''; // លុបធាតុចាស់ទាំងអស់
+
+            if (channels.length === 0) {
+                channelsGrid.innerHTML = '<p class="text-center text-gray-500 p-8 bg-white rounded-xl shadow-sm border">មិនទាន់មានតំណភ្ជាប់ណាមួយនៅឡើយទេ។ សូមបន្ថែមថ្មី!</p>';
+                return;
+            }
+
+            const grouped = groupChannels(channels);
+            const sortedGroupKeys = Object.keys(grouped).sort(); // តម្រៀបតាមឈ្មោះក្រុម (A-Z)
+
+            const fragment = document.createDocumentFragment();
+
+            sortedGroupKeys.forEach(groupName => {
+                // Group Title Header
+                const groupTitle = document.createElement('h3');
+                groupTitle.className = 'text-xl font-bold text-gray-800 pt-3 border-b pb-1 mb-4';
+                groupTitle.textContent = groupName;
+                fragment.appendChild(groupTitle);
+
+                // Group Container (Grid for cards within the group)
+                const groupContainer = document.createElement('div');
+                const groupId = getGroupIdFromGroupName(groupName);
+                groupContainer.id = groupId; 
+                // ត្រូវបន្ថែម min-h-[100px] សម្រាប់ drop ពេល container ទទេ
+                groupContainer.className = 'channel-group-container grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-8 min-h-[100px] p-2 rounded-lg';
+                
+                // Add dragover/drop listeners to the container itself
+                groupContainer.addEventListener('dragover', handleDragOver);
+                groupContainer.addEventListener('drop', handleDrop);
+                groupContainer.addEventListener('dragleave', handleDragLeave); // សម្រាប់លុប highlight
+                groupContainer.addEventListener('dragenter', (e) => {
+                    // បន្ថែម drag-over highlight ពេលចូល group
+                    if (draggedElement && groupContainer.id === draggedElement.dataset.groupId) {
+                        e.currentTarget.classList.add('drag-over');
+                    }
+                });
+
+
+                // តម្រៀប Channels នៅក្នុងក្រុមដោយប្រើ sortOrder (Ascending)
+                grouped[groupName].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+
+                grouped[groupName].forEach(channel => {
+                    groupContainer.appendChild(createChannelCard(channel));
+                });
+                
+                fragment.appendChild(groupContainer);
+            });
+
+            channelsGrid.appendChild(fragment);
+        }
+
+        // មុខងារសម្រាប់ស្តាប់ទិន្នន័យ Real-time ពី Firestore
+        function setupRealtimeListener() {
+            if (!db || !userId) {
+                console.warn("Firestore or User ID not ready for listener.");
+                return;
+            }
+
+            const channelsQuery = query(getCollectionRef());
+
+            // onSnapshot ផ្តល់នូវការអាប់ដេតទិន្នន័យគ្រប់ពេលដែលមានការផ្លាស់ប្តូរ
+            const unsubscribe = onSnapshot(channelsQuery, (snapshot) => {
+                const fetchedChannels = [];
+                snapshot.forEach(doc => {
+                    const channelData = doc.data();
+                    const channelItem = {
+                        id: doc.id,
+                        ...channelData
+                    };
+                    fetchedChannels.push(channelItem);
+                });
+                
+                // រក្សាទុកទិន្នន័យចុងក្រោយ
+                allChannels = fetchedChannels; 
+
+                // Group and Render the updated channels (Sorting is done inside renderGroupedChannels)
+                renderGroupedChannels(allChannels);
+
+            }, (error) => {
+                console.error("Error setting up real-time listener:", error);
+                showMessage("កំហុសក្នុងការផ្ទុកទិន្នន័យ (Real-time listener failed): " + error.message, true);
+            });
+
+            // ត្រឡប់មុខងារ unsubscribe ដើម្បីបញ្ឈប់ការស្តាប់នៅពេលក្រោយ (ប្រសិនបើចាំបាច់)
+            return unsubscribe;
+        }
+
+        // --- Export/Import Logic ---
+
+        // មុខងារសម្រាប់ Export ទិន្នន័យ
+        async function exportChannelsToJson() {
+            if (!appInitialized || !db) {
+                showMessage("កម្មវិធីមិនទាន់ចាប់ផ្តើមទេ។", true);
+                return;
+            }
+            try {
+                exportButton.disabled = true;
+                exportButton.textContent = 'កំពុងរៀបចំឯកសារ...';
+                
+                const snapshot = await fetchWithRetry(() => getDocs(getCollectionRef()));
+                const channels = [];
+                snapshot.forEach(doc => {
+                    // លុប ID និង createdAt ចេញដើម្បីងាយស្រួល Import មកវិញ
+                    const { createdAt, ...data } = doc.data();
+                    channels.push(data);
+                });
+
+                const jsonString = JSON.stringify(channels, null, 2);
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `channel_links_backup_${new Date().toISOString().substring(0, 10)}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                showMessage("បានរក្សាទុកឯកសារដោយជោគជ័យ។");
+
+            } catch (error) {
+                console.error("Error exporting channels:", error);
+                showMessage("កំហុសក្នុងការរក្សាទុកឯកសារ: " + error.message, true);
+            } finally {
+                exportButton.textContent = 'រក្សាទុកជាឯកសារ (Export JSON)';
+                exportButton.disabled = false;
+            }
+        }
+
+        // មុខងារសម្រាប់ Import ទិន្នន័យ
+        async function importChannelsFromJson(file) {
+            if (!appInitialized || !db) {
+                showMessage("កម្មវិធីមិនទាន់ចាប់ផ្តើមទេ។", true);
+                return;
+            }
+
+            // IMPORTANT: ប្រើ alert ជំនួស confirm() ព្រោះ confirm() មិនដំណើរការល្អក្នុង iframe
+            if (!window.confirm("ការផ្ទុកឯកសារ Import នឹងលុបតំណភ្ជាប់ដែលមានស្រាប់ទាំងអស់ ហើយជំនួសដោយតំណភ្ជាប់ថ្មី។ តើអ្នកយល់ព្រមទេ?")) {
+                importFileInput.value = ''; // Clear file input
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                try {
+                    showMessage("កំពុងផ្ទុកទិន្នន័យ... សូមរង់ចាំ!");
+                    
+                    const newChannels = JSON.parse(event.target.result);
+
+                    if (!Array.isArray(newChannels)) {
+                        showMessage("ឯកសារ JSON មិនត្រឹមត្រូវ (ត្រូវជា Array of Objects)។", true);
+                        return;
+                    }
+
+                    // 1. លុបទិន្នន័យចាស់ទាំងអស់ (Delete existing data)
+                    const oldSnapshot = await fetchWithRetry(() => getDocs(getCollectionRef()));
+                    const deletePromises = [];
+                    oldSnapshot.forEach(docToDelete => {
+                        deletePromises.push(fetchWithRetry(() => deleteDoc(doc(db, `${CHANNELS_COLLECTION}${userId}/channels`, docToDelete.id))));
+                    });
+                    await Promise.all(deletePromises);
+
+                    // 2. បន្ថែមទិន្នន័យថ្មី
+                    const addPromises = [];
+                    let groupOrderCounters = {}; // សម្រាប់កំណត់ sortOrder ពេល Import
+
+                    newChannels.forEach(channel => {
+                        if (channel.title && channel.linkUrl) {
+                            const currentGroupName = channel.group || 'ទូទៅ';
+                            
+                            // កំណត់ Order តាមក្រុម (សម្រាប់ធានាថាវាមានលំដាប់បន្ទាប់បន្សំ)
+                            groupOrderCounters[currentGroupName] = (groupOrderCounters[currentGroupName] || 0) + 1;
+
+                            const newChannelData = {
+                                iconUrl: channel.iconUrl || 'https://placehold.co/40x40/cccccc/333333?text=Link',
+                                title: channel.title,
+                                linkUrl: channel.linkUrl,
+                                group: currentGroupName,
+                                sortOrder: groupOrderCounters[currentGroupName], // កំណត់ sortOrder ថ្មី
+                                createdAt: new Date().toISOString()
+                            };
+                            addPromises.push(fetchWithRetry(() => addDoc(getCollectionRef(), newChannelData)));
+                        }
+                    });
+                    await Promise.all(addPromises);
+                    
+                    showMessage(`បានផ្ទុកតំណភ្ជាប់ថ្មីចំនួន ${newChannels.length} ដោយជោគជ័យ!`);
+
+                } catch (error) {
+                    console.error("Error importing channels:", error);
+                    showMessage("កំហុសក្នុងការផ្ទុកឯកសារ: ពិនិត្យមើលទ្រង់ទ្រាយ JSON។", true);
+                } finally {
+                     importFileInput.value = ''; // Clear file input
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // --- Event Listeners and Initial Load ---
+
+        // Event Listener សម្រាប់ Form Submission
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const iconUrl = document.getElementById('iconUrl').value.trim();
+            const title = document.getElementById('title').value.trim();
+            const linkUrl = document.getElementById('linkUrl').value.trim();
+            const groupName = document.getElementById('groupName').value.trim(); // Get new group name
+
+            if (!title || !linkUrl) {
+                showMessage("សូមបំពេញចំណងជើង និងតំណភ្ជាប់។", true);
+                return;
+            }
+
+            saveChannel(iconUrl, title, linkUrl, groupName); // Pass groupName
+        });
+
+        // Event Listener សម្រាប់ Icon URL input
+        document.getElementById('iconUrl').addEventListener('input', (e) => {
+            updateIconPreview(e.target.value);
+        });
+
+        // Event Listener សម្រាប់ Export
+        exportButton.addEventListener('click', exportChannelsToJson);
+
+        // Event Listener សម្រាប់ Import
+        importFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                importChannelsFromJson(file);
+            }
+        });
+
+        // ចាប់ផ្តើមកម្មវិធីនៅពេលទំព័រផ្ទុកចប់
+        window.onload = initFirebase;
+    </script>
+</body>
+</html>
