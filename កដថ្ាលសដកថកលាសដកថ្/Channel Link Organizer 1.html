@@ -43,67 +43,11 @@
 <body class="p-4 md:p-8 min-h-screen">
 
     <div class="max-w-6xl mx-auto">
-        <!-- Form បញ្ចូល Channel ថ្មី -->
-        <div class="bg-white p-6 rounded-xl shadow-lg mb-4 border border-gray-200">
-            <h2 class="text-xl font-semibold text-gray-700 mb-4">បន្ថែមតំណភ្ជាប់ថ្មី</h2>
-            <!-- Message សម្រាប់បង្ហាញស្ថានភាព Title Auto-fetch -->
-            <div id="status-message" class="hidden p-3 mb-4 text-sm rounded-lg bg-yellow-100 text-yellow-800">
-                កំពុងទាញយកចំណងជើងវីដេអូ...
-            </div>
-
-            <form id="add-channel-form" class="space-y-4">
-                <!-- ជួរទី១: វាលបញ្ចូលទិន្នន័យ (Inputs) -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                    
-                    <!-- Icon URL Input with Preview -->
-                    <div class="sm:col-span-1 flex items-center bg-gray-50 p-3 rounded-lg border border-gray-100">
-                        <input type="url" id="iconUrl" name="iconUrl" placeholder="URL រូបតំណាង (Icon)" 
-                               oninput="updateIconPreview(this.value)"
-                               class="flex-grow bg-transparent text-gray-700 focus:outline-none placeholder-gray-500">
-                        <div class="w-10 h-10 ml-3 flex items-center justify-center border rounded-lg bg-white p-1 flex-shrink-0">
-                            <img id="icon-preview" src="https://placehold.co/40x40/cccccc/333333?text=Icon"
-                                 class="input-icon-preview" alt="រូបភាព Icon">
-                        </div>
-                    </div>
-
-                    <!-- Title Input -->
-                    <div class="sm:col-span-1">
-                        <input type="text" id="title" name="title" placeholder="ចំណងជើង" required
-                               class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-700">
-                    </div>
-
-                    <!-- Link URL Input -->
-                    <div class="sm:col-span-1">
-                        <!-- Call handleLinkInput when Link URL changes -->
-                        <input type="url" id="linkUrl" name="linkUrl" placeholder="តំណភ្ជាប់ (Link URL)" required
-                               oninput="handleLinkInput(this.value)"
-                               class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-700">
-                    </div>
-                    
-                    <!-- Group Name Input -->
-                    <div class="sm:col-span-1">
-                        <input type="text" id="groupName" name="groupName" placeholder="ឈ្មោះក្រុម (Monetized, ទូទៅ, ...)" value="ទូទៅ"
-                               class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-700">
-                    </div>
-                </div>
-                
-                <!-- ជួរទី២: ប៊ូតុងបន្ថែម (Full Width) -->
-                <div class="mt-4">
-                    <button type="submit"
-                            class="w-full p-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-150 shadow-lg hover:shadow-xl">
-                        <span id="add-button-text">បន្ថែមចូលបញ្ជី</span>
-                        <span id="loading-spinner" class="hidden animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full ml-2"></span>
-                    </button>
-                </div>
-            </form>
-        </div>
+        
         
         <!-- Export/Import Buttons -->
         <div class="flex flex-wrap gap-4 mb-10">
-            <button id="export-button" class="flex items-center p-3 bg-gray-500 text-white font-semibold rounded-lg hover:bg-gray-600 transition duration-150 shadow-md">
-                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download-cloud mr-2"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.35"/><path d="M12 16v6"/><path d="m15 19-3 3-3-3"/></svg>
-                រក្សាទុកជាឯកសារ (Export JSON)
-            </button>
+            
             <label for="import-file" class="cursor-pointer flex items-center p-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition duration-150 shadow-md">
                 <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload-cloud mr-2"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.35"/><path d="M12 21v-8"/><path d="m15 18-3-3-3 3"/></svg>
                 ផ្ទុកឯកសារ (Import JSON)
