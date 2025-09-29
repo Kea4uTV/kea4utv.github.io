@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>កម្មវិធីគ្រប់គ្រងតំណភ្ជាប់ (Symbaloo Lite)</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Lucide Icons for aesthetic appeal -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Custom styles for better tile visualization */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+        }
+        .tile-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 16px;
+            padding: 1rem;
+        }
+        .tile {
+            height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.1s, box-shadow 0.1s;
+            cursor: pointer;
+        }
+        .tile:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+        }
+        .webmix-tab {
+            transition: background-color 0.15s;
+        }
+        .webmix-tab.active {
+            border-bottom: 4px solid #10b981; /* Emerald 500 */
+            color: #10b981;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+
+        <!-- Header and Controls -->
+        <header class="mb-8">
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-2">
+                កម្មវិធីគ្រប់គ្រងតំណភ្ជាប់ (Symbaloo Lite)
+            </h1>
+            <p class="text-gray-600 text-sm">
+                រៀបចំតំណភ្ជាប់របស់អ្នកជា Webmixes និង Tiles ។ ទិន្នន័យត្រូវបានរក្សាទុកនៅក្នុង Browser របស់អ្នក។
+            </p>
+        </header>
+        
+        <!-- Tools and File Management -->
+        <div class="flex justify-end space-x-4 mb-6">
+            <!-- Export Button -->
+            <button onclick="exportData()" class="flex items-center px-4 py-2 bg-gray-300 text-gray-800 font-semibold rounded-lg hover:bg-gray-400 transition">
+                <i data-lucide="download" class="w-4 h-4 mr-2"></i>
+                <span>រក្សាទុកឯកសារ (Export)</span>
+            </button>
+            <!-- Import Button -->
+            <label for="import-file" class="cursor-pointer flex items-center px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 transition">
+                <i data-lucide="upload" class="w-4 h-4 mr-2"></i>
+                <span>បញ្ចូលឯកសារ (Import)</span>
+            </label>
+            <!-- Hidden File Input -->
+            <input type="file" id="import-file" accept=".json" onchange="importData(event)" class="hidden">
+        </div>
+
+        <!-- Webmix Navigation (Tabs) -->
+        <div id="webmix-tabs" class="flex flex-wrap border-b border-gray-200 mb-6 space-x-2 sm:space-x-4">
+            <!-- Webmix tabs will be injected here -->
+            <button onclick="showAddWebmixModal()" class="flex items-center p-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition duration-150">
+                <i data-lucide="plus" class="w-4 h-4 mr-1"></i>
+                <span class="hidden sm:inline">Webmix ថ្មី</span>
+            </button>
+        </div>
+
+        <!-- Tile Grid Area -->
+        <div id="tile-container" class="tile-grid bg-white p-4 sm:p-6 rounded-xl shadow-lg border border-gray-100 min-h-[300px]">
+            <!-- Tiles will be injected here, including the cloned placeholder -->
+        </div>
+        
+    </div>
+
+    <!-- Hidden Template for Add Tile Placeholder (MOVED OUTSIDE #tile-container) -->
+    <div id="add-tile-placeholder" class="tile bg-gray-100 hover:bg-gray-200 text-gray-600 border-2 border-dashed border-gray-300 transition duration-200 hidden" onclick="showAddTileModal()">
+        <i data-lucide="link" class="w-6 h-6 mb-1"></i>
+        <span class="text-sm font-semibold">បន្ថែម Tile</span>
+    </div>
+
+    <!-- Modals -->
+
+    <!-- 1. Add/Edit Tile Modal -->
+    <div id="add-tile-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4" id="tile-modal-title">បន្ថែម Tile ថ្មី</h2>
+            <form id="tile-form" onsubmit="handleTileForm(event)">
+                <input type="hidden" id="tile-id-edit">
+                <div class="mb-4">
+                    <label for="tile-title" class="block text-sm font-medium text-gray-700 mb-1">ចំណងជើង (ឧ. Gmail)</label>
+                    <input type="text" id="tile-title" required class="w-full p-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
+                </div>
+                <div class="mb-4">
+                    <label for="tile-url" class="block text-sm font-medium text-gray-700 mb-1">URL (ឧ. https://example.com/)</label>
+                    <input type="url" id="tile-url" required class="w-full p-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="closeModal('add-tile-modal')" class="px-4 py-2 bg-gray-300 text-gray-800 font-semibold rounded-lg hover:bg-gray-400 transition">បោះបង់</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 transition" id="tile-submit-btn">បន្ថែម</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. Add Webmix Modal -->
+    <div id="add-webmix-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">បង្កើត Webmix ថ្មី</h2>
+            <form id="webmix-form" onsubmit="handleAddWebmix(event)">
+                <div class="mb-4">
+                    <label for="webmix-title" class="block text-sm font-medium text-gray-700 mb-1">ចំណងជើង Webmix (ឧ. ការងារ)</label>
+                    <input type="text" id="webmix-title" required class="w-full p-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="closeModal('add-webmix-modal')" class="px-4 py-2 bg-gray-300 text-gray-800 font-semibold rounded-lg hover:bg-gray-400 transition">បោះបង់</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 transition">បង្កើត</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. Context Menu for Tile (Hidden) -->
+    <div id="tile-context-menu" class="absolute bg-white border border-gray-200 rounded-lg shadow-lg p-1 z-50 hidden">
+        <button onclick="editSelectedTile()" class="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+            <i data-lucide="pencil" class="w-4 h-4 mr-2"></i> កែប្រែ
+        </button>
+        <button onclick="deleteSelectedTile()" class="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md">
+            <i data-lucide="trash-2" class="w-4 h-4 mr-2"></i> លុប
+        </button>
+    </div>
+
+    <!-- 4. Custom Alert/Confirmation Modal (Replaces standard alert/confirm) -->
+    <div id="custom-alert-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-3" id="custom-alert-title"></h2>
+            <p class="text-gray-700 mb-6" id="custom-alert-message"></p>
+            <div class="flex justify-end space-x-3" id="custom-alert-buttons">
+                <!-- Buttons injected here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data structure and utility functions
+        let symbalooData = {
+            currentWebmixId: 1,
+            nextWebmixId: 3,
+            nextTileId: 5,
+            webmixes: [
+                {
+                    id: 1,
+                    title: "សំខាន់ (Important)",
+                    tiles: [
+                        { id: 1, url: "https://www.google.com/", title: "Google", color: "bg-blue-500" },
+                        { id: 2, url: "https://www.youtube.com/", title: "YouTube", color: "bg-red-500" },
+                    ]
+                },
+                {
+                    id: 2,
+                    title: "បណ្តាញសង្គម (Social)",
+                    tiles: [
+                        { id: 3, url: "https://www.facebook.com/", title: "Facebook", color: "bg-indigo-500" },
+                        { id: 4, url: "https://x.com/", title: "X (Twitter)", color: "bg-black" },
+                    ]
+                }
+            ]
+        };
+
+        let selectedTileId = null;
+        let customModalCallback = null;
+
+        // Utility to generate random Tailwind color classes
+        const COLORS = [
+            "bg-red-500", "bg-yellow-500", "bg-green-500", "bg-blue-500",
+            "bg-indigo-500", "bg-purple-500", "bg-pink-500", "bg-teal-500"
+        ];
+
+        // --- LOCAL STORAGE FUNCTIONS ---
+
+        /** Loads data from LocalStorage or uses default data. */
+        function loadData() {
+            try {
+                const storedData = localStorage.getItem('symbalooLiteData');
+                if (storedData) {
+                    symbalooData = JSON.parse(storedData);
+                    // Ensure next IDs are properly calculated if data exists
+                    symbalooData.nextWebmixId = symbalooData.webmixes.length > 0 ? Math.max(...symbalooData.webmixes.map(w => w.id)) + 1 : 1;
+                    let maxTileId = 0;
+                    symbalooData.webmixes.forEach(w => {
+                        if (w.tiles.length > 0) {
+                            const currentMax = Math.max(...w.tiles.map(t => t.id));
+                            if (currentMax > maxTileId) maxTileId = currentMax;
+                        }
+                    });
+                    symbalooData.nextTileId = maxTileId + 1;
+                } else {
+                    saveData(); // Save default data if none exists
+                }
+            } catch (error) {
+                console.error("Error loading data from LocalStorage:", error);
+            }
+        }
+
+        /** Saves current data structure to LocalStorage. */
+        function saveData() {
+            try {
+                localStorage.setItem('symbalooLiteData', JSON.stringify(symbalooData));
+            } catch (error) {
+                console.error("Error saving data to LocalStorage:", error);
+            }
+        }
+        
+        // --- FILE MANAGEMENT FUNCTIONS ---
+
+        /** Exports the current symbaloo data as a downloadable JSON file. */
+        function exportData() {
+            const dataStr = JSON.stringify(symbalooData, null, 2);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            // Generate dynamic file name
+            link.download = `symbaloo_lite_backup_${new Date().toISOString().slice(0, 10)}.json`;
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            URL.revokeObjectURL(url);
+            
+            showCustomModal('រក្សាទុកបានជោគជ័យ!', 'ទិន្នន័យរបស់អ្នកត្រូវបានរក្សាទុកជាឯកសារ JSON រួចរាល់ហើយ។', false);
+        }
+
+        /** Imports data from a selected JSON file, overwrites current data, and re-renders. */
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    
+                    // Simple validation check for imported structure
+                    if (!importedData || !Array.isArray(importedData.webmixes)) {
+                        showCustomModal('ការបញ្ចូលបរាជ័យ', 'ឯកសារមិនត្រឹមត្រូវ។ សូមប្រាកដថាវាជាឯកសារបម្រុងទុក Symbaloo Lite JSON។', false, null, 'យល់ព្រម');
+                        return;
+                    }
+
+                    // Confirm overwrite action
+                    const confirmAction = () => {
+                        symbalooData = importedData;
+                        saveData();
+                        renderAll();
+                        showCustomModal('បញ្ចូលបានជោគជ័យ!', 'ទិន្នន័យថ្មីត្រូវបានផ្ទុកហើយ។', false);
+                    };
+
+                    showCustomModal(
+                        'បញ្ជាក់ការបញ្ចូល', 
+                        'តើអ្នកចង់ជំនួសទិន្នន័យបច្ចុប្បន្នទាំងអស់ជាមួយនឹងឯកសារដែលបានបញ្ចូលដែរឬទេ? ការផ្លាស់ប្តូរនេះមិនអាចដកថយបានទេ។', 
+                        true, 
+                        confirmAction,
+                        'យល់ព្រមជំនួស',
+                        'បោះបង់'
+                    );
+
+                } catch (error) {
+                    showCustomModal('ការបញ្ចូលបរាជ័យ', 'មានបញ្ហាក្នុងការអានឯកសារ។ សូមប្រាកដថាវាជាឯកសារ JSON ដែលមានទម្រង់ត្រឹមត្រូវ។', false, null, 'យល់ព្រម');
+                }
+            };
+            
+            reader.readAsText(file);
+            
+            // Clear the file input to allow uploading the same file again if needed
+            event.target.value = ''; 
+        }
+
+        // --- MODAL & CONTEXT MENU HANDLERS ---
+
+        function showModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+            if (id === 'add-tile-modal') {
+                document.getElementById('tile-form').reset(); // Reset form on close
+                document.getElementById('tile-id-edit').value = ''; // Clear edit ID
+                document.getElementById('tile-modal-title').textContent = 'បន្ថែម Tile ថ្មី';
+                document.getElementById('tile-submit-btn').textContent = 'បន្ថែម';
+            }
+        }
+        
+        /** Reusable modal for alerts and confirmations (replaces alert/confirm). */
+        function showCustomModal(title, message, isConfirm = false, confirmCallback = null, confirmText = 'យល់ព្រម', cancelText = 'បោះបង់') {
+            const modal = document.getElementById('custom-alert-modal');
+            document.getElementById('custom-alert-title').textContent = title;
+            document.getElementById('custom-alert-message').textContent = message;
+            const buttonsContainer = document.getElementById('custom-alert-buttons');
+            buttonsContainer.innerHTML = '';
+
+            if (isConfirm) {
+                customModalCallback = confirmCallback;
+
+                const cancelButton = document.createElement('button');
+                cancelButton.type = 'button';
+                cancelButton.className = 'px-4 py-2 bg-gray-300 text-gray-800 font-semibold rounded-lg hover:bg-gray-400 transition';
+                cancelButton.textContent = cancelText;
+                cancelButton.onclick = () => closeModal('custom-alert-modal');
+
+                const confirmButton = document.createElement('button');
+                confirmButton.type = 'button';
+                // Use red for destructive actions (like deleting)
+                const isDestructive = confirmText.includes('លុប') || confirmText.includes('Delete');
+                confirmButton.className = `px-4 py-2 ${isDestructive ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600'} text-white font-semibold rounded-lg transition`;
+                confirmButton.textContent = confirmText;
+                confirmButton.onclick = () => {
+                    if (customModalCallback) customModalCallback();
+                    closeModal('custom-alert-modal');
+                };
+
+                buttonsContainer.appendChild(cancelButton);
+                buttonsContainer.appendChild(confirmButton);
+            } else {
+                // Alert mode
+                const okButton = document.createElement('button');
+                okButton.type = 'button';
+                okButton.className = 'px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 transition';
+                okButton.textContent = confirmText;
+                okButton.onclick = () => closeModal('custom-alert-modal');
+                buttonsContainer.appendChild(okButton);
+            }
+
+            showModal('custom-alert-modal');
+        }
+
+        function showAddWebmixModal() {
+            showModal('add-webmix-modal');
+        }
+
+        function showAddTileModal() {
+            // Check if there is any webmix to add to
+            if (symbalooData.webmixes.length === 0) {
+                const createWebmixAction = () => showAddWebmixModal();
+                showCustomModal(
+                    'មិនមាន Webmix',
+                    'អ្នកត្រូវតែបង្កើត Webmix យ៉ាងហោចណាស់មួយសិន។ សូមចុច "បង្កើត Webmix" ដើម្បីចាប់ផ្តើម។',
+                    true, 
+                    createWebmixAction,
+                    'បង្កើត Webmix',
+                    'បោះបង់'
+                );
+                return;
+            }
+            showModal('add-tile-modal');
+        }
+
+        /** Shows the tile context menu (Edit/Delete). */
+        function showContextMenu(e, tileId) {
+            selectedTileId = tileId;
+            const menu = document.getElementById('tile-context-menu');
+            
+            // Position the menu near the cursor/touch point
+            menu.style.left = `${e.pageX}px`;
+            menu.style.top = `${e.pageY}px`;
+            
+            menu.classList.remove('hidden');
+        }
+
+        /** Hides the context menu and clears selected tile. */
+        function closeContextMenu() {
+            document.getElementById('tile-context-menu').classList.add('hidden');
+            selectedTileId = null;
+        }
+
+        // --- RENDERING FUNCTIONS ---
+
+        /** Renders the Webmix tabs navigation. */
+        function renderWebmixTabs() {
+            const tabsContainer = document.getElementById('webmix-tabs');
+            const addButton = tabsContainer.querySelector('button[onclick="showAddWebmixModal()"]');
+            tabsContainer.innerHTML = ''; // Clear existing tabs
+            tabsContainer.appendChild(addButton);
+
+            symbalooData.webmixes.forEach(webmix => {
+                const isActive = webmix.id === symbalooData.currentWebmixId;
+                const button = document.createElement('button');
+                button.setAttribute('onclick', `switchWebmix(${webmix.id})`);
+                button.className = `webmix-tab p-3 text-sm font-semibold rounded-t-lg transition-colors flex items-center ${isActive ? 'active text-emerald-500' : 'text-gray-500 hover:text-gray-700'}`;
+                button.textContent = webmix.title;
+
+                // Add context menu for Webmix (e.g., delete)
+                if (symbalooData.webmixes.length > 1) { // Only allow deletion if there is more than one webmix
+                     const deleteButton = document.createElement('span');
+                     deleteButton.innerHTML = `<i data-lucide="x" class="w-3 h-3 ml-1 text-gray-400 hover:text-red-500"></i>`;
+                     deleteButton.onclick = (e) => {
+                         e.stopPropagation();
+                         const deleteAction = () => deleteWebmix(webmix.id);
+                         showCustomModal(
+                            'បញ្ជាក់ការលុប Webmix', 
+                            `តើអ្នកពិតជាចង់លុប Webmix "${webmix.title}" និង Tiles ទាំងអស់ក្នុងនេះដែរឬទេ?`, 
+                            true, 
+                            deleteAction,
+                            'យល់ព្រោមលុប',
+                            'បោះបង់'
+                        );
+                     };
+                     button.appendChild(deleteButton);
+                }
+
+                tabsContainer.insertBefore(button, addButton);
+            });
+            lucide.createIcons(); // Re-render icons after DOM manipulation
+        }
+
+        /** Renders tiles for the currently selected webmix. */
+        function renderTiles() {
+            const container = document.getElementById('tile-container');
+            container.innerHTML = ''; // Clear existing tiles
+
+            const currentWebmix = symbalooData.webmixes.find(w => w.id === symbalooData.currentWebmixId);
+
+            if (!currentWebmix) {
+                container.innerHTML = `<p class="text-gray-500 text-center col-span-full pt-10">មិនមាន Webmix ដែលបានជ្រើសរើសទេ។</p>`;
+                return;
+            }
+
+            // Render existing tiles
+            currentWebmix.tiles.forEach(tile => {
+                const tileElement = document.createElement('a');
+                tileElement.href = tile.url;
+                tileElement.target = "_blank";
+                tileElement.className = `tile ${tile.color} text-white`;
+                tileElement.id = `tile-${tile.id}`;
+                
+                // Context menu listener (right-click or long press)
+                tileElement.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    showContextMenu(e, tile.id);
+                });
+                tileElement.addEventListener('click', (e) => {
+                    // Simple click event for navigation
+                });
+
+                const iconHTML = `<i data-lucide="external-link" class="w-8 h-8 mb-2"></i>`;
+                const titleHTML = `<span class="text-xs font-medium">${tile.title}</span>`;
+
+                tileElement.innerHTML = iconHTML + titleHTML;
+                container.appendChild(tileElement);
+            });
+
+            // Render 'Add Tile' placeholder (Cloning the template from outside the container)
+            const placeholderTemplate = document.getElementById('add-tile-placeholder');
+            if (placeholderTemplate) {
+                const placeholder = placeholderTemplate.cloneNode(true);
+                placeholder.classList.remove('hidden');
+                placeholder.onclick = showAddTileModal;
+                container.appendChild(placeholder);
+            }
+
+
+            lucide.createIcons();
+        }
+
+        /** Draws all UI elements. */
+        function renderAll() {
+            renderWebmixTabs();
+            renderTiles();
+        }
+
+        // --- WEBMIX LOGIC ---
+
+        /** Switches the currently active Webmix. */
+        function switchWebmix(id) {
+            symbalooData.currentWebmixId = id;
+            saveData();
+            renderAll();
+        }
+
+        /** Deletes a Webmix by ID. */
+        function deleteWebmix(id) {
+            symbalooData.webmixes = symbalooData.webmixes.filter(w => w.id !== id);
+            
+            // If the deleted webmix was the active one, switch to the first available one
+            if (symbalooData.currentWebmixId === id) {
+                symbalooData.currentWebmixId = symbalooData.webmixes.length > 0 ? symbalooData.webmixes[0].id : null;
+            }
+            saveData();
+            renderAll();
+        }
+
+        /** Handles the form submission for creating a new Webmix. */
+        function handleAddWebmix(e) {
+            e.preventDefault();
+            const title = document.getElementById('webmix-title').value.trim();
+            if (!title) return;
+
+            const newWebmix = {
+                id: symbalooData.nextWebmixId++,
+                title: title,
+                tiles: []
+            };
+
+            symbalooData.webmixes.push(newWebmix);
+            symbalooData.currentWebmixId = newWebmix.id; // Switch to the new webmix
+            saveData();
+            closeModal('add-webmix-modal');
+            renderAll();
+            document.getElementById('webmix-title').value = ''; // Reset form
+        }
+
+        // --- TILE LOGIC ---
+
+        /** Handles the form submission for adding or editing a Tile. */
+        function handleTileForm(e) {
+            e.preventDefault();
+            const url = document.getElementById('tile-url').value.trim();
+            const title = document.getElementById('tile-title').value.trim();
+            const editId = document.getElementById('tile-id-edit').value;
+
+            if (!url || !title) return;
+
+            const currentWebmix = symbalooData.webmixes.find(w => w.id === symbalooData.currentWebmixId);
+            if (!currentWebmix) return;
+
+            if (editId) {
+                // Edit existing tile
+                const tileToEdit = currentWebmix.tiles.find(t => t.id === parseInt(editId));
+                if (tileToEdit) {
+                    tileToEdit.url = url;
+                    tileToEdit.title = title;
+                }
+            } else {
+                // Add new tile
+                const newTile = {
+                    id: symbalooData.nextTileId++,
+                    url: url,
+                    title: title,
+                    color: COLORS[Math.floor(Math.random() * COLORS.length)] // Random color
+                };
+                currentWebmix.tiles.push(newTile);
+            }
+
+            saveData();
+            closeModal('add-tile-modal');
+            renderTiles();
+        }
+
+        /** Deletes the currently selected tile. */
+        function deleteSelectedTile() {
+            closeContextMenu();
+            if (!selectedTileId) return;
+
+            const currentWebmix = symbalooData.webmixes.find(w => w.id === symbalooData.currentWebmixId);
+            if (!currentWebmix) return;
+            
+            currentWebmix.tiles = currentWebmix.tiles.filter(t => t.id !== selectedTileId);
+            saveData();
+            renderTiles();
+            selectedTileId = null;
+        }
+
+        /** Opens the modal to edit the currently selected tile. */
+        function editSelectedTile() {
+            closeContextMenu();
+            if (!selectedTileId) return;
+
+            const currentWebmix = symbalooData.webmixes.find(w => w.id === symbalooData.currentWebmixId);
+            const tile = currentWebmix.tiles.find(t => t.id === selectedTileId);
+
+            if (tile) {
+                document.getElementById('tile-modal-title').textContent = 'កែប្រែ Tile';
+                document.getElementById('tile-submit-btn').textContent = 'រក្សាទុក';
+                document.getElementById('tile-id-edit').value = tile.id;
+                document.getElementById('tile-title').value = tile.title;
+                document.getElementById('tile-url').value = tile.url;
+                showModal('add-tile-modal');
+            }
+            selectedTileId = null; // Clear selection after opening modal
+        }
+
+        // --- INITIALIZATION ---
+
+        window.onload = () => {
+            loadData();
+            if (symbalooData.webmixes.length === 0) {
+                // If data is empty after load, initialize with a default one and prompt user
+                handleAddWebmix({ preventDefault: () => {} }, "Webmix ខ្ញុំ"); 
+                showCustomModal(
+                    'សូមស្វាគមន៍!',
+                    'អ្នកត្រូវបង្កើត Webmix យ៉ាងហោចណាស់មួយដើម្បីចាប់ផ្តើមប្រើប្រាស់។',
+                    false,
+                    null,
+                    'យល់ព្រម'
+                );
+            }
+            renderAll();
+            
+            // Global click listener to hide context menu
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#tile-context-menu')) {
+                    closeContextMenu();
+                }
+            });
+            // Ensure context menu closes on resize
+            window.addEventListener('resize', closeContextMenu);
+        };
+    </script>
+
+</body>
+</html>
