@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>កម្មវិធីគ្រប់គ្រងតំណភ្ជាប់ - របៀបគ្រប់គ្រង (ADMIN)</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Lucide Icons for aesthetic appeal -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Custom styles for better tile visualization */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+        }
+        .tile-container-wrapper {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 16px;
+            padding: 1rem;
+            min-height: 300px;
+        }
+        .tile {
+            height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.1s, box-shadow 0.1s;
+            cursor: pointer;
+            padding: 8px;
+            position: relative;
+        }
+        .tile:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+        }
+        .webmix-tab {
+            transition: background-color 0.15s;
+        }
+        .webmix-tab.active {
+            border-bottom: 4px solid #10b981; /* Emerald 500 */
+            color: #10b981;
+        }
+        .tile-icon-container img {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+        }
+        .tile-section-header {
+            grid-column: 1 / -1; 
+            padding-top: 20px;
+            padding-bottom: 8px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1f2937;
+            border-bottom: 2px solid #e5e7eb;
+            margin-bottom: 8px;
+        }
+        .disabled-interaction {
+            pointer-events: none;
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+
+        <header class="mb-8 p-4 bg-white rounded-xl shadow-md border-b-4 border-emerald-500">
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-1">
+                ⚙️ របៀបគ្រប់គ្រង (ADMIN MODE)
+            </h1>
+            <p class="text-gray-600 text-sm">
+                មានមុខងារពេញលេញ៖ បន្ថែម កែប្រែ លុប ចាក់សោរ និងរក្សាទុកឯកសារ។
+            </p>
+        </header>
+
+        <!-- Tools and File Management (All visible in Admin Mode) -->
+        <div class="flex flex-wrap justify-end space-x-3 sm:space-x-4 mb-6" id="tool-controls">
+            
+            <!-- Lock/Unlock Button -->
+            <button id="lock-toggle-btn" onclick="toggleLock()" class="flex items-center px-4 py-2 text-white font-semibold rounded-lg transition">
+                <!-- Icon and text will be updated by JS -->
+            </button>
+            
+            <!-- Export Button -->
+            <button id="export-btn" onclick="exportData()" class="flex items-center px-4 py-2 bg-gray-300 text-gray-800 font-semibold rounded-lg hover:bg-gray-400 transition">
+                <i data-lucide="download" class="w-4 h-4 mr-2"></i>
+                <span>រក្សាទុកឯកសារ (Export)</span>
+            </button>
+            
+            <!-- Import Button -->
+            <label for="import-file" id="import-label" class="cursor-pointer flex items-center px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 transition">
+                <i data-lucide="upload" class="w-4 h-4 mr-2"></i>
+                <span>បញ្ចូលឯកសារ (Import)</span>
+            </label>
+            <!-- Hidden File Input -->
+            <input type="file" id="import-file" accept=".json" onchange="importData(event)" class="hidden">
+        </div>
+
+        <!-- Webmix Navigation (Tabs) -->
+        <div id="webmix-tabs" class="flex flex-wrap border-b border-gray-200 mb-6 space-x-2 sm:space-x-4">
+            <!-- Webmix tabs will be injected here -->
+            <!-- Add Webmix Button -->
+            <button id="add-webmix-btn" onclick="showAddWebmixModal()" class="flex items-center p-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition duration-150">
+                <i data-lucide="plus" class="w-4 h-4 mr-1"></i>
+                <span class="hidden sm:inline">Webmix ថ្មី</span>
+            </button>
+        </div>
+
+        <!-- Tile Grid Area -->
+        <div class="bg-white rounded-xl shadow-lg border border-gray-100">
+            <div id="tile-container" class="tile-container-wrapper">
+                <!-- Tiles and Section Headers will be injected here -->
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- Hidden Template for Add Tile Placeholder -->
+    <div id="add-tile-placeholder" class="tile bg-gray-100 hover:bg-gray-200 text-gray-600 border-2 border-dashed border-gray-300 transition duration-200 hidden" onclick="showAddTileModal()">
+        <i data-lucide="link" class="w-6 h-6 mb-1"></i>
+        <span class="text-sm font-semibold">បន្ថែម Tile</span>
+    </div>
+
+    <!-- Modals (All necessary modals for Admin) -->
+    <!-- 1. Add/Edit Tile Modal -->
+    <div id="add-tile-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4" id="tile-modal-title">បន្ថែម Tile ថ្មី</h2>
+            <form id="tile-form" onsubmit="handleTileForm(event)">
+                <input type="hidden" id="tile-id-edit">
+                <div class="mb-4">
+                    <label for="tile-title" class="block text-sm font-medium text-gray-700 mb-1">ចំណងជើង (ឧ. Gmail)</label>
+                    <input type="text" id="tile-title" required class="w-full p-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
+                </div>
+                <div class="mb-4">
+                    <label for="tile-url" class="block text-sm font-medium text-gray-700 mb-1">URL (ឧ. https://example.com/)</label>
+                    <input type="url" id="tile-url" required class="w-full p-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
+                </div>
+                <div class="mb-4">
+                    <label for="tile-section" class="block text-sm font-medium text-gray-700 mb-1">ឈ្មោះផ្នែក (Section Name) *</label>
+                    <input type="text" id="tile-section" required placeholder="ឧ. ឧបករណ៍ការងារ" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
+                </div>
+                <div class="mb-4">
+                    <label for="tile-custom-icon" class="block text-sm font-medium text-gray-700 mb-1">រូបតំណាងផ្ទាល់ខ្លួន (URL រូបភាព - ស្រេចចិត្ត)</label>
+                    <input type="url" id="tile-custom-icon" placeholder="https://cdn.example.com/logo.png" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="closeModal('add-tile-modal')" class="px-4 py-2 bg-gray-300 text-gray-800 font-semibold rounded-lg hover:bg-gray-400 transition">បោះបង់</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 transition" id="tile-submit-btn">បន្ថែម</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. Add/Edit Webmix Modal -->
+    <div id="add-webmix-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4" id="webmix-modal-title">បង្កើត Webmix ថ្មី</h2>
+            <form id="webmix-form" onsubmit="handleAddWebmix(event)">
+                <input type="hidden" id="webmix-id-edit">
+                <div class="mb-4">
+                    <label for="webmix-title" class="block text-sm font-medium text-gray-700 mb-1">ចំណងជើង Webmix (ឧ. ការងារ)</label>
+                    <input type="text" id="webmix-title" required class="w-full p-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
+                </div>
+                <div class="mb-4">
+                    <label for="webmix-group" class="block text-sm font-medium text-gray-700 mb-1">ក្រុម Webmix (Group - ស្រេចចិត្ត)</label>
+                    <input type="text" id="webmix-group" placeholder="ឧ. ក្រុមទី ១" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500">
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="closeModal('add-webmix-modal')" class="px-4 py-2 bg-gray-300 text-gray-800 font-semibold rounded-lg hover:bg-gray-400 transition">បោះបង់</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 transition" id="webmix-submit-btn">បង្កើត</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. Context Menu for Tile -->
+    <div id="tile-context-menu" class="absolute bg-white border border-gray-200 rounded-lg shadow-lg p-1 z-50 hidden">
+        <button onclick="handleTileAction(event, 'edit')" class="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+            <i data-lucide="pencil" class="w-4 h-4 mr-2"></i> កែប្រែ
+        </button>
+        <button onclick="handleTileAction(event, 'delete')" class="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md">
+            <i data-lucide="trash-2" class="w-4 h-4 mr-2"></i> លុប
+        </button>
+    </div>
+
+    <!-- 4. Custom Alert/Confirmation Modal -->
+    <div id="custom-alert-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-3" id="custom-alert-title"></h2>
+            <p class="text-gray-700 mb-6" id="custom-alert-message"></p>
+            <div class="flex justify-end space-x-3" id="custom-alert-buttons">
+                <!-- Buttons injected here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data structure and global variables
+        let symbalooData = {
+            currentWebmixId: 1,
+            nextWebmixId: 3,
+            nextTileId: 5,
+            isLocked: false,
+            webmixes: [
+                { id: 1, title: "សំខាន់ (Important)", group: "ការងារ (Work)", tiles: [{ id: 1, url: "https://www.google.com/", title: "Google", section: "ឧបករណ៍មូលដ្ឋាន (Basic Tools)", color: "bg-blue-500", customIconUrl: null }, { id: 2, url: "https://www.youtube.com/", title: "YouTube", section: "កម្សាន្ត (Entertainment)", color: "bg-red-500", customIconUrl: null }] },
+                { id: 2, title: "បណ្តាញសង្គម (Social)", group: "ផ្ទាល់ខ្លួន (Personal)", tiles: [{ id: 3, url: "https://www.facebook.com/", title: "Facebook", section: "ប្រព័ន្ធផ្សព្វផ្សាយ (Media)", color: "bg-indigo-500", customIconUrl: null }, { id: 4, url: "https://x.com/", title: "X (Twitter)", section: "ប្រព័ន្ធផ្សព្វផ្សាយ (Media)", color: "bg-black", customIconUrl: null }] }
+            ]
+        };
+
+        let selectedTileId = null;
+        let customModalCallback = null;
+        // In this ADMIN file, we assume the role is always 'admin'
+        const ROLE_IS_ADMIN = true; 
+
+        // Utility to generate random Tailwind color classes
+        const COLORS = [
+            "bg-red-500", "bg-yellow-500", "bg-green-500", "bg-blue-500",
+            "bg-indigo-500", "bg-purple-500", "bg-pink-500", "bg-teal-500"
+        ];
+        
+        // --- CORE UTILITIES (Shared) ---
+
+        function getFaviconUrl(url) {
+            try {
+                const domain = new URL(url).hostname;
+                return `https://s2.googleusercontent.com/s2/favicons?domain=${domain}&sz=48`;
+            } catch (e) {
+                console.warn("Invalid URL for favicon:", url);
+                return null;
+            }
+        }
+
+        function loadData() {
+            try {
+                const storedData = localStorage.getItem('symbalooLiteData');
+                if (storedData) {
+                    const importedData = JSON.parse(storedData);
+                    symbalooData = importedData;
+                    symbalooData.isLocked = importedData.isLocked !== undefined ? importedData.isLocked : false;
+                    
+                    // Recalculate IDs for safety
+                    symbalooData.nextWebmixId = symbalooData.webmixes.length > 0 ? Math.max(...symbalooData.webmixes.map(w => w.id)) + 1 : 1;
+                    let maxTileId = 0;
+                    symbalooData.webmixes.forEach(w => {
+                        if (w.tiles && w.tiles.length > 0) {
+                            const currentMax = Math.max(...w.tiles.map(t => t.id));
+                            if (currentMax > maxTileId) maxTileId = currentMax;
+                        }
+                    });
+                    symbalooData.nextTileId = maxTileId + 1;
+                } else {
+                    // Initialize with default data if empty
+                    if (symbalooData.webmixes.length === 0) {
+                        const newId = symbalooData.nextWebmixId++;
+                        symbalooData.webmixes.push({ id: newId, title: "Webmix ខ្ញុំ", group: null, tiles: [] });
+                        symbalooData.currentWebmixId = newId;
+                    }
+                    saveData(); 
+                }
+            } catch (error) {
+                console.error("Error loading data from LocalStorage:", error);
+            }
+        }
+
+        function saveData() {
+            try {
+                localStorage.setItem('symbalooLiteData', JSON.stringify(symbalooData));
+            } catch (error) {
+                console.error("Error saving data to LocalStorage:", error);
+            }
+        }
+        
+        // --- ADMIN ONLY FUNCTIONS ---
+
+        function toggleLock() {
+            symbalooData.isLocked = !symbalooData.isLocked;
+            saveData();
+            updateLockIcon();
+            renderTiles(); 
+            showCustomModal(
+                symbalooData.isLocked ? 'ចាក់សោរ' : 'ដោះសោរ',
+                symbalooData.isLocked ? 'កម្មវិធីត្រូវបានចាក់សោរ។ មិនអាចកែប្រែបានទេ។' : 'កម្មវិធីត្រូវបានដោះសោរ។ ឥឡូវនេះអាចកែប្រែបានហើយ។',
+                false
+            );
+        }
+
+        function updateLockIcon() {
+            const btn = document.getElementById('lock-toggle-btn');
+            const importLabel = document.getElementById('import-label');
+            const addWebmixBtn = document.getElementById('add-webmix-btn');
+
+            if (!btn) return;
+
+            const iconName = symbalooData.isLocked ? 'lock' : 'unlock';
+            const text = symbalooData.isLocked ? 'ចាក់សោរ (Locked)' : 'ដោះសោរ (Unlocked)';
+            const color = symbalooData.isLocked ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600';
+            
+            btn.className = `flex items-center px-4 py-2 text-white font-semibold rounded-lg transition ${color}`;
+            btn.innerHTML = `<i data-lucide="${iconName}" class="w-4 h-4 mr-2"></i> <span>${text}</span>`;
+            
+            // Lock state still controls Import/Add Webmix buttons
+            if (symbalooData.isLocked) {
+                importLabel.classList.add('disabled-interaction');
+                addWebmixBtn.classList.add('disabled-interaction');
+            } else {
+                importLabel.classList.remove('disabled-interaction');
+                addWebmixBtn.classList.remove('disabled-interaction');
+            }
+
+            lucide.createIcons();
+        }
+
+        function exportData() {
+            if (symbalooData.isLocked) {
+                showCustomModal('ចាក់សោរ', 'សូមដោះសោរដើម្បីរក្សាទុកឯកសារ។', false);
+                return;
+            }
+
+            const dataStr = JSON.stringify(symbalooData, null, 2);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `symbaloo_lite_backup_${new Date().toISOString().slice(0, 10)}.json`;
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            showCustomModal('រក្សាទុកបានជោគជ័យ!', 'ទិន្នន័យរបស់អ្នកត្រូវបានរក្សាទុកជាឯកសារ JSON រួចរាល់ហើយ។', false);
+        }
+        
+        function handleAddWebmix(e) {
+            e.preventDefault();
+            if (symbalooData.isLocked) return;
+
+            const title = document.getElementById('webmix-title').value.trim();
+            const group = document.getElementById('webmix-group').value.trim() || null;
+            const editId = document.getElementById('webmix-id-edit').value;
+
+            if (editId) {
+                const webmixToEdit = symbalooData.webmixes.find(w => w.id === parseInt(editId));
+                if (webmixToEdit) {
+                    webmixToEdit.title = title;
+                    webmixToEdit.group = group;
+                }
+            } else {
+                const newWebmix = {
+                    id: symbalooData.nextWebmixId++,
+                    title: title,
+                    group: group,
+                    tiles: []
+                };
+                symbalooData.webmixes.push(newWebmix);
+                symbalooData.currentWebmixId = newWebmix.id;
+            }
+            saveData();
+            closeModal('add-webmix-modal');
+            renderAll();
+        }
+        
+        function deleteWebmix(id) {
+            if (symbalooData.isLocked) return;
+
+            symbalooData.webmixes = symbalooData.webmixes.filter(w => w.id !== id);
+            
+            if (symbalooData.currentWebmixId === id) {
+                symbalooData.currentWebmixId = symbalooData.webmixes.length > 0 ? symbalooData.webmixes[0].id : null;
+            }
+            saveData();
+            renderAll();
+        }
+
+        function showAddTileModal() {
+            if (symbalooData.isLocked) {
+                showCustomModal('ចាក់សោរ', 'សូមដោះសោរដើម្បីបន្ថែម Tile ថ្មី។', false);
+                return;
+            }
+            if (symbalooData.webmixes.length === 0) {
+                const createWebmixAction = () => showAddWebmixModal();
+                showCustomModal('មិនមាន Webmix', 'អ្នកត្រូវតែបង្កើត Webmix យ៉ាងហោចណាស់មួយសិន។', true, createWebmixAction, 'បង្កើត Webmix');
+                return;
+            }
+            closeModal('add-tile-modal'); 
+            showModal('add-tile-modal');
+        }
+
+        function handleTileForm(e) {
+            e.preventDefault();
+            if (symbalooData.isLocked) return;
+            
+            const url = document.getElementById('tile-url').value.trim();
+            const title = document.getElementById('tile-title').value.trim();
+            const section = document.getElementById('tile-section').value.trim();
+            const customIconUrl = document.getElementById('tile-custom-icon').value.trim();
+            const editId = document.getElementById('tile-id-edit').value;
+
+            const currentWebmix = symbalooData.webmixes.find(w => w.id === symbalooData.currentWebmixId);
+            if (!currentWebmix) return;
+
+            if (editId) {
+                const tileToEdit = currentWebmix.tiles.find(t => t.id === parseInt(editId));
+                if (tileToEdit) {
+                    tileToEdit.url = url;
+                    tileToEdit.title = title;
+                    tileToEdit.section = section;
+                    tileToEdit.customIconUrl = customIconUrl || null; 
+                }
+            } else {
+                const newTile = {
+                    id: symbalooData.nextTileId++,
+                    url: url,
+                    title: title,
+                    section: section,
+                    color: COLORS[Math.floor(Math.random() * COLORS.length)], 
+                    customIconUrl: customIconUrl || null
+                };
+                currentWebmix.tiles.push(newTile);
+            }
+
+            saveData();
+            closeModal('add-tile-modal');
+            renderTiles();
+        }
+
+        function deleteTileById(id) {
+            if (symbalooData.isLocked) return;
+            
+            const confirmAction = () => {
+                const currentWebmix = symbalooData.webmixes.find(w => w.id === symbalooData.currentWebmixId);
+                if (!currentWebmix) return;
+                
+                currentWebmix.tiles = currentWebmix.tiles.filter(t => t.id !== id);
+                saveData();
+                renderTiles();
+            };
+
+            showCustomModal('បញ្ជាក់ការលុប Tile', 'តើអ្នកពិតជាចង់លុប Tile នេះដែរឬទេ?', true, confirmAction, 'យល់ព្រមលុប', 'បោះបង់');
+        }
+
+        function editTileById(id) {
+            if (symbalooData.isLocked) return;
+
+            const currentWebmix = symbalooData.webmixes.find(w => w.id === symbalooData.currentWebmixId);
+            const tile = currentWebmix.tiles.find(t => t.id === id);
+
+            if (tile) {
+                document.getElementById('tile-modal-title').textContent = 'កែប្រែ Tile';
+                document.getElementById('tile-submit-btn').textContent = 'រក្សាទុក';
+                document.getElementById('tile-id-edit').value = tile.id;
+                document.getElementById('tile-title').value = tile.title;
+                document.getElementById('tile-url').value = tile.url;
+                document.getElementById('tile-section').value = tile.section; 
+                document.getElementById('tile-custom-icon').value = tile.customIconUrl || '';
+                showModal('add-tile-modal');
+            }
+        }
+        
+        function handleTileAction(e, action) {
+            if (e) e.stopPropagation(); 
+            if (symbalooData.isLocked) return;
+
+            const idToActOn = selectedTileId; 
+            closeContextMenu(); 
+
+            setTimeout(() => {
+                if (idToActOn) {
+                    if (action === 'edit') {
+                        editTileById(idToActOn); 
+                    } else if (action === 'delete') {
+                        deleteTileById(idToActOn); 
+                    }
+                }
+            }, 0); 
+        }
+
+        // --- COMMON UI/RENDER FUNCTIONS ---
+
+        function showModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+            if (id === 'add-tile-modal') {
+                document.getElementById('tile-form').reset();
+                document.getElementById('tile-id-edit').value = ''; 
+                document.getElementById('tile-modal-title').textContent = 'បន្ថែម Tile ថ្មី';
+                document.getElementById('tile-submit-btn').textContent = 'បន្ថែម';
+                document.getElementById('tile-custom-icon').value = '';
+            }
+            if (id === 'add-webmix-modal') {
+                 document.getElementById('webmix-form').reset();
+                 document.getElementById('webmix-id-edit').value = ''; 
+                 document.getElementById('webmix-modal-title').textContent = 'បង្កើត Webmix ថ្មី';
+                 document.getElementById('webmix-submit-btn').textContent = 'បង្កើត';
+            }
+            if (id === 'custom-alert-modal') {
+                customModalCallback = null;
+            }
+        }
+
+        function showCustomModal(title, message, isConfirm = false, confirmCallback = null, confirmText = 'យល់ព្រោម', cancelText = 'បោះបង់') {
+            const modal = document.getElementById('custom-alert-modal');
+            document.getElementById('custom-alert-title').textContent = title;
+            document.getElementById('custom-alert-message').textContent = message;
+            const buttonsContainer = document.getElementById('custom-alert-buttons');
+            buttonsContainer.innerHTML = '';
+
+            if (isConfirm) {
+                customModalCallback = confirmCallback;
+
+                const cancelButton = document.createElement('button');
+                cancelButton.type = 'button';
+                cancelButton.className = 'px-4 py-2 bg-gray-300 text-gray-800 font-semibold rounded-lg hover:bg-gray-400 transition';
+                cancelButton.textContent = cancelText;
+                cancelButton.onclick = () => closeModal('custom-alert-modal');
+
+                const confirmButton = document.createElement('button');
+                confirmButton.type = 'button';
+                const isDestructive = confirmText.includes('លុប') || confirmText.includes('Delete');
+                confirmButton.className = `px-4 py-2 ${isDestructive ? 'bg-red-500 hover:bg-red-600' : 'bg-emerald-500 hover:bg-emerald-600'} text-white font-semibold rounded-lg transition`;
+                confirmButton.textContent = confirmText;
+                confirmButton.onclick = () => {
+                    if (customModalCallback) customModalCallback();
+                    closeModal('custom-alert-modal');
+                };
+
+                buttonsContainer.appendChild(cancelButton);
+                buttonsContainer.appendChild(confirmButton);
+            } else {
+                const okButton = document.createElement('button');
+                okButton.type = 'button';
+                okButton.className = 'px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg hover:bg-emerald-600 transition';
+                okButton.textContent = confirmText;
+                okButton.onclick = () => closeModal('custom-alert-modal');
+                buttonsContainer.appendChild(okButton);
+            }
+
+            showModal('custom-alert-modal');
+        }
+
+        function showAddWebmixModal(webmixToEdit = null) {
+            if (symbalooData.isLocked) {
+                showCustomModal('ចាក់សោរ', 'សូមដោះសោរដើម្បីបង្កើត/កែប្រែ Webmix។', false);
+                return;
+            }
+            if (webmixToEdit) {
+                document.getElementById('webmix-modal-title').textContent = 'កែប្រែ Webmix';
+                document.getElementById('webmix-submit-btn').textContent = 'រក្សាទុក';
+                document.getElementById('webmix-id-edit').value = webmixToEdit.id;
+                document.getElementById('webmix-title').value = webmixToEdit.title;
+                document.getElementById('webmix-group').value = webmixToEdit.group || '';
+            }
+            showModal('add-webmix-modal');
+        }
+
+        function showContextMenu(e, tileId) {
+            if (symbalooData.isLocked) return;
+            
+            selectedTileId = tileId;
+            const menu = document.getElementById('tile-context-menu');
+            
+            menu.style.left = `${e.pageX}px`;
+            menu.style.top = `${e.pageY}px`;
+            
+            menu.classList.remove('hidden');
+        }
+
+        function closeContextMenu() {
+            document.getElementById('tile-context-menu').classList.add('hidden');
+            selectedTileId = null;
+        }
+
+        function showWebmixContextMenu(e, webmix) {
+            if (symbalooData.isLocked) return;
+            
+            const existingMenu = document.getElementById('webmix-context-menu');
+            if (existingMenu) existingMenu.remove();
+
+            const menu = document.createElement('div');
+            menu.id = 'webmix-context-menu';
+            menu.className = 'absolute bg-white border border-gray-200 rounded-lg shadow-lg p-1 z-50';
+            menu.style.left = `${e.pageX}px`;
+            menu.style.top = `${e.pageY}px`;
+            
+            const editBtn = document.createElement('button');
+            editBtn.className = 'flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md';
+            editBtn.innerHTML = '<i data-lucide="pencil" class="w-4 h-4 mr-2"></i> កែប្រែ Webmix';
+            editBtn.onclick = (event) => {
+                event.stopPropagation();
+                menu.remove();
+                setTimeout(() => showAddWebmixModal(webmix), 0); 
+            };
+            menu.appendChild(editBtn);
+
+            if (symbalooData.webmixes.length > 1) {
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'flex items-center w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md';
+                deleteBtn.innerHTML = '<i data-lucide="trash-2" class="w-4 h-4 mr-2"></i> លុប Webmix';
+                deleteBtn.onclick = (event) => {
+                    event.stopPropagation();
+                    menu.remove();
+                    const deleteAction = () => deleteWebmix(webmix.id);
+                    setTimeout(() => showCustomModal('បញ្ជាក់ការលុប Webmix', `តើអ្នកពិតជាចង់លុប Webmix "${webmix.title}" ដែរឬទេ?`, true, deleteAction, 'យល់ព្រោមលុប'), 0);
+                };
+                menu.appendChild(deleteBtn);
+            }
+            
+            document.body.appendChild(menu);
+            lucide.createIcons();
+
+            document.addEventListener('click', (e) => {
+                 const currentMenu = document.getElementById('webmix-context-menu');
+                 if (currentMenu && e.target !== currentMenu && !currentMenu.contains(e.target)) {
+                    currentMenu.remove();
+                 }
+            }, { once: true });
+        }
+
+        function renderWebmixTabs() {
+            const tabsContainer = document.getElementById('webmix-tabs');
+            const addButton = tabsContainer.querySelector('#add-webmix-btn');
+            
+            const parent = addButton.parentNode;
+            parent.removeChild(addButton);
+            tabsContainer.innerHTML = ''; 
+
+            const groupedWebmixes = symbalooData.webmixes.reduce((acc, webmix) => {
+                const group = webmix.group || 'Webmixes មិនមានក្រុម (Ungrouped Webmixes)';
+                if (!acc[group]) acc[group] = [];
+                acc[group].push(webmix);
+                return acc;
+            }, {});
+
+            const sortedGroupNames = Object.keys(groupedWebmixes).sort();
+            
+            sortedGroupNames.forEach(groupName => {
+                const groupSection = document.createElement('div');
+                groupSection.className = 'flex flex-col mr-6 mb-2 mt-2';
+                
+                if (groupName !== 'Webmixes មិនមានក្រុម (Ungrouped Webmixes)') {
+                    const groupHeader = document.createElement('div');
+                    groupHeader.className = 'text-xs font-bold text-gray-500 uppercase mb-1 border-b border-gray-300 pb-1';
+                    groupHeader.textContent = groupName;
+                    groupSection.appendChild(groupHeader);
+                }
+
+                const tabsDiv = document.createElement('div');
+                tabsDiv.className = 'flex flex-wrap space-x-2';
+
+                groupedWebmixes[groupName].forEach(webmix => {
+                    const isActive = webmix.id === symbalooData.currentWebmixId;
+                    const button = document.createElement('button');
+                    button.setAttribute('onclick', `switchWebmix(${webmix.id})`);
+                    button.className = `webmix-tab p-3 text-sm font-semibold rounded-t-lg transition-colors flex items-center group ${isActive ? 'active text-emerald-500' : 'text-gray-500 hover:text-gray-700'}`;
+                    button.textContent = webmix.title;
+
+                    const menuButton = document.createElement('span');
+                    menuButton.innerHTML = `<i data-lucide="chevron-down" class="w-4 h-4 ml-1 text-gray-400 group-hover:text-gray-600 transition-colors"></i>`;
+                    menuButton.className = 'ml-1';
+                    menuButton.onclick = (e) => {
+                        e.stopPropagation(); 
+                        showWebmixContextMenu(e, webmix);
+                    };
+                    button.appendChild(menuButton);
+                    
+                    tabsDiv.appendChild(button);
+                });
+
+                groupSection.appendChild(tabsDiv);
+                tabsContainer.appendChild(groupSection);
+            });
+
+            tabsContainer.appendChild(addButton); 
+
+            // Handle lock state for Add Webmix button
+            if (symbalooData.isLocked) {
+                addButton.classList.add('disabled-interaction');
+            } else {
+                addButton.classList.remove('disabled-interaction');
+            }
+
+            lucide.createIcons();
+        }
+
+        function renderTiles() {
+            const container = document.getElementById('tile-container');
+            container.innerHTML = ''; 
+
+            const currentWebmix = symbalooData.webmixes.find(w => w.id === symbalooData.currentWebmixId);
+
+            if (!currentWebmix) {
+                container.innerHTML = `<p class="text-gray-500 text-center col-span-full pt-10">មិនមាន Webmix ដែលបានជ្រើសរើសទេ។</p>`;
+                return;
+            }
+
+            const groupedTiles = currentWebmix.tiles.reduce((acc, tile) => {
+                const section = tile.section || 'ផ្នែកមិនកំណត់ (Uncategorized)';
+                if (!acc[section]) acc[section] = [];
+                acc[section].push(tile);
+                return acc;
+            }, {});
+
+            const sortedSectionNames = Object.keys(groupedTiles).sort();
+            
+            const isRestricted = symbalooData.isLocked;
+
+            sortedSectionNames.forEach(sectionName => {
+                const header = document.createElement('div');
+                header.className = 'tile-section-header';
+                header.textContent = sectionName;
+                container.appendChild(header);
+
+                groupedTiles[sectionName].forEach(tile => {
+                    const tileElement = document.createElement('a');
+                    tileElement.href = tile.url;
+                    tileElement.target = "_blank";
+                    tileElement.className = `tile ${tile.color} text-white`;
+                    tileElement.id = `tile-${tile.id}`;
+                    
+                    if (!isRestricted) {
+                        tileElement.addEventListener('contextmenu', (e) => {
+                            e.preventDefault();
+                            showContextMenu(e, tile.id);
+                        });
+                    } else {
+                        tileElement.addEventListener('contextmenu', (e) => { e.preventDefault(); });
+                    }
+
+                    const iconSourceUrl = tile.customIconUrl && tile.customIconUrl.trim() !== '' 
+                        ? tile.customIconUrl 
+                        : getFaviconUrl(tile.url);
+
+                    const fallbackDisplay = iconSourceUrl ? 'none' : 'block';
+                    
+                    const iconHTML = `
+                        <div class="tile-icon-container w-10 h-10 mb-2 flex items-center justify-center">
+                            <img src="${iconSourceUrl || ''}" 
+                                alt="${tile.title} Icon" 
+                                class="w-full h-full object-contain rounded-lg shadow-inner"
+                                onerror="this.style.display='none'; this.closest('.tile-icon-container').querySelector('.fallback-icon').style.display='block';"
+                            >
+                            <i data-lucide="globe" class="w-8 h-8 text-white fallback-icon" style="display: ${fallbackDisplay};"></i>
+                        </div>
+                    `;
+                    
+                    const titleHTML = `<span class="text-xs font-medium truncate w-full px-1">${tile.title}</span>`;
+
+                    tileElement.innerHTML = iconHTML + titleHTML;
+                    container.appendChild(tileElement);
+                });
+            });
+
+            const placeholderTemplate = document.getElementById('add-tile-placeholder');
+            if (placeholderTemplate && !isRestricted && currentWebmix) {
+                const placeholder = placeholderTemplate.cloneNode(true);
+                placeholder.classList.remove('hidden');
+                placeholder.onclick = showAddTileModal;
+                container.appendChild(placeholder);
+            }
+
+            lucide.createIcons();
+        }
+
+        function switchWebmix(id) {
+            symbalooData.currentWebmixId = id;
+            saveData();
+            renderAll();
+        }
+
+        function renderAll() {
+            renderWebmixTabs();
+            renderTiles();
+            updateLockIcon(); 
+        }
+
+        function importData(event) {
+            if (symbalooData.isLocked) {
+                 showCustomModal('ចាក់សោរ', 'សូមដោះសោរដើម្បីបញ្ចូលឯកសារថ្មី។', false);
+                 event.target.value = ''; 
+                 return;
+            }
+
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    
+                    const confirmAction = () => {
+                        symbalooData = importedData;
+                        symbalooData.isLocked = importedData.isLocked !== undefined ? importedData.isLocked : false;
+                        saveData();
+                        renderAll();
+                        showCustomModal('បញ្ចូលបានជោគជ័យ!', 'ទិន្នន័យថ្មីត្រូវបានផ្ទុកហើយ។', false);
+                    };
+
+                    showCustomModal('បញ្ជាក់ការបញ្ចូល', 'តើអ្នកចង់ជំនួសទិន្នន័យបច្ចុប្បន្នទាំងអស់ដែរឬទេ? ការផ្លាស់ប្តូរនេះមិនអាចដកថយបានទេ។', true, confirmAction, 'យល់ព្រមជំនួស');
+
+                } catch (error) {
+                    showCustomModal('ការបញ្ចូលបរាជ័យ', 'មានបញ្ហាក្នុងការអានឯកសារ។ សូមប្រាកដថាវាជាឯកសារ JSON ដែលមានទម្រង់ត្រឹមត្រូវ។', false);
+                }
+            };
+            
+            reader.readAsText(file);
+            event.target.value = ''; 
+        }
+
+        // --- INITIALIZATION ---
+        window.onload = () => {
+            loadData();
+            renderAll();
+            
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#tile-context-menu')) {
+                    closeContextMenu();
+                }
+            });
+            window.addEventListener('resize', closeContextMenu);
+        };
+    </script>
+
+</body>
+</html>
