@@ -1,0 +1,54 @@
+{
+  "currentWebmixId": 1,
+  "nextWebmixId": 3,
+  "nextTileId": 5,
+  "isLocked": false,
+  "webmixes": [
+    {
+      "id": 1,
+      "title": "សំខាន់ (Important)",
+      "group": "ការងារ (Work)",
+      "tiles": [
+        {
+          "id": 1,
+          "url": "https://www.google.com/",
+          "title": "Google",
+          "section": "ឧបករណ៍មូលដ្ឋាន (Basic Tools)",
+          "color": "bg-blue-500",
+          "customIconUrl": null
+        },
+        {
+          "id": 2,
+          "url": "https://www.youtube.com/",
+          "title": "YouTube",
+          "section": "កម្សាន្ត (Entertainment)",
+          "color": "bg-red-500",
+          "customIconUrl": null
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "បណ្តាញសង្គម (Social)",
+      "group": "ផ្ទាល់ខ្លួន (Personal)",
+      "tiles": [
+        {
+          "id": 3,
+          "url": "https://www.facebook.com/",
+          "title": "Facebook",
+          "section": "ប្រព័ន្ធផ្សព្វផ្សាយ (Media)",
+          "color": "bg-indigo-500",
+          "customIconUrl": null
+        },
+        {
+          "id": 4,
+          "url": "https://x.com/",
+          "title": "X (Twitter)",
+          "section": "ប្រព័ន្ធផ្សព្វផ្សាយ (Media)",
+          "color": "bg-black",
+          "customIconUrl": null
+        }
+      ]
+    }
+  ]
+}
