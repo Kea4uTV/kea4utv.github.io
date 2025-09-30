@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>កម្មវិធីគ្រប់គ្រងតំណភ្ជាប់ - របៀបមើល (VIEWER)</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Lucide Icons for aesthetic appeal -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Custom styles (Same as Admin) */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+        }
+        .tile-container-wrapper {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 16px;
+            padding: 1rem;
+            min-height: 300px;
+        }
+        .tile {
+            height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.1s, box-shadow: 0.1s;
+            cursor: pointer;
+            padding: 8px;
+            position: relative;
+        }
+        .tile:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+        }
+        .webmix-tab {
+            transition: background-color 0.15s;
+        }
+        .webmix-tab.active {
+            border-bottom: 4px solid #f97316; /* Orange for Viewer Mode */
+            color: #f97316;
+        }
+        .tile-icon-container img {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+        }
+        .tile-section-header {
+            grid-column: 1 / -1; 
+            padding-top: 20px;
+            padding-bottom: 8px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1f2937;
+            border-bottom: 2px solid #e5e7eb;
+            margin-bottom: 8px;
+        }
+        /* New style to indicate read-only tiles */
+        .read-only-tile {
+            cursor: default !important;
+        }
+        .read-only-tile:hover {
+            transform: none !important;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+
+        <header class="mb-8 p-4 bg-white rounded-xl shadow-md border-b-4 border-orange-500">
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-1">
+                👀 របៀបមើលធម្មតា (VIEWER MODE)
+            </h1>
+            <p class="text-gray-600 text-sm">
+                អ្នកអាចមើលតំណភ្ជាប់ និងបញ្ចូលឯកសារថ្មីដើម្បីមើល។ មិនអាចកែប្រែ ឬរក្សាទុកឯកសារបានឡើយ។
+            </p>
+        </header>
+
+        <!-- Tools and File Management (Only Import is visible) -->
+        <div class="flex flex-wrap justify-end space-x-3 sm:space-x-4 mb-6" id="tool-controls">
+            <!-- Import Button (Allowed) -->
+            <label for="import-file" id="import-label" class="cursor-pointer flex items-center px-4 py-2 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition">
+                <i data-lucide="upload" class="w-4 h-4 mr-2"></i>
+                <span>បញ្ចូលឯកសារ (Import)</span>
+            </label>
+            <!-- Hidden File Input -->
+            <input type="file" id="import-file" accept=".json" onchange="importData(event)" class="hidden">
+        </div>
+
+        <!-- Webmix Navigation (Tabs) -->
+        <div id="webmix-tabs" class="flex flex-wrap border-b border-gray-200 mb-6 space-x-2 sm:space-x-4">
+            <!-- Webmix tabs will be injected here. NO Add Webmix Button. -->
+        </div>
+
+        <!-- Tile Grid Area -->
+        <div class="bg-white rounded-xl shadow-lg border border-gray-100">
+            <div id="tile-container" class="tile-container-wrapper">
+                <!-- Tiles and Section Headers will be injected here -->
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- Modals (Only Alert/Confirmation is needed) -->
+    <!-- 4. Custom Alert/Confirmation Modal -->
+    <div id="custom-alert-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-3" id="custom-alert-title"></h2>
+            <p class="text-gray-700 mb-6" id="custom-alert-message"></p>
+            <div class="flex justify-end space-x-3" id="custom-alert-buttons">
+                <!-- Buttons injected here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data structure and global variables
+        let symbalooData = {
+            currentWebmixId: 1,
+            nextWebmixId: 3,
+            nextTileId: 5,
+            isLocked: false,
+            webmixes: [
+                { id: 1, title: "សំខាន់ (Important)", group: "ការងារ (Work)", tiles: [{ id: 1, url: "https://www.google.com/", title: "Google", section: "ឧបករណ៍មូលដ្ឋាន (Basic Tools)", color: "bg-blue-500", customIconUrl: null }, { id: 2, url: "https://www.youtube.com/", title: "YouTube", section: "កម្សាន្ត (Entertainment)", color: "bg-red-500", customIconUrl: null }] },
+                { id: 2, title: "បណ្តាញសង្គម (Social)", group: "ផ្ទាល់ខ្លួន (Personal)", tiles: [{ id: 3, url: "https://www.facebook.com/", title: "Facebook", section: "ប្រព័ន្ធផ្សព្វផ្សាយ (Media)", color: "bg-indigo-500", customIconUrl: null }, { id: 4, url: "https://x.com/", title: "X (Twitter)", section: "ប្រព័ន្ធផ្សព្វផ្សាយ (Media)", color: "bg-black", customIconUrl: null }] }
+            ]
+        };
+
+        let customModalCallback = null;
+        // In this VIEWER file, all modification is blocked.
+        const ROLE_IS_ADMIN = false; 
+
+        // --- CORE UTILITIES (Shared) ---
+
+        function getFaviconUrl(url) {
+            try {
+                const domain = new URL(url).hostname;
+                return `https://s2.googleusercontent.com/s2/favicons?domain=${domain}&sz=48`;
+            } catch (e) {
+                console.warn("Invalid URL for favicon:", url);
+                return null;
+            }
+        }
+        
+        // VIEWERS can load data but CANNOT save changes they make locally (except the currentWebmixId)
+        function loadData() {
+            try {
+                const storedData = localStorage.getItem('symbalooLiteData');
+                if (storedData) {
+                    const importedData = JSON.parse(storedData);
+                    symbalooData = importedData;
+                    // Reset lock state for viewer - it's read-only regardless of admin setting
+                    symbalooData.isLocked = false; 
+                }
+            } catch (error) {
+                console.error("Error loading data from LocalStorage:", error);
+            }
+        }
+        
+        // Viewer only saves the current webmix ID, never modification data
+        function saveViewerState() {
+            try {
+                const stateToSave = {
+                    currentWebmixId: symbalooData.currentWebmixId
+                };
+                 localStorage.setItem('symbalooLiteViewerState', JSON.stringify(stateToSave));
+            } catch (error) {
+                console.error("Error saving viewer state to LocalStorage:", error);
+            }
+        }
+
+        // --- VIEWER FUNCTIONS (Read-Only) ---
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    
+                    const confirmAction = () => {
+                        // Load data, but ensure modification IDs are not updated in viewer
+                        symbalooData = importedData;
+                        symbalooData.isLocked = false; // Always read-only
+                        saveViewerState(); // Save only the *new* current webmix state/ID
+                        renderAll();
+                        showCustomModal('បញ្ចូលបានជោគជ័យ!', 'ទិន្នន័យថ្មីត្រូវបានផ្ទុកហើយសម្រាប់ការមើល។', false);
+                    };
+
+                    showCustomModal('បញ្ជាក់ការបញ្ចូល', 'តើអ្នកចង់ជំនួសទិន្នន័យបច្ចុប្បន្នទាំងអស់ដែរឬទេ? ការផ្លាស់ប្តូរនេះមិនប៉ះពាល់ដល់ឯកសារដើម Admin របស់អ្នកទេ គឺគ្រាន់តែសម្រាប់មើលប៉ុណ្ណោះ។', true, confirmAction, 'យល់ព្រមជំនួស');
+
+                } catch (error) {
+                    showCustomModal('ការបញ្ចូលបរាជ័យ', 'មានបញ្ហាក្នុងការអានឯកសារ។ សូមប្រាកដថាវាជាឯកសារ JSON ដែលមានទម្រង់ត្រឹមត្រូវ។', false);
+                }
+            };
+            
+            reader.readAsText(file);
+            event.target.value = ''; 
+        }
+
+        // --- COMMON UI/RENDER FUNCTIONS (Modified for Viewer) ---
+
+        function showModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+            if (id === 'custom-alert-modal') {
+                customModalCallback = null;
+            }
+        }
+
+        function showCustomModal(title, message, isConfirm = false, confirmCallback = null, confirmText = 'យល់ព្រោម', cancelText = 'បោះបង់') {
+            const modal = document.getElementById('custom-alert-modal');
+            document.getElementById('custom-alert-title').textContent = title;
+            document.getElementById('custom-alert-message').textContent = message;
+            const buttonsContainer = document.getElementById('custom-alert-buttons');
+            buttonsContainer.innerHTML = '';
+
+            if (isConfirm) {
+                customModalCallback = confirmCallback;
+
+                const cancelButton = document.createElement('button');
+                cancelButton.type = 'button';
+                cancelButton.className = 'px-4 py-2 bg-gray-300 text-gray-800 font-semibold rounded-lg hover:bg-gray-400 transition';
+                cancelButton.textContent = cancelText;
+                cancelButton.onclick = () => closeModal('custom-alert-modal');
+
+                const confirmButton = document.createElement('button');
+                confirmButton.type = 'button';
+                confirmButton.className = 'px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition';
+                confirmButton.textContent = confirmText;
+                confirmButton.onclick = () => {
+                    if (customModalCallback) customModalCallback();
+                    closeModal('custom-alert-modal');
+                };
+
+                buttonsContainer.appendChild(cancelButton);
+                buttonsContainer.appendChild(confirmButton);
+            } else {
+                const okButton = document.createElement('button');
+                okButton.type = 'button';
+                okButton.className = 'px-4 py-2 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition';
+                okButton.textContent = confirmText;
+                okButton.onclick = () => closeModal('custom-alert-modal');
+                buttonsContainer.appendChild(okButton);
+            }
+
+            showModal('custom-alert-modal');
+        }
+
+        function renderWebmixTabs() {
+            const tabsContainer = document.getElementById('webmix-tabs');
+            tabsContainer.innerHTML = ''; 
+
+            const groupedWebmixes = symbalooData.webmixes.reduce((acc, webmix) => {
+                const group = webmix.group || 'Webmixes មិនមានក្រុម (Ungrouped Webmixes)';
+                if (!acc[group]) acc[group] = [];
+                acc[group].push(webmix);
+                return acc;
+            }, {});
+
+            const sortedGroupNames = Object.keys(groupedWebmixes).sort();
+            
+            sortedGroupNames.forEach(groupName => {
+                const groupSection = document.createElement('div');
+                groupSection.className = 'flex flex-col mr-6 mb-2 mt-2';
+                
+                if (groupName !== 'Webmixes មិនមានក្រុម (Ungrouped Webmixes)') {
+                    const groupHeader = document.createElement('div');
+                    groupHeader.className = 'text-xs font-bold text-gray-500 uppercase mb-1 border-b border-gray-300 pb-1';
+                    groupHeader.textContent = groupName;
+                    groupSection.appendChild(groupHeader);
+                }
+
+                const tabsDiv = document.createElement('div');
+                tabsDiv.className = 'flex flex-wrap space-x-2';
+
+                groupedWebmixes[groupName].forEach(webmix => {
+                    const isActive = webmix.id === symbalooData.currentWebmixId;
+                    const button = document.createElement('button');
+                    button.setAttribute('onclick', `switchWebmix(${webmix.id})`);
+                    // Note: No dropdown menu for webmix editing in Viewer Mode
+                    button.className = `webmix-tab p-3 text-sm font-semibold rounded-t-lg transition-colors flex items-center group ${isActive ? 'active text-orange-500' : 'text-gray-500 hover:text-gray-700'}`;
+                    button.textContent = webmix.title;
+                    
+                    tabsDiv.appendChild(button);
+                });
+
+                groupSection.appendChild(tabsDiv);
+                tabsContainer.appendChild(groupSection);
+            });
+
+            lucide.createIcons();
+        }
+
+        function renderTiles() {
+            const container = document.getElementById('tile-container');
+            container.innerHTML = ''; 
+
+            const currentWebmix = symbalooData.webmixes.find(w => w.id === symbalooData.currentWebmixId);
+
+            if (!currentWebmix) {
+                container.innerHTML = `<p class="text-gray-500 text-center col-span-full pt-10">មិនមាន Webmix ដែលបានជ្រើសរើសទេ។</p>`;
+                return;
+            }
+
+            const groupedTiles = currentWebmix.tiles.reduce((acc, tile) => {
+                const section = tile.section || 'ផ្នែកមិនកំណត់ (Uncategorized)';
+                if (!acc[section]) acc[section] = [];
+                acc[section].push(tile);
+                return acc;
+            }, {});
+
+            const sortedSectionNames = Object.keys(groupedTiles).sort();
+            
+            // Viewer Mode: Always restricted
+            const isRestricted = true; 
+
+            sortedSectionNames.forEach(sectionName => {
+                const header = document.createElement('div');
+                header.className = 'tile-section-header';
+                header.textContent = sectionName;
+                container.appendChild(header);
+
+                groupedTiles[sectionName].forEach(tile => {
+                    const tileElement = document.createElement('a');
+                    tileElement.href = tile.url;
+                    tileElement.target = "_blank";
+                    // Add read-only class to prevent hover effects that suggest editing
+                    tileElement.className = `tile ${tile.color} text-white read-only-tile`;
+                    
+                    // NO context menu listeners on tiles in Viewer Mode
+                    tileElement.addEventListener('contextmenu', (e) => { e.preventDefault(); });
+
+                    const iconSourceUrl = tile.customIconUrl && tile.customIconUrl.trim() !== '' 
+                        ? tile.customIconUrl 
+                        : getFaviconUrl(tile.url);
+
+                    const fallbackDisplay = iconSourceUrl ? 'none' : 'block';
+                    
+                    const iconHTML = `
+                        <div class="tile-icon-container w-10 h-10 mb-2 flex items-center justify-center">
+                            <img src="${iconSourceUrl || ''}" 
+                                alt="${tile.title} Icon" 
+                                class="w-full h-full object-contain rounded-lg shadow-inner"
+                                onerror="this.style.display='none'; this.closest('.tile-icon-container').querySelector('.fallback-icon').style.display='block';"
+                            >
+                            <i data-lucide="globe" class="w-8 h-8 text-white fallback-icon" style="display: ${fallbackDisplay};"></i>
+                        </div>
+                    `;
+                    
+                    const titleHTML = `<span class="text-xs font-medium truncate w-full px-1">${tile.title}</span>`;
+
+                    tileElement.innerHTML = iconHTML + titleHTML;
+                    container.appendChild(tileElement);
+                });
+            });
+
+            // NO Add Tile Placeholder in Viewer Mode
+
+            lucide.createIcons();
+        }
+
+        function switchWebmix(id) {
+            symbalooData.currentWebmixId = id;
+            saveViewerState();
+            renderAll();
+        }
+
+        function renderAll() {
+            renderWebmixTabs();
+            renderTiles();
+        }
+
+        // --- INITIALIZATION ---
+        window.onload = () => {
+            loadData();
+            renderAll();
+        };
+    </script>
+
+</body>
+</html>
