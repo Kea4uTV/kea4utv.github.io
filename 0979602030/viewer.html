@@ -1,0 +1,259 @@
+<!-- The content of viewer.html goes here. It is too long to display fully in the chat, 
+     but you can scroll up to the previous response where it was created in a file block, 
+     or you can wait for the editor pane to update. 
+     For the purpose of easy copying, I've re-generated it below. -->
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>កម្មវិធីគ្រប់គ្រងតំណភ្ជាប់ - របៀបមើល (VIEWER)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* (CSS styles are here, same as original file) */
+        body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
+        .tile-container-wrapper { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 16px; padding: 1rem; min-height: 300px; }
+        .tile { height: 120px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); transition: transform 0.1s, box-shadow: 0.1s; cursor: pointer; padding: 8px; position: relative; }
+        .tile:hover { transform: translateY(-2px); box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15); }
+        .webmix-tab { transition: background-color 0.15s; }
+        .webmix-tab.active { border-bottom: 4px solid #f97316; color: #f97316; }
+        .tile-icon-container img { max-width: 100%; max-height: 100%; width: auto; height: auto; }
+        .tile-section-header { grid-column: 1 / -1; padding-top: 20px; padding-bottom: 8px; font-size: 1.25rem; font-weight: 700; color: #1f2937; border-bottom: 2px solid #e5e7eb; margin-bottom: 8px; }
+        .read-only-tile:hover { transform: none !important; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important; }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+
+        <header class="mb-8 p-4 bg-white rounded-xl shadow-md border-b-4 border-orange-500">
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-1">
+                👀 របៀបមើលធម្មតា (VIEWER MODE)
+            </h1>
+            <p class="text-gray-600 text-sm">
+                ទិន្នន័យត្រូវបានផ្ទុកដោយស្វ័យប្រវត្តិពីឯកសារ **data.json**។ មិនអាចកែប្រែ ឬរក្សាទុកឯកសារបានឡើយ។
+            </p>
+        </header>
+
+        <div class="flex flex-wrap justify-end space-x-3 sm:space-x-4 mb-6" id="tool-controls">
+            <p id="loading-message" class="text-gray-500 font-semibold flex items-center">
+                <i data-lucide="loader" class="w-5 h-5 mr-2 animate-spin text-orange-500"></i>
+                កំពុងផ្ទុកទិន្នន័យ...
+            </p>
+        </div>
+
+        <div id="webmix-tabs" class="flex flex-wrap border-b border-gray-200 mb-6 space-x-2 sm:space-x-4">
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg border border-gray-100">
+            <div id="tile-container" class="tile-container-wrapper">
+            </div>
+        </div>
+        
+    </div>
+
+    <div id="custom-alert-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-3" id="custom-alert-title"></h2>
+            <p class="text-gray-700 mb-6" id="custom-alert-message"></p>
+            <div class="flex justify-end space-x-3" id="custom-alert-buttons">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data structure and global variables
+        let symbalooData = { currentWebmixId: 1, webmixes: [] };
+        let customModalCallback = null;
+
+        // --- CORE UTILITIES ---
+        function getFaviconUrl(url) {
+            try {
+                const domain = new URL(url).hostname;
+                return \`https://s2.googleusercontent.com/s2/favicons?domain=\${domain}&sz=48\`;
+            } catch (e) {
+                console.warn("Invalid URL for favicon:", url);
+                return null;
+            }
+        }
+        
+        async function loadDataFromJSON() {
+            const loadingMessage = document.getElementById('loading-message');
+            loadingMessage.innerHTML = \`<i data-lucide="loader" class="w-5 h-5 mr-2 animate-spin text-orange-500"></i> កំពុងផ្ទុកទិន្នន័យ...\`;
+            lucide.createIcons();
+            
+            try {
+                const response = await fetch('data.json');
+                if (!response.ok) { throw new Error(\`HTTP error! status: \${response.status}\`); }
+                const importedData = await response.json();
+                
+                symbalooData = importedData;
+                symbalooData.isLocked = false; 
+                
+                const viewerState = localStorage.getItem('symbalooLiteViewerState');
+                if (viewerState) {
+                    symbalooData.currentWebmixId = JSON.parse(viewerState).currentWebmixId || symbalooData.currentWebmixId;
+                }
+                
+                if (symbalooData.webmixes.length > 0 && 
+                    !symbalooData.webmixes.some(w => w.id === symbalooData.currentWebmixId)) {
+                    symbalooData.currentWebmixId = symbalooData.webmixes[0].id;
+                }
+
+                loadingMessage.textContent = 'ផ្ទុកបានជោគជ័យ';
+                loadingMessage.classList.add('text-green-600');
+                loadingMessage.classList.remove('animate-spin', 'text-orange-500');
+                
+                renderAll();
+                
+            } catch (error) {
+                console.error("Error loading data from data.json:", error);
+                loadingMessage.innerHTML = \`<i data-lucide="alert-triangle" class="w-5 h-5 mr-2 text-red-500"></i> បញ្ហាក្នុងការផ្ទុក data.json\`;
+                loadingMessage.classList.add('text-red-600');
+                loadingMessage.classList.remove('animate-spin', 'text-orange-500');
+
+                document.getElementById('webmix-tabs').innerHTML = '';
+                document.getElementById('tile-container').innerHTML = \`<p class="text-red-500 text-center col-span-full pt-10">មិនអាចផ្ទុកទិន្នន័យបានទេ។ សូមពិនិត្យមើលថាឯកសារ data.json មាននៅថតតែមួយ។</p>\`;
+            }
+        }
+        
+        function saveViewerState() {
+            try {
+                const stateToSave = { currentWebmixId: symbalooData.currentWebmixId };
+                 localStorage.setItem('symbalooLiteViewerState', JSON.stringify(stateToSave));
+            } catch (error) {
+                console.error("Error saving viewer state to LocalStorage:", error);
+            }
+        }
+
+        // --- COMMON UI/RENDER FUNCTIONS ---
+        function showModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); if (id === 'custom-alert-modal') { customModalCallback = null; } }
+
+        function renderWebmixTabs() {
+            const tabsContainer = document.getElementById('webmix-tabs');
+            tabsContainer.innerHTML = ''; 
+
+            if (symbalooData.webmixes.length === 0) return;
+
+            const groupedWebmixes = symbalooData.webmixes.reduce((acc, webmix) => {
+                const group = webmix.group || 'Webmixes មិនមានក្រុម (Ungrouped Webmixes)';
+                if (!acc[group]) acc[group] = [];
+                acc[group].push(webmix);
+                return acc;
+            }, {});
+
+            const sortedGroupNames = Object.keys(groupedWebmixes).sort();
+            
+            sortedGroupNames.forEach(groupName => {
+                const groupSection = document.createElement('div');
+                groupSection.className = 'flex flex-col mr-6 mb-2 mt-2';
+                
+                if (groupName !== 'Webmixes មិនមានក្រុម (Ungrouped Webmixes)') {
+                    const groupHeader = document.createElement('div');
+                    groupHeader.className = 'text-xs font-bold text-gray-500 uppercase mb-1 border-b border-gray-300 pb-1';
+                    groupHeader.textContent = groupName;
+                    groupSection.appendChild(groupHeader);
+                }
+
+                const tabsDiv = document.createElement('div');
+                tabsDiv.className = 'flex flex-wrap space-x-2';
+
+                groupedWebmixes[groupName].forEach(webmix => {
+                    const isActive = webmix.id === symbalooData.currentWebmixId;
+                    const button = document.createElement('button');
+                    button.setAttribute('onclick', \`switchWebmix(\${webmix.id})\`);
+                    button.className = \`webmix-tab p-3 text-sm font-semibold rounded-t-lg transition-colors flex items-center group \${isActive ? 'active text-orange-500' : 'text-gray-500 hover:text-gray-700'}\`;
+                    button.textContent = webmix.title;
+                    
+                    tabsDiv.appendChild(button);
+                });
+
+                groupSection.appendChild(tabsDiv);
+                tabsContainer.appendChild(groupSection);
+            });
+
+            lucide.createIcons();
+        }
+
+        function renderTiles() {
+            const container = document.getElementById('tile-container');
+            container.innerHTML = ''; 
+
+            const currentWebmix = symbalooData.webmixes.find(w => w.id === symbalooData.currentWebmixId);
+
+            if (!currentWebmix) {
+                container.innerHTML = \`<p class="text-gray-500 text-center col-span-full pt-10">មិនមាន Webmix ដែលបានជ្រើសរើសទេ។</p>\`;
+                return;
+            }
+
+            const groupedTiles = currentWebmix.tiles.reduce((acc, tile) => {
+                const section = tile.section || 'ផ្នែកមិនកំណត់ (Uncategorized)';
+                if (!acc[section]) acc[section] = [];
+                acc[section].push(tile);
+                return acc;
+            }, {});
+
+            const sortedSectionNames = Object.keys(groupedTiles).sort();
+            
+            sortedSectionNames.forEach(sectionName => {
+                const header = document.createElement('div');
+                header.className = 'tile-section-header';
+                header.textContent = sectionName;
+                container.appendChild(header);
+
+                groupedTiles[sectionName].forEach(tile => {
+                    const tileElement = document.createElement('a');
+                    tileElement.href = tile.url;
+                    tileElement.target = "_blank";
+                    tileElement.className = \`tile \${tile.color} text-white\`;
+                    
+                    tileElement.addEventListener('contextmenu', (e) => { e.preventDefault(); });
+
+                    const iconSourceUrl = tile.customIconUrl && tile.customIconUrl.trim() !== '' 
+                        ? tile.customIconUrl 
+                        : getFaviconUrl(tile.url);
+
+                    const fallbackDisplay = iconSourceUrl ? 'none' : 'block';
+                    
+                    const iconHTML = \`
+                        <div class="tile-icon-container w-10 h-10 mb-2 flex items-center justify-center">
+                            <img src="\${iconSourceUrl || ''}" 
+                                alt="\${tile.title} Icon" 
+                                class="w-full h-full object-contain rounded-lg shadow-inner"
+                                onerror="this.style.display='none'; this.closest('.tile-icon-container').querySelector('.fallback-icon').style.display='block';"
+                            >
+                            <i data-lucide="globe" class="w-8 h-8 text-white fallback-icon" style="display: \${fallbackDisplay};"></i>
+                        </div>
+                    \`;
+                    
+                    const titleHTML = \`<span class="text-xs font-medium truncate w-full px-1">\${tile.title}</span>\`;
+
+                    tileElement.innerHTML = iconHTML + titleHTML;
+                    container.appendChild(tileElement);
+                });
+            });
+
+            lucide.createIcons();
+        }
+
+        function switchWebmix(id) {
+            symbalooData.currentWebmixId = id;
+            saveViewerState(); 
+            renderAll();
+        }
+
+        function renderAll() {
+            renderWebmixTabs();
+            renderTiles();
+        }
+
+        // --- INITIALIZATION ---
+        window.onload = () => {
+            loadDataFromJSON();
+        };
+    </script>
+
+</body>
+</html>
