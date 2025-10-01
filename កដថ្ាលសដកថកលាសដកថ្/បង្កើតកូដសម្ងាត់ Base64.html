@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Base64 Secret Key Generator</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fc;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8 min-h-screen flex items-center justify-center">
+
+    <div class="w-full max-w-lg bg-white p-6 sm:p-8 rounded-xl shadow-2xl border border-gray-100">
+        <h1 class="text-3xl font-extrabold text-gray-900 mb-6 text-center">
+            បង្កើតកូដសម្ងាត់ Base64
+        </h1>
+        <p class="text-gray-500 mb-8 text-center text-sm">
+            បញ្ចូលព័ត៌មានដើម្បីបង្កើត `const SECRET_KEY` ដែលបានអ៊ិនកូដ។
+        </p>
+
+        <!-- Input Form -->
+        <div id="input-form" class="space-y-6">
+            
+            <!-- Password Input -->
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
+                    ពាក្យសម្ងាត់ (p)
+                </label>
+                <input type="text" id="password" value="Kounsokea" placeholder="បញ្ចូលពាក្យសម្ងាត់"
+                       class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Start Date Input -->
+                <div>
+                    <label for="startDate" class="block text-sm font-medium text-gray-700 mb-1">
+                        កាលបរិច្ឆេទចាប់ផ្តើម (s)
+                    </label>
+                    <input type="date" id="startDate" value="2025-10-01"
+                           class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+                </div>
+
+                <!-- End Date Input -->
+                <div>
+                    <label for="endDate" class="block text-sm font-medium text-gray-700 mb-1">
+                        កាលបរិច្ឆេទបញ្ចប់ (e)
+                    </label>
+                    <input type="date" id="endDate" value="2025-11-01"
+                           class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 transition duration-150">
+                </div>
+            </div>
+
+            <!-- Convert Button -->
+            <button id="convertButton" onclick="generateSecretKey()"
+                    class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-lg font-semibold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-200 transform hover:scale-[1.01] active:scale-[0.99]">
+                ចុច Convert យក const SECRET_KEY
+            </button>
+        </div>
+        
+        <!-- Error Message -->
+        <div id="errorMessage" class="hidden mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative" role="alert">
+            <span class="block sm:inline" id="errorText"></span>
+        </div>
+
+        <!-- Output Area -->
+        <div id="output-area" class="mt-8 pt-6 border-t border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                កូដសម្ងាត់ដែលបានបង្កើត (Generated Secret Key)
+            </h2>
+            
+            <div class="relative">
+                <textarea id="secretKeyOutput" readonly rows="5"
+                          class="font-mono text-sm block w-full p-4 pr-16 bg-gray-50 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 resize-none overflow-auto"
+                          placeholder="const SECRET_KEY = '...'"></textarea>
+                
+                <button onclick="copyToClipboard()"
+                        class="absolute top-2 right-2 p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition duration-150 focus:outline-none focus:ring-2 focus:ring-green-500 text-xs font-medium">
+                    ចម្លង
+                </button>
+            </div>
+            
+            <p id="copyMessage" class="text-sm text-green-600 mt-2 hidden">បានចម្លងហើយ!</p>
+
+            <div id="jsonPreview" class="mt-4 p-3 bg-gray-100 rounded-lg text-xs font-mono text-gray-600 break-words hidden">
+                <!-- JSON Preview will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // មុខងារសម្រាប់បំបែកកាលបរិច្ឆេទ YYYY-MM-DD ទៅជា [Y, M, D]
+        function parseDateInput(dateString) {
+            if (!dateString) return null;
+            try {
+                // dateString គឺនៅក្នុងទម្រង់ YYYY-MM-DD
+                const parts = dateString.split('-').map(Number);
+                // The month from the date input (parts[1]) is already 1-indexed (1-12)
+                return [parts[0], parts[1], parts[2]];
+            } catch (e) {
+                console.error("Error parsing date:", e);
+                return null;
+            }
+        }
+
+        // មុខងារសម្រាប់បង្ហាញសារកំហុស
+        function displayError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            document.getElementById('errorText').textContent = message;
+            errorDiv.classList.remove('hidden');
+        }
+
+        // មុខងារសំខាន់សម្រាប់បង្កើតកូដសម្ងាត់
+        function generateSecretKey() {
+            const password = document.getElementById('password').value.trim();
+            const startDateStr = document.getElementById('startDate').value;
+            const endDateStr = document.getElementById('endDate').value;
+            const outputElement = document.getElementById('secretKeyOutput');
+            const errorDiv = document.getElementById('errorMessage');
+            const jsonPreviewDiv = document.getElementById('jsonPreview');
+            
+            errorDiv.classList.add('hidden');
+            outputElement.value = '';
+            jsonPreviewDiv.classList.add('hidden');
+
+
+            if (!password || !startDateStr || !endDateStr) {
+                displayError('សូមបញ្ចូល ពាក្យសម្ងាត់ កាលបរិច្ឆេទចាប់ផ្តើម និងកាលបរិច្ឆេទបញ្ចប់ ឱ្យបានពេញលេញ។');
+                return;
+            }
+
+            const startDateArray = parseDateInput(startDateStr);
+            const endDateArray = parseDateInput(endDateStr);
+
+            if (!startDateArray || !endDateArray) {
+                displayError('ទម្រង់កាលបរិច្ឆេទមិនត្រឹមត្រូវ។ សូមប្រាកដថាអ្នកបានជ្រើសរើសកាលបរិច្ឆេទ។');
+                return;
+            }
+
+            // 1. បង្កើត Object តាមរចនាសម្ព័ន្ធដែលបានស្នើ
+            const secretObject = {
+                p: password,
+                s: startDateArray, // [Y, M(1-12), D]
+                e: endDateArray    // [Y, M(1-12), D]
+            };
+
+            // 2. បម្លែង Object ទៅជា JSON String
+            const jsonString = JSON.stringify(secretObject);
+            
+            // 3. Base64 encode JSON String
+            let base64Encoded;
+            try {
+                // btoa() គឺជាមុខងារស្តង់ដារសម្រាប់ Base64 Encoding
+                base64Encoded = btoa(jsonString);
+            } catch (e) {
+                displayError('មានបញ្ហាក្នុងការអ៊ិនកូដ Base64។');
+                console.error('Base64 Encoding Error:', e);
+                return;
+            }
+
+            // 4. បង្ហាញលទ្ធផលចុងក្រោយ
+            outputElement.value = `const SECRET_KEY = '${base64Encoded}';`;
+            
+            // បង្ហាញ JSON ដើមសម្រាប់ផ្ទៀងផ្ទាត់
+            jsonPreviewDiv.textContent = `JSON ដើម: ${jsonString}`;
+            jsonPreviewDiv.classList.remove('hidden');
+        }
+
+        // មុខងារសម្រាប់ចម្លងលទ្ធផលទៅក្នុង Clipboard
+        function copyToClipboard() {
+            const outputElement = document.getElementById('secretKeyOutput');
+            const copyMessage = document.getElementById('copyMessage');
+            
+            if (!outputElement.value) {
+                displayError('គ្មានកូដសម្ងាត់ដើម្បីចម្លងទេ។ សូមបង្កើតវាជាមុនសិន។');
+                return;
+            }
+
+            // វិធីចម្លងដែលដំណើរការល្អក្នុងបរិយាកាស iFrame
+            try {
+                outputElement.select();
+                document.execCommand('copy');
+
+                copyMessage.classList.remove('hidden');
+                setTimeout(() => {
+                    copyMessage.classList.add('hidden');
+                }, 2000);
+            } catch (err) {
+                console.error('Could not copy text: ', err);
+                displayError('បរាជ័យក្នុងការចម្លង។ សូមចម្លងដោយដៃ។');
+            }
+        }
+    </script>
+</body>
+</html>
