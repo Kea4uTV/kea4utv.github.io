@@ -1,0 +1,231 @@
+
+    <title>Admin System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+
+            margin: auto;
+            overflow: hidden;
+        }
+
+        h1, h2 {
+            text-align: center;
+        }
+
+        form {
+            background: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        form label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+
+        form input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+
+        form input[type="checkbox"] {
+            margin-right: 10px;
+        }
+
+        button {
+            background: #28a745;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #218838;
+        }
+
+        #questions-list {
+            background: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .question-item {
+            margin-bottom: 15px;
+        }
+
+        .question-item p {
+            margin: 5px 0;
+        }
+
+        .copy-button {
+            background: #007bff;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .copy-button:hover {
+            background: #0056b3;
+        }
+    </style>
+
+    <div class="container">
+        <h1>Admin System</h1>
+        <form id="question-form">
+            <label for="question">Question:</label>
+            <input type="text" id="question" required>
+
+            <label for="answer1">Answer 1:</label>
+            <input type="text" id="answer1" required>
+            <label for="correct1">Correct?</label>
+            <input type="checkbox" id="correct1">
+
+            <label for="answer2">Answer 2:</label>
+            <input type="text" id="answer2" required>
+            <label for="correct2">Correct?</label>
+            <input type="checkbox" id="correct2">
+
+            <label for="answer3">Answer 3:</label>
+            <input type="text" id="answer3" required>
+            <label for="correct3">Correct?</label>
+            <input type="checkbox" id="correct3">
+
+            <label for="answer4">Answer 4:</label>
+            <input type="text" id="answer4" required>
+            <label for="correct4">Correct?</label>
+            <input type="checkbox" id="correct4">
+
+            <button type="submit">Add Question</button>
+        </form>
+        <h2>Questions List</h2>
+        <button id="copy-all-button" class="copy-button">Copy All Scripts</button>
+        <button id="send-to-gmail-button" class="copy-button">Send to Gmail</button>
+        <div id="questions-list"></div>
+    </div>
+
+    <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
+    <script>
+        // Replace these with your EmailJS service ID and template ID
+        const EMAILJS_SERVICE_ID = 'YOUR_SERVICE_ID';
+        const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';
+        const EMAILJS_USER_ID = 'YOUR_USER_ID';
+
+        document.getElementById('question-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            // Get question and answers
+            const question = document.getElementById('question').value;
+            const answers = [
+                {
+                    text: document.getElementById('answer1').value,
+                    correct: document.getElementById('correct1').checked
+                },
+                {
+                    text: document.getElementById('answer2').value,
+                    correct: document.getElementById('correct2').checked
+                },
+                {
+                    text: document.getElementById('answer3').value,
+                    correct: document.getElementById('correct3').checked
+                },
+                {
+                    text: document.getElementById('answer4').value,
+                    correct: document.getElementById('correct4').checked
+                }
+            ];
+
+            // Create question data
+            const questionData = {
+                question: question,
+                answers: shuffleArray(answers) // Shuffle answers
+            };
+
+            displayQuestion(questionData);
+
+            // Clear the form
+            document.getElementById('question-form').reset();
+        });
+
+        function displayQuestion(questionData) {
+            const questionList = document.getElementById('questions-list');
+
+            // Create question item
+            const questionItem = document.createElement('div');
+            questionItem.className = 'question-item';
+
+            // Prepare question and answers in the desired format
+            let html = `{\n    question: '${questionData.question}',\n`;
+            html += '    answers: [\n';
+            questionData.answers.forEach((answer, index) => {
+                html += `        { text: '${answer.text}', correct: ${answer.correct} }${index < 3 ? ',' : ''}\n`;
+            });
+            html += '    ]\n}\n';
+
+            // Create a preformatted block for better display
+            const preformattedText = document.createElement('pre');
+            preformattedText.textContent = html;
+
+            // Append preformatted text to question item
+            questionItem.appendChild(preformattedText);
+            questionList.appendChild(questionItem);
+        }
+
+        // Function to shuffle an array
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+            }
+            return array;
+        }
+
+        // Add Copy All button functionality
+        document.getElementById('copy-all-button').addEventListener('click', () => {
+            const allScripts = Array.from(document.querySelectorAll('.question-item pre'))
+                .map(pre => pre.textContent)
+                .join('\n\n');
+
+            navigator.clipboard.writeText(allScripts)
+                .then(() => {
+                    alert('All scripts copied to clipboard!');
+                })
+                .catch(err => {
+                    alert('Failed to copy all scripts.');
+                    console.error('Copy to clipboard failed: ', err);
+                });
+        });
+
+        // Add Send to Gmail button functionality
+        document.getElementById('send-to-gmail-button').addEventListener('click', () => {
+            const allScripts = Array.from(document.querySelectorAll('.question-item pre'))
+                .map(pre => pre.textContent)
+                .join('\n\n');
+
+            emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+                user_email: 'recipient@example.com', // Replace with your email or user input
+                message: allScripts
+            }, EMAILJS_USER_ID)
+            .then(() => {
+                alert('Scripts sent to email successfully!');
+            })
+            .catch(err => {
+                alert('Failed to send scripts.');
+                console.error('Email sending failed: ', err);
+            });
+        });
+    </script>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Text Converter</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f4f4f4;
+    }
+    .container {
+      text-align: center;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    .output-box {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 10px 0;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #fff;
+    }
+    button {
+      padding: 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .copy-btn {
+      margin-left: 10px;
+      background-color: #28a745;
+    }
+    .copy-btn:hover {
+      background-color: #218838;
+    }
+    .copy-all-btn {
+      background-color: #17a2b8;
+      margin-top: 20px;
+    }
+    .copy-all-btn:hover {
+      background-color: #138496;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>បំប្លែងពាក្យ ទៅជា ( # @ , )</h1>
+    <input type="text" id="inputText" value="" placeholder="Enter text here" />
+    <br />
+    <button onclick="convertText()">ចុចបំប្លែងឥឡូវ</button>
+
+    <div class="output-box">
+      <span id="output1"></span>
+      <button class="copy-btn" onclick="copyText('output1')">ចម្លង</button>
+    </div>
+    <div class="output-box">
+      <span id="output2"></span>
+      <button class="copy-btn" onclick="copyText('output2')">ចម្លង</button>
+    </div>
+    <div class="output-box">
+      <span id="output3"></span>
+      <button class="copy-btn" onclick="copyText('output3')">ចម្លង</button>
+    </div>
+    
+    <button class="copy-all-btn" onclick="copyAllText()">ចម្លង ទាំងអស់</button>
+  </div>
+
+  <script>
+    function convertText() {
+      const input = document.getElementById('inputText').value;
+      const words = input.split(' ');
+
+      const output1 = words.map(word => `#${word}`).join(' ');
+      const output2 = words.map(word => `@${word}`).join(' ');
+      const output3 = words.join(', ');
+
+      document.getElementById('output1').textContent = output1;
+      document.getElementById('output2').textContent = output2;
+      document.getElementById('output3').textContent = output3;
+    }
+
+    function copyText(elementId) {
+      const text = document.getElementById(elementId).textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        alert("Copied: " + text);
+      }).catch(err => {
+        console.error("Error copying text: ", err);
+      });
+    }
+
+    function copyAllText() {
+      const output1 = document.getElementById('output1').textContent;
+      const output2 = document.getElementById('output2').textContent;
+      const output3 = document.getElementById('output3').textContent;
+
+      const allText = `${output1}\n${output2}\n${output3}`;
+      navigator.clipboard.writeText(allText).then(() => {
+        alert("Copied all texts");
+      }).catch(err => {
+        console.error("Error copying all text: ", err);
+      });
+    }
+  </script>
+</body>
+</html>

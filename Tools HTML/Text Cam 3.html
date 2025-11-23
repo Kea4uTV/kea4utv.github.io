@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ឧបករណ៍ចលនាអក្សរ PiP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* កំណត់ Font ខ្មែរដែលអាចមើលឃើញច្បាស់ */
+        body {
+            font-family: 'Inter', 'Khmer OS', 'Moul', sans-serif;
+            background-color: #f1f5f9; /* Slate 100 */
+        }
+        /* កំណត់ទំហំ canvas ដើម */
+        #animationCanvas {
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            /* ផ្ទៃខាងក្រោយត្រូវបានដកចេញ ដើម្បីអោយមានភាពថ្លា (Transparent) */
+            display: block;
+            width: 100%;
+            /* កម្ពស់នឹងត្រូវបានកំណត់ដោយ JS ដើម្បីរក្សា Aspect Ratio */
+            height: 200px; 
+            background-color: transparent !important; /* បង្ខំឱ្យថ្លាទាំងស្រុង */
+        }
+        /* សម្រាប់ការបង្ហាញ Pop-up PiP */
+        #messageBox {
+            opacity: 0;
+            pointer-events: none; /* Make it unclickable when hidden */
+            transition: opacity 0.3s ease;
+        }
+        .message-show {
+            opacity: 1 !important;
+            pointer-events: auto; /* Make it clickable when visible */
+        }
+        .message-title-success {
+            color: #10B981; /* Emerald 500 */
+        }
+        .message-title-error {
+            color: #EF4444; /* Red 500 */
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen flex justify-center items-start">
+
+    <div class="w-full max-w-4xl bg-white p-6 md:p-8 rounded-2xl shadow-2xl">
+        <h1 class="text-3xl font-extrabold text-gray-800 mb-6 border-b pb-2 text-center">
+            កម្មវិធីបង្កើតចលនាអក្សរ PiP
+        </h1>
+        
+        <!-- Input Controls -->
+        <div class="space-y-4 mb-8 p-4 bg-blue-50 rounded-xl border border-blue-200">
+            <h2 class="text-xl font-semibold text-blue-700">១. កំណត់រចនាបថអក្សរ និងបញ្ចូលអត្ថបទ</h2>
+            
+            <!-- FONT CONTROLS -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="fontSelect" class="block text-sm font-medium text-gray-700 mb-1">
+                        ជ្រើសរើស Font (ខ្មែរ Unicode)
+                    </label>
+                    <select id="fontSelect" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        <option value="Noto Sans Khmer" selected>Noto Sans Khmer (លំនាំដើម)</option>
+                        <option value="Khmer OS Muol">Khmer OS Muol (ប្រព័ន្ធ)</option>
+                        <option value="Inter">Inter (អង់គ្លេស)</option>
+                        <option value="Custom Font">-- ផ្ទាល់ខ្លួន (Upload) --</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="fontFileInput" class="block text-sm font-medium text-gray-700 mb-1">
+                        Upload Font (.ttf/.otf/.woff)
+                    </label>
+                    <input type="file" id="fontFileInput" accept=".ttf,.otf,.woff,.woff2" class="w-full p-2 border border-gray-300 rounded-lg bg-white file:mr-4 file:py-1 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-3 gap-4">
+                <div>
+                    <label for="textSize" class="block text-sm font-medium text-gray-700 mb-1">ទំហំអក្សរ (px)</label>
+                    <input type="number" id="textSize" value="48" min="10" max="100" class="w-full p-3 border border-gray-300 rounded-lg text-center">
+                </div>
+                <div>
+                    <label for="textColor" class="block text-sm font-medium text-gray-700 mb-1">ពណ៌អក្សរ</label>
+                    <input type="color" id="textColor" value="#FDE047" class="w-full h-12 border border-gray-300 rounded-lg p-1">
+                </div>
+                <div>
+                    <label for="scrollSpeedInput" class="block text-sm font-medium text-gray-700 mb-1">ល្បឿនចលនា</label>
+                    <input type="number" id="scrollSpeedInput" value="1" min="0.5" max="5" step="0.5" class="w-full p-3 border border-gray-300 rounded-lg text-center">
+                </div>
+            </div>
+            
+            <!-- TEXT SEGMENT MANAGEMENT -->
+            <h3 class="text-lg font-medium text-gray-700 pt-2 border-t mt-4">ការគ្រប់គ្រងបន្ទាត់អក្សរ (នឹងបង្ហាញជាលំដាប់)</h3>
+            <div id="textListContainer" class="space-y-2 max-h-48 overflow-y-auto p-2 bg-white rounded-lg border border-gray-200">
+                <!-- Text segments will be rendered here -->
+            </div>
+            
+            <div class="flex space-x-2">
+                <textarea id="newTextInput" rows="1" class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-base" placeholder="បញ្ចូលអត្ថបទថ្មីនៅទីនេះ..."></textarea>
+                <button id="addTextBtn" class="py-2 px-4 bg-yellow-500 hover:bg-yellow-600 text-white font-bold rounded-xl transition duration-150 shadow-md flex items-center justify-center min-w-[100px]">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                    </svg>
+                    បន្ថែម
+                </button>
+            </div>
+            
+            <button id="startAnimationBtn" class="w-full py-3 px-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition duration-150 shadow-lg shadow-green-200">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 inline-block mr-2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5L7.5 7.5L4.5 4.5" />
+                </svg>
+                ធ្វើបច្ចុប្បន្នភាពការកំណត់ (Font, Size, Speed)
+            </button>
+        </div>
+
+        <!-- Canvas Display - RESOLUTION CONTROLS -->
+        <div class="mb-8 p-4 bg-gray-50 rounded-xl border border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-700 mb-3">២. កំណត់ទំហំ និងបង្ហាញផ្ទាំងចលនា (Canvas)</h2>
+            <p class="text-sm text-gray-600 mb-4 font-bold">
+                *សំគាល់៖ ផ្លាស់ប្តូរតម្លៃទទឹង/កម្ពស់នៅទីនេះដើម្បីកែ Aspect Ratio នៃផ្ទាំង PiP។ ការផ្លាស់ប្តូរនេះនឹងត្រូវបានអនុវត្តភ្លាមៗ។
+            </p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <!-- ផ្នែកជ្រើសរើស Resolution រហ័ស -->
+                <div>
+                    <label for="resolutionQuickSelect" class="block text-sm font-medium text-gray-700 mb-1">ជ្រើសរើស Resolution រហ័ស</label>
+                    <select id="resolutionQuickSelect" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        <optgroup label="Landscape (16:9) - ផ្ទាំងទទឹង">
+                            <option value="1280x720" selected>720p (HD) - 1280x720</option>
+                            <option value="1920x1080">1080p (HD) - 1920x1080</option>
+                            <option value="2560x1440">1440p (2K) - 2560x1440</option>
+                            <option value="3840x2160">2160p (4K) - 3840x2160</option>
+                        </optgroup>
+                        <optgroup label="Portrait (9:16) - ផ្ទាំងបណ្តោយ">
+                            <option value="720x1280">720p Vertical - 720x1280</option>
+                            <option value="1080x1920">1080p Vertical - 1080x1920</option>
+                        </optgroup>
+                        <optgroup label="Square (1:1) - ផ្ទាំងការ៉េ">
+                            <option value="720x720">Square - 720x720</option>
+                            <option value="1080x1080">Square - 1080x1080</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <!-- ផ្នែកកែសម្រួល Resolution ដោយផ្ទាល់ -->
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label for="widthInput" class="block text-sm font-medium text-gray-700 mb-1">ទទឹង (Width, px)</label>
+                        <input type="number" id="widthInput" value="1280" min="100" class="w-full p-3 border border-gray-300 rounded-lg text-center focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="heightInput" class="block text-sm font-medium text-gray-700 mb-1">កម្ពស់ (Height, px)</label>
+                        <input type="number" id="heightInput" value="720" min="100" class="w-full p-3 border border-gray-300 rounded-lg text-center focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label for="displayModeSelect" class="block text-sm font-medium text-gray-700 mb-1">របៀបបង្ហាញ PiP (Object Fit)</label>
+                <select id="displayModeSelect" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    <option value="contain">Fit (សម): រក្សា Aspect Ratio ដោយបង្ហាញពេញផ្ទាំង</option>
+                    <option value="cover">Fill (បំពេញ): រក្សា Aspect Ratio ដោយកាត់ផ្តាច់ផ្នែកខ្លះ</option>
+                    <option value="fill">Stretch (ពង្រីក): បង្ហាញពេញផ្ទាំងដោយមិនរក្សា Aspect Ratio</option>
+                </select>
+                <p class="text-xs text-gray-500 mt-1">របៀបបង្ហាញប៉ះពាល់តែផ្ទាំង PiP ប៉ុណ្ណោះ។</p>
+            </div>
+            
+            <canvas id="animationCanvas"></canvas>
+            <!-- Hidden Video element to enable PiP functionality -->
+            <video id="pipVideo" style="display: none;"></video>
+        </div>
+        
+        <!-- PiP Control -->
+        <div class="p-4 bg-red-50 rounded-xl border border-red-200">
+            <h2 class="text-xl font-semibold text-red-700 mb-3">៣. បង្ហាញជា Pop-up (Picture-in-Picture)</h2>
+            <p class="text-sm text-gray-600 mb-4">
+                <span class="font-bold text-red-600">សំខាន់៖</span> 
+                ផ្ទាំង PiP គឺអាច **បង្រួម/ពង្រីកដោយប្រើ Mouse ដោយផ្ទាល់** នៅលើគែមផ្ទាំងនោះ (Native Browser Feature)។ 
+                សូមចុចប៊ូតុងខាងក្រោមដើម្បីទាញ Canvas នេះទៅជាផ្ទាំងអណ្តែត។
+            </p>
+            <button id="pipBtn" class="w-full py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition duration-150 shadow-lg shadow-red-200">
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 inline-block mr-2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5l15-15m-15 0h15v15" />
+                </svg>
+                បើកជា PiP (Picture-in-Picture)
+            </button>
+        </div>
+
+        <!-- Message Box -->
+        <div id="messageBox" class="fixed top-0 left-0 w-full h-full bg-black/80 flex items-center justify-center p-4 z-50">
+            <div class="bg-white p-8 rounded-lg shadow-xl max-w-md text-center">
+                <p id="messageTitle" class="text-xl font-bold text-gray-800 mb-4 message-title-success">PiP កំពុងដំណើរការ</p>
+                <p id="messageContent" class="text-gray-600 mb-6">ផ្ទាំងចលនាអក្សរកំពុងអណ្តែតលើអេក្រង់របស់អ្នក។ សូមចុចប៊ូតុងបិទ PiP នៅលើផ្ទាំងតូចនោះ ដើម្បីត្រឡប់មកទីនេះវិញ។</p>
+                <button id="closeMessageBtn" class="py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700">យល់ព្រម</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script type="module">
+        // Global variables for Firebase setup (standard immersive requirement)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+
+        // Canvas Setup
+        const canvas = document.getElementById('animationCanvas');
+        // Explicitly request alpha channel for transparency in PiP stream
+        const ctx = canvas.getContext('2d', { alpha: true }); 
+        
+        // Hidden Video Setup
+        const pipVideo = document.getElementById('pipVideo');
+        let canvasStream = null;
+
+        // Input Elements
+        const textSizeInput = document.getElementById('textSize');
+        const textColorInput = document.getElementById('textColor');
+        const scrollSpeedInput = document.getElementById('scrollSpeedInput'); 
+        const startAnimationBtn = document.getElementById('startAnimationBtn');
+        const pipBtn = document.getElementById('pipBtn');
+        
+        // RESOLUTION INPUTS
+        const resolutionQuickSelect = document.getElementById('resolutionQuickSelect');
+        const widthInput = document.getElementById('widthInput');
+        const heightInput = document.getElementById('heightInput');
+        const displayModeSelect = document.getElementById('displayModeSelect');
+
+        // MULTI-TEXT INPUTS
+        const textListContainer = document.getElementById('textListContainer');
+        const newTextInput = document.getElementById('newTextInput');
+        const addTextBtn = document.getElementById('addTextBtn');
+
+        // FONT INPUTS
+        const fontSelect = document.getElementById('fontSelect');
+        const fontFileInput = document.getElementById('fontFileInput');
+        
+        // Message Box Elements
+        const messageBox = document.getElementById('messageBox');
+        const messageTitle = document.getElementById('messageTitle');
+        const messageContent = document.getElementById('messageContent');
+        const closeMessageBtn = document.getElementById('closeMessageBtn');
+
+        // STATE
+        let animationFrameId;
+        let xPos = 0; 
+        let scrollSpeed = 1; 
+        let currentFont = 'Noto Sans Khmer';
+        let textSegments = []; 
+        const SEGMENT_SEPARATOR_SPACE = 200; // Space between segments in pixels
+
+        
+        // FUNCTION 1: Renders the list of text segments in the UI
+        function renderTextSegments() {
+            textListContainer.innerHTML = '';
+            
+            if (textSegments.length === 0) {
+                textListContainer.innerHTML = '<p class="text-gray-500 italic text-sm p-2 text-center">សូមបន្ថែមបន្ទាត់អក្សរយ៉ាងហោចណាស់មួយ។</p>';
+                return;
+            }
+
+            textSegments.forEach((segment, index) => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center justify-between p-2 bg-white rounded-lg shadow-sm border border-gray-100';
+                
+                // Truncate for display but keep original text in segment
+                const displayText = segment.text.length > 50 ? segment.text.substring(0, 47) + '...' : segment.text;
+
+                div.innerHTML = `
+                    <span class="text-sm text-gray-800 truncate" style="color: ${segment.color}; font-size: 14px; font-family: '${segment.fontName}', sans-serif;">
+                        ${index + 1}. ${displayText}
+                    </span>
+                    <button data-index="${index}" class="remove-segment-btn text-red-500 hover:text-red-700 p-1 rounded-full transition duration-150" aria-label="លុប">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                `;
+                textListContainer.appendChild(div);
+            });
+
+            // Re-attach listeners to the remove buttons
+            document.querySelectorAll('.remove-segment-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const indexToRemove = parseInt(e.currentTarget.dataset.index);
+                    textSegments.splice(indexToRemove, 1);
+                    renderTextSegments();
+                    updateAnimation(); // Restart animation with new list
+                });
+            });
+        }
+
+        // FUNCTION 2: Handles drawing the marquee animation
+        function draw() {
+            const currentWidth = parseInt(widthInput.value) || 1280;
+            const currentHeight = parseInt(heightInput.value) || 720;
+            const aspectRatio = currentHeight / currentWidth;
+            
+            // Adjust canvas CSS height for on-page preview based on aspect ratio
+            if (document.pictureInPictureElement !== pipVideo) {
+                 const containerWidth = canvas.parentElement.offsetWidth;
+                 canvas.style.height = `${containerWidth * aspectRatio}px`;
+            }
+
+            // Clear the canvas to transparent
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (textSegments.length === 0) {
+                // Draw static placeholder if no segments are added
+                ctx.font = `bold 48px 'Noto Sans Khmer', 'Inter', sans-serif`;
+                ctx.fillStyle = '#6B7280'; // Gray
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText("សូមបន្ថែមអត្ថបទដើម្បីចាប់ផ្តើមចលនា", canvas.width / 2, canvas.height / 2);
+                animationFrameId = requestAnimationFrame(draw);
+                return;
+            }
+
+            let totalTextWidth = 0; 
+            const segmentWidths = [];
+            
+            // 1. Calculate total width
+            textSegments.forEach(segment => {
+                ctx.font = `bold ${segment.size}px '${segment.fontName}', sans-serif`;
+                const width = ctx.measureText(segment.text).width;
+                segmentWidths.push(width);
+                totalTextWidth += width + SEGMENT_SEPARATOR_SPACE;
+            });
+            // Remove the last separator space which is not needed after the final segment
+            totalTextWidth -= SEGMENT_SEPARATOR_SPACE;
+
+            // 2. Draw all segments sequentially (First loop)
+            let currentDrawPos = xPos;
+            textSegments.forEach((segment, index) => {
+                ctx.font = `bold ${segment.size}px '${segment.fontName}', sans-serif`;
+                ctx.fillStyle = segment.color;
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'middle';
+                
+                const segmentWidth = segmentWidths[index];
+                
+                // Draw the main text segment
+                ctx.fillText(segment.text, currentDrawPos, canvas.height / 2);
+
+                // Update position for the next segment (Text Width + Separator Space)
+                currentDrawPos += segmentWidth + SEGMENT_SEPARATOR_SPACE;
+            });
+            
+            // 3. Draw the full sequence again right after the first sequence (seamless loop)
+            // Start the second sequence only when the first one is about to scroll off
+            if (xPos + totalTextWidth < canvas.width) {
+                 // Start the second sequence right after the first sequence ends
+                let loopDrawPos = xPos + totalTextWidth + SEGMENT_SEPARATOR_SPACE; 
+                
+                textSegments.forEach((segment, index) => {
+                    ctx.font = `bold ${segment.size}px '${segment.fontName}', sans-serif`;
+                    ctx.fillStyle = segment.color;
+                    
+                    const segmentWidth = segmentWidths[index];
+
+                    // Draw the loop text segment
+                    ctx.fillText(segment.text, loopDrawPos, canvas.height / 2);
+
+                    // Update position for the next segment
+                    loopDrawPos += segmentWidth + SEGMENT_SEPARATOR_SPACE;
+                });
+            }
+
+            // 4. Move the text to the left
+            xPos -= scrollSpeed;
+
+            // Reset position when the sequence is fully off-screen 
+            if (xPos < -(totalTextWidth + SEGMENT_SEPARATOR_SPACE)) {
+                // Reset to start scrolling from the right edge again
+                xPos = canvas.width;
+            }
+            
+            // Loop the animation
+            animationFrameId = requestAnimationFrame(draw);
+        }
+
+        // FUNCTION 3: Stops and restarts animation with new parameters
+        function updateAnimation() {
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            
+            // --- 1. Update Resolution from editable inputs ---
+            const newWidth = parseInt(widthInput.value) || 1280;
+            const newHeight = parseInt(heightInput.value) || 720;
+            
+            widthInput.value = newWidth;
+            heightInput.value = newHeight;
+
+            canvas.width = newWidth; // Internal drawing resolution
+            canvas.height = newHeight; // Internal drawing resolution
+
+            // --- 2. Update Speed ---
+            const newSpeed = parseFloat(scrollSpeedInput.value);
+            scrollSpeed = isNaN(newSpeed) || newSpeed <= 0 ? 1 : newSpeed; 
+
+            // Reset xPos to start scrolling from the right edge for a fresh look
+            xPos = canvas.width; 
+
+            // --- 3. Update Video/PiP Object Fit ---
+            const displayMode = displayModeSelect.value;
+            pipVideo.style.objectFit = displayMode;
+            
+            // Re-apply current font/size/color settings to all existing segments
+            textSegments.forEach(s => {
+                // Only update font if it was already the current font, otherwise respect custom settings
+                // For simplicity here, we assume if the user clicks 'Update', they want current settings applied
+                s.fontName = currentFont;
+                s.color = textColorInput.value;
+                s.size = parseInt(textSizeInput.value) || 48;
+            });
+
+            // Start new animation loop
+            draw();
+        }
+
+        // FUNCTION 4: Handles Font Upload and injection
+        function handleFontUpload(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const fontName = 'CustomUploadedFont';
+                
+                // Remove existing custom font style if present
+                const existingStyle = document.getElementById('customFontStyle');
+                if (existingStyle) {
+                    existingStyle.remove();
+                }
+
+                // 1. Create a dynamic style element
+                const style = document.createElement('style');
+                style.type = 'text/css';
+                style.id = 'customFontStyle';
+                
+                // Determine format based on file extension
+                const format = file.name.split('.').pop().toLowerCase();
+                let fontFormat = 'truetype';
+                if (format === 'woff' || format === 'woff2') {
+                    fontFormat = format;
+                } else if (format === 'otf') {
+                    fontFormat = 'opentype';
+                }
+
+                // 2. Define the @font-face rule
+                const fontFace = `
+                    @font-face {
+                        font-family: '${fontName}';
+                        src: url('${e.target.result}') format('${fontFormat}');
+                        font-weight: normal;
+                        font-style: normal;
+                    }
+                `;
+                style.appendChild(document.createTextNode(fontFace));
+                
+                // 3. Inject the style into the head
+                document.head.appendChild(style);
+
+                // 4. Update the current font and selector
+                currentFont = fontName;
+                
+                // Update select option
+                let customOption = document.getElementById('customFontOption');
+                if (!customOption) {
+                    customOption = document.createElement('option');
+                    customOption.value = fontName;
+                    customOption.textContent = `${fontName} (បានផ្ទុក)`;
+                    customOption.id = 'customFontOption';
+                    fontSelect.appendChild(customOption);
+                } else {
+                    customOption.value = fontName;
+                    customOption.textContent = `${fontName} (បានផ្ទុក)`;
+                }
+                fontSelect.value = fontName;
+                
+                // 5. Apply the new font to all existing segments and restart animation
+                textSegments.forEach(s => s.fontName = fontName);
+                renderTextSegments();
+                updateAnimation();
+                
+                showMessage('Font ផ្ទាល់ខ្លួនត្រូវបានផ្ទុក', `Font "${file.name}" ត្រូវបានផ្ទុកដោយជោគជ័យ និងប្រើប្រាស់សម្រាប់ចលនា។`, false);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // FUNCTION 5: Custom Message box handler
+        function showMessage(title, content, isError = false) {
+            console.log(isError ? "ERROR MESSAGE:" : "INFO MESSAGE:", title, content);
+            
+            messageTitle.textContent = title;
+            messageContent.textContent = content;
+            
+            messageTitle.classList.remove('message-title-success', 'message-title-error');
+            if (isError) {
+                 messageTitle.classList.add('message-title-error');
+            } else {
+                 messageTitle.classList.add('message-title-success');
+            }
+            
+            messageBox.classList.add('message-show');
+            
+            if (isError) {
+                setTimeout(() => {
+                     messageBox.classList.remove('message-show');
+                }, 5000);
+            }
+        }
+
+        // FUNCTION 6: PiP Implementation
+        async function openPiP() {
+            if (!document.pictureInPictureEnabled) {
+                showMessage(
+                    'ការបរាជ័យ PiP', 
+                    'Browser របស់អ្នកមិនគាំទ្រ PiP ទេ។ សូមប្រើ Chrome ឬ Edge ជំនាន់ថ្មីបំផុត។', 
+                    true
+                );
+                return;
+            }
+            
+            if (document.pictureInPictureElement === pipVideo) {
+                try {
+                    await document.exitPictureInPicture();
+                    showMessage('PiP បិទហើយ', 'ផ្ទាំងចលនា PiP ត្រូវបានបិទដោយជោគជ័យ។', false);
+                } catch (error) {
+                    console.error("PiP exit failed:", error);
+                    showMessage('ការបរាជ័យ PiP', 'មិនអាចបិទ PiP បានទេ។ សូមសាកល្បងបិទវាដោយផ្ទាល់នៅលើផ្ទាំងតូច។', true);
+                }
+                return;
+            }
+
+            if (textSegments.length === 0) {
+                 showMessage('បរាជ័យ', 'សូមបញ្ចូលអត្ថបទយ៉ាងហោចណាស់មួយបន្ទាត់សិន។', true);
+                 return;
+            }
+
+            try {
+                // IMPORTANT: Ensure animation is updated with all latest segments/font/size before capture
+                updateAnimation();
+                
+                if (!canvasStream || pipVideo.srcObject !== canvasStream) {
+                    // Create stream only if it's the first time or if stream was closed
+                    canvasStream = canvas.captureStream(60); 
+                    pipVideo.srcObject = canvasStream;
+                }
+                
+                pipVideo.style.backgroundColor = 'transparent'; 
+                pipVideo.muted = true; 
+                pipVideo.autoplay = true;
+                pipVideo.playsinline = true; 
+                
+                await pipVideo.play();
+                await pipVideo.requestPictureInPicture();
+                
+                showMessage('PiP កំពុងដំណើរការ', 'ផ្ទាំងចលនាអក្សរកំពុងអណ្តែតលើអេក្រង់របស់អ្នក។ សូមចុចប៊ូតុងបិទ PiP នៅលើផ្ទាំងតូចនោះ ដើម្បីត្រឡប់មកទីនេះវិញ។', false);
+                
+            } catch (error) {
+                console.error("PiP failed:", error);
+                const errorName = error.name || 'UnknownError';
+                const errorMessage = `ការបើក PiP បរាជ័យ៖ ${errorName}។ សូមប្រាកដថាអ្នកបានចុចប៊ូតុងដោយផ្ទាល់។`;
+                
+                showMessage('ការបរាជ័យ PiP', errorMessage, true);
+            }
+        }
+
+        // PiP Exit Handler
+        function handlePiPExit() {
+            messageBox.classList.remove('message-show');
+        }
+
+        // Event Listeners
+        startAnimationBtn.addEventListener('click', updateAnimation); // 'Update Settings' button
+        pipBtn.addEventListener('click', openPiP);
+        
+        // Multi-Text: Add Text Segment
+        addTextBtn.addEventListener('click', () => {
+            const text = newTextInput.value.trim();
+            if (text) {
+                textSegments.push({
+                    text: text,
+                    // Capture current settings for the new segment
+                    color: textColorInput.value,
+                    size: parseInt(textSizeInput.value) || 48,
+                    fontName: currentFont 
+                });
+                newTextInput.value = '';
+                renderTextSegments();
+                updateAnimation(); // Ensures canvas (and PiP) reflects new segment immediately
+            }
+        });
+        
+        // Font Selection/Upload Listeners
+        fontFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleFontUpload(file);
+            }
+            e.target.value = null; // Clear file input after use
+        });
+
+        fontSelect.addEventListener('change', (e) => {
+            const selectedFont = e.target.value;
+            if (selectedFont === 'Custom Font') {
+                fontFileInput.click();
+                return;
+            }
+            
+            currentFont = selectedFont;
+            // Apply the newly selected font to all existing segments
+            textSegments.forEach(s => s.fontName = selectedFont);
+            renderTextSegments();
+            updateAnimation();
+        });
+        
+        // Resolution Listeners - These instantly update the canvas/PiP aspect ratio
+        resolutionQuickSelect.addEventListener('change', () => {
+             const [width, height] = resolutionQuickSelect.value.split('x').map(Number);
+             widthInput.value = width;
+             heightInput.value = height;
+             updateAnimation();
+        });
+        
+        widthInput.addEventListener('input', updateAnimation);
+        heightInput.addEventListener('input', updateAnimation);
+        
+        displayModeSelect.addEventListener('change', updateAnimation);
+        
+        closeMessageBtn.addEventListener('click', () => {
+             messageBox.classList.remove('message-show');
+        });
+        
+        pipVideo.addEventListener('leavepictureinpicture', handlePiPExit);
+        
+        // Initial setup
+        window.onload = () => {
+            // Initialize with default segments
+            textSegments.push({
+                text: "សូមស្វាគមន៍មកកាន់កម្មវិធី PiP Marquee!",
+                color: "#FDE047",
+                size: 48,
+                fontName: currentFont
+            });
+            textSegments.push({
+                text: "អ្នកអាចបន្ថែមអត្ថបទច្រើនបន្ទាត់បាន។",
+                color: "#10B981", // Emerald 500
+                size: 40,
+                fontName: currentFont
+            });
+             textSegments.push({
+                text: "ហើយវានឹងបង្ហាញជាលំដាប់លំដោយក្នុងផ្ទាំង PiP។",
+                color: "#3B82F6", // Blue 500
+                size: 40,
+                fontName: currentFont
+            });
+            renderTextSegments();
+            updateAnimation(); 
+        };
+
+        // Handle window resize to keep canvas aspect ratio correct for the on-page preview
+        window.addEventListener('resize', () => {
+            draw();
+        });
+
+    </script>
+</body>
+</html>
