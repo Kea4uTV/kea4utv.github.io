@@ -1,0 +1,307 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Play, Pause, Volume2, FileText, Trash2, StopCircle, SkipForward, Upload, FileUp, Languages, Clock } from 'lucide-react';
+
+const firebaseConfig = JSON.parse(__firebase_config);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'srt-reader-tts';
+
+const VOICES = [
+  { id: 'Kore', name: 'Kore (ស្រទន់ - ស្រី)' },
+  { id: 'Zephyr', name: 'Zephyr (បុរស)' },
+  { id: 'Puck', name: 'Puck (កំប្លែង)' },
+  { id: 'Charon', name: 'Charon (ចាស់ទុំ)' }
+];
+
+export default function App() {
+  const [srtInput, setSrtInput] = useState('');
+  const [parsedItems, setParsedItems] = useState([]);
+  const [selectedVoice, setSelectedVoice] = useState('Kore');
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(-1);
+  const [isLoading, setIsLoading] = useState(false);
+  const audioRef = useRef(null);
+  const fileInputRef = useRef(null);
+
+  // Helper to convert SRT time format to seconds
+  const timeToSeconds = (timeStr) => {
+    const [hms, ms] = timeStr.split(',');
+    const [h, m, s] = hms.split(':').map(Number);
+    return h * 3600 + m * 60 + s + parseInt(ms) / 1000;
+  };
+
+  const parseSRT = (data) => {
+    const regex = /(\d+)\r?\n(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})\r?\n([\s\S]*?)(?=\r?\n\r?\n|\r?\n*$)/g;
+    const items = [];
+    let match;
+    while ((match = regex.exec(data)) !== null) {
+      const start = timeToSeconds(match[2]);
+      const end = timeToSeconds(match[3]);
+      const duration = end - start;
+
+      items.push({
+        id: match[1],
+        startTime: match[2],
+        endTime: match[3],
+        duration: duration.toFixed(2),
+        text: match[4].replace(/\r?\n/g, ' ').trim(),
+      });
+    }
+    if (items.length > 0) {
+      setParsedItems(items);
+    } else {
+      alert("ទម្រង់ឯកសារ SRT មិនត្រឹមត្រូវ!");
+    }
+  };
+
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target.result;
+        setSrtInput(content);
+        parseSRT(content);
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  const pcmToWav = (pcmData, sampleRate) => {
+    const buffer = new ArrayBuffer(44 + pcmData.length * 2);
+    const view = new DataView(buffer);
+    const writeString = (offset, string) => {
+      for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+      }
+    };
+    writeString(0, 'RIFF');
+    view.setUint32(4, 32 + pcmData.length * 2, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeString(36, 'data');
+    view.setUint32(40, pcmData.length * 2, true);
+    let offset = 44;
+    for (let i = 0; i < pcmData.length; i++, offset += 2) {
+      view.setInt16(offset, pcmData[i], true);
+    }
+    return new Blob([buffer], { type: 'audio/wav' });
+  };
+
+  const generateAndPlaySpeech = async (item, index) => {
+    if (isLoading) return;
+    
+    try {
+      setIsLoading(true);
+      setCurrentIndex(index);
+      const apiKey = ""; 
+      
+      // Calculate a target speed instruction based on duration and word count
+      const wordCount = item.text.length; // Approximate for Khmer
+      const duration = parseFloat(item.duration);
+      
+      // Advanced prompt to control speed and timing
+      const prompt = `
+        អ្នកគឺជាអ្នកអានព័ត៌មានអាជីព។ សូមអានអត្ថបទខ្មែរខាងក្រោមឱ្យបានត្រឹមត្រូវបំផុត។
+        លក្ខខណ្ឌសំខាន់៖ អ្នកត្រូវអានអត្ថបទនេះឱ្យចប់ក្នុងរយៈពេលប្រហែល ${duration} វិនាទី។ 
+        កុំអានលឿនពេក និងកុំអានយឺតពេកដែលនាំឱ្យលើសនាទីដែលបានកំណត់។
+        អត្ថបទ៖ "${item.text}"
+      `;
+      
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            responseModalities: ["AUDIO"],
+            speechConfig: {
+              voiceConfig: {
+                prebuiltVoiceConfig: { voiceName: selectedVoice }
+              }
+            }
+          }
+        })
+      });
+
+      const result = await response.json();
+      if (!result.candidates?.[0]?.content?.parts?.[0]?.inlineData) {
+        throw new Error("TTS failed");
+      }
+
+      const audioPart = result.candidates[0].content.parts[0].inlineData;
+      const audioData = audioPart.data;
+      const sampleRate = parseInt(audioPart.mimeType.match(/rate=(\d+)/)[1]);
+      
+      const binaryString = atob(audioData);
+      const len = binaryString.length;
+      const bytes = new Int16Array(len / 2);
+      for (let i = 0; i < len; i += 2) {
+        bytes[i / 2] = (binaryString.charCodeAt(i + 1) << 8) | binaryString.charCodeAt(i);
+      }
+
+      const wavBlob = pcmToWav(bytes, sampleRate);
+      const audioUrl = URL.createObjectURL(wavBlob);
+      
+      if (audioRef.current) {
+        audioRef.current.src = audioUrl;
+        audioRef.current.play();
+        setIsPlaying(true);
+      }
+    } catch (error) {
+      console.error("Speech Error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAudioEnd = () => {
+    setIsPlaying(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans text-slate-900">
+      <div className="max-w-4xl mx-auto space-y-6">
+        
+        {/* Header */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-indigo-700 flex items-center gap-2">
+              <Languages className="w-8 h-8" />
+              SRT Smart Khmer Reader
+            </h1>
+            <p className="text-slate-500 text-sm">វិភាគល្បឿនអានដោយស្វ័យប្រវត្តិទៅតាមនាទី</p>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <select 
+              value={selectedVoice}
+              onChange={(e) => setSelectedVoice(e.target.value)}
+              className="px-4 py-2 rounded-lg border border-slate-300 bg-white text-sm font-medium"
+            >
+              {VOICES.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+            </select>
+            <button 
+              onClick={() => { setParsedItems([]); setSrtInput(''); }}
+              className="p-2 text-red-500 hover:bg-red-50 rounded-lg border border-transparent hover:border-red-100"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Upload Area */}
+        {parsedItems.length === 0 && (
+          <div className="space-y-4">
+            <div 
+              className="bg-white p-10 rounded-2xl shadow-sm border-2 border-dashed border-slate-300 hover:border-indigo-400 hover:bg-indigo-50/30 transition-all flex flex-col items-center justify-center gap-4 cursor-pointer"
+              onClick={() => fileInputRef.current.click()}
+            >
+              <div className="p-5 bg-indigo-50 rounded-full text-indigo-600">
+                <FileUp className="w-10 h-10" />
+              </div>
+              <div className="text-center">
+                <p className="text-xl font-bold text-slate-700">បញ្ចូលឯកសារ SRT ដើម្បីវិភាគនាទី</p>
+                <p className="text-sm text-slate-500 mt-1">ប្រព័ន្ធនឹងអានឱ្យត្រូវតាមវិនាទីនៃចំណងជើងរងនីមួយៗ</p>
+              </div>
+              <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".srt" className="hidden" />
+            </div>
+            
+            <div className="bg-white p-4 rounded-xl border border-slate-200">
+                <p className="text-xs text-slate-400 font-bold mb-2 uppercase">ឬ បញ្ចូលអត្ថបទ SRT ទីនេះ:</p>
+                <textarea
+                    value={srtInput}
+                    onChange={(e) => setSrtInput(e.target.value)}
+                    className="w-full h-32 p-3 bg-slate-50 rounded-lg border border-slate-200 font-mono text-xs focus:ring-1 focus:ring-indigo-500 outline-none"
+                    placeholder="1\n00:00:01,000 --> 00:00:04,000\nអត្ថបទខ្មែរ..."
+                />
+                <button
+                    onClick={() => parseSRT(srtInput)}
+                    disabled={!srtInput.trim()}
+                    className="w-full mt-3 py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-all disabled:bg-slate-300"
+                >
+                    ចាប់ផ្តើមវិភាគ
+                </button>
+            </div>
+          </div>
+        )}
+
+        {/* Result List */}
+        {parsedItems.length > 0 && (
+          <div className="space-y-3 pb-24">
+            <div className="flex items-center justify-between px-2">
+              <span className="text-sm font-bold text-slate-500">បញ្ជីដែលបានវិភាគរួច ({parsedItems.length})</span>
+              <button onClick={() => setParsedItems([])} className="text-sm text-indigo-600 font-bold underline">ប្តូរឯកសារ</button>
+            </div>
+
+            {parsedItems.map((item, index) => (
+              <div 
+                key={index}
+                className={`bg-white p-4 rounded-2xl border transition-all ${
+                  currentIndex === index ? 'border-indigo-500 ring-4 ring-indigo-50' : 'border-slate-200'
+                }`}
+              >
+                <div className="flex gap-4">
+                  <div className="flex flex-col items-center gap-2">
+                    <span className="w-10 h-10 flex items-center justify-center bg-slate-100 rounded-xl text-xs font-black text-slate-400 border border-slate-200">
+                      {item.id}
+                    </span>
+                    <button
+                      disabled={isLoading && currentIndex === index}
+                      onClick={() => generateAndPlaySpeech(item, index)}
+                      className={`p-3 rounded-xl shadow-md transition-all ${
+                        currentIndex === index && isPlaying ? 'bg-red-500' : 'bg-indigo-600 hover:scale-105'
+                      } text-white disabled:opacity-50`}
+                    >
+                      {currentIndex === index && isLoading ? (
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : currentIndex === index && isPlaying ? (
+                        <Pause className="w-5 h-5" />
+                      ) : (
+                        <Volume2 className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
+                  
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+                            <Clock className="w-3 h-3 text-indigo-400" />
+                            <span>{item.startTime} - {item.endTime}</span>
+                        </div>
+                        <div className="text-[10px] font-bold text-indigo-500 bg-indigo-50 px-2 py-1 rounded-md border border-indigo-100">
+                            រយៈពេល៖ {item.duration} វិនាទី
+                        </div>
+                    </div>
+                    <p className="text-slate-800 text-lg font-bold leading-relaxed">{item.text}</p>
+                    {currentIndex === index && isPlaying && (
+                        <div className="mt-3 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                            <div 
+                                className="bg-indigo-500 h-full animate-[progress_linear_forwards]"
+                                style={{ animationDuration: `${item.duration}s` }}
+                            ></div>
+                        </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <audio ref={audioRef} onEnded={handleAudioEnd} className="hidden" />
+      </div>
+      <style>{`
+        @keyframes progress {
+          from { width: 0%; }
+          to { width: 100%; }
+        }
+      `}</style>
+    </div>
+  );
+}
