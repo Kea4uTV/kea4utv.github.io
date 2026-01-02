@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SRT Reader & TTS Tool - Advanced</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/font-awesome.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@300;400;700&display=swap');
+        body {
+            font-family: 'Kantumruy Pro', sans-serif;
+            background-color: #f0f2f5;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-5xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div class="bg-gradient-to-r from-blue-700 to-indigo-800 p-6 text-white shadow-lg">
+            <h1 class="text-2xl font-bold mb-2 flex items-center">
+                <i class="fas fa-file-audio mr-3"></i> ឧបករណ៍បំប្លែង SRT ទៅជាសំឡេងខ្មែរ
+            </h1>
+            <p class="opacity-80">បញ្ចូលឯកសារ SRT និងបំប្លែងជាសំឡេងខ្មែរតាមវិនាទីកំណត់</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-0">
+            <div class="p-6 bg-gray-50 border-r border-gray-200">
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2">១. ជ្រើសរើសឯកសារ SRT</label>
+                    <input type="file" id="srtFile" accept=".srt" class="hidden" onchange="handleFileUpload(event)">
+                    <button onclick="document.getElementById('srtFile').click()" class="w-full py-3 px-4 bg-white border-2 border-dashed border-blue-400 text-blue-600 rounded-xl hover:bg-blue-50 transition-all flex items-center justify-center font-bold">
+                        <i class="fas fa-upload mr-2"></i> បញ្ចូលឯកសារ .srt
+                    </button>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2">២. កំណត់ការបញ្ចូលជួរ (Merge)</label>
+                    <div class="flex items-center gap-2">
+                        <input type="number" id="mergeCount" value="1" min="1" max="10" class="w-20 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <span class="text-sm text-gray-600">ជួរ ចូលគ្នា</span>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <button onclick="processSRT()" class="w-full py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-bold shadow-md transition-all">
+                        <i class="fas fa-sync-alt mr-2"></i> ចាប់ផ្ដើមវិភាគ
+                    </button>
+                </div>
+                
+                <div class="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <h3 class="text-yellow-800 font-bold text-sm mb-1"><i class="fas fa-info-circle mr-1"></i> ព័ត៌មានបន្ថែម៖</h3>
+                    <p class="text-xs text-yellow-700 leading-relaxed">
+                        កម្មវិធីនឹងប្រើ Gemini TTS ដើម្បីអានអត្ថបទឱ្យត្រូវតាមរយៈពេលដែលអ្នកកំណត់ក្នុង SRT។
+                    </p>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 p-6 bg-white">
+                <div id="welcomeScreen" class="h-96 flex flex-col items-center justify-center text-gray-400">
+                    <i class="fas fa-closed-captioning text-6xl mb-4 opacity-20"></i>
+                    <p>សូម Upload ឯកសារ SRT ដើម្បីចាប់ផ្ដើម។</p>
+                </div>
+
+                <div id="outputArea" class="hidden">
+                    <div class="flex justify-between items-center mb-4 border-b pb-2">
+                        <h2 class="text-lg font-bold text-gray-800">បញ្ជីអត្ថបទ</h2>
+                        <span id="statInfo" class="text-xs font-bold text-gray-500"></span>
+                    </div>
+                    <div id="srtList" class="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="audioPlayer" class="hidden"></audio>
+
+    <div id="loadingOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center max-w-xs text-center">
+            <div class="w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+            <h3 class="font-bold text-gray-800 mb-2">កំពុងបង្កើតសំឡេង...</h3>
+        </div>
+    </div>
+
+    <script>
+        const apiKey = ""; // API Key នឹងត្រូវបានផ្ដល់ឱ្យដោយស្វ័យប្រវត្តិ
+        let rawSrtData = "";
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                rawSrtData = e.target.result;
+                processSRT();
+            };
+            reader.readAsText(file);
+        }
+
+        function parseTime(timeStr) {
+            const parts = timeStr.split(':');
+            const secondsParts = parts[2].split(',');
+            return (parseInt(parts[0]) * 3600) + (parseInt(parts[1]) * 60) + parseInt(secondsParts[0]) + (parseInt(secondsParts[1]) / 1000);
+        }
+
+        function processSRT() {
+            if (!rawSrtData) return;
+            const mergeCount = parseInt(document.getElementById('mergeCount').value) || 1;
+            const srtRegex = /(\d+)\s+(\d{2}:\d{2}:\d{2},\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2},\d{3})\s+([\s\S]*?)(?=\n\n|\n\d+\s+|$)/g;
+            
+            let items = [];
+            let match;
+            while ((match = srtRegex.exec(rawSrtData)) !== null) {
+                items.push({
+                    index: match[1],
+                    start: match[2],
+                    end: match[3],
+                    startTime: parseTime(match[2]),
+                    endTime: parseTime(match[3]),
+                    text: match[4].replace(/\n/g, ' ').trim()
+                });
+            }
+
+            let mergedItems = [];
+            for (let i = 0; i < items.length; i += mergeCount) {
+                let chunk = items.slice(i, i + mergeCount);
+                let mergedText = chunk.map(c => c.text).join('. '); 
+                let duration = (chunk[chunk.length - 1].endTime - chunk[0].startTime).toFixed(2);
+                mergedItems.push({
+                    id: Math.floor(i / mergeCount) + 1,
+                    start: chunk[0].start,
+                    end: chunk[chunk.length - 1].end,
+                    duration: duration,
+                    text: mergedText
+                });
+            }
+            renderList(mergedItems);
+        }
+
+        function renderList(items) {
+            const list = document.getElementById('srtList');
+            document.getElementById('welcomeScreen').classList.add('hidden');
+            document.getElementById('outputArea').classList.remove('hidden');
+            document.getElementById('statInfo').innerText = `សរុប ${items.length} ផ្នែក`;
+            list.innerHTML = '';
+
+            items.forEach(item => {
+                const row = document.createElement('div');
+                row.className = 'p-4 bg-white border border-gray-200 rounded-xl hover:border-blue-400 transition-all shadow-sm';
+                row.innerHTML = `
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded">ផ្នែក ${item.id}</span>
+                                <span class="text-gray-400 text-xs">${item.start} ➔ ${item.end} (${item.duration}s)</span>
+                            </div>
+                            <p class="text-gray-800 font-medium">${item.text}</p>
+                        </div>
+                        <button onclick="generateSpeech(this, \`${item.text.replace(/'/g, "\\'")}\`, ${item.duration})" class="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center shadow hover:bg-blue-700 transition">
+                            <i class="fas fa-play"></i>
+                        </button>
+                    </div>`;
+                list.appendChild(row);
+            });
+        }
+
+        async function generateSpeech(btn, text, duration) {
+            const overlay = document.getElementById('loadingOverlay');
+            const icon = btn.querySelector('i');
+            overlay.classList.remove('hidden');
+            icon.className = 'fas fa-spinner animate-spin';
+
+            try {
+                const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: `Say naturally in Khmer: ${text}` }] }],
+                        model: "gemini-2.5-flash-preview-tts",
+                        generationConfig: {
+                            responseModalities: ["AUDIO"],
+                            speechConfig: {
+                                voiceConfig: {
+                                    prebuiltVoiceConfig: { voiceName: "Kore" }
+                                }
+                            }
+                        }
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.error) {
+                    throw new Error(result.error.message);
+                }
+
+                const audioPart = result.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+                const base64Audio = audioPart?.inlineData?.data;
+                const mimeType = audioPart?.inlineData?.mimeType;
+
+                if (base64Audio) {
+                    playAudio(base64Audio, mimeType);
+                } else {
+                    console.error("API Response structure details:", JSON.stringify(result));
+                    throw new Error("API មិនបានបញ្ជូនទិន្នន័យសំឡេងមកវិញទេ (Finish Reason: " + (result.candidates?.[0]?.finishReason || "Unknown") + ")");
+                }
+            } catch (err) {
+                console.error("Speech generation error details:", err);
+                alert("បញ្ហាក្នុងការបង្កើតសំឡេង៖ " + err.message);
+            } finally {
+                overlay.classList.add('hidden');
+                icon.className = 'fas fa-play';
+            }
+        }
+
+        async function fetchWithRetry(url, options, retries = 5) {
+            let lastError;
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const res = await fetch(url, options);
+                    if (res.ok) return res;
+                    const errorMsg = await res.text();
+                    lastError = new Error(`Status: ${res.status} - ${errorMsg}`);
+                    if (res.status === 401 || res.status === 403) break;
+                } catch (e) {
+                    lastError = e;
+                }
+                await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i)));
+            }
+            throw lastError;
+        }
+
+        function playAudio(base64Data, mimeType) {
+            const sampleRateMatch = mimeType.match(/rate=(\d+)/);
+            const sampleRate = sampleRateMatch ? parseInt(sampleRateMatch[1]) : 24000;
+            
+            const binary = atob(base64Data);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
+            const wav = createWav(bytes.buffer, sampleRate);
+            const blob = new Blob([wav], { type: 'audio/wav' });
+            const url = URL.createObjectURL(blob);
+            
+            const player = document.getElementById('audioPlayer');
+            player.src = url;
+            player.play();
+        }
+
+        function createWav(pcm, rate) {
+            const buf = new ArrayBuffer(44 + pcm.byteLength);
+            const v = new DataView(buf);
+            const s = (o, str) => { for (let i = 0; i < str.length; i++) v.setUint8(o + i, str.charCodeAt(i)); };
+            
+            s(0, 'RIFF'); 
+            v.setUint32(4, 32 + pcm.byteLength, true); 
+            s(8, 'WAVE'); 
+            s(12, 'fmt ');
+            v.setUint32(16, 16, true); 
+            v.setUint16(20, 1, true); 
+            v.setUint16(22, 1, true); 
+            v.setUint32(24, rate, true); 
+            v.setUint32(28, rate * 2, true); 
+            v.setUint16(32, 2, true); 
+            v.setUint16(34, 16, true); 
+            s(36, 'data'); 
+            v.setUint32(40, pcm.byteLength, true);
+            
+            new Uint8Array(buf, 44).set(new Uint8Array(pcm));
+            return buf;
+        }
+    </script>
+</body>
+</html>
