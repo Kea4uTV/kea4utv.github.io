@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ឧបករណ៍ផ្លាស់ប្ដូរអក្សរ/ពាក្យ</title>
+    <!-- ផ្ទុក Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* កំណត់ Font Inter ជាលំនាំដើម */
+        :root {
+            font-family: 'Inter', sans-serif;
+        }
+        /* កំណត់ទំហំ Textarea ឱ្យត្រូវនឹងឧបករណ៍ចល័ត */
+        textarea {
+            resize: vertical;
+        }
+    </style>
+    <!-- កំណត់រចនាប័ទ្ម Tailwind តាមតម្រូវការ -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#4F46E5', /* Indigo */
+                        'primary-dark': '#4338CA',
+                    },
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen p-4 md:p-8">
+
+    <div class="max-w-4xl mx-auto bg-white shadow-xl rounded-xl p-6 md:p-10">
+        
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 border-b pb-2">
+            ឧបករណ៍ផ្លាស់ប្ដូរអក្សរ/ពាក្យ
+        </h1>
+        <p class="text-gray-600 mb-6">
+            សូមបញ្ចូលអត្ថបទដើម និងកំណត់ការផ្លាស់ប្ដូរដែលអ្នកចង់បាន។
+        </p>
+
+        <!-- តំបន់បញ្ចូលអត្ថបទដើម -->
+        <div class="mb-6">
+            <label for="originalText" class="block text-lg font-medium text-gray-700 mb-2">
+                ១. អត្ថបទដើម (Original Text)
+            </label>
+            <textarea id="originalText" rows="6" class="w-full p-4 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary transition duration-150 shadow-sm" placeholder="បញ្ចូលអត្ថបទរបស់អ្នកនៅទីនេះ... ឧទាហរណ៍៖ smμasm<úT§s"></textarea>
+        </div>
+
+        <!-- តំបន់បញ្ចូលស្វែងរក និងជំនួស -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div>
+                <label for="searchText" class="block text-lg font-medium text-gray-700 mb-2">
+                    ២. អក្សរ/ពាក្យដែលត្រូវស្វែងរក (Search)
+                </label>
+                <input type="text" id="searchText" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 transition duration-150 shadow-sm" placeholder="ឧទាហរណ៍៖ μ">
+            </div>
+            <div>
+                <label for="replaceText" class="block text-lg font-medium text-gray-700 mb-2">
+                    ៣. អក្សរ/ពាក្យដែលត្រូវជំនួស (Replace With)
+                </label>
+                <input type="text" id="replaceText" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition duration-150 shadow-sm" placeholder="ឧទាហរណ៍៖ µ">
+            </div>
+        </div>
+        
+        <!-- ប៊ូតុងប្រតិបត្តិការ -->
+        <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 mb-8">
+            <button id="replaceButton" class="w-full sm:w-auto px-6 py-3 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-primary-dark transition duration-150 ease-in-out transform hover:scale-105">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M5 4a1 1 0 00-2 0v7.268a2 2 0 000 3.464V16a1 1 0 102 0v-1.268a2 2 0 000-3.464V4zM11 4a1 1 0 100 2h3a1 1 0 100-2h-3zM11 7a1 1 0 100 2h5a1 1 0 100-2h-5zM11 10a1 1 0 100 2h5a1 1 0 100-2h-5zM11 13a1 1 0 100 2h5a1 1 0 100-2h-5z" />
+                </svg>
+                ធ្វើការផ្លាស់ប្ដូរទាំងអស់
+            </button>
+
+            <button id="copyButton" class="w-full sm:w-auto px-6 py-3 bg-gray-500 text-white font-semibold rounded-lg shadow-md hover:bg-gray-600 transition duration-150 ease-in-out transform hover:scale-105 disabled:opacity-50" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M8 2a1 1 0 000 2h2a1 1 0 100-2H8z" />
+                    <path d="M3 5a2 2 0 012-2v1h1a1 1 0 010 2H5v1a1 1 0 11-2 0V6a1 1 0 011-1zm6 0a1 1 0 011-1h2a1 1 0 110 2h-2a1 1 0 01-1-1zm3 4a1 1 0 100-2h2a1 1 0 100 2h-2z" />
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-7-9a1 1 0 011-1h2a1 1 0 110 2H5a1 1 0 01-1-1zm1 2a1 1 0 100 2h2a1 1 0 100-2H5z" clip-rule="evenodd" />
+                </svg>
+                ចម្លងលទ្ធផល
+            </button>
+        </div>
+
+        <!-- តំបន់លទ្ធផល -->
+        <div class="mb-4">
+            <label for="resultText" class="block text-lg font-medium text-gray-700 mb-2">
+                ៤. លទ្ធផល (Result)
+            </label>
+            <textarea id="resultText" rows="6" readonly class="w-full p-4 border border-green-500 bg-green-50 rounded-lg focus:ring-green-600 focus:border-green-600 transition duration-150 shadow-inner" placeholder="លទ្ធផលនឹងបង្ហាញនៅទីនេះ..." aria-live="polite"></textarea>
+        </div>
+
+        <!-- ប្រអប់សារជូនដំណឹង (សម្រាប់ជំនួស alert) -->
+        <div id="messageBox" class="hidden fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-3 rounded-lg shadow-lg z-50 transition duration-300 transform" role="status">
+            សារជូនដំណឹង
+        </div>
+    </div>
+
+    <script>
+        // ទទួលបានធាតុ HTML ទាំងអស់
+        const originalTextarea = document.getElementById('originalText');
+        const searchInput = document.getElementById('searchText');
+        const replaceInput = document.getElementById('replaceText');
+        const replaceButton = document.getElementById('replaceButton');
+        const resultTextarea = document.getElementById('resultText');
+        const copyButton = document.getElementById('copyButton');
+        const messageBox = document.getElementById('messageBox');
+
+        // អនុគមន៍បង្ហាញសារជូនដំណឹង (ជំនួស alert)
+        function showMessage(message, duration = 3000) {
+            messageBox.textContent = message;
+            messageBox.classList.remove('hidden', 'translate-y-full');
+            messageBox.classList.add('translate-y-0');
+
+            setTimeout(() => {
+                messageBox.classList.add('translate-y-full');
+                setTimeout(() => messageBox.classList.add('hidden'), 300); // លាក់បន្ទាប់ពី Transition បញ្ចប់
+            }, duration);
+        }
+
+        // អនុគមន៍សំខាន់សម្រាប់ផ្លាស់ប្ដូរពាក្យ
+        function performReplacement() {
+            const originalText = originalTextarea.value;
+            const searchText = searchInput.value;
+            const replaceText = replaceInput.value;
+
+            // ពិនិត្យមើលថាតើមានអត្ថបទដើម ឬពាក្យស្វែងរកដែរឬទេ
+            if (!originalText) {
+                showMessage("សូមបញ្ចូលអត្ថបទដើមជាមុនសិន។");
+                return;
+            }
+
+            if (!searchText) {
+                showMessage("សូមបញ្ចូលអក្សរ/ពាក្យដែលត្រូវស្វែងរក។");
+                return;
+            }
+
+            let result;
+            
+            try {
+                // ប្រើ Global Regex ដើម្បីធានាថាការផ្លាស់ប្ដូរត្រូវបានធ្វើឡើងគ្រប់កន្លែង (ករណីដែល user ស្វែងរក μ, វានឹងប្តូរ μ ទាំងអស់)
+                // ត្រូវតែគេច (escape) តួអក្សរពិសេសក្នុង regex មុននឹងបង្កើតវត្ថុ RegExp
+                const escapedSearchText = searchText.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                const regex = new RegExp(escapedSearchText, 'g');
+                
+                // ធ្វើការផ្លាស់ប្ដូរ
+                result = originalText.replace(regex, replaceText);
+                
+                resultTextarea.value = result;
+                copyButton.disabled = false; // បើកដំណើរការប៊ូតុងចម្លង
+                showMessage("ការផ្លាស់ប្ដូរត្រូវបានធ្វើឡើងដោយជោគជ័យ!");
+
+            } catch (error) {
+                console.error("Error during replacement:", error);
+                resultTextarea.value = "មានកំហុសក្នុងការផ្លាស់ប្ដូរ។ សូមពិនិត្យមើលអក្សរដែលត្រូវស្វែងរក។";
+                copyButton.disabled = true;
+                showMessage("មានកំហុស៖ មិនអាចធ្វើការផ្លាស់ប្ដូរបានទេ។");
+            }
+        }
+
+        // អនុគមន៍សម្រាប់ចម្លងអត្ថបទ
+        function copyResult() {
+            const resultText = resultTextarea.value;
+            if (resultText) {
+                // ប្រើ document.execCommand('copy') សម្រាប់ភាពត្រូវគ្នា (Compatibility)
+                resultTextarea.select();
+                document.execCommand('copy');
+                showMessage("បានចម្លងលទ្ធផលទៅក្ដារតម្បៀតខ្ទាស់ហើយ!");
+            } else {
+                showMessage("មិនមានលទ្ធផលដើម្បីចម្លងទេ។");
+            }
+        }
+
+        // ភ្ជាប់ Event Listeners
+        replaceButton.addEventListener('click', performReplacement);
+        copyButton.addEventListener('click', copyResult);
+
+        // ភ្ជាប់ event listeners ទៅកាន់ការបញ្ចូល ដើម្បី trigger ការជំនួសដោយស្វ័យប្រវត្តិ (Optional: សម្រាប់ភាពងាយស្រួលប្រើ)
+        originalTextarea.addEventListener('input', performReplacement);
+        searchInput.addEventListener('input', performReplacement);
+        replaceInput.addEventListener('input', performReplacement);
+
+        // កំណត់ស្ថានភាពដំបូងរបស់ប៊ូតុង
+        if (!resultTextarea.value) {
+            copyButton.disabled = true;
+        }
+    </script>
+</body>
+</html>

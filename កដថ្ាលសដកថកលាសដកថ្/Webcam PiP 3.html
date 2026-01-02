@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="km" style="height: 100%;">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- PWA Title: Used for the installed application name -->
+    <title>Webcam View Only</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        /* Custom Styles for a full-screen, minimal view */
+        html {
+            height: 100%; 
+        }
+        
+        body {
+            background-color: #000000; 
+            height: 100%; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; 
+        }
+        
+        #videoContainer {
+            width: 100%; 
+            height: 100%; 
+            min-width: 1px; 
+            min-height: 1px; 
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #video {
+            /* The mirror effect is controlled by JavaScript */
+            width: 100%;
+            height: 100%;
+            object-fit: cover; 
+            border-radius: 0;
+            /* Transition for smooth filter application */
+            transition: filter 0.1s ease;
+        }
+
+        /* Vignette Overlay (New Element) */
+        #vignetteOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; 
+            z-index: 10;
+            /* Initial gradient is completely transparent */
+            background: radial-gradient(ellipse at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 70%, rgba(0,0,0,0.5) 100%);
+            transition: opacity 0.3s ease;
+            opacity: 0; 
+        }
+
+
+        /* Minimal error/loading messages */
+        #loadingMessage, #errorMessage {
+            z-index: 15;
+            opacity: 0.9;
+        }
+
+        /* Style for the floating buttons */
+        #settingsButton, #toggleCameraButton, #pipButton { 
+            position: absolute;
+            bottom: 20px;
+            z-index: 20;
+            cursor: pointer;
+            background-color: rgba(255, 255, 255, 0.2);
+            transition: background-color 0.2s;
+            backdrop-filter: blur(2px);
+        }
+        #settingsButton:hover, #toggleCameraButton:hover, #pipButton:hover { 
+            background-color: rgba(255, 255, 255, 0.4);
+        }
+
+        #settingsButton {
+            right: 20px;
+        }
+        
+        #toggleCameraButton {
+            right: 75px; 
+        }
+
+        #pipButton {
+            right: 130px; 
+        }
+
+        /* Style for the unified settings panel (formerly resolution selector) */
+        #settingsPanel {
+            position: absolute;
+            bottom: 70px;
+            right: 20px;
+            z-index: 20;
+            background-color: rgba(0, 0, 0, 0.85);
+            max-height: 80vh; 
+            overflow-y: auto;
+            display: none; /* Hidden by default */
+            width: 280px; 
+        }
+        
+        /* Style for resolution list items */
+        .res-item {
+            cursor: pointer;
+            transition: background-color 0.1s;
+        }
+        .res-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Style for slider controls */
+        .slider-group {
+            margin-bottom: 8px;
+        }
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem; /* text-xs */
+            font-weight: bold;
+            color: #ccc;
+            margin-bottom: 2px;
+        }
+        input[type="range"] {
+            width: 100%;
+            cursor: grab;
+        }
+
+        /* Indicators and Messages - (No changes) */
+        #recordingIndicator {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: red;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
+            z-index: 20;
+            animation: pulse 1.5s infinite; 
+            display: none;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        #feedbackMessage {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 6px;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            pointer-events: none; 
+        }
+    </style>
+    
+    <!-- PWA Metadata: Allows the app to be installed (Pop Up) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+</head>
+<body>
+
+    <!-- Video Element Container -->
+    <div id="videoContainer">
+        <video id="video" autoplay playsinline></video>
+        
+        <!-- Vignette Overlay (New) -->
+        <div id="vignetteOverlay"></div>
+
+        <!-- Minimal Loading Message -->
+        <div id="loadingMessage" class="absolute inset-0 flex items-center justify-center bg-black hidden">
+            <p class="text-white text-xs">កំពុងផ្ទុក...</p>
+        </div>
+        
+        <!-- Minimal Error Message -->
+        <div id="errorMessage" class="absolute inset-0 flex items-center justify-center bg-red-900 hidden p-4">
+            <p class="text-white text-xs text-center">Camera Error / Denied</p>
+        </div>
+        
+        <!-- Recording Indicator -->
+        <div id="recordingIndicator" class="hidden"></div>
+        
+        <!-- Feedback Message -->
+        <div id="feedbackMessage"></div>
+
+        <!-- Download Link -->
+        <a id="downloadLink" class="absolute bottom-20 left-4 z-20 bg-blue-600 hover:bg-blue-700 text-white text-xs py-2 px-4 rounded-lg hidden" download>
+            ទាញយកវីដេអូដែលបានថត
+        </a>
+    </div>
+
+    <!-- Floating Picture-in-Picture Button -->
+    <button id="pipButton" class="p-3 rounded-full text-white" title="Picture-in-Picture">
+        <!-- Lucide Picture in Picture Icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-picture-in-picture-2">
+            <path d="M14.5 5H20a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5.5"/>
+            <path d="M10 12l2 2 2-2"/>
+            <path d="M8 17h6"/>
+        </svg>
+    </button>
+
+    <!-- Floating Camera Toggle Button -->
+    <button id="toggleCameraButton" class="p-3 rounded-full text-white" title="ប្តូរ Camera">
+        <!-- Lucide Switch Camera Icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-switch-camera">
+            <path d="M7 19h10"/>
+            <path d="M12 10a2 2 0 0 0-2 2v2a2 2 0 0 0 4 0v-2a2 2 0 0 0-2-2z"/>
+            <path d="M14 6H9c-1.1 0-2 .9-2 2v2"/>
+            <path d="M17 14v2c0 1.1-.9 2-2 2h-1"/>
+            <path d="M21 16v-2c0-1.1-.9-2-2-2h-3"/>
+            <path d="M3 10v2c0 1.1.9 2 2 2h3"/>
+        </svg>
+    </button>
+    
+    <!-- Floating Settings Button (Gear Icon) -->
+    <button id="settingsButton" class="p-3 rounded-full text-white">
+        <!-- Lucide Settings Icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.44a2 2 0 0 1-2 2h-.44a2 2 0 0 0-2 2v.44a2 2 0 0 1-2 2h-.44a2 2 0 0 0-2 2v.44a2 2 0 0 1 2 2h.44a2 2 0 0 0 2 2v.44a2 2 0 0 1 2 2h.44a2 2 0 0 0 2 2v.44a2 2 0 0 1 2 2h.44a2 2 0 0 0 2 2v-.44a2 2 0 0 1 2-2h.44a2 2 0 0 0 2-2v-.44a2 2 0 0 1 2-2h.44a2 2 0 0 0 2-2v-.44a2 2 0 0 1-2-2h-.44a2 2 0 0 0-2-2v-.44a2 2 0 0 1-2-2h-.44a2 2 0 0 0-2-2v-.44a2 2 0 0 1-2-2h-.44z"/>
+            <circle cx="12" cy="12" r="3"/>
+        </svg>
+    </button>
+    
+    <!-- Unified Settings Panel (Resolution and Adjustments) -->
+    <div id="settingsPanel" class="p-3 rounded-lg text-white shadow-2xl">
+        
+        <!-- Adjustments / Effects Section -->
+        <div class="mb-3 p-2 bg-gray-900/70 rounded-lg">
+            <div class="text-sm text-blue-400 font-bold mb-2">ការកែតម្រូវវីដេអូ (Live Adjustments)</div>
+            
+            <!-- Brightness (Lightness/Illumination) -->
+            <div class="slider-group">
+                <div class="slider-label"><span>ពន្លឺ (Brightness)</span><span id="brightnessValue">100%</span></div>
+                <input type="range" id="brightnessSlider" min="0" max="200" value="100" class="h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer range-sm">
+            </div>
+
+            <!-- Contrast (Highlight/Shadow) -->
+            <div class="slider-group">
+                <div class="slider-label"><span>កម្រិតពណ៌ (Contrast)</span><span id="contrastValue">100%</span></div>
+                <input type="range" id="contrastSlider" min="0" max="200" value="100" class="h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer range-sm">
+            </div>
+
+            <!-- Saturation (Color Intensity) -->
+            <div class="slider-group">
+                <div class="slider-label"><span>តិត្ថិភាព (Saturation)</span><span id="saturationValue">100%</span></div>
+                <input type="range" id="saturationSlider" min="0" max="200" value="100" class="h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer range-sm">
+            </div>
+
+            <!-- Hue (Color Shift/Temp) -->
+            <div class="slider-group">
+                <div class="slider-label"><span>កែពណ៌ (Hue Rotate)</span><span id="hueValue">0°</span></div>
+                <input type="range" id="hueSlider" min="0" max="360" value="0" class="h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer range-sm">
+            </div>
+            
+            <!-- Sepia (Fade/Old Film Effect) -->
+            <div class="slider-group">
+                <div class="slider-label"><span>បែបចាស់ (Sepia/Fade)</span><span id="sepiaValue">0%</span></div>
+                <input type="range" id="sepiaSlider" min="0" max="100" value="0" class="h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer range-sm">
+            </div>
+
+            <!-- Vignette (Black Corners Effect) -->
+            <div class="slider-group">
+                <div class="slider-label"><span>បែបខ្មៅជ្រុង (Vignette)</span><span id="vignetteValue">0%</span></div>
+                <input type="range" id="vignetteSlider" min="0" max="100" value="0" class="h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer range-sm">
+            </div>
+            
+            <button id="resetAdjustments" 
+                    class="w-full bg-red-600 hover:bg-red-700 text-white text-sm font-semibold py-1 mt-2 rounded-md transition duration-150">
+                កំណត់ដូចដើម (Reset All)
+            </button>
+        </div>
+
+
+        <!-- Custom Resolution Input Section -->
+        <div class="mb-3 p-2 bg-gray-900/70 rounded-lg">
+            <div class="text-xs text-gray-300 font-bold mb-1 border-t border-gray-700 pt-2">កំណត់ទំហំដោយខ្លួនឯង (Custom Resolution)</div>
+            <div class="flex space-x-2 mb-1">
+                <input type="number" id="customWidth" placeholder="ទទឹង (Width)" value="1280" 
+                       class="w-1/2 p-1 text-sm bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-blue-500 focus:border-blue-500" min="1">
+                <input type="number" id="customHeight" placeholder="បណ្ដោយ (Height)" value="720" 
+                       class="w-1/2 p-1 text-sm bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-blue-500 focus:border-blue-500" min="1">
+            </div>
+            <button id="applyCustomResolution" 
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-1 rounded-md transition duration-150">
+                អនុវត្ត (Apply)
+            </button>
+        </div>
+        
+        <div class="text-xs text-gray-400 mb-2 border-t border-gray-700 pt-2">ជ្រើសរើសទំហំដែលបានកំណត់ជាមុន (Presets)</div>
+        <div id="resolutionPresetsContainer">
+            <!-- Resolution options will be populated here by JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        // Check for media device support
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            document.getElementById('errorMessage').classList.remove('hidden');
+        }
+
+        const video = document.getElementById('video');
+        const videoContainer = document.getElementById('videoContainer');
+        const vignetteOverlay = document.getElementById('vignetteOverlay'); 
+        const loadingMessage = document.getElementById('loadingMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        const settingsButton = document.getElementById('settingsButton');
+        const pipButton = document.getElementById('pipButton');
+        const settingsPanel = document.getElementById('settingsPanel'); 
+        const downloadLink = document.getElementById('downloadLink');
+
+        // Resolution Elements
+        const customWidthInput = document.getElementById('customWidth');
+        const customHeightInput = document.getElementById('customHeight');
+        const applyCustomResolutionButton = document.getElementById('applyCustomResolution');
+        const resolutionPresetsContainer = document.getElementById('resolutionPresetsContainer');
+
+        // Adjustment Elements
+        const brightnessSlider = document.getElementById('brightnessSlider');
+        const contrastSlider = document.getElementById('contrastSlider');
+        const saturationSlider = document.getElementById('saturationSlider');
+        const hueSlider = document.getElementById('hueSlider');
+        const sepiaSlider = document.getElementById('sepiaSlider');
+        const vignetteSlider = document.getElementById('vignetteSlider');
+        const resetAdjustmentsButton = document.getElementById('resetAdjustments');
+
+        // Adjustment Values Display
+        const brightnessValue = document.getElementById('brightnessValue');
+        const contrastValue = document.getElementById('contrastValue');
+        const saturationValue = document.getElementById('saturationValue');
+        const hueValue = document.getElementById('hueValue');
+        const sepiaValue = document.getElementById('sepiaValue');
+        const vignetteValue = document.getElementById('vignetteValue');
+
+
+        let stream = null; 
+        // Changed default resolution to 720p for better mobile compatibility
+        let currentResolution = { w: 1280, h: 720 }; 
+        let currentFacingMode = 'user'; 
+
+        // State for Image Adjustments
+        let adjustmentState = {
+            brightness: 100, 
+            contrast: 100,  
+            saturation: 100,
+            hue: 0,         
+            sepia: 0,       
+            vignette: 0     
+        };
+        
+        // Defined resolutions (Presets)
+        const RESOLUTIONS = [
+            { group: "16:9 (Landscape)", name: "4K (3840x2160)", w: 3840, h: 2160 },
+            { group: "16:9 (Landscape)", name: "2K (2560x1440)", w: 2560, h: 1440 },
+            { group: "16:9 (Landscape)", name: "1080p (1920x1080)", w: 1920, h: 1080 },
+            { group: "16:9 (Landscape)", name: "720p (1280x720)", w: 1280, h: 720 },
+            { group: "9:16 (Portrait)", name: "1080p (1080x1920)", w: 1080, h: 1920 },
+            { group: "1:1 (Square)", name: "1080x1080 (HD)", w: 1080, h: 1080 },
+        ];
+        
+        // Function to show temporary feedback message
+        function showFeedback(message, duration = 3000) {
+            const feedback = document.getElementById('feedbackMessage');
+            feedback.textContent = message;
+            feedback.style.opacity = '1';
+            
+            clearTimeout(feedback.timeoutId);
+            feedback.timeoutId = setTimeout(() => {
+                feedback.style.opacity = '0';
+            }, duration);
+        }
+
+        // --- Adjustment Logic ---
+
+        function applyFilters() {
+            const { brightness, contrast, saturation, hue, sepia, vignette } = adjustmentState;
+            
+            // 1. Apply CSS Filters to the video element
+            const filterString = `
+                brightness(${brightness}%) 
+                contrast(${contrast}%) 
+                saturate(${saturation}%) 
+                hue-rotate(${hue}deg)
+                sepia(${sepia}%)
+            `;
+            video.style.filter = filterString.trim();
+            
+            // 2. Apply Vignette effect using the overlay opacity
+            vignetteOverlay.style.opacity = (vignette / 100).toFixed(2);
+        }
+        
+        function updateSliderDisplay() {
+            brightnessValue.textContent = `${adjustmentState.brightness}%`;
+            contrastValue.textContent = `${adjustmentState.contrast}%`;
+            saturationValue.textContent = `${adjustmentState.saturation}%`;
+            hueValue.textContent = `${adjustmentState.hue}°`;
+            sepiaValue.textContent = `${adjustmentState.sepia}%`;
+            vignetteValue.textContent = `${adjustmentState.vignette}%`;
+        }
+
+        function setupAdjustmentListeners() {
+            const createSliderListener = (slider, key, displayElement, unit = '%') => {
+                slider.addEventListener('input', () => {
+                    const value = parseInt(slider.value);
+                    adjustmentState[key] = value;
+                    displayElement.textContent = `${value}${unit}`;
+                    applyFilters();
+                });
+            };
+
+            createSliderListener(brightnessSlider, 'brightness', brightnessValue, '%');
+            createSliderListener(contrastSlider, 'contrast', contrastValue, '%');
+            createSliderListener(saturationSlider, 'saturation', saturationValue, '%');
+            createSliderListener(hueSlider, 'hue', hueValue, '°');
+            createSliderListener(sepiaSlider, 'sepia', sepiaValue, '%');
+            createSliderListener(vignetteSlider, 'vignette', vignetteValue, '%');
+
+            resetAdjustmentsButton.addEventListener('click', () => {
+                adjustmentState = {
+                    brightness: 100, 
+                    contrast: 100,
+                    saturation: 100,
+                    hue: 0,
+                    sepia: 0,
+                    vignette: 0
+                };
+                // Update slider DOM positions
+                brightnessSlider.value = 100;
+                contrastSlider.value = 100;
+                saturationSlider.value = 100;
+                hueSlider.value = 0;
+                sepiaSlider.value = 0;
+                vignetteSlider.value = 0;
+
+                updateSliderDisplay();
+                applyFilters();
+                showFeedback("ការកែតម្រូវទាំងអស់ត្រូវបានកំណត់ដូចដើម។", 3000);
+            });
+        }
+        
+        // --- Core Webcam Functions (Updated with Fallback Logic) ---
+
+        // #1. Function to start Webcam with specific constraints and fallbacks
+        async function startWebcam(width, height) {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+            
+            // Define an array of resolutions to try (from user requested, down to safe low)
+            const resolutionsToTry = [
+                { w: width, h: height },       // 1. User requested resolution
+                { w: 1920, h: 1080 },          // 2. 1080p (High) fallback
+                { w: 1280, h: 720 },           // 3. 720p (Safe/Standard) fallback
+                { w: 640, h: 480 },            // 4. VGA (Low) fallback
+            ].filter((res, index, self) => 
+                index === 0 || (res.w !== width || res.h !== height) // Filter out duplicates if user requested 1280x720, etc.
+            );
+
+            // Update inputs immediately with the user's intended selection
+            customWidthInput.value = width;
+            customHeightInput.value = height;
+
+            loadingMessage.classList.remove('hidden');
+            errorMessage.classList.add('hidden');
+            downloadLink.classList.add('hidden'); 
+
+            let success = false;
+            let attemptedResolution = null;
+
+            // Try each resolution in the list
+            for (const res of resolutionsToTry) {
+                attemptedResolution = res;
+                const constraints = { 
+                    audio: true, 
+                    video: { 
+                        facingMode: currentFacingMode, 
+                        // Use 'ideal' to suggest the size, allowing the browser flexibility
+                        width: { ideal: res.w },
+                        height: { ideal: res.h }
+                    }
+                };
+
+                loadingMessage.classList.remove('hidden');
+                
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia(constraints);
+                    success = true;
+                    // Set the actual current resolution that succeeded
+                    currentResolution = res; 
+                    
+                    // Update input fields to reflect the resolution that was successfully used
+                    customWidthInput.value = res.w;
+                    customHeightInput.value = res.h;
+                    
+                    break; // Stop on success
+                } catch (err) {
+                    // Log the failure and continue to the next lower resolution
+                    console.warn(`Attempt failed for resolution ${res.w}x${res.h} and mode ${currentFacingMode}:`, err.name, err.message);
+                }
+            }
+
+            loadingMessage.classList.add('hidden');
+
+            if (success) {
+                video.srcObject = stream;
+
+                if (currentFacingMode === 'user') {
+                    video.style.transform = 'scaleX(-1)'; 
+                } else {
+                    video.style.transform = 'scaleX(1)'; 
+                }
+                
+                video.onloadedmetadata = () => {
+                    video.play();
+                };
+                showFeedback(`Webcam ត្រូវបានចាប់ផ្តើមដោយជោគជ័យ។ ទំហំ: ${currentResolution.w}x${currentResolution.h}`, 4000);
+            } else {
+                errorMessage.classList.remove('hidden');
+                errorMessage.querySelector('p').textContent = `Camera Error / Denied. No supported resolution found. Please check device permissions.`;
+                console.error("Failed to start camera after all fallbacks.");
+            }
+        }
+
+        // #2. Video Recording (F1)
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let isRecording = false;
+
+        function startRecording() {
+            if (!stream) {
+                showFeedback("Webcam មិនទាន់ដំណើរការទេ។", 3000);
+                return;
+            }
+
+            recordedChunks = [];
+            try {
+                if (!stream.active) throw new Error("Stream is not active.");
+                mediaRecorder = new MediaRecorder(stream); 
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        recordedChunks.push(event.data);
+                    }
+                };
+                
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                    const url = URL.createObjectURL(blob);
+    
+                    downloadLink.href = url;
+                    downloadLink.download = `webcam_video_${new Date().toISOString()}.webm`;
+                    downloadLink.classList.remove('hidden');
+                    
+                    showFeedback("ថតវីដេអូរួចរាល់! ចុចដើម្បីទាញយក។ (ចំណាំ: Filters មិនត្រូវបានបញ្ចូលក្នុងវីដេអូដែលបានថតទេ)", 10000); 
+                };
+                
+                mediaRecorder.start(100); 
+    
+                isRecording = true;
+                recordingIndicator.classList.remove('hidden');
+                showFeedback("ចាប់ផ្តើមថតវីដេអូ និងសម្លេង (F1 ដើម្បីបញ្ឈប់)", 3000); 
+
+            } catch (e) {
+                console.error("MediaRecorder failed:", e);
+                showFeedback("MediaRecorder Error: មិនអាចថតបានទេ។", 5000);
+            }
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                isRecording = false;
+                recordingIndicator.classList.add('hidden');
+                showFeedback("បញ្ឈប់ការថតវីដេអូ...", 3000);
+            }
+        }
+
+        function toggleRecording() {
+            if (!stream || video.paused) {
+                showFeedback("Webcam មិនទាន់ដំណើរការទេ។", 3000);
+                return;
+            }
+            if (isRecording) {
+                stopRecording();
+            } else {
+                downloadLink.classList.add('hidden');
+                startRecording();
+            }
+        }
+
+        // #3. Photo Capture (F2) (Updated to include filters!)
+        function capturePhoto() {
+            if (!stream || video.paused) {
+                showFeedback("Webcam មិនទាន់ដំណើរការទេ។", 3000);
+                return;
+            }
+            if (isRecording) {
+                showFeedback("សូមបញ្ឈប់ការថតវីដេអូសិន (F1) មុនពេលថតរូប។", 3000);
+                return;
+            }
+            
+            // 1. Create a temporary Canvas element
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = video.videoWidth;
+            tempCanvas.height = video.videoHeight;
+            const ctx = tempCanvas.getContext('2d');
+            
+            // 2. Set the canvas drawing context filter using the current adjustment state
+            const { brightness, contrast, saturation, hue, sepia } = adjustmentState;
+            ctx.filter = `
+                brightness(${brightness}%) 
+                contrast(${contrast}%) 
+                saturate(${saturation}%) 
+                hue-rotate(${hue}deg)
+                sepia(${sepia}%)
+            `.trim();
+            
+            // Apply mirror correction for saved image if user camera
+            if (currentFacingMode === 'user') {
+                ctx.translate(tempCanvas.width, 0);
+                ctx.scale(-1, 1);
+            }
+            // Draw the filtered video frame
+            ctx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
+            
+            // 3. Add Vignette (if active) manually to the canvas
+            if (adjustmentState.vignette > 0) {
+                const strength = adjustmentState.vignette / 100;
+                const gradient = ctx.createRadialGradient(
+                    tempCanvas.width / 2, tempCanvas.height / 2, 0,
+                    tempCanvas.width / 2, tempCanvas.height / 2, Math.max(tempCanvas.width, tempCanvas.height) * 0.7
+                );
+                // Create a smooth vignette from black to transparent
+                gradient.addColorStop(0.0, 'rgba(0,0,0,0)');
+                gradient.addColorStop(0.7, `rgba(0,0,0,${strength * 0.2})`);
+                gradient.addColorStop(1.0, `rgba(0,0,0,${strength * 0.8})`);
+                
+                ctx.fillStyle = gradient;
+                // Since ctx.scale(-1, 1) was applied, drawing the rect covers the whole canvas
+                ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height); 
+            }
+            
+            // 4. Create download link
+            tempCanvas.toBlob((blob) => {
+                const dataURL = URL.createObjectURL(blob);
+                const photoDownloadLink = document.createElement('a');
+                photoDownloadLink.href = dataURL;
+                photoDownloadLink.download = `webcam_photo_${new Date().toISOString()}.png`;
+                photoDownloadLink.click(); 
+                URL.revokeObjectURL(dataURL); 
+            }, 'image/png');
+
+            // 5. Visual Feedback
+            const flash = document.createElement('div');
+            flash.className = 'absolute inset-0 bg-white opacity-0 transition-opacity duration-75';
+            videoContainer.appendChild(flash);
+            setTimeout(() => {
+                flash.style.opacity = '0.9';
+                setTimeout(() => {
+                    flash.style.opacity = '0';
+                    setTimeout(() => {
+                        videoContainer.removeChild(flash);
+                    }, 100); 
+                }, 75); 
+            }, 10);
+            
+            showFeedback("រូបភាពត្រូវបានថត និងទាញយក (F2)", 3000);
+        }
+
+        // #4. Function to toggle camera mode (Front/Back)
+        function toggleCamera() {
+            currentFacingMode = (currentFacingMode === 'user' ? 'environment' : 'user');
+            // When toggling camera, use the current succeeded resolution for the new camera attempt
+            const { w, h } = currentResolution; 
+            startWebcam(w, h);
+            showFeedback(`ប្តូរទៅ Camera: ${currentFacingMode === 'user' ? 'មុខ (Front)' : 'ក្រោយ (Back)'}`, 3000);
+        }
+
+        // #5. Picture-in-Picture Logic (PiP)
+        function togglePictureInPicture() {
+            if (!document.pictureInPictureEnabled) {
+                showFeedback("Browser របស់អ្នកមិនគាំទ្រ Picture-in-Picture ទេ។", 4000);
+                return;
+            }
+            if (document.pictureInPictureElement) {
+                document.exitPictureInPicture()
+                    .then(() => showFeedback("ចេញពី Picture-in-Picture.", 2000))
+                    .catch(err => console.error("Could not exit PiP:", err));
+            } 
+            else if (video.readyState >= 3) { 
+                video.requestPictureInPicture()
+                    .then(() => showFeedback("Picture-in-Picture កំពុងដំណើរការ...", 3000))
+                    .catch(err => {
+                        console.error("Could not enter PiP:", err);
+                        showFeedback("មិនអាចដំណើរការ Picture-in-Picture បានទេ។", 4000);
+                    });
+            } else {
+                showFeedback("វីដេអូមិនទាន់រួចរាល់សម្រាប់ PiP ទេ។ សូមរង់ចាំបន្តិច។", 3000);
+            }
+        }
+
+
+        // #6. Keyboard Event Listener
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'F1') {
+                e.preventDefault(); 
+                toggleRecording();
+            } else if (e.key === 'F2') {
+                e.preventDefault(); 
+                capturePhoto();
+            }
+        });
+
+        // #7. Resolution Selector Functions
+        function applyResolution(width, height) {
+            startWebcam(width, height);
+            settingsPanel.style.display = 'none'; // Hide menu after selection
+        }
+        
+        // Custom Resolution Handler
+        applyCustomResolutionButton.addEventListener('click', () => {
+            const width = parseInt(customWidthInput.value);
+            const height = parseInt(customHeightInput.value);
+            const MAX_DIMENSION = 8192; 
+
+            if (isNaN(width) || isNaN(height) || width <= 0 || height <= 0) {
+                showFeedback("សូមបញ្ចូលទំហំ (ទទឹង និងបណ្ដោយ) ជាលេខវិជ្ជមាន។", 5000);
+                return;
+            }
+            
+            if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+                showFeedback(`ទំហំអតិបរមាគឺ ${MAX_DIMENSION}x${MAX_DIMENSION}។`, 5000);
+                return;
+            }
+
+            // Start webcam with the requested custom resolution (it will handle fallbacks)
+            applyResolution(width, height);
+            showFeedback(`ព្យាយាមអនុវត្តទំហំផ្ទាល់ខ្លួន: ${width}x${height}`, 3000);
+        });
+
+        function populateResolutionSelector() {
+            resolutionPresetsContainer.innerHTML = '';
+            
+            let lastGroup = "";
+            RESOLUTIONS.forEach(res => {
+                if (res.group !== lastGroup) {
+                    const groupHeader = document.createElement('div');
+                    groupHeader.className = 'text-xs font-bold mt-2 pt-1 border-t border-gray-700 first:mt-0 first:pt-0 first:border-t-0 px-2';
+                    groupHeader.textContent = res.group;
+                    resolutionPresetsContainer.appendChild(groupHeader);
+                    lastGroup = res.group;
+                }
+
+                const item = document.createElement('div');
+                item.className = 'res-item px-2 py-1 text-sm rounded-md';
+                item.textContent = res.name;
+                item.dataset.width = res.w;
+                item.dataset.height = res.h;
+                
+                item.addEventListener('click', () => {
+                    applyResolution(parseInt(item.dataset.width), parseInt(item.dataset.height));
+                });
+                resolutionPresetsContainer.appendChild(item);
+            });
+        }
+
+        // #8. PWA Manifest Generator
+        function generateManifest() {
+            const manifestContent = {
+                name: "Webcam View",
+                short_name: "Webcam",
+                description: "Simple webcam viewer with resolution control and recording shortcuts.",
+                start_url: "./webcam_pwa.html",
+                display: "standalone", 
+                background_color: "#000000",
+                theme_color: "#000000",
+                prefer_related_applications: false, 
+                icons: [
+                    {
+                        src: "https://placehold.co/192x192/000000/ffffff?text=W",
+                        sizes: "192x192",
+                        type: "image/png"
+                    },
+                    {
+                        src: "https://placehold.co/512x512/000000/ffffff?text=W",
+                        sizes: "512x512",
+                        type: "image/png"
+                    }
+                ]
+            };
+
+            const blob = new Blob([JSON.stringify(manifestContent)], { type: 'application/json' });
+            const manifestURL = URL.createObjectURL(blob);
+            
+            const link = document.createElement('link');
+            link.rel = 'manifest';
+            link.href = manifestURL;
+            document.head.appendChild(link);
+        }
+        
+        // Event Listeners for buttons
+        settingsButton.addEventListener('click', () => {
+            settingsPanel.style.display = settingsPanel.style.display === 'block' ? 'none' : 'block';
+        });
+
+        toggleCameraButton.addEventListener('click', toggleCamera);
+        pipButton.addEventListener('click', togglePictureInPicture);
+
+
+        // Start functionalities when the page is fully loaded
+        window.onload = function() {
+            generateManifest(); 
+            populateResolutionSelector();
+            setupAdjustmentListeners(); 
+            updateSliderDisplay(); 
+            applyFilters(); 
+
+            // Start with the default safe resolution (1280x720)
+            startWebcam(currentResolution.w, currentResolution.h);      
+        };
+
+    </script>
+</body>
+</html>

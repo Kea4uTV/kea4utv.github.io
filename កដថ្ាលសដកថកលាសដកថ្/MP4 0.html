@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>កម្មវិធីចាក់វីដេអូ MP4 និងចំណងជើងរង</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* កំណត់ Font សម្រាប់ Body */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #1f2937;
+        }
+
+        /* កំណត់ទម្រង់ CSS សម្រាប់ Subtitle (::cue) */
+        #videoPlayer::cue {
+            font-size: var(--subtitle-size, 1.5em); /* Default size */
+            color: white;
+            background-color: rgba(0, 0, 0, 0.75);
+            padding: 0.25em 0.5em;
+            border-radius: 0.3rem;
+            text-shadow: 1px 1px 2px black;
+            transition: all 0.2s;
+        }
+
+        /* Customizing Range Input */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            background: #d1d5db;
+            border-radius: 4px;
+            outline: none;
+            opacity: 0.7;
+            -webkit-transition: .2s;
+            transition: opacity .2s;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+        }
+        
+        /* CSS for Vignette Effect */
+        #videoContainer {
+            /* Ensure position is relative for the pseudo-element */
+            position: relative;
+        }
+
+        /* ប្រើ::after ដើម្បីបង្កើត Overlay ងងឹតសម្រាប់ Vignette */
+        #videoContainer.vignette-active::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            /* Radial gradient បង្កើតបែបភាពងងឹតនៅតាមជ្រុង */
+            background: radial-gradient(ellipse at center, transparent 0%, transparent 65%, rgba(0,0,0,0.8) 100%);
+            pointer-events: none; /* អនុញ្ញាតឲ្យចុចឆ្លងកាត់ទៅវីដេអូបាន */
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen flex items-start justify-center">
+
+    <div class="w-full max-w-6xl bg-white shadow-2xl rounded-xl p-4 sm:p-6 space-y-6">
+        <h1 class="text-3xl font-bold text-center text-blue-600 mb-6">កម្មវិធីចាក់វីដេអូជាមួយចំណងជើងរង (Subtitle)</h1>
+        
+        <!-- Video Player Container -->
+        <!-- បានបន្ថែម ID videoContainer សម្រាប់គ្រប់គ្រង Vignette Effect -->
+        <div id="videoContainer" class="relative w-full aspect-video rounded-lg overflow-hidden bg-black">
+            <!-- វីដេអូ Placeholder: ប្រើប្រាស់វីដេអូគំរូ (MP4) -->
+            <video 
+                id="videoPlayer" 
+                class="w-full h-full transition duration-100 ease-in-out" 
+                controls 
+                crossorigin="anonymous">
+                
+                <source id="videoSource" src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
+                
+                <!-- Subtitle Track (Placeholder - នឹងត្រូវ Load ដោយ JS) -->
+                <!-- នេះជា Subtitle គំរូដែលបង្កប់ក្នុង Base64 (VTT Format) -->
+                <track 
+                    id="khmerTrack"
+                    label="ខ្មែរ (លំនាំដើម)" 
+                    kind="subtitles" 
+                    srclang="km" 
+                    src="data:text/vtt;base64,V0VCVlRUCgpwcm9tcHQgaWQgaXMgdGhlIGRhdGEgdG8gYmUgcGFyc2VkCjAwOjAwOjAxLjAwMCAtLT4gMDA6MDA6MDMuNTAwCkxvcmVtIGlwc3VtIGRvbG9yIHNpdCBhbWV0LgoKV2UgY2FuIGFkanVzdCB0aGUgc2l6ZSBhbmQgYSAKMDc6MDA6MDcuMDAwIC0tPiAwMDowMDoxMC4wMDAKWWVhaCBzZWUgZGlmZmVyZW50IGxvY2F0aW9ucwo=" 
+                    default>
+                
+                Your browser does not support the video tag.
+            </video>
+        </div>
+
+        <!-- Subtitle & File Controls -->
+        <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <h2 class="text-xl font-semibold mb-3 text-gray-700">គ្រប់គ្រងវីដេអូ និងចំណងជើងរង</h2>
+
+            <!-- Grid Layout for 4 Controls -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                
+                <!-- 1. Subtitle Position Control -->
+                <div class="p-3 bg-white rounded-md shadow-sm border">
+                    <label class="block text-sm font-medium text-gray-600 mb-1">កំណត់ទីតាំង Subtitle</label>
+                    <select id="subtitlePosition" onchange="setSubtitlePosition(this.value)"
+                            class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
+                        <option value="default">លំនាំដើម (បាត)</option>
+                        <option value="middle">កណ្តាល (Middle)</option>
+                        <option value="top">កំពូល (Top)</option>
+                        <option value="custom">រំកិលឡើងលើ</option>
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1">ផ្លាស់ប្តូរទីតាំងបញ្ឈរនៃចំណងជើងរង។</p>
+                </div>
+
+                <!-- 2. Subtitle Size Control -->
+                <div class="p-3 bg-white rounded-md shadow-sm border">
+                    <label for="subtitleSize" class="block text-sm font-medium text-gray-600 mb-1">ទំហំអក្សរ Subtitle (<span id="sizeValue">150</span>%)</label>
+                    <input type="range" id="subtitleSize" min="100" max="300" value="150" step="10" oninput="setSubtitleSize(this.value)" class="mt-1">
+                    <p class="text-xs text-gray-500 mt-1">ទំហំអក្សរនឹងផ្លាស់ប្តូរភ្លាមៗ (100% - 300%)។</p>
+                </div>
+
+                <!-- 3. Load External VTT/Subtitle File (Updated to accept .srt) -->
+                <div class="p-3 bg-white rounded-md shadow-sm border flex flex-col">
+                    <label for="vttFileLoader" class="block text-sm font-medium text-gray-600 mb-2">បញ្ចូលឯកសារ Subtitle ថ្មី (.vtt/.srt)</label>
+                    <input type="file" id="vttFileLoader" accept=".vtt,.srt" class="text-sm text-gray-700
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-full file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-blue-50 file:text-blue-700
+                        hover:file:bg-blue-100 flex-grow" onchange="loadExternalSubtitle(event)">
+                    <p id="loadStatus" class="text-xs text-red-500 mt-1 h-3"></p>
+                </div>
+
+                <!-- 4. Load External MP4 Video File (NEW) -->
+                <div class="p-3 bg-white rounded-md shadow-sm border flex flex-col">
+                    <label for="videoFileLoader" class="block text-sm font-medium text-gray-600 mb-2">បញ្ចូលឯកសារវីដេអូថ្មី (.mp4/.webm)</label>
+                    <input type="file" id="videoFileLoader" accept="video/mp4,video/webm" class="text-sm text-gray-700
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-full file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-red-50 file:text-red-700
+                        hover:file:bg-red-100 flex-grow" onchange="loadExternalVideo(event)">
+                    <p id="videoLoadStatus" class="text-xs text-red-500 mt-1 h-3"></p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- New Video Visual Adjustment Controls -->
+        <div class="p-4 mt-6 bg-yellow-50 rounded-lg border border-yellow-200">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">គ្រប់គ្រងរូបភាពវីដេអូ (Filters & Adjustments)</h2>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Control 1: Brightness (ពន្លឺ) -->
+                <div class="p-3 bg-white rounded-md shadow-sm border">
+                    <label for="filterBrightness" class="block text-sm font-medium text-gray-600 mb-1">ពន្លឺ (Brightness) <span id="brightnessValue">100</span>%</label>
+                    <input type="range" id="filterBrightness" min="0" max="200" value="100" step="1" oninput="applyVideoFilters()" class="mt-1 accent-yellow-600">
+                </div>
+                <!-- Control 2: Contrast (កម្រិតពណ៌) -->
+                <div class="p-3 bg-white rounded-md shadow-sm border">
+                    <label for="filterContrast" class="block text-sm font-medium text-gray-600 mb-1">កម្រិតពណ៌ (Contrast) <span id="contrastValue">100</span>%</label>
+                    <input type="range" id="filterContrast" min="0" max="200" value="100" step="1" oninput="applyVideoFilters()" class="mt-1 accent-yellow-600">
+                </div>
+                <!-- Control 3: Saturation (ភាពឆ្អែតពណ៌) -->
+                <div class="p-3 bg-white rounded-md shadow-sm border">
+                    <label for="filterSaturation" class="block text-sm font-medium text-gray-600 mb-1">ភាពឆ្អែតពណ៌ (Saturation) <span id="saturationValue">100</span>%</label>
+                    <input type="range" id="filterSaturation" min="0" max="200" value="100" step="1" oninput="applyVideoFilters()" class="mt-1 accent-yellow-600">
+                </div>
+                <!-- Control 4: Hue (ពណ៌លាំៗ - Hue-rotate) -->
+                <div class="p-3 bg-white rounded-md shadow-sm border">
+                    <label for="filterHue" class="block text-sm font-medium text-gray-600 mb-1">ពណ៌លាំៗ (Hue) <span id="hueValue">0</span>°</label>
+                    <input type="range" id="filterHue" min="0" max="360" value="0" step="1" oninput="applyVideoFilters()" class="mt-1 accent-yellow-600">
+                </div>
+                <!-- Control 5: Grayscale (Effects) -->
+                <div class="p-3 bg-white rounded-md shadow-sm border">
+                    <label for="filterGrayscale" class="block text-sm font-medium text-gray-600 mb-1">ពណ៌ខ្មៅ-ស (Grayscale) <span id="grayscaleValue">0</span>%</label>
+                    <input type="range" id="filterGrayscale" min="0" max="100" value="0" step="1" oninput="applyVideoFilters()" class="mt-1 accent-yellow-600">
+                </div>
+                <!-- Control 6: Sepia (Effects/Temp) -->
+                <div class="p-3 bg-white rounded-md shadow-sm border">
+                    <label for="filterSepia" class="block text-sm font-medium text-gray-600 mb-1">ពណ៌ចាស់ (Sepia) <span id="sepiaValue">0</span>%</label>
+                    <input type="range" id="filterSepia" min="0" max="100" value="0" step="1" oninput="applyVideoFilters()" class="mt-1 accent-yellow-600">
+                </div>
+                <!-- Control 7: Blur (Simulates Sharpen/Fade) -->
+                <div class="p-3 bg-white rounded-md shadow-sm border">
+                    <label for="filterBlur" class="block text-sm font-medium text-gray-600 mb-1">ភាពស្រវាំង (Blur) <span id="blurValue">0.0</span>px</label>
+                    <input type="range" id="filterBlur" min="0" max="5" value="0" step="0.1" oninput="applyVideoFilters()" class="mt-1 accent-yellow-600">
+                </div>
+                <!-- Control 8: Vignette Toggle (Effects) -->
+                <div class="p-3 bg-white rounded-md shadow-sm border flex items-center justify-between">
+                    <label for="vignetteToggle" class="text-sm font-medium text-gray-600">បែបភាពងងឹតជ្រុង (Vignette)</label>
+                    <input type="checkbox" id="vignetteToggle" onchange="toggleVignette()" class="h-6 w-6 rounded text-yellow-600 focus:ring-yellow-500 border-gray-300">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('videoPlayer');
+        const videoSource = document.getElementById('videoSource'); // For the placeholder video
+        const vttFileLoader = document.getElementById('vttFileLoader');
+        const loadStatus = document.getElementById('loadStatus');
+        const subtitleSizeInput = document.getElementById('subtitleSize');
+        const sizeValueSpan = document.getElementById('sizeValue');
+        
+        const videoFileLoader = document.getElementById('videoFileLoader');
+        const videoLoadStatus = document.getElementById('videoLoadStatus');
+        
+        // New Filter Controls
+        const filterBrightness = document.getElementById('filterBrightness');
+        const filterContrast = document.getElementById('filterContrast');
+        const filterSaturation = document.getElementById('filterSaturation');
+        const filterHue = document.getElementById('filterHue');
+        const filterGrayscale = document.getElementById('filterGrayscale');
+        const filterSepia = document.getElementById('filterSepia');
+        const filterBlur = document.getElementById('filterBlur');
+        const vignetteToggle = document.getElementById('vignetteToggle');
+        const videoContainer = document.getElementById('videoContainer');
+
+
+        // --- 1. Subtitle Size Control ---
+        
+        // កំណត់ទំហំអក្សរ Subtitle ដោយប្រើ CSS Variable
+        function setSubtitleSize(value) {
+            // បង្ហាញតម្លៃភាគរយ
+            sizeValueSpan.textContent = value;
+            // កំណត់ CSS Variable --subtitle-size ទៅ 1.5em (ប្រសិនបើ 150%)
+            const sizeEm = (value / 100) * 1; 
+            video.style.setProperty('--subtitle-size', `${sizeEm}em`);
+
+            // ត្រូវកំណត់ឡើងវិញរាល់ cue ដែលកំពុងបង្ហាញ ដើម្បីឲ្យវា update style លើ browser មួយចំនួន
+            const activeTrack = Array.from(video.textTracks).find(track => track.mode === 'showing');
+            if (activeTrack && activeTrack.activeCues) {
+                // Trigger a slight change to force redraw on some browsers
+                Array.from(activeTrack.activeCues).forEach(cue => {
+                    cue.text = cue.text; 
+                });
+            }
+        }
+
+        // --- 2. Subtitle Position Control ---
+
+        function setSubtitlePosition(position) {
+            // មុខងារនេះដំណើរការដោយការកំណត់ property 'line' លើ Cues នីមួយៗ
+            
+            // ជ្រើសរើស Subtitle Track ទីមួយដែលមាន mode ជា 'showing'
+            const activeTrack = Array.from(video.textTracks).find(track => track.mode === 'showing');
+            if (!activeTrack) {
+                console.warn("No active text track found for position setting.");
+                return;
+            }
+
+            // តម្លៃ Line សម្រាប់កំណត់ទីតាំង
+            let lineValue;
+            switch (position) {
+                case 'default':
+                    lineValue = -1; // -1: Bottom of video (relative to video height)
+                    break;
+                case 'middle':
+                    lineValue = 50; // 50: Middle of video (as percentage)
+                    break;
+                case 'top':
+                    lineValue = 0; // 0: Top of video (relative to video height)
+                    break;
+                case 'custom':
+                    lineValue = -5; // -5: រំកិលឡើងលើពីបាតបន្តិច
+                    break;
+                default:
+                    lineValue = -1;
+            }
+            
+            // ត្រូវតែកំណត់ម្តងទៀតនៅពេល cue ថ្មីលេចឡើង
+            activeTrack.oncuechange = () => {
+                if (activeTrack.activeCues) {
+                    Array.from(activeTrack.activeCues).forEach(cue => {
+                        cue.line = lineValue;
+                    });
+                }
+            };
+
+            // កំណត់លើ Cues ដែលមានស្រាប់
+            if (activeTrack.cues) {
+                 Array.from(activeTrack.cues).forEach(cue => {
+                    cue.line = lineValue;
+                });
+            }
+        }
+
+        // --- 3. SRT to VTT Converter ---
+        
+        /**
+         * Function to convert SRT format content to VTT format content.
+         */
+        function convertSrtToVtt(srtContent) {
+            let vttContent = "WEBVTT\n\n";
+
+            // Split cues blocks using two or more newlines as separator
+            const srtCues = srtContent.trim().split(/\n\s*\n/);
+
+            for (const cue of srtCues) {
+                if (!cue.trim()) continue;
+
+                const lines = cue.trim().split('\n');
+
+                // Determine where the timestamp line starts (skipping index number)
+                let startIndex = 0;
+                if (lines.length > 0 && !isNaN(parseInt(lines[0].trim()))) {
+                    startIndex = 1;
+                }
+
+                // Get and format timestamp line (00:00:01,000 --> 00:00:03,500)
+                let timeLine = lines[startIndex];
+                if (!timeLine) continue;
+                
+                // 1. Replace comma with dot for milliseconds (essential VTT rule)
+                timeLine = timeLine.replace(/,(\d{3})/g, '.$1');
+
+                // 2. Append the timestamp line
+                vttContent += timeLine + '\n';
+
+                // 3. Append the text content (remaining lines)
+                for (let i = startIndex + 1; i < lines.length; i++) {
+                    vttContent += lines[i] + '\n';
+                }
+                vttContent += '\n'; // Add newline separator for the next cue
+            }
+            return vttContent;
+        }
+
+
+        // --- 4. External VTT/SRT File Loading (Manual) ---
+
+        function loadExternalSubtitle(event) {
+            loadStatus.textContent = ''; // Clear previous status
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const filename = file.name.toLowerCase();
+            const isVtt = filename.endsWith('.vtt');
+            const isSrt = filename.endsWith('.srt');
+
+            if (!isVtt && !isSrt) {
+                loadStatus.textContent = "សូមជ្រើសរើសឯកសារ WebVTT (.vtt) ឬ SRT (.srt) ប៉ុណ្ណោះ។";
+                loadStatus.classList.add('text-red-500');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                let content = e.target.result;
+                let trackLabel = file.name;
+
+                if (isSrt) {
+                    try {
+                        content = convertSrtToVtt(content);
+                        trackLabel += " (Converted)";
+                    } catch (error) {
+                        loadStatus.textContent = "មានកំហុសក្នុងការបម្លែងឯកសារ SRT ទៅ VTT។";
+                        loadStatus.classList.add('text-red-500');
+                        return;
+                    }
+                }
+
+                const vttBlob = new Blob([content], { type: 'text/vtt' });
+                const vttUrl = URL.createObjectURL(vttBlob);
+
+                // 1. លុប Subtitle track ចាស់ៗដែលមាន id (khmerTrack/externalTrack)
+                Array.from(video.querySelectorAll('track')).forEach(track => {
+                    if (track.id === 'khmerTrack' || track.id === 'externalTrack') {
+                        track.track.mode = 'disabled';
+                        video.removeChild(track);
+                    }
+                });
+
+                // 2. បង្កើត Track Element ថ្មី
+                const newTrack = document.createElement('track');
+                newTrack.kind = 'subtitles';
+                newTrack.label = trackLabel;
+                newTrack.srclang = 'new';
+                newTrack.src = vttUrl;
+                newTrack.default = true; // ធ្វើឲ្យវាជា Subtitle លំនាំដើម
+                newTrack.id = 'externalTrack';
+
+                // 3. បញ្ចូល Track ទៅក្នុង Video
+                video.appendChild(newTrack);
+
+                // 4. ធ្វើឲ្យ Subtitle ថ្មីដំណើរការ
+                newTrack.addEventListener('load', () => {
+                    // Set the mode of the new track to 'showing'
+                    newTrack.track.mode = 'showing';
+                    
+                    // Reset position after loading the new track
+                    const currentPosition = document.getElementById('subtitlePosition').value;
+                    setSubtitlePosition(currentPosition);
+
+                    loadStatus.textContent = `បានបញ្ចូល Subtitle ថ្មី៖ ${trackLabel}`;
+                    loadStatus.classList.remove('text-red-500');
+                    loadStatus.classList.add('text-green-600');
+                });
+            };
+
+            reader.onerror = () => {
+                loadStatus.textContent = "មានកំហុសក្នុងការអានឯកសារ។";
+                loadStatus.classList.add('text-red-500');
+            };
+
+            reader.readAsText(file);
+        }
+        
+        // --- 5. External MP4 Video Loading (Auto-Embedded Track Detection) ---
+
+        function loadExternalVideo(event) {
+            videoLoadStatus.textContent = '';
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('video/')) {
+                videoLoadStatus.textContent = "សូមជ្រើសរើសឯកសារវីដេអូ (MP4/WebM) ប៉ុណ្ណោះ។";
+                videoLoadStatus.classList.remove('text-green-600');
+                videoLoadStatus.classList.add('text-red-500');
+                return;
+            }
+
+            // Revoke any previous object URL to free up memory
+            if (videoSource.src.startsWith('blob:')) {
+                 URL.revokeObjectURL(videoSource.src);
+            }
+            
+            const videoUrl = URL.createObjectURL(file);
+
+            // 1. ផ្លាស់ប្តូរ Source នៃ video
+            videoSource.src = videoUrl;
+            videoSource.type = file.type;
+            
+            // 2. Load វីដេអូថ្មី
+            video.load();
+            
+            // 3. បង្ហាញស្ថានភាព
+            videoLoadStatus.textContent = `បានបញ្ចូលវីដេអូថ្មី៖ ${file.name}`;
+            videoLoadStatus.classList.remove('text-red-500', 'text-yellow-600');
+            videoLoadStatus.classList.add('text-green-600');
+
+            // 4. ចាប់ផ្តើមចាក់វីដេអូដោយស្វ័យប្រវត្តិ (បើអាច)
+            video.play().catch(error => {
+                console.log("Video play failed (requires user interaction).", error);
+            });
+            
+            // 5. មុខងារសម្រាប់ពិនិត្យមើល Subtitle បង្កប់
+            video.addEventListener('loadedmetadata', function checkEmbeddedTracks() {
+                const tracks = video.textTracks;
+                let embeddedTrackCount = 0;
+
+                // Remove manually added track elements from the DOM if present
+                Array.from(video.querySelectorAll('track')).forEach(track => {
+                    if (track.id === 'externalTrack') {
+                        track.track.mode = 'disabled';
+                        video.removeChild(track);
+                    }
+                });
+                
+                // Iterate through the textTracks collection (includes both embedded and loaded via HTML <track>)
+                for (let i = 0; i < tracks.length; i++) {
+                    const track = tracks[i];
+                    // Check if it's a subtitle/caption track, and not the hardcoded placeholder track
+                    if ((track.kind === 'subtitles' || track.kind === 'captions') && (track.label !== 'ខ្មែរ (លំនាំដើម)')) {
+                        embeddedTrackCount++;
+                        // Activate the first embedded track found
+                        if (embeddedTrackCount === 1) {
+                            track.mode = 'showing';
+                            // Apply style settings to the newly activated track
+                            const currentPosition = document.getElementById('subtitlePosition').value;
+                            setSubtitlePosition(currentPosition);
+                            setSubtitleSize(subtitleSizeInput.value);
+                        } else {
+                            track.mode = 'hidden'; // Keep others hidden but available in the browser's CC menu
+                        }
+                    } else if (track.id === 'khmerTrack' || track.kind === 'subtitles') {
+                        // Make sure our hardcoded placeholder is disabled if a new video is loaded.
+                        track.mode = 'disabled';
+                    }
+                }
+                
+                if (embeddedTrackCount > 0) {
+                    videoLoadStatus.textContent += ` | បានរកឃើញ ${embeddedTrackCount} Subtitle បង្កប់។`;
+                    videoLoadStatus.classList.remove('text-yellow-600');
+                    videoLoadStatus.classList.add('text-green-600');
+
+                } else {
+                    videoLoadStatus.textContent += ` | មិនមាន Subtitle បង្កប់ត្រូវបានរកឃើញទេ។`;
+                    videoLoadStatus.classList.remove('text-green-600');
+                    videoLoadStatus.classList.add('text-yellow-600');
+                }
+                
+                // Remove the listener after execution to prevent multiple calls
+                video.removeEventListener('loadedmetadata', checkEmbeddedTracks);
+            }, { once: true });
+        }
+        
+        // --- 6. Video Visual Filter Controls ---
+
+        function applyVideoFilters() {
+            // Update display values
+            document.getElementById('brightnessValue').textContent = filterBrightness.value;
+            document.getElementById('contrastValue').textContent = filterContrast.value;
+            document.getElementById('saturationValue').textContent = filterSaturation.value;
+            document.getElementById('hueValue').textContent = filterHue.value;
+            document.getElementById('grayscaleValue').textContent = filterGrayscale.value;
+            document.getElementById('sepiaValue').textContent = filterSepia.value;
+            // Blur uses one decimal place
+            document.getElementById('blurValue').textContent = parseFloat(filterBlur.value).toFixed(1);
+
+            // Construct the CSS filter string
+            // Note: Brightness, Contrast, Saturation act as Lightness/Brightness/Color/HSL controls
+            const filterString = `
+                brightness(${filterBrightness.value}%)
+                contrast(${filterContrast.value}%)
+                saturate(${filterSaturation.value}%)
+                hue-rotate(${filterHue.value}deg)
+                grayscale(${filterGrayscale.value}%)
+                sepia(${filterSepia.value}%)
+                blur(${filterBlur.value}px)
+            `.replace(/\s+/g, ' ').trim(); // Clean up whitespace
+
+            // Apply the filter to the video element
+            video.style.filter = filterString;
+        }
+        
+        // --- 7. Vignette Toggle ---
+
+        function toggleVignette() {
+            if (vignetteToggle.checked) {
+                videoContainer.classList.add('vignette-active');
+            } else {
+                videoContainer.classList.remove('vignette-active');
+            }
+        }
+
+        // --- Initialization ---
+        window.onload = function() {
+            // កំណត់ទំហំអក្សរលំនាំដើម
+            setSubtitleSize(subtitleSizeInput.value);
+            // កំណត់ទីតាំងលំនាំដើម
+            setSubtitlePosition(document.getElementById('subtitlePosition').value);
+            // កំណត់ Filters លំនាំដើម
+            applyVideoFilters();
+        };
+    </script>
+</body>
+</html>

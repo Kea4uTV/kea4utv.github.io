@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>កម្មវិធីបង្កើតរូបភាពតូច | Thumbnail Generator</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configure Tailwind to use Inter font -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Khmer OS Siemreap', 'sans-serif'],
+                    },
+                    colors: {
+                        'primary': '#3b82f6',
+                        'primary-dark': '#2563eb',
+                        'secondary': '#f3f4f6',
+                        'card-bg': '#ffffff',
+                        'purple-dark': '#6d28d9',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom styles for better look and feel */
+        body {
+            font-family: 'Inter', 'Khmer OS Siemreap', sans-serif;
+            background-color: #f8f9fa; /* Light grey background */
+        }
+        .container {
+            min-height: 100vh;
+        }
+        .card {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+        }
+        .thumbnail-item {
+            cursor: pointer;
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+            position: relative;
+            overflow: hidden;
+            background-color: #e5e7eb; /* Placeholder color */
+        }
+        .thumbnail-item:hover {
+            transform: scale(1.03);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+        }
+        .thumbnail-item.selected {
+            border: 4px solid #f97316; /* Orange ring for selected */
+            box-shadow: 0 0 0 6px #f97316, 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+        }
+        /* Style for the file input button to make it look nicer */
+        .custom-file-input::-webkit-file-upload-button {
+            visibility: hidden;
+        }
+        .custom-file-input::before {
+            content: 'ជ្រើសរើសឯកសារ'; /* Choose file */
+            display: inline-block;
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            padding: 0.5rem 1rem;
+            outline: none;
+            white-space: nowrap;
+            -webkit-user-select: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.15s ease-in-out;
+        }
+        .custom-file-input:hover::before {
+            background-color: #f3f4f6;
+        }
+        .custom-file-input:active::before {
+            background-color: #e5e7eb;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-10">
+
+    <!-- Main Container -->
+    <div class="container mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Left Panel: Controls (Thumbnail Generator) -->
+        <div class="lg:col-span-1 p-6 bg-card-bg rounded-xl card">
+            <h1 class="text-2xl font-bold mb-6 text-gray-800">កម្មវិធីបង្កើតរូបភាពតូច (Thumbnail Generator)</h1>
+            
+            <!-- File Upload -->
+            <div class="mb-6">
+                <label for="videoFile" class="block text-sm font-medium text-gray-700 mb-2">
+                    <span id="fileNameDisplay" class="truncate max-w-full inline-block">មិនទាន់មានឯកសារត្រូវបានជ្រើសរើស។</span>
+                </label>
+                <input type="file" id="videoFile" accept="video/*" class="custom-file-input w-full text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary-dark" onchange="handleFileSelect()">
+                <p class="mt-4 text-sm text-gray-500">សូមផ្ទុកវីដេអូឡើងដើម្បីបង្កើតរូបភាពតូចៗ។</p>
+            </div>
+
+            <!-- Video Player (Hidden, for frame extraction) -->
+            <video id="videoElement" style="display:none;" crossOrigin="anonymous"></video>
+            <canvas id="canvasElement" style="display:none;"></canvas>
+
+            <hr class="my-6">
+
+            <!-- 1. Generate Random Thumbnails by Count -->
+            <h2 class="text-lg font-semibold mb-3 text-gray-700">បង្កើតរូបភាពតូចៗចៃដន្យតាមចំនួនដែលកំណត់៖</h2>
+            <div class="flex space-x-3">
+                <input type="number" id="randomCountInput" placeholder="ចំនួនរូបភាព (ឧ. ២០)" 
+                       class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary" 
+                       min="1" value="20" step="1">
+                <button id="generateRandomCountBtn" onclick="handleRandomGeneration()" 
+                        class="py-3 px-4 bg-primary text-white font-semibold rounded-lg hover:bg-primary-dark transition duration-150 ease-in-out shadow-md disabled:opacity-50" 
+                        disabled>
+                    បង្កើត
+                </button>
+            </div>
+            <p class="mt-2 text-sm text-gray-500">បញ្ចូលចំនួនរូបភាពតូចដែលអ្នកចង់បង្កើត (អតិបរមា ១០០)។</p>
+
+            <hr class="my-6">
+
+            <!-- 2. Generate Thumbnail by Timestamp -->
+            <h2 class="text-lg font-semibold mb-3 text-gray-700">ឬ បញ្ចូលពេលវេលា (គិតជាវិនាទី)៖</h2>
+            <div class="flex space-x-3">
+                <input type="number" id="timestampInput" placeholder="ពេលវេលា (វិនាទី)" 
+                       class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary" 
+                       min="0" step="1">
+                <button id="generateTimestampBtn" onclick="generateThumbnailByTimestamp()" 
+                        class="py-3 px-4 bg-gray-500 text-white font-semibold rounded-lg hover:bg-gray-600 transition duration-150 ease-in-out shadow-md disabled:opacity-50" 
+                        disabled>
+                    បង្កើតរូបភាពតូច
+                </button>
+            </div>
+            <p class="mt-2 text-sm text-gray-500">បញ្ចូលពេលវេលាគិតជាវិនាទី (ឧ. ១០ សម្រាប់ ១០ វិនាទី)។</p>
+
+            <hr class="my-6">
+
+            <!-- 3. Format Selector (NEW SECTION) -->
+            <h2 class="text-lg font-semibold mb-3 text-gray-700">ជ្រើសរើសទម្រង់ឯកសារ៖</h2>
+            <select id="downloadFormat" class="w-full p-3 border border-gray-300 rounded-lg mb-6 focus:ring-primary focus:border-primary">
+                <option value="jpeg">JPEG (.jpeg) - ទំហំតូចល្មម</option>
+                <option value="png">PNG (.png) - គុណភាពខ្ពស់</option>
+                <option value="webp">WebP (.webp) - ទម្រង់ទំនើប</option>
+            </select>
+            
+            <!-- 4. Download Selected Thumbnail -->
+            <button id="downloadBtn" onclick="downloadSelectedThumbnail()" 
+                    class="w-full py-3 px-4 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition duration-150 ease-in-out shadow-lg disabled:opacity-50" 
+                    disabled>
+                ទាញយក​​រូបភាពតូចដែលបានជ្រើសរើស
+            </button>
+            
+            <hr class="my-6">
+
+            <!-- 5. Download ALL Thumbnails -->
+            <button id="downloadAllBtn" onclick="downloadAllThumbnails()" 
+                    class="w-full py-3 px-4 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition duration-150 ease-in-out shadow-lg disabled:opacity-50" 
+                    disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                ទាញយក​​រូបភាពតូចទាំងអស់
+            </button>
+        </div>
+
+        <!-- Right Panel: Display (Thumbnails) -->
+        <div class="lg:col-span-2 p-6 bg-secondary rounded-xl card">
+            <h1 class="text-2xl font-bold mb-6 text-gray-800">រូបភាពតូចៗ (Thumbnails)</h1>
+            
+            <!-- Message/Loading Indicator -->
+            <div id="messageBox" class="p-4 bg-blue-100 text-blue-700 rounded-lg mb-6 hidden"></div>
+            <div id="loadingIndicator" class="text-center py-12 hidden">
+                <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto"></div>
+                <p class="mt-4 text-primary font-semibold">កំពុងផ្ទុក... សូមរង់ចាំ</p>
+            </div>
+
+            <!-- Thumbnails Container -->
+            <div id="thumbnailsContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                <p id="placeholderMsg" class="text-gray-500 col-span-full text-center py-12">
+                    សូមផ្ទុកវីដេអូឡើងរួចចុចប៊ូតុង "បង្កើត" ដើម្បីចាប់ផ្ដើម។
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Modal -->
+    <div id="previewModal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-80 flex items-center justify-center p-4" onclick="handleModalClick(event)">
+        <div class="bg-card-bg rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <!-- Modal Header -->
+            <div class="flex justify-between items-center p-4 border-b border-gray-200">
+                <h2 id="modalTitle" class="text-xl font-bold text-gray-800">មើលរូបភាពតូចជាមុន</h2>
+                <button onclick="closePreviewModal()" class="text-gray-500 hover:text-gray-700 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Content (Image and Controls) -->
+            <div class="relative flex-grow flex items-center justify-center p-2 md:p-6 overflow-hidden">
+                <!-- Navigation Buttons -->
+                <button onclick="navigateThumbnails(-1)" id="prevBtn" class="absolute left-1 md:left-4 z-10 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75 transition disabled:opacity-30">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </button>
+                
+                <!-- NOTE: The image source is always a data URL, we re-encode it only during download -->
+                <img id="modalImage" src="" alt="Thumbnail Preview" class="max-w-full max-h-[70vh] object-contain rounded-md shadow-xl transition-all duration-300" />
+                
+                <button onclick="navigateThumbnails(1)" id="nextBtn" class="absolute right-1 md:right-4 z-10 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-75 transition disabled:opacity-30">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="flex justify-between items-center p-4 border-t border-gray-200">
+                <span id="modalTimeLabel" class="text-lg font-medium text-gray-600">ពេលវេលា៖ 00:00</span>
+                <button onclick="downloadSelectedThumbnail(true)" class="py-2 px-4 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition shadow-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    ទាញយក
+                </button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const videoFile = document.getElementById('videoFile');
+    const videoElement = document.getElementById('videoElement');
+    const canvasElement = document.getElementById('canvasElement');
+    const thumbnailsContainer = document.getElementById('thumbnailsContainer');
+    
+    // Controls
+    const randomCountInput = document.getElementById('randomCountInput'); 
+    const generateRandomCountBtn = document.getElementById('generateRandomCountBtn'); 
+    const generateTimestampBtn = document.getElementById('generateTimestampBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const downloadAllBtn = document.getElementById('downloadAllBtn'); 
+    const timestampInput = document.getElementById('timestampInput');
+    const downloadFormat = document.getElementById('downloadFormat'); // NEW: Format Selector
+    const fileNameDisplay = document.getElementById('fileNameDisplay');
+    const messageBox = document.getElementById('messageBox');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const placeholderMsg = document.getElementById('placeholderMsg');
+    
+    // Modal elements
+    const previewModal = document.getElementById('previewModal');
+    const modalImage = document.getElementById('modalImage');
+    const modalTimeLabel = document.getElementById('modalTimeLabel');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+
+    let videoDuration = 0;
+    // selectedThumbnailDataURL is now redundant as we re-encode during download, 
+    // but we keep it to maintain simplicity for the single-download function flow.
+    let selectedThumbnailDataURL = null; 
+    let selectedThumbnailElement = null; 
+
+    /**
+     * Helper function to get the appropriate MIME type and file extension based on user selection.
+     * @param {string} formatKey - 'jpeg', 'png', or 'webp'.
+     * @returns {{mimeType: string, extension: string}}
+     */
+    function getFormatDetails(formatKey) {
+        switch (formatKey) {
+            case 'png':
+                return { mimeType: 'image/png', extension: '.png' };
+            case 'webp':
+                // Note: toDataURL for WebP might not be supported in older browsers, but is generally fine now.
+                return { mimeType: 'image/webp', extension: '.webp' }; 
+            case 'jpeg':
+            default:
+                return { mimeType: 'image/jpeg', extension: '.jpeg' };
+        }
+    }
+
+    /**
+     * Converts an image DataURL (like the one stored in thumbnail elements) 
+     * to a new DataURL in the specified format by redrawing it onto the canvas.
+     * @param {string} dataURL - The original image data URL (usually JPEG or PNG).
+     * @param {string} formatKey - 'jpeg', 'png', or 'webp'.
+     * @returns {Promise<string>} - The data URL in the requested format.
+     */
+    function convertDataURLFormat(dataURL, formatKey) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+                try {
+                    const ctx = canvasElement.getContext('2d');
+                    
+                    // Ensure canvas matches image size for conversion
+                    canvasElement.width = img.naturalWidth;
+                    canvasElement.height = img.naturalHeight;
+
+                    ctx.clearRect(0, 0, canvasElement.width, canvasElement.height); // Clear canvas
+                    ctx.drawImage(img, 0, 0); // Draw the original image
+
+                    const { mimeType } = getFormatDetails(formatKey);
+                    // Quality parameter (0.9) is only relevant for JPEG/WebP
+                    const newDataURL = canvasElement.toDataURL(mimeType, 0.9); 
+                    resolve(newDataURL);
+                } catch (e) {
+                    reject(e);
+                }
+            };
+            img.onerror = reject;
+            img.src = dataURL;
+        });
+    }
+
+    /**
+     * Shows a temporary message in the message box.
+     * @param {string} message - The message text.
+     * @param {string} type - 'success', 'error', or 'info'.
+     * @param {number} duration - Duration in milliseconds (default 5000). Use 0 for permanent message.
+     */
+    function showMessage(message, type, duration = 5000) {
+        messageBox.textContent = message;
+        messageBox.className = 'p-4 rounded-lg mb-6';
+        messageBox.classList.remove('hidden');
+
+        if (type === 'success') {
+            messageBox.classList.add('bg-green-100', 'text-green-700');
+        } else if (type === 'error') {
+            messageBox.classList.add('bg-red-100', 'text-red-700');
+        } else {
+            messageBox.classList.add('bg-blue-100', 'text-blue-700');
+        }
+
+        if (duration > 0) {
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, duration);
+        }
+    }
+
+    /**
+     * Hides the message box.
+     */
+    function hideMessage() {
+        messageBox.classList.add('hidden');
+    }
+
+    /**
+     * Updates the UI buttons based on the video file status.
+     */
+    function updateUI(isEnabled) {
+        generateRandomCountBtn.disabled = !isEnabled; 
+        generateTimestampBtn.disabled = !isEnabled;
+        timestampInput.disabled = !isEnabled;
+        
+        if (!isEnabled) {
+            downloadBtn.disabled = true;
+            downloadAllBtn.disabled = true;
+        }
+    }
+
+    /**
+     * Updates the state of the Download All button based on existing thumbnails.
+     */
+    function updateDownloadAllButtonState() {
+        const hasThumbnails = document.querySelectorAll('.thumbnail-item').length > 0;
+        downloadAllBtn.disabled = !hasThumbnails;
+    }
+
+    /**
+     * Handles the video file selection and loads it into the video element.
+     */
+    function handleFileSelect() {
+        const file = videoFile.files[0];
+        
+        // Reset state
+        updateUI(false);
+        thumbnailsContainer.innerHTML = '';
+        placeholderMsg.classList.remove('hidden');
+        selectedThumbnailDataURL = null;
+        selectedThumbnailElement = null;
+        downloadBtn.disabled = true;
+        updateDownloadAllButtonState(); 
+        hideMessage();
+
+        if (file) {
+            fileNameDisplay.textContent = `ឯកសារ៖ ${file.name}`;
+            const fileURL = URL.createObjectURL(file);
+            videoElement.src = fileURL;
+
+            // Wait for video metadata to load (to get duration, width, height)
+            videoElement.onloadedmetadata = () => {
+                videoDuration = videoElement.duration;
+                updateUI(true);
+                showMessage(`ផ្ទុកវីដេអូបានជោគជ័យ។ រយៈពេលសរុប៖ ${videoDuration.toFixed(1)} វិនាទី។`, 'info');
+                placeholderMsg.classList.add('hidden');
+            };
+
+            videoElement.onerror = (e) => {
+                showMessage(`មានកំហុសក្នុងការផ្ទុកវីដេអូ៖ ${e.target.error.message}`, 'error');
+                fileNameDisplay.textContent = 'មិនទាន់មានឯកសារត្រូវបានជ្រើសរើស។';
+                updateUI(false);
+            };
+
+        } else {
+            fileNameDisplay.textContent = 'មិនទាន់មានឯកសារត្រូវបានជ្រើសរើស។';
+            updateUI(false);
+        }
+    }
+
+    /**
+     * Core function to capture a frame at a specific time.
+     * @param {number} time - The timestamp in seconds.
+     * @returns {Promise<string>} - The data URL of the captured image (using image/jpeg for storage).
+     */
+    function captureFrame(time) {
+        return new Promise((resolve, reject) => {
+            if (time < 0 || time > videoDuration) {
+                return reject(new Error('ពេលវេលាមិនត្រឹមត្រូវ។')); 
+            }
+            
+            videoElement.currentTime = time;
+
+            videoElement.onseeked = () => {
+                try {
+                    const ctx = canvasElement.getContext('2d');
+                    
+                    canvasElement.width = videoElement.videoWidth;
+                    canvasElement.height = videoElement.videoHeight;
+
+                    ctx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+
+                    // We store all images internally as PNG data URL for maximum quality retention
+                    const dataURL = canvasElement.toDataURL('image/png'); 
+                    
+                    videoElement.onseeked = null;
+                    
+                    resolve(dataURL);
+                } catch (error) {
+                    videoElement.onseeked = null;
+                    reject(error);
+                }
+            };
+
+            videoElement.onerror = (e) => {
+                videoElement.onseeked = null;
+                reject(new Error(`មានកំហុសពេលកំពុងស្វែងរកពេលវេលា៖ ${e.target.error.message}`));
+            };
+        });
+    }
+
+    /**
+     * Renders a captured image (data URL) to the thumbnails container.
+     */
+    function renderThumbnail(dataURL, time) {
+        const timeLabel = formatTime(time);
+        
+        const wrapper = document.createElement('div');
+        wrapper.className = 'thumbnail-item rounded-lg overflow-hidden border-2 border-transparent transition duration-150 ease-in-out';
+        // Store the original high-quality PNG data URL
+        wrapper.setAttribute('data-url', dataURL); 
+        wrapper.setAttribute('data-time', time);
+        wrapper.onclick = () => selectThumbnail(wrapper); 
+
+        const img = document.createElement('img');
+        img.src = dataURL;
+        img.alt = `Thumbnail at ${timeLabel}`;
+        img.className = 'w-full h-auto object-cover block';
+
+        const timeOverlay = document.createElement('div');
+        timeOverlay.className = 'absolute bottom-0 left-0 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded-tr-lg font-mono';
+        timeOverlay.textContent = timeLabel;
+
+        wrapper.appendChild(img);
+        wrapper.appendChild(timeOverlay);
+        thumbnailsContainer.prepend(wrapper); 
+        
+        updateDownloadAllButtonState(); 
+    }
+    
+    /**
+     * Formats seconds into a human-readable HH:MM:SS format.
+     */
+    function formatTime(totalSeconds) {
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = Math.floor(totalSeconds % 60);
+
+        const parts = [
+            hours.toString().padStart(2, '0'),
+            minutes.toString().padStart(2, '0'),
+            seconds.toString().padStart(2, '0')
+        ].filter((part, index) => index > 0 || hours > 0); 
+
+        return parts.join(':');
+    }
+
+    /**
+     * Selects a thumbnail, updates the download state, and opens the preview modal.
+     */
+    function selectThumbnail(element) {
+        document.querySelectorAll('.thumbnail-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+        
+        element.classList.add('selected');
+        selectedThumbnailElement = element; 
+        selectedThumbnailDataURL = element.getAttribute('data-url');
+        downloadBtn.disabled = false;
+        
+        const time = element.getAttribute('data-time');
+        openPreviewModal(selectedThumbnailDataURL, parseFloat(time));
+        showMessage('រូបភាពតូចត្រូវបានជ្រើសរើស។ ឥឡូវអ្នកអាចទាញយកវាបាន។', 'success');
+    }
+
+    // --- Modal Logic ---
+
+    /**
+     * Opens the preview modal with the given data.
+     */
+    function openPreviewModal(dataURL, time) {
+        modalImage.src = dataURL;
+        modalTimeLabel.textContent = `ពេលវេលា៖ ${formatTime(time)}`;
+        previewModal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden'; 
+        updateModalNavigationButtons();
+    }
+
+    /**
+     * Closes the preview modal.
+     */
+    function closePreviewModal() {
+        previewModal.classList.add('hidden');
+        document.body.style.overflow = ''; 
+    }
+
+    /**
+     * Handles clicks on the modal overlay to close it.
+     */
+    function handleModalClick(event) {
+        if (event.target === previewModal) {
+            closePreviewModal();
+        }
+    }
+
+    /**
+     * Updates the state of the Previous/Next buttons in the modal.
+     */
+    function updateModalNavigationButtons() {
+        const thumbnails = document.querySelectorAll('.thumbnail-item');
+        const count = thumbnails.length;
+        
+        if (count <= 1) {
+            prevBtn.disabled = true;
+            nextBtn.disabled = true;
+            return;
+        }
+        
+        prevBtn.disabled = false;
+        nextBtn.disabled = false;
+    }
+
+    /**
+     * Navigates to the previous or next thumbnail in the modal.
+     */
+    function navigateThumbnails(direction) {
+        const thumbnails = Array.from(document.querySelectorAll('.thumbnail-item'));
+        const currentIndex = thumbnails.findIndex(item => item === selectedThumbnailElement);
+        
+        if (currentIndex === -1 || thumbnails.length === 0) return;
+
+        let nextIndex = currentIndex + direction;
+
+        if (nextIndex < 0) {
+            nextIndex = thumbnails.length - 1; 
+        } else if (nextIndex >= thumbnails.length) {
+            nextIndex = 0; 
+        }
+
+        const nextElement = thumbnails[nextIndex];
+        if (nextElement) {
+            document.querySelectorAll('.thumbnail-item').forEach(item => item.classList.remove('selected'));
+            nextElement.classList.add('selected');
+            
+            selectedThumbnailElement = nextElement;
+            const newURL = nextElement.getAttribute('data-url');
+            const newTime = parseFloat(nextElement.getAttribute('data-time'));
+            selectedThumbnailDataURL = newURL; 
+            downloadBtn.disabled = false; 
+
+            modalImage.src = newURL;
+            modalTimeLabel.textContent = `ពេលវេលា៖ ${formatTime(newTime)}`;
+            updateModalNavigationButtons();
+        }
+    }
+
+
+    // --- Generation & Download Logic ---
+    
+    /**
+     * Handles user input for random thumbnail count and triggers generation.
+     */
+    function handleRandomGeneration() {
+        if (videoDuration === 0) {
+            return showMessage('មិនទាន់មានវីដេអូត្រូវបានផ្ទុក។', 'error');
+        }
+
+        const countStr = randomCountInput.value;
+        const count = parseInt(countStr, 10);
+
+        if (isNaN(count) || count < 1 || count > 100) {
+            return showMessage('ចំនួនរូបភាពមិនត្រឹមត្រូវ៖ សូមបញ្ចូលលេខចន្លោះពី ១ ដល់ ១០០។', 'error');
+        }
+
+        generateRandomThumbnails(count);
+    }
+
+
+    /**
+     * Generates a specified number of random thumbnails sequentially for stability.
+     */
+    async function generateRandomThumbnails(count) {
+        // Clear previous results and selection
+        thumbnailsContainer.innerHTML = '';
+        loadingIndicator.classList.remove('hidden');
+        placeholderMsg.classList.add('hidden');
+        selectedThumbnailDataURL = null;
+        selectedThumbnailElement = null;
+        downloadBtn.disabled = true;
+        downloadAllBtn.disabled = true; 
+        closePreviewModal();
+        hideMessage();
+
+        const generatedTimes = new Set();
+        
+        // Generate unique random times
+        while (generatedTimes.size < count) {
+            const randomTime = Math.random() * (videoDuration - 0.5); 
+            generatedTimes.add(parseFloat(randomTime.toFixed(3))); 
+        }
+
+        const timesArray = Array.from(generatedTimes).sort((a, b) => a - b); 
+        
+        for (const [index, time] of timesArray.entries()) {
+            try {
+                showMessage(`កំពុងបង្កើតរូបភាពតូច ${index + 1} ក្នុងចំណោម ${count} (${formatTime(time)})...`, 'info', 0);
+                
+                const dataURL = await captureFrame(time);
+                renderThumbnail(dataURL, time);
+            } catch (err) {
+                console.error(`Failed to capture frame at ${time}:`, err);
+            }
+        }
+        
+        loadingIndicator.classList.add('hidden');
+        showMessage(`បង្កើតរូបភាពតូចៗចៃដន្យ ${count} បានជោគជ័យ។`, 'success');
+        updateDownloadAllButtonState(); 
+    }
+
+    /**
+     * Generates a thumbnail based on the user-provided timestamp.
+     */
+    async function generateThumbnailByTimestamp() {
+        if (videoDuration === 0) {
+            return showMessage('មិនទាន់មានវីដេអូត្រូវបានផ្ទុក។', 'error');
+        }
+
+        const timeStr = timestampInput.value;
+        const time = parseFloat(timeStr);
+
+        if (isNaN(time) || time < 0 || time > videoDuration) {
+            return showMessage(`ពេលវេលាមិនត្រឹមត្រូវ៖ បញ្ចូលលេខរវាង 0 និង ${videoDuration.toFixed(1)} វិនាទី។`, 'error');
+        }
+        
+        loadingIndicator.classList.remove('hidden');
+        placeholderMsg.classList.add('hidden');
+        hideMessage();
+        
+        try {
+            const dataURL = await captureFrame(time);
+            renderThumbnail(dataURL, time);
+            showMessage(`បង្កើតរូបភាពតូចនៅ ${formatTime(time)} បានជោគជ័យ។`, 'success');
+        } catch (error) {
+            showMessage(`មានកំហុសក្នុងការបង្កើតរូបភាពតូច៖ ${error.message}`, 'error');
+        } finally {
+            loadingIndicator.classList.add('hidden');
+            updateDownloadAllButtonState(); 
+        }
+    }
+
+    /**
+     * Triggers the download of the currently selected thumbnail.
+     * @param {boolean} closeOnDownload - Whether to close the modal after starting download.
+     */
+    async function downloadSelectedThumbnail(closeOnDownload = false) {
+        if (!selectedThumbnailDataURL) {
+            return showMessage('សូមជ្រើសរើសរូបភាពតូចមួយដើម្បីទាញយក។', 'error');
+        }
+
+        const formatKey = downloadFormat.value;
+        const { extension } = getFormatDetails(formatKey);
+
+        try {
+            // Convert the stored data URL to the user's desired format
+            const finalDataURL = await convertDataURLFormat(selectedThumbnailDataURL, formatKey);
+
+            const selectedElement = document.querySelector('.thumbnail-item.selected');
+            const time = selectedElement ? selectedElement.getAttribute('data-time') : '0';
+            const formattedTime = formatTime(parseFloat(time)).replace(/[:.]/g, '-'); 
+            const fileName = `thumbnail_at_${formattedTime}${extension}`;
+
+            const link = document.createElement('a');
+            link.href = finalDataURL;
+            link.download = fileName; 
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showMessage(`ការទាញយកជា ${extension.toUpperCase().replace('.', '')} បានចាប់ផ្តើម...`, 'success');
+
+            if (closeOnDownload) {
+                closePreviewModal();
+            }
+
+        } catch (error) {
+            showMessage('មានកំហុសក្នុងការទាញយក។', 'error');
+            console.error('Download error:', error);
+        }
+    }
+    
+    /**
+     * Triggers the download of all generated thumbnails sequentially with a slight delay.
+     */
+    function downloadAllThumbnails() {
+        const thumbnails = document.querySelectorAll('.thumbnail-item');
+        if (thumbnails.length === 0) {
+            return showMessage('មិនមានរូបភាពតូចៗសម្រាប់ទាញយកទេ។', 'error');
+        }
+
+        const formatKey = downloadFormat.value;
+        const { extension } = getFormatDetails(formatKey);
+
+        showMessage(`កំពុងចាប់ផ្ដើមទាញយកឯកសារសរុប ${thumbnails.length} ជា ${extension.toUpperCase().replace('.', '')} ... សូមកុំបិទផ្ទាំងនេះ!`, 'info', 10000);
+
+        const thumbnailsArray = Array.from(thumbnails); 
+
+        let delay = 0;
+        const delayIncrement = 150; // Increased delay to ensure successful multiple downloads in the browser
+
+        thumbnailsArray.forEach((element) => {
+            const dataURL = element.getAttribute('data-url');
+            const time = element.getAttribute('data-time');
+            
+            setTimeout(async () => {
+                try {
+                    // Convert and download each image one by one
+                    const finalDataURL = await convertDataURLFormat(dataURL, formatKey);
+
+                    const formattedTime = formatTime(parseFloat(time)).replace(/[:.]/g, '-'); 
+                    const fileName = `thumbnail_at_${formattedTime}${extension}`;
+
+                    const link = document.createElement('a');
+                    link.href = finalDataURL;
+                    link.download = fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                } catch (error) {
+                    console.error(`Failed to download thumbnail at ${time}:`, error);
+                }
+            }, delay);
+
+            delay += delayIncrement;
+        });
+
+        // Show final message after all downloads are initiated
+        setTimeout(() => {
+            showMessage('ការទាញយកឯកសារទាំងអស់បានបញ្ចប់។ សូមពិនិត្យមើល Folder Downloads របស់អ្នក។', 'success');
+        }, delay + 500); 
+    }
+
+</script>
+</body>
+</html>
