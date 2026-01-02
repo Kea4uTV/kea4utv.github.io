@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SRT Reader & TTS Tool - Precision Timing Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/font-awesome.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@300;400;700&display=swap');
+        body {
+            font-family: 'Kantumruy Pro', sans-serif;
+            background-color: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #6366f1; border-radius: 10px; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 p-6 text-white shadow-lg">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold mb-1 flex items-center">
+                        <i class="fas fa-clock mr-3"></i> SRT to Khmer Voice Precision
+                    </h1>
+                    <p class="opacity-80 text-xs">បង្កើតសំឡេងឱ្យត្រូវតាមវិនាទីនៃពាក្យនីមួយៗ (Word-Level Timing)</p>
+                </div>
+                <div class="hidden md:block">
+                    <i class="fas fa-waveform-lines animate-pulse text-4xl opacity-20"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-0">
+            <!-- Left Sidebar -->
+            <div class="p-6 bg-gray-50 border-r border-gray-200">
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2 text-sm">១. បញ្ចូលឯកសារ SRT</label>
+                    <input type="file" id="srtFile" accept=".srt" class="hidden" onchange="handleFileUpload(event)">
+                    <button onclick="document.getElementById('srtFile').click()" class="w-full py-4 px-4 bg-white border-2 border-dashed border-indigo-300 text-indigo-600 rounded-2xl hover:bg-indigo-50 hover:border-indigo-500 transition-all flex flex-col items-center justify-center">
+                        <i class="fas fa-file-import text-2xl mb-1"></i>
+                        <span class="font-bold text-sm">ជ្រើសរើសឯកសារ .srt</span>
+                    </button>
+                    <p id="fileNameDisplay" class="text-[10px] text-gray-400 mt-1 text-center truncate"></p>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2 text-sm">២. ជ្រើសរើសតួអង្គ (Voice)</label>
+                    <select id="voiceSelect" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm bg-white text-sm">
+                        <option value="Kore">Kore (សំឡេងស្តង់ដារ - ប្រុស)</option>
+                        <option value="Zephyr">Zephyr (សំឡេងស្រទន់ - ស្រី)</option>
+                        <option value="Puck">Puck (សំឡេងរហ័សរហួន)</option>
+                        <option value="Charon">Charon (សំឡេងជ្រៅ)</option>
+                        <option value="Fenrir">Fenrir (សំឡេងបុរសមាំ)</option>
+                        <option value="Leda">Leda (សំឡេងស្រីផ្អែម)</option>
+                    </select>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2 text-sm">៣. ការបញ្ចូលជួរ (Merge Groups)</label>
+                    <div class="flex items-center gap-3">
+                        <input type="number" id="mergeCount" value="5" min="1" max="20" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm text-center font-bold">
+                        <span class="text-xs text-gray-500 font-medium">ជួរ/ផ្នែក</span>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <button onclick="processSRT()" class="w-full py-4 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-2xl font-bold shadow-xl hover:shadow-indigo-200 transition-all active:scale-95 flex items-center justify-center">
+                        <i class="fas fa-sync-alt mr-2"></i> រៀបចំទិន្នន័យ
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Content -->
+            <div class="lg:col-span-2 p-6 bg-white">
+                <div id="welcomeScreen" class="h-full flex flex-col items-center justify-center text-gray-300 py-20">
+                    <i class="fas fa-layer-group text-5xl mb-4 opacity-10"></i>
+                    <p class="font-medium italic">សូមបញ្ចូលឯកសារ ដើម្បីគណនាវិនាទី</p>
+                </div>
+
+                <div id="outputArea" class="hidden">
+                    <div class="flex justify-between items-center mb-6 border-b pb-4">
+                        <h2 class="text-lg font-bold text-gray-800">លទ្ធផលនៃការបែងចែកផ្នែក</h2>
+                        <span id="statInfo" class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-lg text-[10px] font-black uppercase"></span>
+                    </div>
+                    <div id="srtList" class="space-y-6 max-h-[700px] overflow-y-auto pr-2 custom-scrollbar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="audioPlayer" class="hidden"></audio>
+
+    <!-- Overlay Loading -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md hidden flex items-center justify-center z-50">
+        <div class="bg-white p-10 rounded-[2.5rem] shadow-2xl flex flex-col items-center max-w-sm text-center">
+            <div class="relative w-20 h-20 mb-6">
+                <div class="absolute inset-0 border-4 border-indigo-100 rounded-full"></div>
+                <div class="absolute inset-0 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
+            </div>
+            <h3 class="font-bold text-gray-800 text-xl mb-2">កំពុងបង្កើតសំឡេង...</h3>
+            <p id="loadingMsg" class="text-sm text-gray-500"></p>
+        </div>
+    </div>
+
+    <script>
+        const apiKey = ""; 
+        let rawSrtData = "";
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            document.getElementById('fileNameDisplay').innerText = file.name;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                rawSrtData = e.target.result;
+                processSRT();
+            };
+            reader.readAsText(file);
+        }
+
+        function parseSrtTimeToSeconds(timeStr) {
+            const parts = timeStr.split(':');
+            const secondsParts = parts[2].split(',');
+            return (parseInt(parts[0]) * 3600) + (parseInt(parts[1]) * 60) + parseInt(secondsParts[0]) + (parseInt(secondsParts[1]) / 1000);
+        }
+
+        function processSRT() {
+            if (!rawSrtData) return;
+            const mergeCount = parseInt(document.getElementById('mergeCount').value) || 1;
+            const srtRegex = /(\d+)\s+(\d{2}:\d{2}:\d{2},\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2},\d{3})\s+([\s\S]*?)(?=\n\n|\n\d+\s+|$)/g;
+            
+            let items = [];
+            let match;
+            while ((match = srtRegex.exec(rawSrtData)) !== null) {
+                const start = parseSrtTimeToSeconds(match[2]);
+                const end = parseSrtTimeToSeconds(match[3]);
+                items.push({
+                    index: match[1],
+                    startStr: match[2],
+                    endStr: match[3],
+                    startTime: start,
+                    endTime: end,
+                    duration: (end - start).toFixed(2),
+                    text: match[4].replace(/\n/g, ' ').trim()
+                });
+            }
+
+            let mergedGroups = [];
+            for (let i = 0; i < items.length; i += mergeCount) {
+                let chunk = items.slice(i, i + mergeCount);
+                let totalDur = (chunk[chunk.length - 1].endTime - chunk[0].startTime).toFixed(2);
+                
+                mergedGroups.push({
+                    id: Math.floor(i / mergeCount) + 1,
+                    segments: chunk,
+                    totalDuration: totalDur,
+                    startTimeStr: chunk[0].startStr
+                });
+            }
+            renderList(mergedGroups);
+        }
+
+        function renderList(groups) {
+            const list = document.getElementById('srtList');
+            document.getElementById('welcomeScreen').classList.add('hidden');
+            document.getElementById('outputArea').classList.remove('hidden');
+            document.getElementById('statInfo').innerText = `${groups.length} ផ្នែក`;
+            list.innerHTML = '';
+
+            groups.forEach(group => {
+                const card = document.createElement('div');
+                card.className = 'bg-white border border-gray-200 rounded-3xl overflow-hidden shadow-sm p-5';
+                
+                let segmentsHtml = group.segments.map(s => `
+                    <div class="mb-4 last:mb-0">
+                        <div class="text-[11px] font-bold text-indigo-500 font-mono">${s.duration}s</div>
+                        <p class="text-sm text-gray-800 font-medium">${s.text}</p>
+                    </div>
+                `).join('');
+
+                card.innerHTML = `
+                    <div class="flex flex-col md:flex-row gap-6">
+                        <div class="flex-1">
+                            <div class="mb-4">
+                                <div class="text-[10px] text-gray-400 font-mono font-bold">${group.startTimeStr}</div>
+                                <div class="text-indigo-600 text-xs font-black uppercase tracking-tighter">DURATION: ${group.totalDuration}s</div>
+                            </div>
+                            <div class="bg-gray-50 p-5 rounded-2xl border border-dashed border-gray-200">
+                                ${segmentsHtml}
+                            </div>
+                        </div>
+                        <div class="flex md:flex-col gap-3 justify-center">
+                            <button onclick='generateSpeech(this, ${JSON.stringify(group.segments).replace(/'/g, "&apos;")}, ${group.totalDuration}, "play")' class="w-14 h-14 bg-indigo-600 text-white rounded-2xl flex items-center justify-center shadow-lg hover:bg-indigo-700 transition-all transform active:scale-90">
+                                <i class="fas fa-play text-xl"></i>
+                            </button>
+                            <button onclick='generateSpeech(this, ${JSON.stringify(group.segments).replace(/'/g, "&apos;")}, ${group.totalDuration}, "download")' class="w-14 h-14 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg hover:bg-emerald-600 transition-all transform active:scale-90">
+                                <i class="fas fa-download text-xl"></i>
+                            </button>
+                        </div>
+                    </div>`;
+                list.appendChild(card);
+            });
+        }
+
+        async function generateSpeech(btn, segments, totalDuration, mode) {
+            const overlay = document.getElementById('loadingOverlay');
+            const icon = btn.querySelector('i');
+            const loadingMsg = document.getElementById('loadingMsg');
+            const voice = document.getElementById('voiceSelect').value;
+            
+            overlay.classList.remove('hidden');
+            const originalIcon = icon.className;
+            icon.className = 'fas fa-spinner animate-spin';
+            loadingMsg.innerText = "កំពុងលៃសំឡេងឱ្យត្រូវតាមវិនាទីនៃពាក្យនីមួយៗ...";
+            
+            // បង្កើតការណែនាំច្បាស់លាស់បំផុតសម្រាប់ AI
+            let scriptDetails = segments.map((s, idx) => {
+                return `[Segment ${idx + 1}] Duration: ${s.duration}s | Text: "${s.text}"`;
+            }).join('\n');
+            
+            let systemPrompt = `You are an expert Khmer synchronized narrator. 
+            I have a multi-segment script where EACH segment has a strict time limit. 
+            Your goal is to adjust your speaking speed for each individual segment to match its duration perfectly.
+
+            TARGET TIMING DATA:
+            ${scriptDetails}
+
+            RULES:
+            1. For short durations (e.g., 0.44s), you must speak extremely quickly but clearly.
+            2. For longer durations (e.g., 1.64s), speak naturally.
+            3. Do not add silence at the end of segments; keep the flow moving to fit the total ${totalDuration}s duration.
+            4. Speak all words provided in the segments.
+            5. The final output must be exactly one audio file containing all these segments in sequence.`;
+
+            try {
+                const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: systemPrompt }] }],
+                        model: "gemini-2.5-flash-preview-tts",
+                        generationConfig: {
+                            responseModalities: ["AUDIO"],
+                            speechConfig: {
+                                voiceConfig: {
+                                    prebuiltVoiceConfig: { voiceName: voice }
+                                }
+                            }
+                        }
+                    })
+                });
+
+                const result = await response.json();
+                if (result.error) throw new Error(result.error.message);
+
+                const audioPart = result.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+                if (audioPart?.inlineData?.data) {
+                    const base64Data = audioPart.inlineData.data;
+                    const mimeType = audioPart.inlineData.mimeType;
+                    
+                    if (mode === "play") {
+                        playAudio(base64Data, mimeType);
+                    } else {
+                        downloadAudio(base64Data, mimeType, `khmer_sync_audio_${Date.now()}.wav`);
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Error: " + err.message);
+            } finally {
+                overlay.classList.add('hidden');
+                icon.className = originalIcon;
+            }
+        }
+
+        async function fetchWithRetry(url, options, retries = 5) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const res = await fetch(url, options);
+                    if (res.ok) return res;
+                    await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i)));
+                } catch (e) {}
+            }
+            throw new Error("API call failed after retries.");
+        }
+
+        function getWavBlob(base64Data, mimeType) {
+            const sampleRateMatch = mimeType.match(/rate=(\d+)/);
+            const sampleRate = sampleRateMatch ? parseInt(sampleRateMatch[1]) : 24000;
+            const binary = atob(base64Data);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            const wav = createWav(bytes.buffer, sampleRate);
+            return new Blob([wav], { type: 'audio/wav' });
+        }
+
+        function playAudio(base64Data, mimeType) {
+            const blob = getWavBlob(base64Data, mimeType);
+            const url = URL.createObjectURL(blob);
+            const player = document.getElementById('audioPlayer');
+            player.src = url;
+            player.play();
+        }
+
+        function downloadAudio(base64Data, mimeType, filename) {
+            const blob = getWavBlob(base64Data, mimeType);
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function createWav(pcm, rate) {
+            const buf = new ArrayBuffer(44 + pcm.byteLength);
+            const v = new DataView(buf);
+            const s = (o, str) => { for (let i = 0; i < str.length; i++) v.setUint8(o + i, str.charCodeAt(i)); };
+            s(0, 'RIFF'); v.setUint32(4, 32 + pcm.byteLength, true); s(8, 'WAVE'); s(12, 'fmt ');
+            v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+            v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true);
+            v.setUint16(34, 16, true); s(36, 'data'); v.setUint32(40, pcm.byteLength, true);
+            new Uint8Array(buf, 44).set(new Uint8Array(pcm));
+            return buf;
+        }
+    </script>
+</body>
+</html>
