@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Motion Pro - Smart Selection</title>
+    <title>Motion Pro - Smart Selection & Audio Ducking</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -33,10 +33,7 @@
             transition: border 0.2s;
         }
 
-        /* បង្ហាញស៊ុមពេលដាក់ Mouse ពីលើ */
         .element:hover { border: 2px solid rgba(59, 130, 246, 0.4); }
-
-        /* បង្ហាញស៊ុមដាច់ៗពេល Select */
         .element.active { border: 2px dashed #3b82f6; z-index: 50 !important; }
 
         .resizer {
@@ -64,6 +61,13 @@
             border-left: 4px solid #3b82f6;
         }
 
+        .audio-status {
+            font-size: 10px;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 20px;
+        }
+
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
@@ -74,18 +78,16 @@
     <header class="bg-white border-b px-6 py-3 flex justify-between items-center shadow-sm z-50">
         <div class="flex items-center gap-4">
             <div class="bg-blue-600 p-2 rounded-lg text-white">
-                <i class="fas fa-mouse-pointer text-lg"></i>
+                <i class="fas fa-microphone-lines text-lg"></i>
             </div>
             <div>
-                <h1 class="text-lg font-bold text-slate-800 leading-tight">Motion Smart Select</h1>
-                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">រចនាចលនា និងគ្រប់គ្រងស្រទាប់</p>
+                <h1 class="text-lg font-bold text-slate-800 leading-tight">Motion Smart Studio</h1>
+                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">រចនាចលនា និងប្រព័ន្ធសម្លេងឆ្លាតវៃ</p>
             </div>
         </div>
 
         <div class="flex-1 max-w-md mx-10">
-            <div id="masterTimeline" class="master-timeline">
-                <!-- Segments -->
-            </div>
+            <div id="masterTimeline" class="master-timeline"></div>
             <div class="flex justify-between text-[9px] font-bold text-slate-400 mt-1 uppercase">
                 <span id="totalTimeLabel">Total: 0s</span>
                 <span id="currentSceneLabel">Scene: 1</span>
@@ -93,8 +95,8 @@
         </div>
 
         <div class="flex items-center gap-3">
-            <button id="globalPlayBtn" class="bg-slate-900 hover:bg-black text-white px-6 py-2 rounded-xl font-bold text-sm flex items-center gap-2 transition-all">
-                <i class="fas fa-play"></i> PREVIEW ALL
+            <button id="globalPlayBtn" onclick="togglePlay()" class="bg-slate-900 hover:bg-black text-white px-6 py-2 rounded-xl font-bold text-sm flex items-center gap-2 transition-all">
+                <i class="fas fa-play"></i> PREVIEW SCENE
             </button>
         </div>
     </header>
@@ -107,26 +109,23 @@
                     <h2 class="font-bold text-slate-700 text-[10px] uppercase tracking-widest">បញ្ជីក្រុម (Scenes)</h2>
                     <button id="addScene" class="text-blue-600 hover:text-blue-800 text-sm"><i class="fas fa-plus-circle"></i></button>
                 </div>
-                <div class="space-y-2">
-                    <label class="text-[9px] font-bold text-slate-400 uppercase">កំណត់វិនាទីសរុប</label>
-                    <div class="flex gap-2">
-                        <input type="number" id="globalDurationInput" class="w-full bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-xs outline-none focus:border-blue-500" placeholder="Seconds">
-                        <button id="applyGlobalTime" class="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg text-[10px] font-bold">Apply</button>
+                <div class="space-y-4">
+                    <div class="space-y-1">
+                        <label class="text-[9px] font-bold text-slate-400 uppercase">Background Music (Global)</label>
+                        <button onclick="document.getElementById('bgMusicIn').click()" class="w-full py-2 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold border border-blue-100 hover:bg-blue-100 transition">
+                            <i class="fas fa-music mr-1"></i> <span id="bgMusicLabel">ADD BG MUSIC</span>
+                        </button>
                     </div>
                 </div>
             </div>
-            <div id="sceneList" class="flex-1 overflow-y-auto p-4 space-y-3">
-                <!-- Scenes -->
-            </div>
+            <div id="sceneList" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
         </aside>
 
         <!-- Main Editor -->
         <main class="flex-1 flex flex-col bg-slate-200 relative">
             <div id="canvasWrapper" class="flex-1 p-8 flex items-center justify-center relative min-h-0">
-                <!-- Canvas នឹង Deselect ពេលចុចលើផ្ទៃទំនេរ -->
                 <div id="canvas" class="canvas-container shadow-2xl"></div>
                 
-                <!-- Floating Tools (នឹងបង្ហាញតែពេលមាន Selection) -->
                 <div id="elementTools" class="absolute top-6 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur px-5 py-3 rounded-2xl shadow-xl border border-white flex items-center gap-6 opacity-0 pointer-events-none transition-all duration-300 transform translate-y-[-10px] z-[60]">
                     <div class="flex flex-col">
                         <span class="text-[10px] font-black text-blue-600 uppercase">Layer Options</span>
@@ -152,10 +151,8 @@
                             <i class="fas fa-play"></i>
                         </button>
                         <div class="flex flex-col">
-                            <span class="text-[10px] font-bold text-slate-400 uppercase mb-1">វិនាទីក្រុមនេះ</span>
-                            <div class="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border">
-                                <input type="number" id="sceneDurationInput" value="5" class="w-10 bg-transparent text-center font-bold text-blue-600 outline-none text-sm">
-                            </div>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase mb-1">Ducking Status</span>
+                            <div id="duckingIndicator" class="audio-status bg-slate-100 text-slate-500">NORMAL VOLUME</div>
                         </div>
                     </div>
                     <div id="sceneTimeDisplay" class="text-3xl font-mono text-slate-800 font-black">00:00.00</div>
@@ -184,20 +181,19 @@
                         <span class="text-[9px] font-bold">BACKGROUND</span>
                     </button>
                 </div>
-                <button onclick="document.getElementById('audioIn').click()" class="w-full mt-2 py-2 border border-dashed border-blue-200 text-blue-600 text-[9px] font-bold rounded-xl hover:bg-blue-50">
-                    <i class="fas fa-music mr-1"></i> ADD SCENE MP3
+                <button onclick="document.getElementById('audioIn').click()" class="w-full mt-2 py-2 border border-dashed border-blue-200 text-blue-600 text-[9px] font-bold rounded-xl hover:bg-blue-50 transition">
+                    <i class="fas fa-music mr-1"></i> <span id="localAudioLabel">ADD VOICE (SCENE)</span>
                 </button>
             </div>
-            <div id="layerList" class="flex-1 overflow-y-auto p-4 space-y-2">
-                <!-- Layer items -->
-            </div>
+            <div id="layerList" class="flex-1 overflow-y-auto p-4 space-y-2"></div>
         </aside>
     </div>
 
     <!-- Hidden Files -->
     <input type="file" id="fileIn" accept="image/*" class="hidden" onchange="uploadAsset(event, false)">
     <input type="file" id="bgIn" accept="image/*" class="hidden" onchange="uploadAsset(event, true)">
-    <input type="file" id="audioIn" accept="audio/mp3" class="hidden" onchange="uploadAudio(event)">
+    <input type="file" id="audioIn" accept="audio/*" class="hidden" onchange="uploadAudio(event)">
+    <input type="file" id="bgMusicIn" accept="audio/*" class="hidden" onchange="uploadGlobalMusic(event)">
 
     <script>
         let scenes = [];
@@ -206,6 +202,10 @@
         let sceneTime = 0;
         let isPlaying = false;
         let playReq = null;
+        
+        // Audio Global
+        let globalBgAudio = null;
+        let currentVoiceAudio = null;
 
         const canvas = document.getElementById('canvas');
         const tools = document.getElementById('elementTools');
@@ -218,14 +218,8 @@
 
         function setupEvents() {
             document.getElementById('addScene').onclick = addScene;
-            document.getElementById('applyGlobalTime').onclick = applyGlobalTime;
             document.getElementById('previewPlayBtn').onclick = togglePlay;
-            document.getElementById('sceneDurationInput').onchange = (e) => {
-                scenes[currentSceneIdx].duration = parseFloat(e.target.value) || 5;
-                refreshMasterTimeline();
-            };
-
-            // ឈប់ Select នៅពេលចុចលើផ្ទៃទំនេរនៃ Canvas ឬ Canvas Wrapper
+            
             const deselectHandler = (e) => {
                 if (e.target.id === 'canvas' || e.target.id === 'canvasWrapper') {
                     deselectElement();
@@ -253,7 +247,13 @@
         }
 
         function addScene() {
-            scenes.push({ id: Date.now(), duration: 5, elements: [], audio: null, audioName: '' });
+            scenes.push({ 
+                id: Date.now(), 
+                duration: 5, 
+                elements: [], 
+                audio: null, 
+                audioName: '' 
+            });
             selectScene(scenes.length - 1);
         }
 
@@ -267,13 +267,97 @@
             canvas.innerHTML = '';
             deselectElement();
             const scene = scenes[currentSceneIdx];
-            document.getElementById('sceneDurationInput').value = scene.duration;
+            document.getElementById('localAudioLabel').innerText = scene.audioName || "ADD VOICE (SCENE)";
             scene.elements.forEach(data => canvas.appendChild(createElementDOM(data)));
             refreshUI();
             updateFrame();
             refreshMasterTimeline();
         }
 
+        // Fixed Function: Added uploadAudio to handle scene-specific voiceovers
+        function uploadAudio(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const scene = scenes[currentSceneIdx];
+            scene.audioName = file.name;
+            scene.audio = URL.createObjectURL(file);
+            
+            // Auto-detect duration from audio
+            const temp = new Audio(scene.audio);
+            temp.onloadedmetadata = () => {
+                scene.duration = temp.duration;
+                loadScene();
+            };
+            document.getElementById('localAudioLabel').innerText = file.name;
+        }
+
+        function uploadGlobalMusic(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (globalBgAudio) globalBgAudio.pause();
+            globalBgAudio = new Audio(URL.createObjectURL(file));
+            globalBgAudio.loop = true;
+            document.getElementById('bgMusicLabel').innerText = file.name;
+        }
+
+        function togglePlay() {
+            if(isPlaying) stopPlay(); else startPlay();
+        }
+
+        function startPlay() {
+            isPlaying = true;
+            const scene = scenes[currentSceneIdx];
+            document.getElementById('previewPlayBtn').innerHTML = '<i class="fas fa-pause"></i>';
+            
+            // Audio Logic
+            if (globalBgAudio) {
+                globalBgAudio.currentTime = 0;
+                globalBgAudio.play();
+            }
+            if (scene.audio) {
+                currentVoiceAudio = new Audio(scene.audio);
+                currentVoiceAudio.play();
+            }
+
+            const start = performance.now() - (sceneTime * 1000);
+            const loop = (ts) => {
+                if(!isPlaying) return;
+                sceneTime = (ts - start) / 1000;
+                
+                // Smart Ducking Logic
+                const indicator = document.getElementById('duckingIndicator');
+                if (currentVoiceAudio && !currentVoiceAudio.paused) {
+                    if(globalBgAudio) globalBgAudio.volume = 0.2; // Dim music
+                    indicator.innerText = "DUCKING ACTIVE (20%)";
+                    indicator.className = "audio-status bg-amber-100 text-amber-600";
+                } else {
+                    if(globalBgAudio) globalBgAudio.volume = 1.0; // Normal music
+                    indicator.innerText = "NORMAL VOLUME (100%)";
+                    indicator.className = "audio-status bg-emerald-100 text-emerald-600";
+                }
+
+                if(sceneTime >= scene.duration) { 
+                    sceneTime = scene.duration; 
+                    stopPlay(); 
+                }
+                updateFrame();
+                playReq = requestAnimationFrame(loop);
+            };
+            playReq = requestAnimationFrame(loop);
+        }
+
+        function stopPlay() {
+            isPlaying = false;
+            cancelAnimationFrame(playReq);
+            document.getElementById('previewPlayBtn').innerHTML = '<i class="fas fa-play"></i>';
+            if (globalBgAudio) globalBgAudio.pause();
+            if (currentVoiceAudio) {
+                currentVoiceAudio.pause();
+                currentVoiceAudio = null;
+            }
+        }
+
+        // UI & Element Helpers
         function createElementDOM(data) {
             const div = document.createElement('div');
             div.className = 'element';
@@ -291,29 +375,24 @@
             div.appendChild(resizer);
 
             div.onmousedown = (e) => {
-                e.stopPropagation(); // ការពារកុំអោយ Deselect ពេលចុចចំរូប
+                e.stopPropagation();
                 if (e.target.className === 'resizer' || isPlaying) return;
                 selectElement(data.id);
                 startDrag(e, div, data);
             };
-
             resizer.onmousedown = (e) => {
                 e.stopPropagation();
                 startResize(e, div, data);
             };
-
             return div;
         }
 
         function selectElement(id) {
             selectedId = id;
             document.querySelectorAll('.element').forEach(el => el.classList.toggle('active', el.dataset.id == id));
-            
-            // បង្ហាញ Tools បែបចលនា
             tools.style.opacity = "1";
             tools.style.pointerEvents = "auto";
             tools.style.transform = "translate(-50%, 0)";
-            
             refreshUI();
             renderKeyframes();
         }
@@ -321,12 +400,9 @@
         function deselectElement() {
             selectedId = null;
             document.querySelectorAll('.element').forEach(el => el.classList.remove('active'));
-            
-            // លាក់ Tools
             tools.style.opacity = "0";
             tools.style.pointerEvents = "none";
             tools.style.transform = "translate(-50%, -10px)";
-            
             refreshUI();
             const track = document.getElementById('keyframeTrack');
             if(track) track.innerHTML = '';
@@ -393,7 +469,7 @@
                 const div = document.createElement('div');
                 div.className = `p-3 rounded-xl border-2 cursor-pointer transition ${i === currentSceneIdx ? 'border-blue-500 bg-blue-50' : 'border-transparent bg-white shadow-sm'}`;
                 div.onclick = () => selectScene(i);
-                div.innerHTML = `<div class="flex justify-between font-bold text-[10px]"><span>SCENE ${i+1}</span><span>${s.duration}s</span></div>`;
+                div.innerHTML = `<div class="flex justify-between font-bold text-[10px]"><span>SCENE ${i+1}</span><span>${s.duration.toFixed(1)}s</span></div>`;
                 sList.appendChild(div);
             });
 
@@ -423,16 +499,8 @@
                 master.appendChild(seg);
                 cur += w;
             });
-            document.getElementById('totalTimeLabel').innerText = `Total: ${total}s`;
+            document.getElementById('totalTimeLabel').innerText = `Total: ${total.toFixed(1)}s`;
             document.getElementById('currentSceneLabel').innerText = `Scene: ${currentSceneIdx + 1}`;
-        }
-
-        function applyGlobalTime() {
-            const val = parseFloat(document.getElementById('globalDurationInput').value);
-            if(!val) return;
-            const per = val / scenes.length;
-            scenes.forEach(s => s.duration = per);
-            loadScene();
         }
 
         function formatTime(s) {
@@ -493,30 +561,6 @@
             });
         }
 
-        function togglePlay() {
-            if(isPlaying) stopPlay(); else startPlay();
-        }
-
-        function startPlay() {
-            isPlaying = true;
-            document.getElementById('previewPlayBtn').innerHTML = '<i class="fas fa-pause"></i>';
-            const start = performance.now() - (sceneTime * 1000);
-            const loop = (ts) => {
-                if(!isPlaying) return;
-                sceneTime = (ts - start) / 1000;
-                if(sceneTime >= scenes[currentSceneIdx].duration) { sceneTime = scenes[currentSceneIdx].duration; stopPlay(); }
-                updateFrame();
-                playReq = requestAnimationFrame(loop);
-            };
-            playReq = requestAnimationFrame(loop);
-        }
-
-        function stopPlay() {
-            isPlaying = false;
-            cancelAnimationFrame(playReq);
-            document.getElementById('previewPlayBtn').innerHTML = '<i class="fas fa-play"></i>';
-        }
-
         function resetKeyframes() {
             if(!selectedId) return;
             const data = scenes[currentSceneIdx].elements.find(e => e.id == selectedId);
@@ -531,6 +575,7 @@
         }
 
         window.onload = init;
+        window.onresize = updateCanvasSize;
     </script>
 </body>
 </html>
