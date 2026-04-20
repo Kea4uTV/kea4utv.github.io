@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motion Pro - Smart Selection</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@300;400;700&display=swap');
+        
+        body {
+            font-family: 'Kantumruy Pro', sans-serif;
+            background-color: #f1f5f9;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .canvas-container {
+            position: relative;
+            background-color: white;
+            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            margin: auto;
+            background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .element {
+            position: absolute;
+            cursor: move;
+            border: 2px solid transparent;
+            transition: border 0.2s;
+        }
+
+        /* បង្ហាញស៊ុមពេលដាក់ Mouse ពីលើ */
+        .element:hover { border: 2px solid rgba(59, 130, 246, 0.4); }
+
+        /* បង្ហាញស៊ុមដាច់ៗពេល Select */
+        .element.active { border: 2px dashed #3b82f6; z-index: 50 !important; }
+
+        .resizer {
+            width: 12px; height: 12px;
+            background: #3b82f6;
+            position: absolute; right: -6px; bottom: -6px;
+            cursor: nwse-resize; border-radius: 50%;
+            display: none;
+        }
+        .element.active .resizer { display: block; }
+
+        .master-timeline {
+            height: 12px; background: #e2e8f0;
+            position: relative; border-radius: 10px;
+            overflow: hidden; margin-top: 5px;
+        }
+        .scene-segment {
+            height: 100%; position: absolute;
+            border-right: 1px solid white; transition: all 0.3s;
+        }
+        .scene-segment.active { background-color: #3b82f6; }
+
+        .layer-item.active {
+            background-color: #eff6ff;
+            border-left: 4px solid #3b82f6;
+        }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-white border-b px-6 py-3 flex justify-between items-center shadow-sm z-50">
+        <div class="flex items-center gap-4">
+            <div class="bg-blue-600 p-2 rounded-lg text-white">
+                <i class="fas fa-mouse-pointer text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold text-slate-800 leading-tight">Motion Smart Select</h1>
+                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">រចនាចលនា និងគ្រប់គ្រងស្រទាប់</p>
+            </div>
+        </div>
+
+        <div class="flex-1 max-w-md mx-10">
+            <div id="masterTimeline" class="master-timeline">
+                <!-- Segments -->
+            </div>
+            <div class="flex justify-between text-[9px] font-bold text-slate-400 mt-1 uppercase">
+                <span id="totalTimeLabel">Total: 0s</span>
+                <span id="currentSceneLabel">Scene: 1</span>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button id="globalPlayBtn" class="bg-slate-900 hover:bg-black text-white px-6 py-2 rounded-xl font-bold text-sm flex items-center gap-2 transition-all">
+                <i class="fas fa-play"></i> PREVIEW ALL
+            </button>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+        <!-- Left Sidebar -->
+        <aside class="w-72 bg-white border-r flex flex-col shadow-sm">
+            <div class="p-4 border-b bg-slate-50">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="font-bold text-slate-700 text-[10px] uppercase tracking-widest">បញ្ជីក្រុម (Scenes)</h2>
+                    <button id="addScene" class="text-blue-600 hover:text-blue-800 text-sm"><i class="fas fa-plus-circle"></i></button>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-[9px] font-bold text-slate-400 uppercase">កំណត់វិនាទីសរុប</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="globalDurationInput" class="w-full bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-xs outline-none focus:border-blue-500" placeholder="Seconds">
+                        <button id="applyGlobalTime" class="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg text-[10px] font-bold">Apply</button>
+                    </div>
+                </div>
+            </div>
+            <div id="sceneList" class="flex-1 overflow-y-auto p-4 space-y-3">
+                <!-- Scenes -->
+            </div>
+        </aside>
+
+        <!-- Main Editor -->
+        <main class="flex-1 flex flex-col bg-slate-200 relative">
+            <div id="canvasWrapper" class="flex-1 p-8 flex items-center justify-center relative min-h-0">
+                <!-- Canvas នឹង Deselect ពេលចុចលើផ្ទៃទំនេរ -->
+                <div id="canvas" class="canvas-container shadow-2xl"></div>
+                
+                <!-- Floating Tools (នឹងបង្ហាញតែពេលមាន Selection) -->
+                <div id="elementTools" class="absolute top-6 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur px-5 py-3 rounded-2xl shadow-xl border border-white flex items-center gap-6 opacity-0 pointer-events-none transition-all duration-300 transform translate-y-[-10px] z-[60]">
+                    <div class="flex flex-col">
+                        <span class="text-[10px] font-black text-blue-600 uppercase">Layer Options</span>
+                        <div class="flex items-center gap-2 mt-1">
+                            <button id="addKeyframe" class="px-4 py-2 bg-blue-600 text-white rounded-xl text-[11px] font-bold hover:bg-blue-700 transition">
+                                <i class="fas fa-plus mr-1"></i> ADD POINT
+                            </button>
+                            <button id="clearKeyframes" class="px-3 py-2 bg-slate-100 text-slate-600 rounded-xl text-[11px] font-bold hover:bg-red-50 hover:text-red-500">
+                                <i class="fas fa-sync"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="h-8 w-px bg-slate-200"></div>
+                    <button id="deleteElement" class="w-10 h-10 text-red-400 hover:bg-red-50 hover:text-red-600 rounded-xl flex items-center justify-center"><i class="fas fa-trash-alt"></i></button>
+                </div>
+            </div>
+
+            <!-- Footer Timeline -->
+            <div class="bg-white border-t p-6 h-56 shadow-2xl flex flex-col gap-4">
+                <div class="flex justify-between items-end">
+                    <div class="flex items-center gap-6">
+                        <button id="previewPlayBtn" class="w-12 h-12 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg hover:bg-blue-700 transition active:scale-90">
+                            <i class="fas fa-play"></i>
+                        </button>
+                        <div class="flex flex-col">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase mb-1">វិនាទីក្រុមនេះ</span>
+                            <div class="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border">
+                                <input type="number" id="sceneDurationInput" value="5" class="w-10 bg-transparent text-center font-bold text-blue-600 outline-none text-sm">
+                            </div>
+                        </div>
+                    </div>
+                    <div id="sceneTimeDisplay" class="text-3xl font-mono text-slate-800 font-black">00:00.00</div>
+                </div>
+
+                <div class="relative flex-1 bg-slate-50 rounded-xl overflow-hidden border">
+                    <div id="sceneTimelineBar" class="h-full relative cursor-pointer">
+                        <div id="sceneTimelineProgress" class="absolute top-0 left-0 h-full bg-blue-500/10 border-r-2 border-blue-600 z-10 pointer-events-none"></div>
+                        <div id="keyframeTrack" class="absolute inset-0 pointer-events-none"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Sidebar -->
+        <aside class="w-72 bg-white border-l flex flex-col">
+            <div class="p-4 border-b bg-slate-50">
+                <h2 class="font-bold text-slate-700 text-[10px] uppercase tracking-widest mb-4">បញ្ចូលមេឌៀ</h2>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="document.getElementById('fileIn').click()" class="p-3 border rounded-xl flex flex-col items-center gap-1 hover:bg-white transition">
+                        <i class="fas fa-plus-circle text-blue-500"></i>
+                        <span class="text-[9px] font-bold">OVERLAY</span>
+                    </button>
+                    <button onclick="document.getElementById('bgIn').click()" class="p-3 border rounded-xl flex flex-col items-center gap-1 hover:bg-white transition">
+                        <i class="fas fa-image text-slate-500"></i>
+                        <span class="text-[9px] font-bold">BACKGROUND</span>
+                    </button>
+                </div>
+                <button onclick="document.getElementById('audioIn').click()" class="w-full mt-2 py-2 border border-dashed border-blue-200 text-blue-600 text-[9px] font-bold rounded-xl hover:bg-blue-50">
+                    <i class="fas fa-music mr-1"></i> ADD SCENE MP3
+                </button>
+            </div>
+            <div id="layerList" class="flex-1 overflow-y-auto p-4 space-y-2">
+                <!-- Layer items -->
+            </div>
+        </aside>
+    </div>
+
+    <!-- Hidden Files -->
+    <input type="file" id="fileIn" accept="image/*" class="hidden" onchange="uploadAsset(event, false)">
+    <input type="file" id="bgIn" accept="image/*" class="hidden" onchange="uploadAsset(event, true)">
+    <input type="file" id="audioIn" accept="audio/mp3" class="hidden" onchange="uploadAudio(event)">
+
+    <script>
+        let scenes = [];
+        let currentSceneIdx = 0;
+        let selectedId = null;
+        let sceneTime = 0;
+        let isPlaying = false;
+        let playReq = null;
+
+        const canvas = document.getElementById('canvas');
+        const tools = document.getElementById('elementTools');
+
+        function init() {
+            addScene();
+            setupEvents();
+            updateCanvasSize();
+        }
+
+        function setupEvents() {
+            document.getElementById('addScene').onclick = addScene;
+            document.getElementById('applyGlobalTime').onclick = applyGlobalTime;
+            document.getElementById('previewPlayBtn').onclick = togglePlay;
+            document.getElementById('sceneDurationInput').onchange = (e) => {
+                scenes[currentSceneIdx].duration = parseFloat(e.target.value) || 5;
+                refreshMasterTimeline();
+            };
+
+            // ឈប់ Select នៅពេលចុចលើផ្ទៃទំនេរនៃ Canvas ឬ Canvas Wrapper
+            const deselectHandler = (e) => {
+                if (e.target.id === 'canvas' || e.target.id === 'canvasWrapper') {
+                    deselectElement();
+                }
+            };
+            document.getElementById('canvas').onmousedown = deselectHandler;
+            document.getElementById('canvasWrapper').onmousedown = deselectHandler;
+
+            document.getElementById('addKeyframe').onclick = addKeyframe;
+            document.getElementById('clearKeyframes').onclick = resetKeyframes;
+            document.getElementById('deleteElement').onclick = deleteElement;
+
+            document.getElementById('sceneTimelineBar').onmousedown = (e) => {
+                if(isPlaying) stopPlay();
+                const rect = e.currentTarget.getBoundingClientRect();
+                const update = (ev) => {
+                    let p = Math.max(0, Math.min(1, (ev.clientX - rect.left) / rect.width));
+                    sceneTime = p * scenes[currentSceneIdx].duration;
+                    updateFrame();
+                };
+                update(e);
+                window.onmousemove = update;
+                window.onmouseup = () => window.onmousemove = null;
+            };
+        }
+
+        function addScene() {
+            scenes.push({ id: Date.now(), duration: 5, elements: [], audio: null, audioName: '' });
+            selectScene(scenes.length - 1);
+        }
+
+        function selectScene(idx) {
+            currentSceneIdx = idx;
+            sceneTime = 0;
+            loadScene();
+        }
+
+        function loadScene() {
+            canvas.innerHTML = '';
+            deselectElement();
+            const scene = scenes[currentSceneIdx];
+            document.getElementById('sceneDurationInput').value = scene.duration;
+            scene.elements.forEach(data => canvas.appendChild(createElementDOM(data)));
+            refreshUI();
+            updateFrame();
+            refreshMasterTimeline();
+        }
+
+        function createElementDOM(data) {
+            const div = document.createElement('div');
+            div.className = 'element';
+            div.dataset.id = data.id;
+            div.style.zIndex = data.z;
+
+            const img = document.createElement('img');
+            img.src = data.src;
+            img.className = 'w-full h-full ' + (data.isBg ? 'object-cover' : 'object-contain');
+            img.draggable = false;
+            div.appendChild(img);
+
+            const resizer = document.createElement('div');
+            resizer.className = 'resizer';
+            div.appendChild(resizer);
+
+            div.onmousedown = (e) => {
+                e.stopPropagation(); // ការពារកុំអោយ Deselect ពេលចុចចំរូប
+                if (e.target.className === 'resizer' || isPlaying) return;
+                selectElement(data.id);
+                startDrag(e, div, data);
+            };
+
+            resizer.onmousedown = (e) => {
+                e.stopPropagation();
+                startResize(e, div, data);
+            };
+
+            return div;
+        }
+
+        function selectElement(id) {
+            selectedId = id;
+            document.querySelectorAll('.element').forEach(el => el.classList.toggle('active', el.dataset.id == id));
+            
+            // បង្ហាញ Tools បែបចលនា
+            tools.style.opacity = "1";
+            tools.style.pointerEvents = "auto";
+            tools.style.transform = "translate(-50%, 0)";
+            
+            refreshUI();
+            renderKeyframes();
+        }
+
+        function deselectElement() {
+            selectedId = null;
+            document.querySelectorAll('.element').forEach(el => el.classList.remove('active'));
+            
+            // លាក់ Tools
+            tools.style.opacity = "0";
+            tools.style.pointerEvents = "none";
+            tools.style.transform = "translate(-50%, -10px)";
+            
+            refreshUI();
+            const track = document.getElementById('keyframeTrack');
+            if(track) track.innerHTML = '';
+        }
+
+        function updateFrame() {
+            const scene = scenes[currentSceneIdx];
+            const p = (sceneTime / scene.duration) * 100;
+            document.getElementById('sceneTimelineProgress').style.width = p + '%';
+            document.getElementById('sceneTimeDisplay').innerText = formatTime(sceneTime);
+
+            document.querySelectorAll('.element').forEach(el => {
+                const data = scene.elements.find(d => d.id == el.dataset.id);
+                if (data) {
+                    const state = getInterpolatedState(data, sceneTime);
+                    const cw = canvas.offsetWidth, ch = canvas.offsetHeight;
+                    el.style.left = (state.x * cw) + 'px';
+                    el.style.top = (state.y * ch) + 'px';
+                    el.style.width = (state.w * cw) + 'px';
+                    el.style.height = (state.h * ch) + 'px';
+                }
+            });
+        }
+
+        function getInterpolatedState(data, time) {
+            const kfs = data.keyframes;
+            if (kfs.length === 0) return { x:0, y:0, w:0.5, h:0.5 };
+            if (time <= kfs[0].time) return kfs[0];
+            if (time >= kfs[kfs.length - 1].time) return kfs[kfs.length - 1];
+            for (let i = 0; i < kfs.length - 1; i++) {
+                const s = kfs[i], e = kfs[i+1];
+                if (time >= s.time && time <= e.time) {
+                    const p = (time - s.time) / (e.time - s.time);
+                    return {
+                        x: s.x + (e.x - s.x) * p, y: s.y + (e.y - s.y) * p,
+                        w: s.w + (e.w - s.w) * p, h: s.h + (e.h - s.h) * p
+                    };
+                }
+            }
+        }
+
+        function uploadAsset(e, isBg) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const scene = scenes[currentSceneIdx];
+                if (isBg) scene.elements = scene.elements.filter(el => !el.isBg);
+                const data = {
+                    id: Date.now(), src: ev.target.result, isBg, z: isBg ? 0 : scene.elements.length + 1,
+                    keyframes: [{ time: 0, x: isBg?0:0.3, y: isBg?0:0.3, w: isBg?1:0.4, h: isBg?1:0.4 }]
+                };
+                scene.elements.push(data);
+                loadScene();
+                selectElement(data.id);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function refreshUI() {
+            const sList = document.getElementById('sceneList');
+            sList.innerHTML = '';
+            scenes.forEach((s, i) => {
+                const div = document.createElement('div');
+                div.className = `p-3 rounded-xl border-2 cursor-pointer transition ${i === currentSceneIdx ? 'border-blue-500 bg-blue-50' : 'border-transparent bg-white shadow-sm'}`;
+                div.onclick = () => selectScene(i);
+                div.innerHTML = `<div class="flex justify-between font-bold text-[10px]"><span>SCENE ${i+1}</span><span>${s.duration}s</span></div>`;
+                sList.appendChild(div);
+            });
+
+            const lList = document.getElementById('layerList');
+            lList.innerHTML = '';
+            scenes[currentSceneIdx].elements.slice().reverse().forEach(el => {
+                const div = document.createElement('div');
+                div.className = `layer-item flex items-center gap-2 p-2 border rounded-lg cursor-pointer ${selectedId == el.id ? 'active' : ''}`;
+                div.onclick = (e) => { e.stopPropagation(); selectElement(el.id); };
+                div.innerHTML = `<img src="${el.src}" class="w-8 h-8 rounded object-cover"><span class="text-[10px] font-bold">${el.isBg ? 'BG' : 'Overlay'}</span>`;
+                lList.appendChild(div);
+            });
+        }
+
+        function refreshMasterTimeline() {
+            const master = document.getElementById('masterTimeline');
+            master.innerHTML = '';
+            let total = 0;
+            scenes.forEach(s => total += s.duration);
+            let cur = 0;
+            scenes.forEach((s, i) => {
+                const w = (s.duration / total) * 100;
+                const seg = document.createElement('div');
+                seg.className = `scene-segment ${i === currentSceneIdx ? 'active' : ''}`;
+                seg.style.left = cur + '%';
+                seg.style.width = w + '%';
+                master.appendChild(seg);
+                cur += w;
+            });
+            document.getElementById('totalTimeLabel').innerText = `Total: ${total}s`;
+            document.getElementById('currentSceneLabel').innerText = `Scene: ${currentSceneIdx + 1}`;
+        }
+
+        function applyGlobalTime() {
+            const val = parseFloat(document.getElementById('globalDurationInput').value);
+            if(!val) return;
+            const per = val / scenes.length;
+            scenes.forEach(s => s.duration = per);
+            loadScene();
+        }
+
+        function formatTime(s) {
+            const sec = Math.floor(s);
+            const ms = Math.floor((s % 1) * 100);
+            return `${sec.toString().padStart(2,'0')}.${ms.toString().padStart(2,'0')}`;
+        }
+
+        function updateCanvasSize() {
+            const p = canvas.parentElement;
+            const s = Math.min((p.clientWidth-40)/1280, (p.clientHeight-40)/720);
+            canvas.style.width = (1280*s)+'px';
+            canvas.style.height = (720*s)+'px';
+            updateFrame();
+        }
+
+        function startDrag(e, el, data) {
+            let sx = e.clientX - el.offsetLeft, sy = e.clientY - el.offsetTop;
+            window.onmousemove = (ev) => {
+                el.style.left = (ev.clientX - sx) + 'px';
+                el.style.top = (ev.clientY - sy) + 'px';
+            };
+            window.onmouseup = () => window.onmousemove = window.onmouseup = null;
+        }
+
+        function startResize(e, el, data) {
+            let sw = el.offsetWidth, sh = el.offsetHeight, sx = e.clientX, sy = e.clientY;
+            window.onmousemove = (ev) => {
+                el.style.width = Math.max(20, sw + (ev.clientX - sx)) + 'px';
+                el.style.height = Math.max(20, sh + (ev.clientY - sy)) + 'px';
+            };
+            window.onmouseup = () => window.onmousemove = window.onmouseup = null;
+        }
+
+        function addKeyframe() {
+            if(!selectedId) return;
+            const data = scenes[currentSceneIdx].elements.find(e => e.id == selectedId);
+            const dom = document.querySelector(`.element[data-id="${selectedId}"]`);
+            data.keyframes = data.keyframes.filter(k => Math.abs(k.time - sceneTime) > 0.1);
+            data.keyframes.push({
+                time: sceneTime, x: dom.offsetLeft / canvas.offsetWidth, y: dom.offsetTop / canvas.offsetHeight,
+                w: dom.offsetWidth / canvas.offsetWidth, h: dom.offsetHeight / canvas.offsetHeight
+            });
+            data.keyframes.sort((a,b) => a.time - b.time);
+            renderKeyframes();
+        }
+
+        function renderKeyframes() {
+            const track = document.getElementById('keyframeTrack');
+            track.innerHTML = '';
+            if(!selectedId) return;
+            const data = scenes[currentSceneIdx].elements.find(e => e.id == selectedId);
+            data.keyframes.forEach(k => {
+                const m = document.createElement('div');
+                m.className = 'absolute top-1/2 -translate-y-1/2 w-2 h-2 bg-red-500 rotate-45 border border-white';
+                m.style.left = (k.time / scenes[currentSceneIdx].duration * 100) + '%';
+                track.appendChild(m);
+            });
+        }
+
+        function togglePlay() {
+            if(isPlaying) stopPlay(); else startPlay();
+        }
+
+        function startPlay() {
+            isPlaying = true;
+            document.getElementById('previewPlayBtn').innerHTML = '<i class="fas fa-pause"></i>';
+            const start = performance.now() - (sceneTime * 1000);
+            const loop = (ts) => {
+                if(!isPlaying) return;
+                sceneTime = (ts - start) / 1000;
+                if(sceneTime >= scenes[currentSceneIdx].duration) { sceneTime = scenes[currentSceneIdx].duration; stopPlay(); }
+                updateFrame();
+                playReq = requestAnimationFrame(loop);
+            };
+            playReq = requestAnimationFrame(loop);
+        }
+
+        function stopPlay() {
+            isPlaying = false;
+            cancelAnimationFrame(playReq);
+            document.getElementById('previewPlayBtn').innerHTML = '<i class="fas fa-play"></i>';
+        }
+
+        function resetKeyframes() {
+            if(!selectedId) return;
+            const data = scenes[currentSceneIdx].elements.find(e => e.id == selectedId);
+            data.keyframes = [data.keyframes[0]];
+            renderKeyframes(); updateFrame();
+        }
+
+        function deleteElement() {
+            if(!selectedId) return;
+            scenes[currentSceneIdx].elements = scenes[currentSceneIdx].elements.filter(e => e.id != selectedId);
+            loadScene();
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
