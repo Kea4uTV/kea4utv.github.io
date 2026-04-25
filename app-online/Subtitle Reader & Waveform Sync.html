@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ឧបករណ៍បញ្ចូលសម្លេង និងតម្រូវល្បឿន SRT ជាមួយ Waveform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:ital,wght@0,100..700;1,100..700&display=swap');
+        body {
+            font-family: 'Kantumruy Pro', sans-serif;
+            background-color: #0f172a;
+            color: #f1f5f9;
+        }
+        .timeline-container {
+            background: #111827;
+            border-top: 1px solid #334155;
+            height: 320px;
+            overflow-x: auto;
+            position: relative;
+            scroll-behavior: auto;
+        }
+        #waveformCanvas {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            height: 120px;
+            pointer-events: none;
+            opacity: 0.5;
+        }
+        .timeline-segment {
+            position: absolute;
+            height: 120px;
+            top: 40px;
+            background: rgba(59, 130, 246, 0.4);
+            border: 1px solid #60a5fa;
+            border-radius: 8px;
+            color: white;
+            font-size: 11px;
+            padding: 8px;
+            cursor: pointer;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            transition: border 0.2s, background 0.2s;
+            backdrop-filter: blur(2px);
+        }
+        .timeline-segment.has-voice {
+            background: rgba(16, 185, 129, 0.4);
+            border-color: #34d399;
+        }
+        .timeline-segment.active {
+            border: 2px solid #fbbf24;
+            background: rgba(251, 191, 36, 0.2);
+            box-shadow: 0 0 15px rgba(251, 191, 36, 0.3);
+            z-index: 20;
+        }
+        .play-head {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #fbbf24;
+            z-index: 50;
+            pointer-events: none;
+        }
+        .play-head::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -5px;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 10px solid #fbbf24;
+        }
+        .action-btns {
+            display: flex;
+            gap: 4px;
+            margin-top: 4px;
+        }
+        .mini-btn {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            width: 26px;
+            height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            transition: all 0.2s;
+        }
+        .mini-btn:hover { background: #334155; transform: scale(1.1); }
+        .mini-btn.recording {
+            background: #ef4444;
+            animation: pulse 1s infinite;
+        }
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+        ::-webkit-scrollbar { height: 10px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 5px; border: 2px solid #0f172a; }
+    </style>
+</head>
+<body class="p-4 md:p-6">
+    <div id="toast" class="toast">បានចម្លងអត្ថបទរួចរាល់!</div>
+
+    <div class="max-w-7xl mx-auto space-y-6">
+        <!-- Header -->
+        <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 flex flex-wrap justify-between items-center gap-4 shadow-2xl">
+            <div class="flex items-center gap-4">
+                <div class="bg-indigo-600 p-3 rounded-xl text-2xl shadow-lg">📊</div>
+                <div>
+                    <h1 class="text-xl font-bold">Timeline Waveform & Sync</h1>
+                    <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Visual Audio Synchronization</p>
+                </div>
+            </div>
+            
+            <div class="flex flex-wrap gap-2">
+                <input type="file" id="mediaUpload" accept="video/*,audio/*" class="hidden">
+                <button onclick="document.getElementById('mediaUpload').click()" class="bg-slate-700 hover:bg-slate-600 px-5 py-2.5 rounded-xl text-sm border border-slate-600 transition flex items-center gap-2 font-bold">🎞️ <span>ដាក់វីដេអូ</span></button>
+                
+                <input type="file" id="srtUpload" accept=".srt" class="hidden">
+                <button onclick="document.getElementById('srtUpload').click()" class="bg-indigo-600 hover:bg-indigo-500 px-5 py-2.5 rounded-xl text-sm transition shadow-lg flex items-center gap-2 font-bold">📝 <span>បញ្ចូល SRT</span></button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div class="lg:col-span-3 space-y-4">
+                <!-- Video Player Container -->
+                <div class="bg-black rounded-3xl overflow-hidden aspect-video relative shadow-2xl border border-slate-800 group">
+                    <video id="mainPlayer" class="w-full h-full cursor-pointer"></video>
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="absolute bottom-12 left-0 right-0 text-center px-6 pointer-events-none">
+                        <p id="displayText" class="text-white text-2xl md:text-5xl font-bold [text-shadow:_0_4px_12px_rgba(0,0,0,1)] leading-tight"></p>
+                    </div>
+                </div>
+                
+                <!-- Enhanced Timeline -->
+                <div class="bg-slate-800 rounded-2xl overflow-hidden border border-slate-700 shadow-xl">
+                    <div class="bg-slate-900/80 px-4 py-3 flex justify-between items-center text-[11px] font-bold text-slate-400 border-b border-slate-700">
+                        <div class="flex items-center gap-4">
+                            <span class="flex items-center gap-1"><span class="w-3 h-3 bg-blue-500 rounded-sm"></span> វីដេអូ</span>
+                            <span class="flex items-center gap-1"><span class="w-3 h-3 bg-emerald-500 rounded-sm"></span> សម្លេងបញ្ចូល</span>
+                        </div>
+                        <span id="timeDisplay" class="font-mono text-indigo-400 text-base bg-black/40 px-3 py-1 rounded-lg">00:00 / 00:00</span>
+                    </div>
+                    <div class="timeline-container" id="timeline">
+                        <!-- Waveform Canvas -->
+                        <canvas id="waveformCanvas"></canvas>
+                        <!-- Playhead -->
+                        <div class="play-head" id="playHead"></div>
+                        <!-- Segments -->
+                        <div id="segmentsWrapper" class="relative h-full pt-10 px-[50%]"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Side Panel -->
+            <div class="space-y-4">
+                <div class="bg-slate-800 p-6 rounded-3xl border border-slate-700 shadow-xl">
+                    <h3 class="text-xs font-bold mb-5 text-indigo-400 uppercase tracking-wider">ការកំណត់ការចាក់</h3>
+                    
+                    <div class="space-y-6">
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center">
+                                <label class="text-[10px] text-slate-400 uppercase font-bold">Ducking សម្លេងដើម</label>
+                                <span id="duckingVal" class="text-xs font-mono text-orange-400">20%</span>
+                            </div>
+                            <input type="range" id="duckingLevel" min="0" max="1" step="0.05" value="0.2" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500">
+                        </div>
+
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center">
+                                <label class="text-[10px] text-slate-400 uppercase font-bold">ល្បឿនរួម</label>
+                                <span id="playbackVal" class="text-xs font-mono text-blue-400">1.0x</span>
+                            </div>
+                            <input type="range" id="playbackRate" min="0.5" max="2.0" step="0.1" value="1" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                        </div>
+
+                        <div class="pt-4">
+                            <button id="playBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-2xl font-bold text-lg shadow-lg transition-all active:scale-95 flex items-center justify-center gap-3">
+                                <span id="playIcon">▶️</span> <span id="playText">PLAY</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-indigo-900/30 border border-indigo-500/30 p-5 rounded-2xl">
+                    <h4 class="text-[11px] font-bold text-indigo-400 mb-3 uppercase tracking-tighter">របៀបប្រើប្រាស់៖</h4>
+                    <ul class="text-[10px] text-slate-300 space-y-2">
+                        <li class="flex items-start gap-2"><span>🖱️</span> <span>ចុចលើ Timeline ដើម្បីទៅកាន់វិនាទីដែលចង់បាន</span></li>
+                        <li class="flex items-start gap-2"><span>📊</span> <span>មើលរលកសម្លេងដើម្បីដឹងពីកន្លែងត្រូវបញ្ចូលសម្លេង</span></li>
+                        <li class="flex items-start gap-2"><span>⚡</span> <span>សម្លេងបញ្ចូលនឹងរត់ល្បឿនអូតូឱ្យត្រូវនឹងអត្ថបទ</span></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <input type="file" id="individualAudioUpload" accept="audio/*" class="hidden">
+
+    <script>
+        const mainPlayer = document.getElementById('mainPlayer');
+        const displayText = document.getElementById('displayText');
+        const segmentsWrapper = document.getElementById('segmentsWrapper');
+        const playHead = document.getElementById('playHead');
+        const timeline = document.getElementById('timeline');
+        const timeDisplay = document.getElementById('timeDisplay');
+        const playbackRate = document.getElementById('playbackRate');
+        const duckingLevel = document.getElementById('duckingLevel');
+        const toast = document.getElementById('toast');
+        const waveformCanvas = document.getElementById('waveformCanvas');
+        const playBtn = document.getElementById('playBtn');
+        
+        let subtitles = [];
+        let synth = window.speechSynthesis;
+        let lastIdx = -1;
+        const pixelsPerSecond = 100;
+        let audioContext, audioBuffer, waveformData = [];
+
+        // Audio Storage
+        let mediaRecorder;
+        let audioChunks = [];
+        let recordedAudios = {}; 
+        let currentTargetIndex = -1;
+
+        function showToast(msg) {
+            toast.innerText = msg;
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 2000);
+        }
+
+        // --- Waveform Generation ---
+        async function generateWaveform(file) {
+            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const arrayBuffer = await file.arrayBuffer();
+            const buffer = await audioContext.decodeAudioData(arrayBuffer);
+            audioBuffer = buffer;
+            
+            const rawData = buffer.getChannelData(0); 
+            const samples = Math.floor(buffer.duration * 20); // 20 samples per second
+            const blockSize = Math.floor(rawData.length / samples);
+            waveformData = [];
+            
+            for (let i = 0; i < samples; i++) {
+                let sum = 0;
+                for (let j = 0; j < blockSize; j++) {
+                    sum += Math.abs(rawData[i * blockSize + j]);
+                }
+                waveformData.push(sum / blockSize);
+            }
+            drawWaveform();
+        }
+
+        function drawWaveform() {
+            const ctx = waveformCanvas.getContext('2d');
+            const totalWidth = mainPlayer.duration * pixelsPerSecond;
+            waveformCanvas.width = totalWidth;
+            waveformCanvas.style.width = totalWidth + 'px';
+            waveformCanvas.height = 120;
+            
+            ctx.clearRect(0, 0, waveformCanvas.width, waveformCanvas.height);
+            ctx.fillStyle = '#6366f1';
+            
+            const barWidth = 3;
+            const gap = 2;
+            const maxVal = Math.max(...waveformData) || 1;
+            
+            waveformData.forEach((val, i) => {
+                const h = (val / maxVal) * 100;
+                const x = (i / waveformData.length) * totalWidth;
+                ctx.fillRect(x, 60 - h/2, barWidth, h);
+            });
+        }
+
+        // --- Audio Handlers ---
+        async function startRecording(index, btn) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    recordedAudios[index] = URL.createObjectURL(audioBlob);
+                    updateSegmentStatus(index);
+                    btn.classList.remove('recording');
+                    btn.innerHTML = '🎤';
+                    showToast("បានរក្សាទុកការថត!");
+                };
+                mediaRecorder.start();
+                btn.classList.add('recording');
+                btn.innerHTML = '🛑';
+            } catch (err) { alert("សូមអនុញ្ញាតប្រើ Microphone!"); }
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            }
+        }
+
+        function triggerUpload(index) {
+            currentTargetIndex = index;
+            document.getElementById('individualAudioUpload').click();
+        }
+
+        document.getElementById('individualAudioUpload').addEventListener('change', e => {
+            const file = e.target.files[0];
+            if (file && currentTargetIndex !== -1) {
+                recordedAudios[currentTargetIndex] = URL.createObjectURL(file);
+                updateSegmentStatus(currentTargetIndex);
+                showToast("បានបញ្ចូលសម្លេង!");
+                currentTargetIndex = -1;
+            }
+        });
+
+        function updateSegmentStatus(index) {
+            const seg = document.getElementById(`seg-${index}`);
+            if (seg) seg.classList.add('has-voice');
+        }
+
+        // --- SRT Logic ---
+        document.getElementById('mediaUpload').addEventListener('change', e => {
+            const file = e.target.files[0];
+            if (file) {
+                mainPlayer.src = URL.createObjectURL(file);
+                generateWaveform(file);
+            }
+        });
+
+        document.getElementById('srtUpload').addEventListener('change', e => {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = ev => {
+                subtitles = parseSRT(ev.target.result);
+                renderTimeline();
+            };
+            reader.readAsText(file);
+        });
+
+        function parseSRT(data) {
+            const regex = /(\d+)\r?\n(\d{2}:\d{2}:\d{2}[.,]\d{3}) --> (\d{2}:\d{2}:\d{2}[.,]\d{3})\r?\n([\s\S]*?)(?=\r?\n\r?\n|\r?\n$|$)/g;
+            let matches;
+            const subs = [];
+            while ((matches = regex.exec(data)) !== null) {
+                subs.push({
+                    start: timeToSeconds(matches[2].replace(',', '.')),
+                    end: timeToSeconds(matches[3].replace(',', '.')),
+                    text: matches[4].trim()
+                });
+            }
+            return subs;
+        }
+
+        function timeToSeconds(t) {
+            const p = t.split(':');
+            return parseInt(p[0]) * 3600 + parseInt(p[1]) * 60 + parseFloat(p[2]);
+        }
+
+        function renderTimeline() {
+            segmentsWrapper.innerHTML = '';
+            subtitles.forEach((sub, i) => {
+                const div = document.createElement('div');
+                div.className = 'timeline-segment';
+                div.id = `seg-${i}`;
+                div.style.left = `calc(50% + ${sub.start * pixelsPerSecond}px)`;
+                div.style.width = ((sub.end - sub.start) * pixelsPerSecond) + 'px';
+                
+                div.innerHTML = `
+                    <span class="truncate w-full text-center font-bold px-1">${sub.text}</span>
+                    <div class="action-btns">
+                        <button class="mini-btn" onclick="handleRecordClick(${i}, event)">🎤</button>
+                        <button class="mini-btn" onclick="handleUploadClick(${i}, event)">📁</button>
+                        <button class="mini-btn" onclick="handleCopyClick('${sub.text.replace(/'/g, "\\'")}', event)">📋</button>
+                    </div>
+                `;
+                
+                div.onclick = (e) => {
+                    if (e.target === div || e.target.tagName === 'SPAN') {
+                        mainPlayer.currentTime = sub.start;
+                    }
+                };
+                segmentsWrapper.appendChild(div);
+            });
+            if (mainPlayer.duration) drawWaveform();
+        }
+
+        function handleRecordClick(index, e) { e.stopPropagation(); const btn = e.currentTarget; if (btn.classList.contains('recording')) stopRecording(); else startRecording(index, btn); }
+        function handleUploadClick(index, e) { e.stopPropagation(); triggerUpload(index); }
+        function handleCopyClick(text, e) { e.stopPropagation(); const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t); showToast("ចម្លងរួច!"); }
+
+        // --- Navigation Logic ---
+        timeline.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.mini-btn')) return;
+            const rect = timeline.getBoundingClientRect();
+            const clickX = e.clientX - rect.left + timeline.scrollLeft;
+            const centerOffset = rect.width / 2;
+            const targetTime = (clickX - centerOffset) / pixelsPerSecond;
+            if (targetTime >= 0 && targetTime <= mainPlayer.duration) {
+                mainPlayer.currentTime = targetTime;
+            }
+        });
+
+        // --- Core Sync Engine ---
+        mainPlayer.ontimeupdate = () => {
+            const cur = mainPlayer.currentTime;
+            const currentX = cur * pixelsPerSecond;
+            playHead.style.left = `calc(50% + ${currentX}px)`;
+            timeline.scrollLeft = currentX;
+            timeDisplay.innerText = `${formatTime(cur)} / ${formatTime(mainPlayer.duration || 0)}`;
+
+            const idx = subtitles.findIndex(s => cur >= s.start && cur <= s.end);
+            if (idx !== -1 && idx !== lastIdx) {
+                lastIdx = idx;
+                const sub = subtitles[idx];
+                displayText.innerText = sub.text;
+                document.querySelectorAll('.timeline-segment').forEach(s => s.classList.remove('active'));
+                document.getElementById(`seg-${idx}`)?.classList.add('active');
+                triggerAutoSyncVoice(idx, sub);
+            } else if (idx === -1 && lastIdx !== -1) {
+                displayText.innerText = "";
+                mainPlayer.volume = 1.0;
+                lastIdx = -1;
+            }
+        };
+
+        async function triggerAutoSyncVoice(index, sub) {
+            const srtDuration = sub.end - sub.start;
+            if (recordedAudios[index]) {
+                const audio = new Audio(recordedAudios[index]);
+                mainPlayer.volume = parseFloat(duckingLevel.value);
+                audio.addEventListener('loadedmetadata', () => {
+                    const targetRate = audio.duration / srtDuration;
+                    audio.playbackRate = Math.max(0.5, Math.min(3.0, targetRate));
+                    audio.play();
+                });
+                audio.onended = () => { if(lastIdx === -1) mainPlayer.volume = 1.0; };
+            } else {
+                synth.cancel();
+                const utter = new SpeechSynthesisUtterance(sub.text);
+                utter.lang = 'km-KH';
+                utter.rate = Math.max(0.8, Math.min(1.8, (sub.text.length / srtDuration) / 10));
+                mainPlayer.volume = parseFloat(duckingLevel.value);
+                synth.speak(utter);
+                utter.onend = () => { if(lastIdx === -1) mainPlayer.volume = 1.0; };
+            }
+        }
+
+        function formatTime(s) {
+            const mins = Math.floor(s / 60);
+            const secs = Math.floor(s % 60);
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        playbackRate.oninput = () => {
+            mainPlayer.playbackRate = playbackRate.value;
+            document.getElementById('playbackVal').innerText = playbackRate.value + 'x';
+        };
+
+        duckingLevel.oninput = () => {
+            document.getElementById('duckingVal').innerText = Math.round(duckingLevel.value * 100) + '%';
+        };
+
+        playBtn.onclick = () => {
+            if (mainPlayer.paused) {
+                mainPlayer.play();
+                document.getElementById('playIcon').innerText = '⏸️';
+                document.getElementById('playText').innerText = 'PAUSE';
+            } else {
+                mainPlayer.pause();
+                document.getElementById('playIcon').innerText = '▶️';
+                document.getElementById('playText').innerText = 'PLAY';
+            }
+        };
+
+        mainPlayer.onplay = () => { document.getElementById('playIcon').innerText = '⏸️'; document.getElementById('playText').innerText = 'PAUSE'; };
+        mainPlayer.onpause = () => { document.getElementById('playIcon').innerText = '▶️'; document.getElementById('playText').innerText = 'PLAY'; };
+    </script>
+</body>
+</html>
