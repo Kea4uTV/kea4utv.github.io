@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Ducking & Pro Enhancement - ឧបករណ៍កាត់តសម្លេងកម្រិតខ្ពស់</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@300;400;700&display=swap');
+        body {
+            font-family: 'Kantumruy Pro', sans-serif;
+            background-color: #f1f5f9;
+        }
+        .canvas-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.05);
+        }
+        .range-slider {
+            position: relative;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            margin: 15px 0;
+        }
+        .range-slider input {
+            position: absolute;
+            width: 100%;
+            pointer-events: none;
+            appearance: none;
+            background: none;
+            outline: none;
+        }
+        .range-slider input::-webkit-slider-thumb {
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4f46e5;
+            pointer-events: auto;
+            appearance: none;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        .tool-card {
+            background: #ffffff;
+            border: 1px solid #f1f5f9;
+            border-radius: 14px;
+            padding: 12px;
+            transition: all 0.2s;
+        }
+        .tool-card:hover { border-color: #cbd5e1; }
+        .label-style {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        input[type="range"] { accent-color: #4f46e5; }
+    </style>
+</head>
+<body class="p-4 md:p-6 lg:p-10 text-slate-800">
+
+    <div class="max-w-6xl mx-auto">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-slate-800 mb-3">ឧបករណ៍ផលិតសម្លេង Vlog & Podcast អាជីព</h1>
+            <p class="text-slate-500 max-w-2xl mx-auto">គ្រប់គ្រងកម្រិតសម្លេង កាត់ខ្យល់ និងបញ្ចុះភ្លេងស្វ័យប្រវត្តិក្នុងកន្លែងតែមួយ</p>
+        </header>
+
+        <!-- Live Preview / Control Bar -->
+        <div class="canvas-container p-4 mb-8 sticky top-4 z-50 border-2 border-indigo-100 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <button id="playPreviewBtn" class="bg-emerald-500 hover:bg-emerald-600 text-white p-3 rounded-full shadow-lg transition disabled:opacity-30">
+                    <svg id="playIcon" class="w-7 h-7" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11v11.78a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path></svg>
+                    <svg id="pauseIcon" class="w-7 h-7 hidden" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                </button>
+                <div>
+                    <div class="text-xs font-bold text-slate-400 uppercase">Live Preview Mixer</div>
+                    <div id="currentTime" class="text-xl font-mono font-bold text-indigo-600">00:00.0</div>
+                </div>
+            </div>
+            
+            <div class="flex-1 max-w-md hidden md:block">
+                <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div id="progressBar" class="h-full bg-indigo-500 w-0"></div>
+                </div>
+            </div>
+
+            <button id="processBtn" class="bg-indigo-700 hover:bg-indigo-800 text-white font-bold py-2 px-8 rounded-xl shadow-md transition disabled:opacity-50">
+                🚀 ផលិតសម្លេងរួម (Export)
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+            <!-- Voice Track Advanced Section -->
+            <div class="canvas-container p-6 border-t-8 border-blue-600">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-blue-700 flex items-center gap-2">
+                        <span>🎤</span> សម្លេងនិយាយ (Voice)
+                    </h2>
+                    <span id="voiceTimeLabel" class="text-xs font-mono bg-blue-50 text-blue-600 px-3 py-1 rounded-full border border-blue-100">0s - 0s</span>
+                </div>
+                
+                <input type="file" id="voiceInput" accept="audio/*" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-6 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer mb-6">
+                
+                <div id="voiceControls" class="hidden space-y-6">
+                    <!-- Volume Control -->
+                    <div class="tool-card bg-blue-50 border-blue-100">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="label-style text-blue-700 mb-0">កម្រិតសម្លេងនិយាយ (Gain)</label>
+                            <span id="voiceVolValue" class="text-sm font-bold text-blue-600">100%</span>
+                        </div>
+                        <input type="range" id="voiceVolume" min="0" max="250" value="100" class="w-full h-2 cursor-pointer">
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="tool-card">
+                            <label class="label-style">Noise Gate (កាត់ខ្យល់)</label>
+                            <input type="range" id="noiseGate" min="0" max="100" value="0" class="w-full h-1.5 cursor-pointer">
+                            <p class="text-[9px] text-slate-400 mt-1">កាត់សម្លេងរំខានពេលមិននិយាយ</p>
+                        </div>
+                        <div class="tool-card">
+                            <label class="label-style">Compressor (សម្លេងណែន)</label>
+                            <input type="range" id="compressionLevel" min="0" max="100" value="0" class="w-full h-1.5 cursor-pointer">
+                            <p class="text-[9px] text-slate-400 mt-1">ធ្វើឱ្យសម្លេងឮស្មើគ្នាជានិច្ច</p>
+                        </div>
+                        <div class="tool-card">
+                            <label class="label-style">Echo & Reverb (អេកូ)</label>
+                            <input type="range" id="reverbLevel" min="0" max="100" value="0" class="w-full h-1.5 cursor-pointer">
+                            <p class="text-[9px] text-slate-400 mt-1">បន្ថែមសម្លេងបន្ទរ</p>
+                        </div>
+                        <div class="tool-card">
+                            <label class="label-style">Hard Limiter (ការពារបែក)</label>
+                            <input type="range" id="hardLimiter" min="-40" max="0" value="0" class="w-full h-1.5 cursor-pointer">
+                            <p class="text-[9px] text-slate-400 mt-1">ទប់សម្លេងខ្លាំងមិនឱ្យបែក</p>
+                        </div>
+                    </div>
+
+                    <div class="px-2">
+                        <label class="label-style">Timeline កាត់ត (Trim)</label>
+                        <div class="range-slider">
+                            <input type="range" id="voiceStart" min="0" max="100" value="0">
+                            <input type="range" id="voiceEnd" min="0" max="100" value="100">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Background Track Section -->
+            <div class="canvas-container p-6 border-t-8 border-indigo-600">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-indigo-700 flex items-center gap-2">
+                        <span>🎵</span> ភ្លេង Background
+                    </h2>
+                    <span id="bgTimeLabel" class="text-xs font-mono bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full border border-indigo-100">0s - 0s</span>
+                </div>
+                
+                <input type="file" id="bgInput" accept="audio/*" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-6 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer mb-6">
+                
+                <div id="bgControls" class="hidden space-y-6">
+                    <div class="tool-card bg-indigo-50 border-indigo-100">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="label-style text-indigo-700 mb-0">កម្រិតភ្លេងទូទៅ (Master Volume)</label>
+                            <span id="bgVolValue" class="text-sm font-bold text-indigo-600">80%</span>
+                        </div>
+                        <input type="range" id="bgMasterVolume" min="0" max="150" value="80" class="w-full h-2 cursor-pointer">
+                    </div>
+
+                    <div class="tool-card">
+                        <label class="label-style">កម្រិតភ្លេងពេលនិយាយ (Ducking)</label>
+                        <input type="range" id="duckingVolume" min="0" max="100" value="20" class="w-full h-1.5 cursor-pointer">
+                        <div class="text-center text-sm font-bold text-indigo-600 mt-2" id="duckValue">20%</div>
+                    </div>
+
+                    <div class="px-2">
+                        <label class="label-style">Timeline កាត់ត (Trim)</label>
+                        <div class="range-slider">
+                            <input type="range" id="bgStart" min="0" max="100" value="0">
+                            <input type="range" id="bgEnd" min="0" max="100" value="100">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Result Area -->
+        <div id="resultArea" class="canvas-container p-10 hidden border-4 border-dashed border-emerald-400 bg-emerald-50">
+            <div class="max-w-md mx-auto text-center">
+                <h2 class="text-2xl font-bold text-slate-800 mb-6">ផលិតរួចរាល់!</h2>
+                <audio id="finalAudio" controls class="w-full mb-8"></audio>
+                <button id="downloadBtn" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 px-8 rounded-2xl shadow-xl transition-all">
+                    ទាញយកឯកសារ (WAV Format)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let audioCtx;
+        let voiceFullBuffer, bgFullBuffer;
+        let isPlaying = false;
+        let startTime = 0;
+        let animationFrame;
+
+        // Processing Nodes
+        let voiceSource, bgSource, voiceGain, bgGain;
+        let gateNode, compressorNode, reverbNode, reverbGain, limiterNode;
+
+        const voiceInput = document.getElementById('voiceInput');
+        const bgInput = document.getElementById('bgInput');
+        const playPreviewBtn = document.getElementById('playPreviewBtn');
+        const processBtn = document.getElementById('processBtn');
+
+        // UI Updates
+        document.getElementById('voiceVolume').oninput = (e) => document.getElementById('voiceVolValue').innerText = e.target.value + '%';
+        document.getElementById('bgMasterVolume').oninput = (e) => document.getElementById('bgVolValue').innerText = e.target.value + '%';
+        document.getElementById('duckingVolume').oninput = (e) => document.getElementById('duckValue').innerText = e.target.value + '%';
+
+        voiceInput.onchange = async (e) => {
+            const file = e.target.files[0]; if (!file) return;
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            voiceFullBuffer = await audioCtx.decodeAudioData(await file.arrayBuffer());
+            setupTrimmer('voice', voiceFullBuffer.duration);
+        };
+
+        bgInput.onchange = async (e) => {
+            const file = e.target.files[0]; if (!file) return;
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            bgFullBuffer = await audioCtx.decodeAudioData(await file.arrayBuffer());
+            setupTrimmer('bg', bgFullBuffer.duration);
+        };
+
+        function setupTrimmer(type, duration) {
+            document.getElementById(`${type}Controls`).classList.remove('hidden');
+            const start = document.getElementById(`${type}Start`);
+            const end = document.getElementById(`${type}End`);
+            const label = document.getElementById(`${type}TimeLabel`);
+            start.max = duration; end.max = duration; end.value = duration;
+            const update = () => {
+                if(parseFloat(start.value) >= parseFloat(end.value)) start.value = end.value - 0.1;
+                label.innerText = `${parseFloat(start.value).toFixed(1)}s - ${parseFloat(end.value).toFixed(1)}s`;
+                if(isPlaying) stopPreview();
+            };
+            start.oninput = update; end.oninput = update;
+            update();
+        }
+
+        playPreviewBtn.onclick = () => isPlaying ? stopPreview() : startPreview();
+
+        async function startPreview() {
+            if (!voiceFullBuffer || !bgFullBuffer) return alert("សូមបញ្ចូលឯកសារសម្លេងទាំងពីរ!");
+            if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+            isPlaying = true;
+            document.getElementById('playIcon').classList.add('hidden');
+            document.getElementById('pauseIcon').classList.remove('hidden');
+
+            const vS = parseFloat(document.getElementById('voiceStart').value);
+            const vE = parseFloat(document.getElementById('voiceEnd').value);
+            const bS = parseFloat(document.getElementById('bgStart').value);
+            const bE = parseFloat(document.getElementById('bgEnd').value);
+
+            // 1. Create Nodes
+            voiceSource = audioCtx.createBufferSource(); voiceSource.buffer = voiceFullBuffer;
+            bgSource = audioCtx.createBufferSource(); bgSource.buffer = bgFullBuffer;
+
+            gateNode = audioCtx.createDynamicsCompressor(); // Use for Noise Gate
+            compressorNode = audioCtx.createDynamicsCompressor(); 
+            voiceGain = audioCtx.createGain();
+            
+            // Pro Reverb using Delay & Feedback for clear audible effect
+            reverbNode = audioCtx.createDelay();
+            reverbGain = audioCtx.createGain();
+            let reverbFeedback = audioCtx.createGain();
+            reverbNode.delayTime.value = 0.15;
+            reverbFeedback.gain.value = 0.3;
+            reverbNode.connect(reverbFeedback);
+            reverbFeedback.connect(reverbNode);
+
+            limiterNode = audioCtx.createDynamicsCompressor(); // Final Limiter
+            bgGain = audioCtx.createGain();
+
+            // 2. Connect Voice Chain: Source -> Gate -> Compressor -> Gain -> (Limiter)
+            voiceSource.connect(gateNode);
+            gateNode.connect(compressorNode);
+            compressorNode.connect(voiceGain);
+            
+            // Reverb Parallel
+            voiceGain.connect(reverbNode);
+            reverbNode.connect(reverbGain);
+            
+            // Mix All Voice to Limiter
+            voiceGain.connect(limiterNode);
+            reverbGain.connect(limiterNode);
+
+            // 3. Connect BG Chain
+            bgSource.connect(bgGain);
+            bgGain.connect(audioCtx.destination);
+            limiterNode.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+            voiceSource.start(now, vS, vE - vS);
+            bgSource.start(now, bS, bE - bS);
+            startTime = now;
+
+            updateLiveParams();
+            requestAnimationFrame(drawProgress);
+            voiceSource.onended = () => { if(isPlaying) stopPreview(); };
+        }
+
+        function stopPreview() {
+            isPlaying = false;
+            document.getElementById('playIcon').classList.remove('hidden');
+            document.getElementById('pauseIcon').classList.add('hidden');
+            cancelAnimationFrame(animationFrame);
+            if (voiceSource) try{ voiceSource.stop(); }catch(e){}
+            if (bgSource) try{ bgSource.stop(); }catch(e){}
+        }
+
+        function updateLiveParams() {
+            if (!isPlaying) return;
+            const now = audioCtx.currentTime;
+
+            // --- NOISE GATE ---
+            const gateVal = document.getElementById('noiseGate').value; // 0 to 100
+            // Threshold from 0 to -100dB
+            gateNode.threshold.setTargetAtTime(-100 + (100 - gateVal), now, 0.05);
+            gateNode.ratio.setTargetAtTime(20, now, 0.05);
+            gateNode.attack.setTargetAtTime(0.01, now, 0.05);
+
+            // --- COMPRESSOR ---
+            const compVal = document.getElementById('compressionLevel').value;
+            compressorNode.threshold.setTargetAtTime(-0.8 * compVal, now, 0.05);
+            compressorNode.ratio.setTargetAtTime(Math.max(1, compVal / 10), now, 0.05);
+            compressorNode.knee.setTargetAtTime(30, now, 0.05);
+
+            // --- VOICE GAIN ---
+            const vVol = document.getElementById('voiceVolume').value / 100;
+            voiceGain.gain.setTargetAtTime(vVol, now, 0.05);
+
+            // --- REVERB ---
+            const revVal = document.getElementById('reverbLevel').value / 100;
+            reverbGain.gain.setTargetAtTime(revVal * 0.8, now, 0.05);
+
+            // --- LIMITER ---
+            const limitVal = document.getElementById('hardLimiter').value;
+            limiterNode.threshold.setTargetAtTime(parseFloat(limitVal), now, 0.05);
+            limiterNode.ratio.setTargetAtTime(20, now, 0.05);
+
+            // --- BG DUCKING ---
+            const bgMVol = document.getElementById('bgMasterVolume').value / 100;
+            const duckFactor = document.getElementById('duckingVolume').value / 100; // 0.2 means 20%
+            
+            // Analyze Voice RMS
+            const voiceData = voiceFullBuffer.getChannelData(0);
+            const vS = parseFloat(document.getElementById('voiceStart').value);
+            const elapsed = now - startTime;
+            const sampleIdx = Math.floor((vS + elapsed) * audioCtx.sampleRate);
+            
+            let rms = 0;
+            if (sampleIdx < voiceData.length) {
+                for(let i=0; i<1024 && (sampleIdx+i)<voiceData.length; i++) rms += voiceData[sampleIdx+i]**2;
+                rms = Math.sqrt(rms/1024);
+            }
+
+            const isSpeaking = (rms > 0.02);
+            const targetBgVol = isSpeaking ? (duckFactor * bgMVol) : bgMVol;
+            bgGain.gain.setTargetAtTime(targetBgVol, now, 0.15); // Smooth transition
+
+            setTimeout(updateLiveParams, 50);
+        }
+
+        function drawProgress() {
+            if (!isPlaying) return;
+            const elapsed = audioCtx.currentTime - startTime;
+            const vE = parseFloat(document.getElementById('voiceEnd').value);
+            const vS = parseFloat(document.getElementById('voiceStart').value);
+            const total = vE - vS;
+            document.getElementById('progressBar').style.width = `${Math.min((elapsed/total)*100, 100)}%`;
+            document.getElementById('currentTime').innerText = `${Math.floor(elapsed/60).toString().padStart(2,'0')}:${(elapsed%60).toFixed(1).padStart(4,'0')}`;
+            animationFrame = requestAnimationFrame(drawProgress);
+        }
+
+        processBtn.onclick = async () => {
+            if (!voiceFullBuffer || !bgFullBuffer) return alert("សូមបញ្ចូលឯកសារ!");
+            if (isPlaying) stopPreview();
+            processBtn.disabled = true; processBtn.innerText = "កំពុងផលិត...";
+
+            try {
+                const vS = parseFloat(document.getElementById('voiceStart').value);
+                const vE = parseFloat(document.getElementById('voiceEnd').value);
+                const bS = parseFloat(document.getElementById('bgStart').value);
+                const bE = parseFloat(document.getElementById('bgEnd').value);
+                const totalDur = Math.max(vE - vS, bE - bS);
+                const sampleRate = 44100;
+
+                const offlineCtx = new OfflineAudioContext(2, totalDur * sampleRate, sampleRate);
+                
+                // Buffers
+                const vBuf = offlineCtx.createBuffer(2, (vE-vS)*sampleRate, sampleRate);
+                for(let c=0; c<2; c++) vBuf.copyToChannel(voiceFullBuffer.getChannelData(c).slice(vS*sampleRate, vE*sampleRate), c);
+                const bBuf = offlineCtx.createBuffer(2, (bE-bS)*sampleRate, sampleRate);
+                for(let c=0; c<2; c++) bBuf.copyToChannel(bgFullBuffer.getChannelData(c).slice(bS*sampleRate, bE*sampleRate), c);
+
+                const vs = offlineCtx.createBufferSource(); vs.buffer = vBuf;
+                const bs = offlineCtx.createBufferSource(); bs.buffer = bBuf;
+
+                // Apply same processing chain for export
+                const gate = offlineCtx.createDynamicsCompressor();
+                gate.threshold.setValueAtTime(-100 + (100 - document.getElementById('noiseGate').value), 0);
+                gate.ratio.setValueAtTime(20, 0);
+
+                const comp = offlineCtx.createDynamicsCompressor();
+                comp.threshold.setValueAtTime(-0.8 * document.getElementById('compressionLevel').value, 0);
+                comp.ratio.setValueAtTime(12, 0);
+
+                const vg = offlineCtx.createGain();
+                vg.gain.setValueAtTime(document.getElementById('voiceVolume').value/100, 0);
+
+                const lim = offlineCtx.createDynamicsCompressor();
+                lim.threshold.setValueAtTime(parseFloat(document.getElementById('hardLimiter').value), 0);
+
+                const bg = offlineCtx.createGain();
+                const bgM = document.getElementById('bgMasterVolume').value/100;
+                const duck = document.getElementById('duckingVolume').value/100;
+
+                // Offline Ducking automation
+                const vData = vBuf.getChannelData(0);
+                for(let i=0; i<vData.length; i+=2048) {
+                    let rms = 0;
+                    for(let j=0; j<2048 && (i+j)<vData.length; j++) rms += vData[i+j]**2;
+                    rms = Math.sqrt(rms/2048);
+                    bg.gain.setTargetAtTime((rms > 0.02 ? duck * bgM : bgM), i/44100, 0.1);
+                }
+
+                vs.connect(gate); gate.connect(comp); comp.connect(vg); vg.connect(lim);
+                bs.connect(bg); bg.connect(offlineCtx.destination);
+                lim.connect(offlineCtx.destination);
+
+                vs.start(); bs.start();
+                const rendered = await offlineCtx.startRendering();
+                const url = URL.createObjectURL(bufferToWave(rendered, rendered.length));
+                document.getElementById('finalAudio').src = url;
+                document.getElementById('resultArea').classList.remove('hidden');
+                document.getElementById('downloadBtn').onclick = () => {
+                    const a = document.createElement('a'); a.href = url; a.download = "mastered_audio.wav"; a.click();
+                };
+            } catch (e) { alert(e.message); }
+            finally { processBtn.disabled = false; processBtn.innerText = "🚀 ផលិតសម្លេងរួម (Export)"; }
+        };
+
+        function bufferToWave(abuffer, len) {
+            let numOfChan = abuffer.numberOfChannels, length = len * numOfChan * 2 + 44,
+                buffer = new ArrayBuffer(length), view = new DataView(buffer),
+                channels = [], i, sample, offset = 0, pos = 0;
+            function setUint16(d) { view.setUint16(pos, d, true); pos += 2; }
+            function setUint32(d) { view.setUint32(pos, d, true); pos += 4; }
+            setUint32(0x46464952); setUint32(length - 8); setUint32(0x45564157);
+            setUint32(0x20746d66); setUint32(16); setUint16(1); setUint16(numOfChan);
+            setUint32(abuffer.sampleRate); setUint32(abuffer.sampleRate * 2 * numOfChan);
+            setUint16(numOfChan * 2); setUint16(16); setUint32(0x61746164); setUint32(length - pos - 4);
+            for(i = 0; i < numOfChan; i++) channels.push(abuffer.getChannelData(i));
+            while(pos < length) {
+                for(i = 0; i < numOfChan; i++) {
+                    sample = Math.max(-1, Math.min(1, channels[i][offset]));
+                    sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767)|0;
+                    view.setInt16(pos, sample, true); pos += 2;
+                }
+                offset++;
+            }
+            return new Blob([buffer], {type: "audio/wav"});
+        }
+    </script>
+</body>
+</html>
