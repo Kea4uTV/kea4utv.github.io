@@ -235,6 +235,15 @@
             </div>
         </div>
         <div class="flex gap-2">
+                <!-- Floating Zoom Controls -->
+                <div class="absolute bottom-4 right-4 z-[50] flex items-center gap-1 bg-slate-900/90 p-1.5 rounded-lg shadow-xl backdrop-blur border border-slate-700">
+                    <button onclick="changePreviewZoom(-0.1)" class="w-6 h-6 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-white rounded text-xs transition-colors">-</button>
+                    <span id="zoomDisp" class="text-[9px] font-bold text-blue-400 flex items-center w-10 justify-center">FIT</span>
+                    <button onclick="changePreviewZoom(0.1)" class="w-6 h-6 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-white rounded text-xs transition-colors">+</button>
+                    <div class="w-px h-4 bg-slate-700 mx-1"></div>
+                    <button onclick="resetPreviewZoom()" class="px-2 h-6 bg-blue-600 hover:bg-blue-500 text-white rounded text-[8px] font-bold transition-colors">FIT</button>
+                </div>
+            
             <button onclick="document.getElementById('audioInput').click()" class="bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded text-[9px] text-white border border-slate-700">AUDIO</button>
             <button onclick="document.getElementById('bgInput').click()" class="bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded text-[9px] text-white border border-slate-700">BG (IMG/VID)</button>
             <button onclick="document.getElementById('logoInput').click()" class="bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded text-[9px] text-white border border-slate-700">LOGO</button>
@@ -273,14 +282,7 @@
             <!-- CANVAS AREA WITH ZOOM SUPPORT -->
             <div class="relative flex-1 overflow-hidden bg-slate-950">
                 
-                <!-- Floating Zoom Controls -->
-                <div class="absolute bottom-4 right-4 z-[50] flex items-center gap-1 bg-slate-900/90 p-1.5 rounded-lg shadow-xl backdrop-blur border border-slate-700">
-                    <button onclick="changePreviewZoom(-0.1)" class="w-6 h-6 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-white rounded text-xs transition-colors">-</button>
-                    <span id="zoomDisp" class="text-[9px] font-bold text-blue-400 flex items-center w-10 justify-center">FIT</span>
-                    <button onclick="changePreviewZoom(0.1)" class="w-6 h-6 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-white rounded text-xs transition-colors">+</button>
-                    <div class="w-px h-4 bg-slate-700 mx-1"></div>
-                    <button onclick="resetPreviewZoom()" class="px-2 h-6 bg-blue-600 hover:bg-blue-500 text-white rounded text-[8px] font-bold transition-colors">FIT</button>
-                </div>
+                
 
                 <div id="previewArea" class="w-full h-full overflow-auto relative" onclick="deselectAll(event)">
                     <div id="canvasWrapper" class="flex items-center justify-center p-8 box-border" style="min-width: 100%; min-height: 100%; width: fit-content; height: fit-content;">
