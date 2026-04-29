@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Animator Pro V6.4 AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Battambang:wght@400;700&family=Koulen&family=Moul&family=Freehand&family=Dangrek&display=swap');
+        
+        :root { --primary: #2563eb; --accent: #f59e0b; }
+        body { font-family: 'Battambang', sans-serif; background-color: #f1f5f9; color: #1e293b; }
+
+        #canvasWrapper {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+            position: relative;
+            background-color: #000;
+            overflow: hidden;
+        }
+
+        .canvas-area {
+            position: relative;
+            display: flex;
+            padding: 40px 20px;
+            width: 100%;
+            height: 100%;
+            overflow-y: scroll;
+            z-index: 2;
+            scroll-behavior: smooth;
+        }
+        .canvas-area::-webkit-scrollbar { display: none; }
+        .canvas-area { -ms-overflow-style: none; scrollbar-width: none; }
+
+        #bgLayer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1;
+            transform-origin: center;
+        }
+
+        /* Background Display Modes */
+        .bg-fill { background-size: cover; background-position: center; }
+        .bg-fit { background-size: contain; background-position: center; background-repeat: no-repeat; }
+        .bg-stretch { background-size: 100% 100%; }
+        .bg-tile { background-size: auto; background-repeat: repeat; }
+        .bg-center { background-size: auto; background-position: center; background-repeat: no-repeat; }
+
+        /* Background Animations */
+        .bg-anim-zoom-pan { animation: bg-zoom-pan 20s infinite alternate ease-in-out; }
+        .bg-anim-pulse { animation: bg-pulse 8s infinite ease-in-out; }
+        .bg-anim-float { animation: bg-float 10s infinite ease-in-out; }
+
+        @keyframes bg-zoom-pan { 0% { transform: scale(1) translateX(0); } 100% { transform: scale(1.2) translateX(-2%); } }
+        @keyframes bg-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.8; } }
+        @keyframes bg-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+
+        #messageFlow { 
+            display: flex; 
+            width: 100%; 
+            gap: 12px; 
+            transition: all 0.5s ease;
+        }
+
+        /* IN Animations */
+        @keyframes anim-slide-up { from { opacity: 0; transform: translateY(50px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes anim-slide-down { from { opacity: 0; transform: translateY(-50px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes anim-bounce { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes anim-zoom { from { transform: scale(1.5); opacity: 0; filter: blur(10px); } to { transform: scale(1); opacity: 1; filter: blur(0); } }
+        @keyframes anim-swing { 0% { transform: rotate(15deg); opacity: 0; } 100% { transform: rotate(0deg); opacity: 1; } }
+        @keyframes anim-elastic { 0% { transform: scale(0); } 70% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        @keyframes anim-blur-in { from { filter: blur(15px); opacity: 0; } to { filter: blur(0); opacity: 1; } }
+        @keyframes anim-wave-right { from { transform: translateX(-40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes anim-wave-left { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes anim-glitch { 0% { transform: translate(2px, 2px); opacity: 0; } 50% { transform: translate(-2px, -2px); opacity: 0.5; } 100% { transform: translate(0); opacity: 1; } }
+
+        /* EXIT Animations */
+        @keyframes exit-fade { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes exit-slide-up { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-50px); } }
+        @keyframes exit-zoom-out { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.5); filter: blur(10px); } }
+        @keyframes exit-shrink { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0); } }
+        @keyframes exit-glitch { 0% { transform: translate(0); opacity: 1; } 50% { transform: translate(5px, -5px); opacity: 0.5; } 100% { opacity: 0; } }
+
+        .timeline-container { background: #0f172a; border-radius: 12px; height: 12px; position: relative; overflow: hidden; border: 1px solid #334155; }
+        .timeline-progress { background: linear-gradient(90deg, #3b82f6, #60a5fa); height: 100%; width: 0%; }
+
+        .config-scroll { max-height: 94vh; overflow-y: auto; padding-right: 8px; }
+        .control-section { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .label-sm { font-size: 0.75rem; font-weight: 700; color: #475569; margin-bottom: 6px; display: block; }
+        .input-ui { width: 100%; border: 1px solid #cbd5e1; padding: 8px 12px; border-radius: 10px; font-size: 14px; outline: none; }
+        
+        #aiLoading {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.8); z-index: 9999; align-items: center; justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .copy-toast {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: #1e293b; color: white; padding: 10px 20px; border-radius: 30px;
+            font-size: 12px; font-weight: bold; z-index: 10000; opacity: 0; transition: opacity 0.3s; pointer-events: none;
+        }
+    </style>
+</head>
+<body class="p-6">
+
+    <div id="aiLoading">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600 mx-auto mb-4"></div>
+            <p class="font-bold text-blue-800">AI កំពុងបង្កើតស្គ្រីបការសន្ទនា...</p>
+        </div>
+    </div>
+
+    <div id="copyToast" class="copy-toast">ចម្លងអត្ថបទរួចរាល់!</div>
+
+    <div class="max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <div class="lg:col-span-8 config-scroll">
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <h1 class="text-3xl font-black text-slate-800 tracking-tight">CHAT ANIMATOR <span class="text-blue-600">V6.4 AI</span></h1>
+                    <p class="text-slate-500 font-medium">Single View Duration & Exit Animations</p>
+                </div>
+                <button id="playBtn" onclick="playPreview()" class="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-2xl font-black shadow-xl transform transition active:scale-95">▶ ចាប់ផ្តើមផលិត (PLAY)</button>
+            </div>
+
+            <!-- AI SCRIPT ENGINE -->
+            <div class="control-section border-2 border-blue-200 bg-blue-50/50">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="text-2xl">✨</span>
+                    <h3 class="font-bold text-lg text-blue-800">AI Script Generator (បង្កើតអូតូ)</h3>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                    <div class="md:col-span-6">
+                        <label class="label-sm">ប្រធានបទ (Topic)</label>
+                        <input type="text" id="aiTopic" placeholder="ឧ៖ តាសួរនាំចៅរឿងរៀនសូត្រ..." class="input-ui">
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="label-sm">ចំនួនសារ</label>
+                        <input type="number" id="aiMsgCount" value="6" min="2" max="20" class="input-ui">
+                    </div>
+                    <div class="md:col-span-3">
+                        <button onclick="generateAIScript()" class="w-full bg-blue-800 hover:bg-blue-900 text-white h-[42px] rounded-xl font-bold transition shadow-md">ផលិតស្គ្រីប AI</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 1. Background Settings -->
+            <div class="control-section">
+                <h3 class="font-bold text-lg mb-4 text-blue-600 border-b pb-2">១. រូបភាពផ្ទៃក្រោយ & ចលនា (Background)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                    <div class="md:col-span-4">
+                        <label class="label-sm">ជ្រើសរើសរូបភាព</label>
+                        <input type="file" id="bgImgFile" accept="image/*" onchange="handleBgImage(event)" class="input-ui">
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="label-sm">ទំហំរូបភាព (Size)</label>
+                        <select id="bgSizeMode" onchange="updateCanvasLayout()" class="input-ui font-bold text-blue-600">
+                            <option value="bg-fill">Fill (ពេញប្លង់)</option>
+                            <option value="bg-fit">Fit (សមល្មម)</option>
+                            <option value="bg-stretch">Stretch (យឺតតាមប្លង់)</option>
+                            <option value="bg-tile">Tile (ផ្ទួនៗ)</option>
+                            <option value="bg-center">Center (កណ្តាល)</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="label-sm">ចលនាផ្ទៃក្រោយ</label>
+                        <select id="bgAnim" onchange="updateCanvasLayout()" class="input-ui">
+                            <option value="none">គ្មានចលនា</option>
+                            <option value="bg-anim-zoom-pan">Zoom & Pan</option>
+                            <option value="bg-anim-pulse">Pulse (កម្រើក)</option>
+                            <option value="bg-anim-float">Floating (អណ្តែត)</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="label-sm">ពណ៌ផ្ទៃក្រោយ</label>
+                        <input type="color" id="bgColor" value="#000000" oninput="updateCanvasLayout()" class="w-full h-10 rounded-lg cursor-pointer">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Typography -->
+            <div class="control-section">
+                <h3 class="font-bold text-lg mb-4 text-purple-600 border-b pb-2">២. ស្ទាយអក្សរ & Fonts</h3>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="label-sm">Font ផ្ទាល់ខ្លួន</label>
+                        <input type="file" accept=".ttf,.otf" onchange="handleCustomFont(event)" class="text-[10px]">
+                    </div>
+                    <div>
+                        <label class="label-sm">ជ្រើសរើស Font</label>
+                        <select id="fontFamily" onchange="autoUpdate()" class="input-ui">
+                            <option value="font-battambang">Battambang</option>
+                            <option value="font-koulen">Koulen</option>
+                            <option value="font-moul">Moul</option>
+                            <option value="font-dangrek">Dangrek</option>
+                            <option value="font-freehand">Freehand</option>
+                            <option value="font-custom" id="customFontOption" disabled>Custom Font</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label-sm">ទំហំ (px)</label>
+                        <input type="number" id="fontSize" value="16" oninput="autoUpdate()" class="input-ui">
+                    </div>
+                    <div>
+                        <label class="label-sm">កោង Bubble</label>
+                        <input type="number" id="bubbleRadius" value="18" oninput="autoUpdate()" class="input-ui">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Layout & Presentation (NEW) -->
+            <div class="control-section border-l-4 border-orange-500">
+                <h3 class="font-bold text-lg mb-4 text-orange-600 border-b pb-2">៣. ប្លង់ & របៀបបង្ហាញសារ (View Mode)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-6">
+                    <div class="md:col-span-3">
+                        <label class="label-sm text-blue-600">របៀបបង្ហាញ</label>
+                        <select id="viewMode" onchange="autoUpdate()" class="input-ui font-bold bg-blue-50">
+                            <option value="multi">សារហូរចុះ (Multi)</option>
+                            <option value="single">ម្តងមួយសារ (Single)</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="label-sm">បង្ហាញយូរ (វិនាទី)</label>
+                        <input type="number" id="msgDuration" value="2.5" step="0.1" min="0.5" oninput="autoUpdate()" class="input-ui font-bold text-orange-600">
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="label-sm">ចលនាចូល (Entry)</label>
+                        <select id="animStyle" onchange="autoUpdate()" class="input-ui">
+                            <option value="anim-slide-up">Slide Up</option>
+                            <option value="anim-slide-down">Slide Down</option>
+                            <option value="anim-bounce">Bounce In</option>
+                            <option value="anim-zoom">Zoom & Blur</option>
+                            <option value="anim-swing">Swing</option>
+                            <option value="anim-elastic">Elastic</option>
+                            <option value="anim-blur-in">Smooth Blur</option>
+                            <option value="anim-glitch">Glitch</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="label-sm">ចលនាចេញ (Exit)</label>
+                        <select id="exitAnimStyle" onchange="autoUpdate()" class="input-ui">
+                            <option value="exit-fade">Fade Out</option>
+                            <option value="exit-slide-up">Slide Up & Out</option>
+                            <option value="exit-zoom-out">Zoom Out</option>
+                            <option value="exit-shrink">Shrink</option>
+                            <option value="exit-glitch">Glitch Out</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-12 gap-4 mb-4">
+                    <div class="md:col-span-3">
+                        <label class="label-sm">Canvas (W x H)</label>
+                        <div class="flex gap-1">
+                            <input type="number" id="wInput" value="340" oninput="updateCanvasLayout()" class="input-ui text-center px-1">
+                            <input type="number" id="hInput" value="600" oninput="updateCanvasLayout()" class="input-ui text-center px-1">
+                        </div>
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="label-sm">V-Align</label>
+                        <select id="vAlign" onchange="autoUpdate()" class="input-ui">
+                            <option value="flex-end">Bottom</option>
+                            <option value="center" selected>Center</option>
+                            <option value="flex-start">Top</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="label-sm">Flow</label>
+                        <select id="flowDir" onchange="autoUpdate()" class="input-ui">
+                            <option value="column">Vertical</option>
+                            <option value="column-reverse">Reverse</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                    <div class="md:col-span-4">
+                        <label class="label-sm">Global SFX</label>
+                        <input type="file" accept="audio/*" onchange="handleGlobalSFX(event)" class="text-[10px] w-full">
+                    </div>
+                    <div class="md:col-span-4">
+                        <label class="label-sm">Music Background</label>
+                        <input type="file" accept="audio/*" onchange="loadAudioFile(event, 'bgMusicPlayer')" class="text-[10px] w-full">
+                    </div>
+                    <div class="md:col-span-2 flex flex-col justify-end">
+                        <label class="label-sm flex items-center gap-2">
+                            <input type="checkbox" id="bgMusicLoop" checked onchange="updateMusicLoop()"> Loop
+                        </label>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="label-sm">Ducking</label>
+                        <input type="range" id="bgMusicDucking" min="0" max="0.5" step="0.05" value="0.1" class="w-full">
+                    </div>
+                </div>
+                <div class="timeline-container mt-4">
+                    <div id="musicProgress" class="timeline-progress"></div>
+                </div>
+            </div>
+
+            <!-- Profiles & Messages -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="control-section">
+                    <h3 class="font-bold text-md mb-4 text-rose-500 border-b pb-2">៤. តួអង្គ (Profiles)</h3>
+                    <div id="profilesContainer" class="space-y-4"></div>
+                    <button onclick="addProfile()" class="mt-4 text-blue-600 font-bold text-sm">+ បន្ថែមតួអង្គ</button>
+                </div>
+                <div class="control-section">
+                    <h3 class="font-bold text-md mb-4 text-rose-500 border-b pb-2">៥. បញ្ជីសារ (Messages)</h3>
+                    <div id="messagesContainer" class="space-y-3"></div>
+                    <button onclick="addMessage()" class="mt-4 text-blue-600 font-bold text-sm">+ បន្ថែមសារ</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview -->
+        <div class="lg:col-span-4">
+            <div class="sticky top-6">
+                <div id="canvasWrapper" class="mx-auto rounded-[3.5rem] border-[14px] border-slate-950 overflow-hidden" style="width: 340px; height: 600px;">
+                    <div id="bgLayer"></div>
+                    <div id="mainCanvas" class="canvas-area">
+                        <div id="messageFlow"></div>
+                    </div>
+                </div>
+                <div class="mt-4 text-center">
+                    <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest">Duration & Animation Control V6.4</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="bgMusicPlayer" loop></audio>
+    <audio id="voicePlayer"></audio>
+    <audio id="sfxPlayer"></audio>
+    <audio id="globalSFXPlayer"></audio>
+
+    <script>
+        const apiKey = "";
+        let state = {
+            isPlaying: false,
+            globalSFX: '',
+            canvas: { 
+                width: 340, height: 600, bgColor: '#000000', bgImage: '', 
+                bgAnim: 'none', bgSizeMode: 'bg-fill',
+                vAlign: 'center', flowDir: 'column', 
+                viewMode: 'multi', animStyle: 'anim-slide-up', exitAnimStyle: 'exit-fade',
+                msgDuration: 2.5,
+                fontFamily: 'font-battambang', fontSize: 16, bubbleRadius: 18
+            },
+            profiles: [
+                { id: 'p1', name: 'លោកតា', role: 'លោកតា', color: '#b45309', align: 'right', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Old' },
+                { id: 'p2', name: 'ចៅប្រុស', role: 'ចៅ', color: '#1d4ed8', align: 'left', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Kid' }
+            ],
+            messages: [
+                { profileId: 'p1', text: 'សួស្តីចៅ! មកពីណាហ្នឹង?', delay: 500, audio: '', sfx: '' },
+                { profileId: 'p2', text: 'បាទលោកតា ខ្ញុំទើបមកពីសាលា។', delay: 800, audio: '', sfx: '' }
+            ]
+        };
+
+        async function generateAIScript() {
+            const topic = document.getElementById('aiTopic').value;
+            const count = document.getElementById('aiMsgCount').value;
+            if (!topic) return;
+            document.getElementById('aiLoading').style.display = 'flex';
+            const charContext = state.profiles.map(p => `${p.name} (ឋានៈ: ${p.role})`).join(', ');
+            const prompt = `Create a natural Khmer chat conversation. Topic: ${topic}. Messages: ${count}. Characters: ${charContext}. Output JSON: [{"name": "Name", "text": "Khmer Text"}]`;
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" } })
+                });
+                const data = await response.json();
+                const script = JSON.parse(data.candidates[0].content.parts[0].text);
+                state.messages = script.map(s => ({
+                    profileId: (state.profiles.find(p => p.name === s.name) || state.profiles[0]).id,
+                    text: s.text, delay: 500, audio: '', sfx: ''
+                }));
+                renderMessages();
+                refreshCanvasStatic();
+            } catch (e) { console.error(e); }
+            finally { document.getElementById('aiLoading').style.display = 'none'; }
+        }
+
+        window.autoUpdate = function() {
+            if (state.isPlaying) return;
+            state.canvas.vAlign = document.getElementById('vAlign').value;
+            state.canvas.flowDir = document.getElementById('flowDir').value;
+            state.canvas.viewMode = document.getElementById('viewMode').value;
+            state.canvas.msgDuration = parseFloat(document.getElementById('msgDuration').value) || 2.5;
+            state.canvas.animStyle = document.getElementById('animStyle').value;
+            state.canvas.exitAnimStyle = document.getElementById('exitAnimStyle').value;
+            state.canvas.fontFamily = document.getElementById('fontFamily').value;
+            state.canvas.fontSize = document.getElementById('fontSize').value;
+            state.canvas.bubbleRadius = document.getElementById('bubbleRadius').value;
+            refreshCanvasStatic();
+        };
+
+        window.updateCanvasLayout = function() {
+            const wrapper = document.getElementById('canvasWrapper');
+            const bgLayer = document.getElementById('bgLayer');
+            state.canvas.bgAnim = document.getElementById('bgAnim').value;
+            state.canvas.bgSizeMode = document.getElementById('bgSizeMode').value;
+            wrapper.style.width = document.getElementById('wInput').value + 'px';
+            wrapper.style.height = document.getElementById('hInput').value + 'px';
+            wrapper.style.backgroundColor = document.getElementById('bgColor').value;
+            if (state.canvas.bgImage) bgLayer.style.backgroundImage = `url(${state.canvas.bgImage})`;
+            bgLayer.className = `${state.canvas.bgSizeMode} ${state.canvas.bgAnim}`;
+            refreshCanvasStatic();
+        };
+
+        window.updateMusicLoop = function() {
+            const player = document.getElementById('bgMusicPlayer');
+            player.loop = document.getElementById('bgMusicLoop').checked;
+        };
+
+        function refreshCanvasStatic() {
+            const flow = document.getElementById('messageFlow');
+            const canvasArea = document.getElementById('mainCanvas');
+            flow.style.flexDirection = state.canvas.flowDir;
+            canvasArea.style.alignItems = state.canvas.vAlign;
+            flow.innerHTML = '';
+            if (state.canvas.viewMode === 'single') {
+                if (state.messages.length > 0) renderSingleBubble(state.messages[state.messages.length - 1], false);
+            } else {
+                state.messages.forEach(m => renderSingleBubble(m, false));
+            }
+        }
+
+        window.playPreview = async function() {
+            if (state.isPlaying) return;
+            state.isPlaying = true;
+            const bgMusic = document.getElementById('bgMusicPlayer');
+            const progress = document.getElementById('musicProgress');
+            document.getElementById('playBtn').innerText = "PRODUCTION...";
+            
+            if (bgMusic.src) {
+                bgMusic.volume = 0.4; bgMusic.currentTime = 0; bgMusic.play();
+                bgMusic.ontimeupdate = () => progress.style.width = (bgMusic.currentTime/bgMusic.duration*100)+'%';
+            }
+
+            const flow = document.getElementById('messageFlow');
+            flow.innerHTML = '';
+            let currentBubble = null;
+            
+            for (let i = 0; i < state.messages.length; i++) {
+                const m = state.messages[i];
+                
+                // If Single Mode, trigger Exit Animation
+                if (state.canvas.viewMode === 'single' && currentBubble) {
+                    currentBubble.style.animation = `${state.canvas.exitAnimStyle} 0.5s ease-in forwards`;
+                    await new Promise(r => setTimeout(r, 450));
+                    flow.innerHTML = '';
+                }
+
+                await new Promise(r => setTimeout(r, m.delay));
+                currentBubble = renderSingleBubble(m, true);
+
+                if (state.globalSFX) playSound('globalSFXPlayer', state.globalSFX, 0.8);
+                if (m.sfx) playSound('sfxPlayer', m.sfx, 1);
+                
+                // If Audio exists, wait for audio, otherwise wait for set duration
+                if (m.audio) {
+                    const duck = parseFloat(document.getElementById('bgMusicDucking').value);
+                    if (bgMusic.src) bgMusic.volume = duck;
+                    await playSound('voicePlayer', m.audio, 1);
+                    if (bgMusic.src) bgMusic.volume = 0.4;
+                } else {
+                    // Wait for the duration defined by user
+                    await new Promise(r => setTimeout(r, state.canvas.msgDuration * 1000));
+                }
+            }
+
+            setTimeout(() => {
+                state.isPlaying = false;
+                document.getElementById('playBtn').innerText = "▶ ចាប់ផ្តើមផលិត (PLAY)";
+            }, 1000);
+        };
+
+        function renderSingleBubble(msg, animate) {
+            const flow = document.getElementById('messageFlow');
+            const canvasArea = document.getElementById('mainCanvas');
+            const p = state.profiles.find(x => x.id === msg.profileId) || state.profiles[0];
+            const isRight = p.align === 'right';
+            
+            const entry = document.createElement('div');
+            entry.className = `flex w-full mb-4 shrink-0 ${isRight ? 'flex-row-reverse' : 'flex-row'}`;
+            
+            if (animate) {
+                entry.style.animation = `${state.canvas.animStyle} 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards`;
+            }
+
+            let fontStyle = state.canvas.fontFamily === 'font-custom' ? "font-family: 'CustomFont';" : "";
+            const bStyle = `
+                background-color: ${isRight ? p.color : '#ffffff'};
+                color: ${isRight ? '#ffffff' : '#1e293b'};
+                border-radius: ${state.canvas.bubbleRadius}px;
+                ${isRight ? 'border-bottom-right-radius: 4px;' : 'border-bottom-left-radius: 4px;'}
+                font-size: ${state.canvas.fontSize}px; padding: 12px 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); ${fontStyle}
+            `;
+
+            entry.innerHTML = `
+                <img src="${p.avatar}" class="w-11 h-11 rounded-full border-2 border-white shadow self-end mx-2 object-cover">
+                <div class="flex flex-col ${isRight ? 'items-end' : 'items-start'} max-w-[75%]">
+                    <span class="text-[10px] font-bold mb-1 px-1 text-white drop-shadow-md opacity-80">${p.name}</span>
+                    <div class="${state.canvas.fontFamily}" style="${bStyle}">${msg.text}</div>
+                </div>
+            `;
+            
+            flow.appendChild(entry);
+            
+            if (state.canvas.viewMode === 'multi') {
+                setTimeout(() => {
+                    const scrollPos = entry.offsetTop - (canvasArea.offsetHeight / 2) + (entry.offsetHeight / 2);
+                    canvasArea.scrollTo({ top: Math.max(0, scrollPos), behavior: 'smooth' });
+                }, 100);
+            } else {
+                canvasArea.scrollTo({ top: 0 });
+            }
+            return entry;
+        }
+
+        async function playSound(id, src, vol) {
+            const p = document.getElementById(id); p.src = src; p.volume = vol;
+            return new Promise(r => { p.onended = r; p.onerror = r; p.play(); });
+        }
+
+        window.copyText = (text) => {
+            const el = document.createElement('textarea'); el.value = text; document.body.appendChild(el); el.select();
+            document.execCommand('copy'); document.body.removeChild(el);
+            const toast = document.getElementById('copyToast'); toast.style.opacity = '1';
+            setTimeout(() => { toast.style.opacity = '0'; }, 2000);
+        };
+
+        window.handleBgImage = (e) => { const f = e.target.files[0]; if(f) { const rd = new FileReader(); rd.onload = ev => { state.canvas.bgImage = ev.target.result; updateCanvasLayout(); }; rd.readAsDataURL(f); } };
+        window.handleGlobalSFX = (e) => { const f = e.target.files[0]; if(f) { const rd = new FileReader(); rd.onload = ev => { state.globalSFX = ev.target.result; }; rd.readAsDataURL(f); } };
+        window.loadAudioFile = (e, tid) => { const f = e.target.files[0]; if(f) { const rd = new FileReader(); rd.onload = ev => { document.getElementById(tid).src = ev.target.result; }; rd.readAsDataURL(f); } };
+        window.handleCustomFont = (e) => { const f = e.target.files[0]; if(f) { const rd = new FileReader(); rd.onload = ev => { const nf = new FontFace('CustomFont', `url(${ev.target.result})`); nf.load().then(l => { document.fonts.add(l); document.getElementById('customFontOption').disabled = false; document.getElementById('customFontOption').selected = true; state.canvas.fontFamily = 'font-custom'; autoUpdate(); }); }; rd.readAsDataURL(f); } };
+
+        window.handleProfileAvatar = (e, id) => {
+            const f = e.target.files[0]; if(f) {
+                const rd = new FileReader(); rd.onload = ev => {
+                    const p = state.profiles.find(x => x.id === id);
+                    if(p) { p.avatar = ev.target.result; renderProfiles(); refreshCanvasStatic(); }
+                }; rd.readAsDataURL(f);
+            }
+        };
+
+        window.renderProfiles = function() {
+            const container = document.getElementById('profilesContainer'); container.innerHTML = '';
+            state.profiles.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'p-3 bg-slate-50 rounded-xl border flex gap-3 items-center group';
+                div.innerHTML = `
+                    <div class="relative w-12 h-12 shrink-0">
+                        <img src="${p.avatar}" class="w-full h-full rounded-full border shadow object-cover">
+                        <label class="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition">
+                            <span class="text-[8px] text-white font-bold">ដូររូប</span>
+                            <input type="file" accept="image/*" onchange="handleProfileAvatar(event, '${p.id}')" class="hidden">
+                        </label>
+                    </div>
+                    <div class="flex-1 space-y-1">
+                        <div class="grid grid-cols-2 gap-1">
+                            <input type="text" value="${p.name}" oninput="updateProfile('${p.id}', 'name', this.value)" class="input-ui h-7 text-[11px] font-bold">
+                            <input type="text" value="${p.role}" placeholder="ឋានៈ" oninput="updateProfile('${p.id}', 'role', this.value)" class="input-ui h-7 text-[11px]">
+                        </div>
+                        <div class="flex gap-1">
+                            <select onchange="updateProfile('${p.id}', 'align', this.value)" class="input-ui h-7 text-[10px]">
+                                <option value="left" ${p.align === 'left' ? 'selected' : ''}>ឆ្វេង</option>
+                                <option value="right" ${p.align === 'right' ? 'selected' : ''}>ស្តាំ</option>
+                            </select>
+                            <input type="color" value="${p.color}" oninput="updateProfile('${p.id}', 'color', this.value)" class="w-8 h-7 rounded cursor-pointer">
+                            <button onclick="removeProfile('${p.id}')" class="text-rose-500 text-[10px] ml-auto">លុប</button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        };
+
+        window.renderMessages = function() {
+            const container = document.getElementById('messagesContainer'); container.innerHTML = '';
+            state.messages.forEach((m, idx) => {
+                const div = document.createElement('div');
+                div.className = 'bg-white p-3 rounded-xl border shadow-sm space-y-2 relative';
+                let opts = state.profiles.map(p => `<option value="${p.id}" ${m.profileId === p.id ? 'selected' : ''}>${p.name}</option>`).join('');
+                div.innerHTML = `
+                    <div class="flex gap-2 items-center">
+                        <select onchange="updateMessage(${idx}, 'profileId', this.value)" class="input-ui w-24 h-8 text-[11px]">${opts}</select>
+                        <div class="relative flex-1 group">
+                            <input type="text" value="${m.text}" id="msgInput_${idx}" oninput="updateMessage(${idx}, 'text', this.value)" class="input-ui h-8 pr-10">
+                            <button onclick="copyText(document.getElementById('msgInput_${idx}').value)" title="ចម្លងអត្ថបទ" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                            </button>
+                        </div>
+                        <button onclick="removeMessage(${idx})" class="text-rose-400 hover:text-rose-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                         <div class="flex flex-col"><label class="text-[8px] font-bold text-gray-500 mb-1">ពន្យារ (s)</label><input type="number" value="${m.delay/1000}" step="0.1" oninput="updateMessage(${idx}, 'delay', this.value * 1000)" class="input-ui h-7 text-[10px]"></div>
+                        <div class="flex flex-col"><label class="text-[8px] font-bold text-blue-500 mb-1">SFX</label><input type="file" onchange="handleMsgAudio(event, ${idx}, 'sfx')" class="text-[8px] w-full"></div>
+                        <div class="flex flex-col"><label class="text-[8px] font-bold text-emerald-500 mb-1">VOICE</label><input type="file" onchange="handleMsgAudio(event, ${idx}, 'audio')" class="text-[8px] w-full"></div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+            if (!state.isPlaying) refreshCanvasStatic();
+        };
+
+        window.updateProfile = (id, k, v) => { const p = state.profiles.find(x => x.id === id); if(p) p[k] = v; refreshCanvasStatic(); renderMessages(); };
+        window.removeProfile = (id) => { state.profiles = state.profiles.filter(p => p.id !== id); renderProfiles(); renderMessages(); };
+        window.addProfile = () => { const id = 'p' + Date.now(); state.profiles.push({ id, name: 'ថ្មី', role: 'ធម្មតា', color: '#2563eb', align: 'left', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed='+id }); renderProfiles(); renderMessages(); };
+        window.updateMessage = (i, k, v) => { state.messages[i][k] = v; if(!state.isPlaying) refreshCanvasStatic(); };
+        window.addMessage = () => { state.messages.push({ profileId: state.profiles[0].id, text: '...', delay: 500, audio: '', sfx: '' }); renderMessages(); };
+        window.removeMessage = (i) => { state.messages.splice(i, 1); renderMessages(); };
+        window.handleMsgAudio = (e, i, type) => { const f = e.target.files[0]; if(f) { const rd = new FileReader(); rd.onload = ev => { state.messages[i][type] = ev.target.result; }; rd.readAsDataURL(f); } };
+
+        window.onload = () => { renderProfiles(); renderMessages(); updateCanvasLayout(); updateMusicLoop(); };
+    </script>
+</body>
+</html>
