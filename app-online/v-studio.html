@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V-Pro Studio - Timeline Paint & Zoom</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { background-color: #0a0a0a; color: #f0f0f0; font-family: 'Inter', sans-serif; user-select: none; }
+        
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: #0a0a0a; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+
+        .canvas-container { 
+            background-color: #111; 
+            background-image: repeating-conic-gradient(#1a1a1a 0% 25%, #111 0% 50%);
+            background-size: 20px 20px;
+            overflow: auto; /* អនុញ្ញាតឱ្យ scroll ពេលពង្រីកធំ */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        #mainCanvas { 
+            object-fit: contain; 
+            transition: transform 0.2s ease;
+            transform-origin: center center;
+            background-color: transparent;
+        }
+
+        .timeline-ruler { background: #161616; height: 35px; border-bottom: 1px solid #333; position: relative; cursor: pointer; min-width: 1000px; }
+        .layer-item { border-bottom: 1px solid #222; min-height: 60px; display: flex; align-items: center; background: #111; min-width: 1000px; }
+        .timeline-track { background: #151515; flex-grow: 1; height: 100%; position: relative; overflow: hidden; }
+        
+        .clip-block { 
+            position: absolute; height: 40px; background: #4f46e5; border-radius: 6px; cursor: move; top: 10px; 
+            display: flex; align-items: center; padding: 0 12px; font-size: 11px; color: white; 
+            border: 1px solid #ffffff33; white-space: nowrap; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            z-index: 10;
+        }
+        .clip-block.selected { border: 2px solid #fbbf24; background: #6366f1; box-shadow: 0 0 20px rgba(99, 102, 241, 0.5); }
+        
+        .playhead { position: absolute; top: 0; bottom: 0; width: 2px; background: #ff4757; z-index: 100; pointer-events: none; }
+        .playhead::after { content: ''; position: absolute; top: 0; left: -6px; border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 10px solid #ff4757; }
+        
+        .tool-active { border-color: #6366f1 !important; background-color: #1e1b4b !important; color: #818cf8 !important; }
+        
+        #waveformCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; opacity: 0.6; }
+
+        /* Zoom Control UI Style */
+        .zoom-badge { background: #222; padding: 4px 12px; border-radius: 4px; border: 1px solid #333; font-family: monospace; font-size: 12px; color: #818cf8; min-width: 60px; text-align: center; }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <header class="h-16 bg-[#111] border-b border-gray-800 px-4 flex items-center justify-between z-50 shrink-0">
+        <div class="flex items-center gap-4">
+            <h1 class="font-black text-xl tracking-tighter text-indigo-500 italic">V-PRO <span class="text-white">STUDIO</span></h1>
+        </div>
+        
+        <!-- Center/Right Controls: Zoom & Play -->
+        <div class="flex items-center gap-4">
+            <!-- Zoom Buttons -->
+            <div class="flex items-center bg-[#1a1a1a] p-1 rounded-lg border border-gray-800 gap-1">
+                <button onclick="changeZoom(-0.1)" class="w-8 h-8 flex items-center justify-center hover:bg-gray-800 rounded transition" title="បង្រួម">-</button>
+                <div id="zoomDisplay" class="zoom-badge">100%</div>
+                <button onclick="changeZoom(0.1)" class="w-8 h-8 flex items-center justify-center hover:bg-gray-800 rounded transition" title="ពង្រីក">+</button>
+                <button onclick="resetZoom()" class="px-2 h-8 text-[10px] uppercase font-bold hover:text-white text-gray-500">Reset</button>
+            </div>
+
+            <div id="timeDisplay" class="text-xl font-mono text-indigo-400 font-bold tracking-widest bg-[#161616] px-4 py-1 rounded border border-gray-800">00:00:00</div>
+            <button id="playBtn" class="bg-indigo-600 text-white font-bold px-10 py-2 rounded-full text-xs hover:bg-indigo-500 transition shadow-lg active:scale-95">PLAY</button>
+        </div>
+    </header>
+
+    <div class="flex-grow flex flex-col lg:flex-row overflow-hidden">
+        <aside class="sidebar w-80 bg-[#0f0f0f] border-r border-gray-800 flex flex-col overflow-y-auto p-5 gap-5 text-[11px] shrink-0">
+            <div class="flex gap-2">
+                <button id="selectToolBtn" onclick="toggleTool('select')" class="tool-active flex-1 bg-[#1a1a1a] border border-gray-800 p-2 rounded flex items-center justify-center gap-2 transition">🖱️ Select</button>
+                <button id="paintToolBtn" onclick="toggleTool('paint')" class="flex-1 bg-[#1a1a1a] border border-gray-800 p-2 rounded flex items-center justify-center gap-2 transition">🪣 Paint Bucket</button>
+            </div>
+
+            <div class="space-y-2">
+                <button onclick="document.getElementById('audioIn').click()" class="w-full bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 hover:border-green-500/50 transition flex items-center gap-3 font-bold uppercase tracking-wider">🎵 បញ្ចូលសម្លេង</button>
+                <button onclick="document.getElementById('mediaIn').click()" class="w-full bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 hover:border-indigo-500/50 transition flex items-center gap-3 font-bold uppercase tracking-wider">🖼️ បញ្ចូលរូបភាព</button>
+                <input type="file" id="audioIn" class="hidden" accept="audio/*" onchange="addAudio(event)">
+                <input type="file" id="mediaIn" class="hidden" accept="image/*" onchange="addImage(event)">
+            </div>
+
+            <div id="controlsPanel" class="opacity-30 pointer-events-none space-y-4 transition-opacity">
+                <div class="bg-[#161616] p-4 rounded-xl border border-gray-800 space-y-4">
+                    <h3 class="text-indigo-400 font-black uppercase text-[10px] tracking-widest">Paint Settings</h3>
+                    <div class="p-2 bg-indigo-500/10 border border-indigo-500/20 rounded text-[9px] text-indigo-300 leading-relaxed italic">
+                        * ការចាក់ពណ៌នឹងបង្ហាញតែចាប់ពីវិនាទីដែលអ្នកចុចទៅមុខប៉ុណ្ណោះ។ រូបភាពដើមមិនបាត់ទេ។
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <label class="text-gray-500 text-[9px] uppercase font-bold">ពណ៌ចាក់ (Foreground)</label>
+                        <input type="color" id="primaryColor" value="#4f46e5" class="bg-transparent border-none w-8 h-8 cursor-pointer">
+                    </div>
+                    <div>
+                        <label class="flex justify-between text-gray-500 text-[9px] font-bold uppercase mb-1">Tolerance</label>
+                        <input type="range" id="tolerance" min="0" max="150" value="30" class="w-full h-1.5 bg-gray-800 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                </div>
+                <button onclick="removeLayer()" class="w-full py-3 bg-red-950/20 text-red-500 border border-red-900/50 rounded-xl hover:bg-red-900/40 transition font-black text-[10px] uppercase">លុបស្រទាប់</button>
+            </div>
+        </aside>
+
+        <section class="flex-grow flex flex-col bg-[#050505] relative overflow-hidden">
+            <div id="previewArea" class="flex-grow flex items-center justify-center p-4 overflow-hidden">
+                <div id="canvasContainer" class="canvas-container w-full h-full border border-gray-800 transition-all">
+                    <canvas id="mainCanvas"></canvas>
+                </div>
+            </div>
+
+            <div class="h-48 bg-[#0f0f0f] border-t border-gray-800 flex flex-col shrink-0">
+                <div class="overflow-x-auto" id="timelineScroll">
+                    <div class="timeline-ruler" id="ruler" onclick="seekTimeline(event)">
+                        <div id="playhead" class="playhead"></div>
+                        <canvas id="rulerCanvas"></canvas>
+                    </div>
+                    <div id="timelineLayers" class="flex flex-col">
+                        <div class="layer-item" id="audioLayer">
+                            <div class="w-24 shrink-0 bg-[#161616] h-full flex items-center px-4 text-[9px] font-black border-r border-gray-800 text-green-500 sticky left-0 z-10 uppercase">Audio</div>
+                            <div class="timeline-track" id="audioTrack" onclick="seekTimeline(event)">
+                                <canvas id="waveformCanvas"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const ruler = document.getElementById('ruler');
+        const playBtn = document.getElementById('playBtn');
+        const timeDisplay = document.getElementById('timeDisplay');
+        const timelineLayers = document.getElementById('timelineLayers');
+        const waveformCanvas = document.getElementById('waveformCanvas');
+        const zoomDisplay = document.getElementById('zoomDisplay');
+
+        let project = { duration: 10, currentTime: 0, layers: [], audio: null, resolution: { w: 1920, h: 1080 } };
+        let isPlaying = false, selectedLayerIndex = null, activeTool = 'select', currentZoom = 1.0;
+        let audioContext, audioBuffer, audioSource, playbackStartTime, isDragging = false, lastMouseX = 0, lastMouseY = 0;
+
+        window.onload = () => { updateResolution(); requestAnimationFrame(renderLoop); };
+
+        // --- Zoom Logic ---
+        function changeZoom(delta) {
+            currentZoom = Math.max(0.1, Math.min(5.0, currentZoom + delta));
+            updateZoomUI();
+        }
+
+        function resetZoom() {
+            currentZoom = 1.0;
+            updateZoomUI();
+        }
+
+        function updateZoomUI() {
+            canvas.style.transform = `scale(${currentZoom})`;
+            zoomDisplay.innerText = Math.round(currentZoom * 100) + '%';
+        }
+
+        function toggleTool(tool) {
+            activeTool = tool;
+            document.getElementById('paintToolBtn').classList.toggle('tool-active', tool === 'paint');
+            document.getElementById('selectToolBtn').classList.toggle('tool-active', tool === 'select');
+            canvas.style.cursor = tool === 'paint' ? 'crosshair' : 'default';
+        }
+
+        function updateResolution() {
+            const res = project.resolution;
+            canvas.width = res.w; canvas.height = res.h;
+            
+            // Set basic display size
+            const area = document.getElementById('previewArea');
+            const ratio = res.w / res.h;
+            let displayW = area.clientWidth - 40, displayH = displayW / ratio;
+            if (displayH > area.clientHeight - 40) { displayH = area.clientHeight - 40; displayW = displayH * ratio; }
+            
+            canvas.style.width = displayW + 'px';
+            canvas.style.height = displayH + 'px';
+            
+            drawRuler();
+        }
+
+        async function addAudio(e) {
+            const file = e.target.files[0]; if(!file) return;
+            const ab = await file.arrayBuffer();
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            audioBuffer = await audioContext.decodeAudioData(ab);
+            project.duration = audioBuffer.duration;
+            drawWaveform(); drawRuler(); refreshTimeline();
+        }
+
+        function drawWaveform() {
+            if (!audioBuffer) return;
+            const track = waveformCanvas.parentElement;
+            waveformCanvas.width = track.clientWidth; waveformCanvas.height = track.clientHeight;
+            const wctx = waveformCanvas.getContext('2d');
+            const data = audioBuffer.getChannelData(0);
+            const step = Math.ceil(data.length / waveformCanvas.width);
+            const amp = waveformCanvas.height / 2;
+            wctx.clearRect(0, 0, waveformCanvas.width, waveformCanvas.height);
+            wctx.strokeStyle = '#22c55e'; wctx.beginPath();
+            for (let i = 0; i < waveformCanvas.width; i++) {
+                let min = 1.0, max = -1.0;
+                for (let j = 0; j < step; j++) {
+                    const d = data[(i * step) + j]; if (d < min) min = d; if (d > max) max = d;
+                }
+                wctx.moveTo(i, (1 + min) * amp); wctx.lineTo(i, (1 + max) * amp);
+            }
+            wctx.stroke();
+        }
+
+        function addImage(e) {
+            const file = e.target.files[0]; if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = new Image();
+                img.onload = () => {
+                    project.layers.push({
+                        id: Date.now(), name: file.name, originalImg: img,
+                        history: [], 
+                        start: 0, end: project.duration,
+                        posX: 0, posY: 0, scale: Math.min(project.resolution.w/img.width, project.resolution.h/img.height, 1)
+                    });
+                    refreshTimeline(); selectLayer(project.layers.length - 1);
+                };
+                img.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            if(activeTool !== 'select' || selectedLayerIndex === null) return;
+            isDragging = true; lastMouseX = e.clientX; lastMouseY = e.clientY;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if(!isDragging || selectedLayerIndex === null) return;
+            const rect = canvas.getBoundingClientRect();
+            // Adjust delta based on zoom
+            const dx = (e.clientX - lastMouseX) * (canvas.width / rect.width);
+            const dy = (e.clientY - lastMouseY) * (canvas.height / rect.height);
+            project.layers[selectedLayerIndex].posX += dx;
+            project.layers[selectedLayerIndex].posY += dy;
+            lastMouseX = e.clientX; lastMouseY = e.clientY;
+        });
+        window.addEventListener('mouseup', () => isDragging = false);
+
+        canvas.addEventListener('click', (e) => {
+            if(activeTool !== 'paint' || selectedLayerIndex === null) return;
+            const rect = canvas.getBoundingClientRect();
+            // Important: This math correctly handles the displayed size vs actual resolution
+            const x = Math.round((e.clientX - rect.left) * (canvas.width / rect.width));
+            const y = Math.round((e.clientY - rect.top) * (canvas.height / rect.height));
+            applyTimelinePaint(x, y);
+        });
+
+        function applyTimelinePaint(startX, startY) {
+            const layer = project.layers[selectedLayerIndex];
+            const temp = document.createElement('canvas');
+            temp.width = canvas.width; temp.height = canvas.height;
+            const tctx = temp.getContext('2d');
+
+            drawLayerAtTime(layer, tctx, project.currentTime);
+            
+            const imgData = tctx.getImageData(0, 0, temp.width, temp.height);
+            const target = getPixel(imgData, startX, startY);
+            const fillColor = hexToRgb(document.getElementById('primaryColor').value);
+            const tolerance = parseInt(document.getElementById('tolerance').value);
+
+            if (colorsMatch(target, fillColor, 0)) return;
+
+            const maskCanvas = document.createElement('canvas');
+            maskCanvas.width = canvas.width; maskCanvas.height = canvas.height;
+            const mctx = maskCanvas.getContext('2d');
+            const maskData = mctx.createImageData(canvas.width, canvas.height);
+
+            const q = [[startX, startY]];
+            const vis = new Uint8Array(temp.width * temp.height);
+            
+            while (q.length > 0) {
+                const [x, y] = q.shift();
+                const i = y * temp.width + x;
+                if (x < 0 || x >= temp.width || y < 0 || y >= temp.height || vis[i]) continue;
+                if (colorsMatch(getPixel(imgData, x, y), target, tolerance)) {
+                    vis[i] = 1;
+                    const mi = i * 4;
+                    maskData.data[mi] = fillColor[0]; maskData.data[mi+1] = fillColor[1]; maskData.data[mi+2] = fillColor[2]; maskData.data[mi+3] = 255;
+                    q.push([x+1,y],[x-1,y],[x,y+1],[x,y-1]);
+                }
+            }
+            mctx.putImageData(maskData, 0, 0);
+
+            const paintLayerImg = new Image();
+            paintLayerImg.onload = () => {
+                layer.history.push({ time: project.currentTime, img: paintLayerImg });
+                layer.history.sort((a, b) => a.time - b.time);
+            };
+            paintLayerImg.src = maskCanvas.toDataURL();
+        }
+
+        function drawLayerAtTime(layer, targetCtx, time) {
+            targetCtx.save();
+            targetCtx.translate(canvas.width/2 + layer.posX, canvas.height/2 + layer.posY);
+            targetCtx.scale(layer.scale, layer.scale);
+            targetCtx.drawImage(layer.originalImg, -layer.originalImg.width/2, -layer.originalImg.height/2);
+            targetCtx.restore();
+
+            layer.history.forEach(p => {
+                if (time >= p.time) targetCtx.drawImage(p.img, 0, 0);
+            });
+        }
+
+        function renderLoop() {
+            if(isPlaying) {
+                project.currentTime = audioBuffer ? (audioContext.currentTime - playbackStartTime) : (performance.now() / 1000 - playbackStartTime);
+                if(project.currentTime >= project.duration) { project.currentTime = project.duration; stop(); }
+            }
+            
+            const pxPos = (project.currentTime / project.duration) * ruler.clientWidth;
+            document.getElementById('playhead').style.left = pxPos + 'px';
+            timeDisplay.innerText = formatTime(project.currentTime);
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            project.layers.forEach(l => {
+                if(project.currentTime >= l.start && project.currentTime <= l.end) drawLayerAtTime(l, ctx, project.currentTime);
+            });
+            requestAnimationFrame(renderLoop);
+        }
+
+        function getPixel(id, x, y) { const i = (y * id.width + x) * 4; return [id.data[i], id.data[i+1], id.data[i+2], id.data[i+3]]; }
+        function colorsMatch(c1, c2, t) { return Math.abs(c1[0]-c2[0])<=t && Math.abs(c1[1]-c2[1])<=t && Math.abs(c1[2]-c2[2])<=t; }
+        function hexToRgb(h) { return [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)]; }
+        function formatTime(s) { const m = Math.floor(s/60), sc = Math.floor(s%60), ms = Math.floor((s%1)*100); return `${m.toString().padStart(2,'0')}:${sc.toString().padStart(2,'0')}:${ms.toString().padStart(2,'0')}`; }
+
+        function drawRuler() {
+            const c = document.getElementById('rulerCanvas'); c.width = ruler.clientWidth; c.height = 35;
+            const cr = c.getContext('2d'); cr.strokeStyle = '#444'; cr.fillStyle = '#888'; cr.font = '10px Inter';
+            const pps = c.width / project.duration;
+            for(let i=0; i<=project.duration; i++) {
+                const x = i * pps; cr.beginPath(); cr.moveTo(x, 22); cr.lineTo(x, 35); cr.stroke();
+                if (i % 2 === 0) cr.fillText(i + 's', x + 4, 15);
+            }
+        }
+
+        function refreshTimeline() {
+            const items = timelineLayers.querySelectorAll('.layer-item:not(#audioLayer)');
+            items.forEach(i => i.remove());
+            project.layers.forEach((l, idx) => {
+                const div = document.createElement('div'); div.className = 'layer-item';
+                div.innerHTML = `
+                    <div class="w-24 shrink-0 bg-[#161616] h-full flex items-center px-4 text-[9px] border-r border-gray-800 text-gray-500 font-bold sticky left-0 z-10 uppercase">Layer ${idx+1}</div>
+                    <div class="timeline-track" onclick="seekTimeline(event)">
+                        <div class="clip-block ${selectedLayerIndex === idx ? 'selected' : ''}" 
+                             style="left: ${(l.start/project.duration)*100}%; width: ${((l.end-l.start)/project.duration)*100}%"
+                             onclick="event.stopPropagation(); selectLayer(${idx})">${l.name}</div>
+                    </div>`;
+                timelineLayers.appendChild(div);
+            });
+        }
+
+        function selectLayer(idx) {
+            selectedLayerIndex = idx;
+            document.getElementById('controlsPanel').style.opacity = '1';
+            document.getElementById('controlsPanel').style.pointerEvents = 'auto';
+            refreshTimeline();
+        }
+
+        function seekTimeline(e) {
+            const rect = ruler.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            project.currentTime = Math.max(0, Math.min(project.duration, (x / rect.width) * project.duration));
+            if(isPlaying) { stop(); play(); }
+        }
+
+        function play() {
+            if(isPlaying) return;
+            if(audioBuffer) {
+                audioSource = audioContext.createBufferSource(); audioSource.buffer = audioBuffer;
+                audioSource.connect(audioContext.destination); audioSource.start(0, project.currentTime);
+                playbackStartTime = audioContext.currentTime - project.currentTime;
+            } else playbackStartTime = (performance.now()/1000) - project.currentTime;
+            isPlaying = true; playBtn.innerText = "PAUSE";
+        }
+
+        function stop() { if(audioSource) { try{audioSource.stop();}catch(e){} } isPlaying = false; playBtn.innerText = "PLAY"; }
+        playBtn.onclick = () => isPlaying ? stop() : play();
+        function removeLayer() { if(selectedLayerIndex !== null) { project.layers.splice(selectedLayerIndex, 1); selectedLayerIndex = null; document.getElementById('controlsPanel').style.opacity = '0.3'; refreshTimeline(); } }
+    </script>
+</body>
+</html>
