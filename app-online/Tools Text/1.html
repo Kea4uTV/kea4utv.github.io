@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Khmer Unicode ↔ Limon Master Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;700&family=Freehand&family=Moul&display=swap');
+        
+        body {
+            font-family: 'Kantumruy Pro', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
+
+        #editor, #preview { transition: all 0.2s; min-height: 400px; }
+        
+        .panel-header {
+            background: #0f172a;
+            color: #f8fafc;
+            padding: 10px 16px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .font-settings-card {
+            background: #f1f5f9;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .mode-btn-active {
+            background-color: #4f46e5 !important;
+            color: white !important;
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden text-gray-900">
+
+    <!-- Top Navigation -->
+    <header class="bg-indigo-900 text-white p-4 shadow-xl flex justify-between items-center shrink-0">
+        <div class="flex items-center gap-4">
+            <div class="bg-white/10 p-2 rounded-lg backdrop-blur-md">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-300"><path d="M17 3 21 7 17 11"/><path d="M3 13 7 17 3 21"/><path d="M21 17H7"/><path d="M3 7h14"/></svg>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold">Khmer Converter Master</h1>
+                <p class="text-[10px] text-indigo-200 uppercase tracking-widest font-semibold">Separate Fonts & Global Space Adder</p>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="saveData()" class="bg-emerald-500 hover:bg-emerald-600 px-6 py-2 rounded-full text-sm font-bold shadow-lg transition-all">រក្សាទុក</button>
+            <button onclick="resetEditor()" class="bg-rose-500 hover:bg-rose-600 px-6 py-2 rounded-full text-sm font-bold shadow-lg transition-all">សម្អាត</button>
+        </div>
+    </header>
+
+    <!-- Toolbar -->
+    <div class="bg-white border-b border-slate-200 p-4 flex flex-wrap gap-4 items-start shadow-sm overflow-y-auto max-h-64">
+        
+        <!-- Editor Font Settings -->
+        <div class="font-settings-card flex flex-col gap-2">
+            <label class="text-[10px] font-black text-indigo-600 uppercase">Font សម្រាប់ EDITOR</label>
+            <div class="flex gap-2">
+                <input type="text" id="eFontUrl" placeholder="Google URL" class="border border-slate-300 p-1.5 text-xs w-32 rounded outline-none">
+                <input type="text" id="eFontFamily" placeholder="ឈ្មោះ Font" class="border border-slate-300 p-1.5 text-xs w-24 rounded outline-none">
+                <button onclick="loadRemoteFont('e')" class="bg-slate-700 text-white px-2 py-1.5 rounded text-[10px] font-bold">Load</button>
+                <label class="bg-indigo-600 text-white px-2 py-1.5 rounded text-[10px] font-bold cursor-pointer">
+                    Up
+                    <input type="file" class="hidden" accept=".ttf,.otf,.woff" onchange="uploadLocalFont(this, 'e')">
+                </label>
+            </div>
+            <div class="flex items-center gap-2">
+                <label class="text-[10px] font-bold">ទំហំ:</label>
+                <input type="number" id="eSize" value="18" class="border border-slate-300 p-1 text-xs w-12 rounded outline-none" onchange="applyStyles()">
+            </div>
+        </div>
+
+        <!-- Preview Font Settings -->
+        <div class="font-settings-card flex flex-col gap-2">
+            <label class="text-[10px] font-black text-emerald-600 uppercase">Font សម្រាប់ PREVIEW</label>
+            <div class="flex gap-2">
+                <input type="text" id="pFontUrl" placeholder="Google URL" class="border border-slate-300 p-1.5 text-xs w-32 rounded outline-none">
+                <input type="text" id="pFontFamily" placeholder="ឈ្មោះ Font" class="border border-slate-300 p-1.5 text-xs w-24 rounded outline-none">
+                <button onclick="loadRemoteFont('p')" class="bg-slate-700 text-white px-2 py-1.5 rounded text-[10px] font-bold">Load</button>
+                <label class="bg-emerald-600 text-white px-2 py-1.5 rounded text-[10px] font-bold cursor-pointer">
+                    Up
+                    <input type="file" class="hidden" accept=".ttf,.otf,.woff" onchange="uploadLocalFont(this, 'p')">
+                </label>
+            </div>
+            <div class="flex items-center gap-2">
+                <label class="text-[10px] font-bold">ទំហំ:</label>
+                <input type="number" id="pSize" value="18" class="border border-slate-300 p-1 text-xs w-12 rounded outline-none" onchange="applyStyles()">
+            </div>
+        </div>
+
+        <!-- Conversion Mode -->
+        <div class="font-settings-card flex flex-col gap-2">
+            <label class="text-[10px] font-black text-indigo-600 uppercase">របៀបបំលែង (CONVERT MODE)</label>
+            <div class="flex gap-1">
+                <button id="btnNone" onclick="setMode('none')" class="bg-white border border-slate-300 px-3 py-1.5 rounded text-[10px] font-bold hover:bg-slate-100 transition-all">Original</button>
+                <button id="btnUniToLimon" onclick="setMode('uniToLimon')" class="bg-white border border-slate-300 px-3 py-1.5 rounded text-[10px] font-bold hover:bg-slate-100 transition-all">Uni ➔ Limon</button>
+                <button id="btnLimonToUni" onclick="setMode('limonToUni')" class="bg-white border border-slate-300 px-3 py-1.5 rounded text-[10px] font-bold hover:bg-slate-100 transition-all">Limon ➔ Uni</button>
+            </div>
+            <div class="flex gap-1 mt-1">
+                <button onclick="applyGlobalSpaces()" class="w-full bg-slate-800 text-white px-3 py-1.5 rounded text-[10px] font-bold shadow-sm hover:bg-black transition-colors">ថែមដកឃ្លាគ្រប់កន្លែង (Global Space)</button>
+            </div>
+        </div>
+
+        <!-- Quick Convert (New Section requested) -->
+        <div class="font-settings-card flex flex-col gap-2 border-l-4 border-l-blue-500">
+            <label class="text-[10px] font-black text-blue-600 uppercase">បំលែងពាក្យរហ័ស (QUICK CONVERT)</label>
+            <div class="flex gap-2">
+                <input type="text" id="quickIn" placeholder="បញ្ចូលពាក្យ..." class="border border-slate-300 p-1.5 text-xs w-28 rounded outline-none">
+                <div class="flex flex-col gap-1">
+                    <button onclick="quickConvert('uniToLimon')" class="bg-blue-600 text-white px-2 py-1 rounded text-[9px] font-bold">U➔L</button>
+                    <button onclick="quickConvert('limonToUni')" class="bg-indigo-600 text-white px-2 py-1 rounded text-[9px] font-bold">L➔U</button>
+                </div>
+                <input type="text" id="quickOut" readonly placeholder="លទ្ធផល" class="border border-blue-200 bg-blue-50 p-1.5 text-xs w-28 rounded outline-none text-blue-700 font-bold">
+            </div>
+        </div>
+
+        <!-- Custom Mapping Tools -->
+        <div class="font-settings-card flex flex-col gap-2">
+            <label class="text-[10px] font-black text-amber-600 uppercase">ជំនួសពាក្យ (CUSTOM MAP)</label>
+            <div class="flex gap-2">
+                <input type="text" id="mFrom" placeholder="ពី" class="border border-slate-300 p-1.5 text-xs w-16 rounded outline-none">
+                <input type="text" id="mTo" placeholder="ទៅ" class="border border-slate-300 p-1.5 text-xs w-16 rounded outline-none">
+                <button onclick="addMap()" class="bg-amber-600 text-white px-4 py-1.5 rounded text-[10px] font-bold shadow-sm">+</button>
+            </div>
+            <div id="mappingList" class="flex gap-1 flex-wrap max-w-[200px]"></div>
+        </div>
+
+    </div>
+
+    <!-- Workspace -->
+    <main class="flex-1 flex overflow-hidden">
+        <div class="flex-1 flex flex-col border-r border-slate-200">
+            <div class="panel-header">
+                <span>ផ្ទាំងសរសេរ (EDITOR)</span>
+                <span id="stat1" class="text-[10px]">0</span>
+            </div>
+            <textarea id="editor" class="flex-1 p-6 focus:outline-none resize-none custom-scrollbar bg-slate-50/50 leading-relaxed" placeholder="សរសេរនៅទីនេះ..."></textarea>
+        </div>
+
+        <div class="flex-1 flex flex-col bg-white">
+            <div class="panel-header bg-slate-800">
+                <span id="modeTitle">លទ្ធផល (PREVIEW)</span>
+                <span id="stat2" class="text-[10px]">0</span>
+            </div>
+            <div id="preview" class="flex-1 p-6 overflow-y-auto custom-scrollbar break-words whitespace-pre-wrap leading-relaxed shadow-inner"></div>
+        </div>
+    </main>
+
+    <script>
+        const uniToLimonMap = {
+            'ក':'k', 'ខ':'x', 'គ':'K', 'ឃ':'X', 'ង':'g', 'ច':'c', 'ឆ':'q', 'ជ':'C', 'ឈ':'Q', 'ញ':'j', 'ដ':'d', 'ឋ':'z', 'ឌ':'D', 'ឍ':'Z', 'ណ':'N', 'ត':'t', 'ថ':'f', 'ទ':'T', 'ធ':'F', 'ន':'n', 'ប':'b', 'ផ':'p', 'ព':'B', 'ភ':'P', 'ម':'m', 'យ':'y', 'រ':'r', 'ល':'l', 'វ':'v', 'ស':'s', 'ហ':'h', 'ឡ':'L', 'អ':'G',
+            'ា':'a', 'ិ':'i', 'ី':'I', 'ឹ':'w', 'ឺ':'W', 'ុ':'u', 'ូ':'U', 'ួ':'Y', 'ើ':'eI', 'ឿ':'eO', 'ៀ':'eo', 'េ':'e', 'ែ':'E', 'ៃ':'é', 'ោ':'ea', 'ៅ':'eA', 'ុំ':'uM', 'ំ':'M', 'ាំ':'aM', 'ះ':'H', 'ុះ':'uH', 'េះ':'eH', 'ោះ':'eaH',
+            '០':'0', '១':'1', '២':'2', '៣':'3', '៤':'4', '៥':'5', '៦':'6', '៧':'7', '៨':'8', '៩':'9',
+            '្ក':'á', '្ខ':'ç', '្គ':'Á', '្ឃ':'Ç', '្ង':'¶', '្ច':'©', '្ឆ':'ä', '្ជ':'¢', '្ឈ':'Ä', '្ញ':'J', '្ដ':'þ', '្ឋ':'æ', '្ឌ':'Ð', '្ឍ':'Æ', '្ណ':'Ñ', '្ត':'þ', '្ថ':'ß', '្ទ':'Þ', '្ធ':'§', '្ន':'ñ', '្ប':',', '្ផ':'ö', '្ព':'<', '្ភ':'Ö', '្ម':'µ', '្យ':'ü', '្រ':'r', '្ល':'ø', '្វ':'V', '្ស':'S', '្ហ':'ð', '្អ':'¥',
+            'ៗ':'½', '៌':'_', '៍':'’', '៏':'¾', '័':'’', '់':'’', '៉':'’', '៊':'’', 'ៈ':'³', '៙':'៙', '។':'.', '៕':'៕', '៚':'៚', '?':'?', '!':'¡', '(': '(', ')': ')', '[': '[', ']': ']', '"': '“', '"': '”'
+        };
+
+        const limonToUniMap = {};
+        for(let key in uniToLimonMap) limonToUniMap[uniToLimonMap[key]] = key;
+
+        const editor = document.getElementById('editor');
+        const preview = document.getElementById('preview');
+        let customMaps = [];
+        let currentMode = 'none';
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('[id^="btn"]').forEach(btn => btn.classList.remove('mode-btn-active'));
+            if(mode === 'none') document.getElementById('btnNone').classList.add('mode-btn-active');
+            if(mode === 'uniToLimon') document.getElementById('btnUniToLimon').classList.add('mode-btn-active');
+            if(mode === 'limonToUni') document.getElementById('btnLimonToUni').classList.add('mode-btn-active');
+            updatePreview();
+        }
+
+        function convert(text, mode) {
+            if (mode === 'none' || !text) return text;
+            let result = "";
+            if (mode === 'uniToLimon') {
+                let i = 0;
+                while (i < text.length) {
+                    let char = text[i];
+                    let next = text[i+1];
+                    if (char === '្' && next) { result += uniToLimonMap['្' + next] || ('្' + next); i += 2; }
+                    else if (['េ', 'ែ', 'ៃ', 'ោ', 'ៅ'].includes(next)) {
+                        let lv = uniToLimonMap[next];
+                        result += lv[0] + (uniToLimonMap[char] || char);
+                        if (lv.length > 1) result += lv.substring(1);
+                        i += 2;
+                    } else { result += uniToLimonMap[char] || char; i++; }
+                }
+            } else { for(let char of text) result += limonToUniMap[char] || char; }
+            return result;
+        }
+
+        function quickConvert(mode) {
+            const input = document.getElementById('quickIn').value;
+            const output = convert(input, mode);
+            document.getElementById('quickOut').value = output;
+            toast("បំលែងរហ័សរួចរាល់");
+        }
+
+        function updatePreview() {
+            let converted = convert(editor.value, currentMode);
+            customMaps.forEach(m => {
+                const regex = new RegExp(m.from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+                converted = converted.replace(regex, m.to);
+            });
+            preview.innerText = converted;
+            document.getElementById('stat1').innerText = editor.value.length;
+            document.getElementById('stat2').innerText = converted.length;
+        }
+
+        function applyGlobalSpaces() {
+            const text = editor.value;
+            if (!text.includes(' ')) { toast("មិនមានកន្លែងដកឃ្លាដើម្បីបន្ថែមទេ"); return; }
+            editor.value = text.replace(/ /g, '  ');
+            updatePreview();
+            toast("បានបន្ថែមដកឃ្លាជាន់គ្នាគ្រប់កន្លែង");
+        }
+
+        function applyStyles() {
+            editor.style.fontSize = document.getElementById('eSize').value + 'px';
+            const eFont = document.getElementById('eFontFamily').value;
+            editor.style.fontFamily = eFont ? `'${eFont}', sans-serif` : 'inherit';
+            preview.style.fontSize = document.getElementById('pSize').value + 'px';
+            const pFont = document.getElementById('pFontFamily').value;
+            preview.style.fontFamily = pFont ? `'${pFont}', sans-serif` : 'inherit';
+        }
+
+        function loadRemoteFont(target) {
+            const url = document.getElementById(target + 'FontUrl').value.trim();
+            const family = document.getElementById(target + 'FontFamily').value.trim();
+            if (!url || !family) return toast("សូមបញ្ចូល URL និងឈ្មោះ Font");
+            const styleId = 'font-style-' + target;
+            let style = document.getElementById(styleId) || document.createElement('style');
+            style.id = styleId;
+            style.textContent = `@import url('${url}');`;
+            document.head.appendChild(style);
+            document.fonts.ready.then(() => { applyStyles(); toast("Font បាន Load រួចរាល់"); });
+        }
+
+        function uploadLocalFont(input, target) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const fontName = "Local_" + target + "_" + Math.random().toString(36).substring(7);
+                    const fontFace = new FontFace(fontName, e.target.result);
+                    fontFace.load().then(loaded => {
+                        document.fonts.add(loaded);
+                        document.getElementById(target + 'FontFamily').value = fontName;
+                        applyStyles();
+                        toast("បញ្ចូល Font ជោគជ័យ");
+                    });
+                };
+                reader.readAsArrayBuffer(input.files[0]);
+            }
+        }
+
+        function addMap() {
+            const from = document.getElementById('mFrom').value;
+            const to = document.getElementById('mTo').value;
+            if(!from) return;
+            customMaps.push({from, to});
+            document.getElementById('mFrom').value = '';
+            document.getElementById('mTo').value = '';
+            renderMappingTags();
+            updatePreview();
+        }
+
+        function renderMappingTags() {
+            const container = document.getElementById('mappingList');
+            container.innerHTML = '';
+            customMaps.forEach((m, i) => {
+                const tag = document.createElement('div');
+                tag.className = 'bg-slate-700 text-white text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1 shadow-sm';
+                tag.innerHTML = `${m.from}→${m.to} <button onclick="customMaps.splice(${i},1);renderMappingTags();updatePreview()" class="text-rose-400 font-bold ml-1">×</button>`;
+                container.appendChild(tag);
+            });
+        }
+
+        function toast(m) {
+            const t = document.createElement('div');
+            t.className = 'fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-2 rounded-full text-xs z-50 shadow-lg';
+            t.innerText = m; document.body.appendChild(t);
+            setTimeout(() => t.remove(), 2000);
+        }
+
+        function saveData() {
+            const data = {
+                text: editor.value,
+                eUrl: document.getElementById('eFontUrl').value,
+                eFam: document.getElementById('eFontFamily').value,
+                pUrl: document.getElementById('pFontUrl').value,
+                pFam: document.getElementById('pFontFamily').value,
+                eSize: document.getElementById('eSize').value,
+                pSize: document.getElementById('pSize').value,
+                mode: currentMode,
+                maps: customMaps
+            };
+            localStorage.setItem('khmer_converter_v6', JSON.stringify(data));
+            toast("រក្សាទុកជោគជ័យ");
+        }
+
+        function resetEditor() { if(confirm("តើអ្នកប្រាកដជាចង់សម្អាតទិន្នន័យមែនទេ?")) { localStorage.removeItem('khmer_converter_v6'); location.reload(); } }
+
+        window.onload = () => {
+            const saved = JSON.parse(localStorage.getItem('khmer_converter_v6') || '{}');
+            if(saved.text) editor.value = saved.text;
+            document.getElementById('eFontUrl').value = saved.eUrl || '';
+            document.getElementById('eFontFamily').value = saved.eFam || '';
+            document.getElementById('pFontUrl').value = saved.pUrl || '';
+            document.getElementById('pFontFamily').value = saved.pFam || '';
+            document.getElementById('eSize').value = saved.eSize || 18;
+            document.getElementById('pSize').value = saved.pSize || 18;
+            setMode(saved.mode || 'none');
+            customMaps = saved.maps || [];
+            if(saved.eUrl) loadRemoteFont('e');
+            if(saved.pUrl) loadRemoteFont('p');
+            renderMappingTags();
+            updatePreview(); 
+            applyStyles();
+        };
+
+        editor.addEventListener('input', updatePreview);
+    </script>
+</body>
+</html>
