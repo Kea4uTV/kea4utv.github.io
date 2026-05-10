@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Storyboard Animator Pro</title>
+    <!-- Fabric.js for Canvas Manipulation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- SortableJS for Layer Reordering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <style>
+        :root {
+            --bg-main: #0a0a0a;
+            --bg-sidebar: #141414;
+            --bg-panel: #1e1e1e;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --text-main: #f4f4f5;
+            --text-dim: #a1a1aa;
+            --border: #27272a;
+            --sidebar-width: 320px;
+            --timeline-height: 240px;
+            --touch-target: 44px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- Layout --- */
+        #app-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        aside {
+            width: var(--sidebar-width);
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #000;
+            position: relative;
+            min-width: 0;
+        }
+
+        #canvas-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background-image: radial-gradient(#222 1px, transparent 1px);
+            background-size: 30px 30px;
+            position: relative;
+            touch-action: none; /* Prevents browser pinch/zoom interference with canvas */
+        }
+
+        /* --- Panels --- */
+        .panel { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+        .panel-header {
+            padding: 10px 16px;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            min-height: var(--touch-target);
+        }
+        .scroll-area { flex: 1; overflow-y: auto; padding: 8px; }
+
+        /* --- Layers --- */
+        .layer-list-container { list-style: none; }
+        .layer-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: var(--bg-panel);
+            margin-bottom: 2px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            gap: 10px;
+            cursor: grab;
+            border: 1px solid transparent;
+            user-select: none;
+            min-height: var(--touch-target);
+        }
+        .layer-item:active { cursor: grabbing; }
+        .layer-item.selected { border-color: var(--accent); background: #262626; }
+        .layer-item .visibility-toggle, .layer-item .lock-toggle { 
+            cursor: pointer; opacity: 0.5; transition: opacity 0.2s;
+            padding: 4px; /* Increase tap area */
+        }
+        .layer-item.hidden .visibility-toggle { color: #ef4444; opacity: 1; }
+        .layer-item.locked .lock-toggle { color: #f59e0b; opacity: 1; }
+
+        /* --- Transform Inputs --- */
+        .transform-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            padding: 16px;
+        }
+        .input-group { position: relative; }
+        .input-group label {
+            display: block;
+            font-size: 10px;
+            color: var(--text-dim);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+        .input-group input {
+            width: 100%;
+            background: #000;
+            border: 1px solid var(--border);
+            color: #fff;
+            padding: 10px 8px;
+            border-radius: 4px;
+            font-size: 13px;
+            min-height: 40px;
+        }
+
+        /* --- Timeline --- */
+        #timeline-container {
+            height: var(--timeline-height);
+            background: var(--bg-sidebar);
+            border-top: 2px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            transition: height 0.3s ease;
+            position: relative;
+            z-index: 80;
+        }
+        .timeline-toolbar {
+            height: 56px;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+        .timeline-scroll-wrapper {
+            flex: 1;
+            overflow: auto;
+            position: relative;
+            background: #0d0d0d;
+        }
+        .track-row {
+            display: flex;
+            height: 44px;
+            border-bottom: 1px solid #1a1a1a;
+            position: relative;
+        }
+        .track-info {
+            width: 140px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            position: sticky;
+            left: 0;
+            z-index: 10;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .track-content {
+            flex: 1;
+            position: relative;
+            min-width: 3000px;
+        }
+        .playhead {
+            position: absolute;
+            top: 0; bottom: 0;
+            width: 2px;
+            background: #ef4444;
+            z-index: 20;
+            pointer-events: none;
+        }
+        .keyframe {
+            position: absolute;
+            width: 12px; height: 12px;
+            background: var(--accent);
+            border-radius: 2px;
+            top: 50%;
+            transform: translate(-50%, -50%) rotate(45deg);
+            cursor: pointer;
+        }
+        .vis-interval {
+            position: absolute;
+            height: 24px;
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid var(--accent);
+            top: 50%;
+            transform: translateY(-50%);
+            border-radius: 4px;
+            cursor: move;
+        }
+
+        /* --- Buttons --- */
+        .btn {
+            background: #27272a;
+            border: none;
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            min-height: var(--touch-target);
+            white-space: nowrap;
+        }
+        .btn:hover { background: #3f3f46; }
+        .btn-primary { background: var(--accent); }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-icon { width: var(--touch-target); height: var(--touch-target); justify-content: center; padding: 0; }
+
+        /* --- Responsive Logic --- */
+        
+        /* Sidebar Overlay for Mobile */
+        #sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 90;
+        }
+
+        /* LARGE (>1200px): Standard layout (as above) */
+
+        /* MEDIUM (768px - 1200px) */
+        @media (max-width: 1200px) {
+            :root { --sidebar-width: 260px; }
+            .btn span { display: none; } /* Hide text in icons if tight */
+            .btn { padding: 8px; }
+        }
+
+        /* SMALL (< 768px) */
+        @media (max-width: 768px) {
+            aside {
+                position: absolute;
+                left: 0; top: 0; bottom: 0;
+                transform: translateX(-100%);
+                box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+            }
+            aside.open { transform: translateX(0); }
+            aside.open + #sidebar-overlay { display: block; }
+
+            #timeline-container {
+                height: 60px; /* Collapsed state */
+                overflow: hidden;
+            }
+            #timeline-container.expanded {
+                height: 280px;
+            }
+            
+            /* Responsive Toolbar adjustments */
+            .timeline-toolbar { padding: 0 8px; gap: 6px; }
+            #time-display { font-size: 12px; }
+            
+            .main-toolbar {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .transform-grid { grid-template-columns: 1fr; } /* Stack inputs on mobile */
+        }
+
+        /* --- Modals --- */
+        #modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal {
+            background: var(--bg-sidebar);
+            width: 400px;
+            max-width: 90%;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+        .modal-body { padding: 20px; }
+        .modal-footer {
+            padding: 12px 20px;
+            background: var(--bg-panel);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .is-group { border-left: 3px solid #8b5cf6 !important; }
+        
+        /* Utility for mobile timeline toggle */
+        #timeline-toggle-btn {
+            display: none;
+        }
+        @media (max-width: 768px) {
+            #timeline-toggle-btn { display: flex; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="sidebar-overlay" onclick="ui.toggleSidebar(false)"></div>
+
+    <div id="app-container">
+        <!-- Sidebar Drawer -->
+        <aside id="main-sidebar">
+            <!-- Scene Manager -->
+            <div class="panel" style="flex: 0 0 auto; height: 180px; border-bottom: 1px solid var(--border);">
+                <div class="panel-header">
+                    Scenes
+                    <button class="btn btn-icon" onclick="ui.showSceneModal()"><i data-lucide="plus"></i></button>
+                </div>
+                <div class="scroll-area" id="scene-list"></div>
+            </div>
+
+            <!-- Layers Panel -->
+            <div class="panel">
+                <div class="panel-header">Hierarchy</div>
+                <div class="scroll-area">
+                    <div id="layer-list" class="layer-list-container"></div>
+                </div>
+            </div>
+
+            <!-- Transform Panel -->
+            <div class="panel" id="transform-section" style="flex: 0 0 auto; background: var(--bg-panel); border-top: 1px solid var(--border);">
+                <div class="panel-header">Transform</div>
+                <div class="transform-grid" id="transform-panel">
+                    <div class="input-group">
+                        <label>PosX</label>
+                        <input type="number" data-prop="left" id="p-left">
+                    </div>
+                    <div class="input-group">
+                        <label>PosY</label>
+                        <input type="number" data-prop="top" id="p-top">
+                    </div>
+                    <div class="input-group">
+                        <label>ScaleX %</label>
+                        <input type="number" data-prop="scaleX" id="p-scaleX" step="1">
+                    </div>
+                    <div class="input-group">
+                        <label>ScaleY %</label>
+                        <input type="number" data-prop="scaleY" id="p-scaleY" step="1">
+                    </div>
+                    <div class="input-group">
+                        <label>Rotate °</label>
+                        <input type="number" data-prop="angle" id="p-angle">
+                    </div>
+                    <div class="input-group">
+                        <label>Opacity</label>
+                        <input type="number" data-prop="opacity" id="p-opacity" step="0.1" min="0" max="1">
+                    </div>
+                </div>
+                <div style="padding: 0 12px 12px; display: flex; gap: 4px;">
+                    <button class="btn btn-primary" style="flex: 1" onclick="animator.addKeyframe()"><span>+ KF</span></button>
+                    <button class="btn" style="flex: 1" onclick="animator.addInterval()"><span>Visible</span></button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main>
+            <div class="timeline-toolbar main-toolbar">
+                <button id="menu-btn" class="btn btn-icon" onclick="ui.toggleSidebar(true)">
+                    <i data-lucide="menu"></i>
+                </button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn" onclick="ui.triggerImageImport()"><i data-lucide="image"></i> <span>Import</span></button>
+                    <button class="btn" onclick="ui.groupSelected()"><i data-lucide="package"></i> <span>Group</span></button>
+                    <button class="btn" onclick="ui.ungroupSelected()"><i data-lucide="unfold-more"></i> <span>Ungroup</span></button>
+                </div>
+                <div style="margin-left: auto; display: flex; gap: 8px; padding-right: 8px;">
+                    <button class="btn" onclick="ui.exportJSON()"><i data-lucide="save"></i></button>
+                    <button class="btn btn-primary" onclick="ui.exportVideo()"><i data-lucide="video"></i> <span>Render</span></button>
+                </div>
+            </div>
+
+            <div id="canvas-wrapper">
+                <canvas id="main-canvas"></canvas>
+            </div>
+        </main>
+    </div>
+
+    <!-- Timeline (Bottom Sheet on Mobile) -->
+    <div id="timeline-container">
+        <div class="timeline-toolbar">
+            <button class="btn btn-icon" id="play-btn" onclick="animator.togglePlay()"><i data-lucide="play"></i></button>
+            <span id="time-display" style="font-family: monospace;">00:00.000</span>
+            <input type="range" id="scrubber" style="flex: 1; cursor: pointer;" min="0" max="10000" value="0">
+            <button id="timeline-toggle-btn" class="btn btn-icon" onclick="ui.toggleTimeline()">
+                <i data-lucide="chevron-up" id="timeline-chevron"></i>
+            </button>
+            <button class="btn btn-icon" onclick="ui.importAudio()"><i data-lucide="music"></i></button>
+        </div>
+        <div class="timeline-scroll-wrapper" id="timeline-scroll">
+            <div class="playhead" id="playhead"></div>
+            <div id="tracks-list"></div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-overlay">
+        <div class="modal" id="scene-modal">
+            <div class="panel-header">Create New Scene</div>
+            <div class="modal-body">
+                <div class="input-group" style="margin-bottom: 12px;">
+                    <label>Resolution Preset</label>
+                    <select id="res-select" class="btn" style="width: 100%; text-align: left;">
+                        <optgroup label="Landscape (16:9)">
+                            <option value="1920,1080">1080p HD (1920x1080)</option>
+                            <option value="3840,2160">4K (3840x2160)</option>
+                            <option value="1280,720">720p HD (1280x720)</option>
+                        </optgroup>
+                        <optgroup label="Portrait (9:16)">
+                            <option value="1080,1920">1080p Vertical</option>
+                            <option value="720,1280">720p Vertical</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Background Color</label>
+                    <input type="color" id="scene-bg" value="#ffffff" style="height: 44px; padding: 4px;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="ui.hideModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="ui.createScene()">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const state = {
+            scenes: [],
+            activeSceneIdx: 0,
+            currentTime: 0,
+            duration: 10000,
+            isPlaying: false,
+            audio: null,
+            pixRatio: 1
+        };
+
+        let canvas;
+        let playInterval;
+
+        function init() {
+            canvas = new fabric.Canvas('main-canvas', {
+                preserveObjectStacking: true,
+                subTargetCheck: true,
+                backgroundColor: '#fff'
+            });
+
+            canvas.on('selection:created', () => { ui.syncTransformPanel(); ui.refreshLayers(); });
+            canvas.on('selection:updated', () => { ui.syncTransformPanel(); ui.refreshLayers(); });
+            canvas.on('selection:cleared', () => { ui.clearTransformPanel(); ui.refreshLayers(); });
+            canvas.on('object:modified', () => { ui.syncTransformPanel(); animator.updateTracks(); });
+            canvas.on('object:moving', ui.syncTransformPanel);
+            canvas.on('object:scaling', ui.syncTransformPanel);
+
+            window.addEventListener('resize', ui.resizeCanvas);
+            
+            ui.createScene(1920, 1080, '#ffffff');
+            lucide.createIcons();
+            
+            new Sortable(document.getElementById('layer-list'), {
+                animation: 150,
+                onEnd: (evt) => {
+                    const objects = canvas.getObjects();
+                    const movedItem = objects.splice(objects.length - 1 - evt.oldIndex, 1)[0];
+                    objects.splice(objects.length - evt.newIndex, 0, movedItem);
+                    canvas.requestRenderAll();
+                }
+            });
+
+            // Touch interaction for Scrubber
+            document.getElementById('scrubber').addEventListener('touchstart', () => animator.togglePlay(false));
+        }
+
+        const ui = {
+            toggleSidebar(show) {
+                const aside = document.getElementById('main-sidebar');
+                if (show) aside.classList.add('open');
+                else aside.classList.remove('open');
+            },
+            toggleTimeline() {
+                const timeline = document.getElementById('timeline-container');
+                const icon = document.getElementById('timeline-chevron');
+                timeline.classList.toggle('expanded');
+                const isExpanded = timeline.classList.contains('expanded');
+                icon.setAttribute('data-lucide', isExpanded ? 'chevron-down' : 'chevron-up');
+                lucide.createIcons();
+            },
+            showSceneModal() {
+                document.getElementById('modal-overlay').style.display = 'flex';
+                document.getElementById('scene-modal').style.display = 'block';
+            },
+            hideModal() {
+                document.getElementById('modal-overlay').style.display = 'none';
+            },
+            createScene(w, h, bg) {
+                if (!w) {
+                    const res = document.getElementById('res-select').value.split(',').map(Number);
+                    w = res[0]; h = res[1];
+                    bg = document.getElementById('scene-bg').value;
+                }
+                const scene = {
+                    id: 'scene-' + Date.now(),
+                    width: w, height: h, background: bg,
+                    objects: []
+                };
+                state.scenes.push(scene);
+                this.switchScene(state.scenes.length - 1);
+                this.hideModal();
+                this.refreshSceneList();
+            },
+            switchScene(idx) {
+                if (state.scenes[state.activeSceneIdx]) {
+                    state.scenes[state.activeSceneIdx].objects = canvas.toJSON(['id', 'animData']);
+                }
+                state.activeSceneIdx = idx;
+                const scene = state.scenes[idx];
+                canvas.loadFromJSON(scene.objects, () => {
+                    canvas.backgroundColor = scene.background;
+                    this.resizeCanvas();
+                    this.refreshLayers();
+                    animator.updateTracks();
+                });
+                this.refreshSceneList();
+            },
+            refreshSceneList() {
+                const list = document.getElementById('scene-list');
+                list.innerHTML = state.scenes.map((s, i) => `
+                    <div class="layer-item ${i === state.activeSceneIdx ? 'selected' : ''}" onclick="ui.switchScene(${i})">
+                        <i data-lucide="film" size="14"></i>
+                        <span style="flex:1">Scene ${i+1}</span>
+                        <i data-lucide="trash" size="14" onclick="ui.deleteScene(${i}, event)"></i>
+                    </div>
+                `).join('');
+                lucide.createIcons();
+            },
+            deleteScene(idx, e) {
+                e.stopPropagation();
+                if (state.scenes.length <= 1) return;
+                if (confirm('Delete this scene?')) {
+                    state.scenes.splice(idx, 1);
+                    this.switchScene(0);
+                }
+            },
+            resizeCanvas() {
+                const wrapper = document.getElementById('canvas-wrapper');
+                const scene = state.scenes[state.activeSceneIdx];
+                if (!scene) return;
+
+                const padding = window.innerWidth < 768 ? 10 : 40;
+                const scale = Math.min(
+                    (wrapper.clientWidth - padding) / scene.width,
+                    (wrapper.clientHeight - padding) / scene.height
+                );
+
+                canvas.setDimensions({ 
+                    width: scene.width * scale, 
+                    height: scene.height * scale 
+                });
+                canvas.setZoom(scale);
+                state.pixRatio = scale;
+            },
+            refreshLayers() {
+                const list = document.getElementById('layer-list');
+                const objects = canvas.getObjects().slice().reverse();
+                const active = canvas.getActiveObject();
+
+                list.innerHTML = objects.map(obj => {
+                    const isSelected = active === obj || (active && active.type === 'activeSelection' && active.contains(obj));
+                    return `
+                        <div class="layer-item ${isSelected ? 'selected' : ''} ${obj.type === 'group' ? 'is-group' : ''} ${!obj.visible ? 'hidden' : ''} ${obj.lockMovementX ? 'locked' : ''}" onclick="ui.selectInCanvas('${obj.id}')">
+                            <i data-lucide="${obj.type === 'group' ? 'package' : 'image'}" size="14"></i>
+                            <span style="flex:1; overflow:hidden; text-overflow:ellipsis">${obj.id || obj.type}</span>
+                            <i data-lucide="${obj.visible ? 'eye' : 'eye-off'}" class="visibility-toggle" onclick="ui.toggleProp('${obj.id}', 'visible', event)"></i>
+                            <i data-lucide="${obj.lockMovementX ? 'lock' : 'unlock'}" class="lock-toggle" onclick="ui.toggleProp('${obj.id}', 'lock', event)"></i>
+                        </div>
+                    `;
+                }).join('');
+                lucide.createIcons();
+            },
+            selectInCanvas(id) {
+                const obj = canvas.getObjects().find(o => o.id === id);
+                if (obj) {
+                    canvas.setActiveObject(obj);
+                    canvas.requestRenderAll();
+                }
+            },
+            toggleProp(id, prop, e) {
+                e.stopPropagation();
+                const obj = canvas.getObjects().find(o => o.id === id);
+                if (!obj) return;
+                if (prop === 'visible') obj.set('visible', !obj.visible);
+                if (prop === 'lock') {
+                    const locked = !obj.lockMovementX;
+                    obj.set({
+                        lockMovementX: locked, lockMovementY: locked,
+                        lockScalingX: locked, lockScalingY: locked,
+                        lockRotation: locked, hasControls: !locked
+                    });
+                }
+                canvas.requestRenderAll();
+                this.refreshLayers();
+            },
+            triggerImageImport() {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (f) => {
+                        fabric.Image.fromURL(f.target.result, (img) => {
+                            img.set({
+                                id: 'Img_' + Math.random().toString(36).substr(2, 4),
+                                left: 50, top: 50,
+                                animData: { keyframes: [], intervals: [] }
+                            });
+                            img.scaleToWidth(200);
+                            canvas.add(img);
+                            canvas.setActiveObject(img);
+                            this.refreshLayers();
+                            animator.updateTracks();
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                };
+                input.click();
+            },
+            syncTransformPanel() {
+                const obj = canvas.getActiveObject();
+                if (!obj) return;
+                document.getElementById('p-left').value = Math.round(obj.left);
+                document.getElementById('p-top').value = Math.round(obj.top);
+                document.getElementById('p-scaleX').value = Math.round(obj.scaleX * 100);
+                document.getElementById('p-scaleY').value = Math.round(obj.scaleY * 100);
+                document.getElementById('p-angle').value = Math.round(obj.angle);
+                document.getElementById('p-opacity').value = obj.opacity;
+            },
+            clearTransformPanel() {
+                document.querySelectorAll('#transform-panel input').forEach(i => i.value = '');
+            },
+            groupSelected() {
+                const active = canvas.getActiveObject();
+                if (!active || active.type !== 'activeSelection') return;
+                active.toGroup();
+                const group = canvas.getActiveObject();
+                group.set({
+                    id: 'Group_' + Math.random().toString(36).substr(2, 4),
+                    animData: { keyframes: [], intervals: [] }
+                });
+                canvas.requestRenderAll();
+                this.refreshLayers();
+                animator.updateTracks();
+            },
+            ungroupSelected() {
+                const active = canvas.getActiveObject();
+                if (!active || active.type !== 'group') return;
+                active.toActiveSelection();
+                canvas.requestRenderAll();
+                this.refreshLayers();
+                animator.updateTracks();
+            },
+            deleteSelected() {
+                const active = canvas.getActiveObject();
+                if (active) {
+                    if (active.type === 'activeSelection') active.forEachObject(o => canvas.remove(o));
+                    else canvas.remove(active);
+                    canvas.discardActiveObject();
+                    this.refreshLayers();
+                    animator.updateTracks();
+                }
+            },
+            exportJSON() {
+                const data = JSON.stringify(state.scenes);
+                const blob = new Blob([data], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = 'storyboard_project.json';
+                a.click();
+            },
+            async exportVideo() {
+                const stream = canvas.getElement().captureStream(30);
+                const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+                const chunks = [];
+                recorder.ondataavailable = e => chunks.push(e.data);
+                recorder.onstop = () => {
+                    const blob = new Blob(chunks, { type: 'video/webm' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url; a.download = 'storyboard_render.webm'; a.click();
+                };
+                
+                state.currentTime = 0;
+                animator.applyTime();
+                recorder.start();
+                animator.togglePlay(true);
+                setTimeout(() => {
+                    animator.togglePlay(false);
+                    recorder.stop();
+                }, state.duration);
+            }
+        };
+
+        const animator = {
+            togglePlay(force) {
+                state.isPlaying = force !== undefined ? force : !state.isPlaying;
+                const btn = document.getElementById('play-btn');
+                btn.innerHTML = state.isPlaying ? '<i data-lucide="pause"></i>' : '<i data-lucide="play"></i>';
+                lucide.createIcons();
+
+                if (state.isPlaying) {
+                    const start = Date.now() - state.currentTime;
+                    playInterval = setInterval(() => {
+                        state.currentTime = Date.now() - start;
+                        if (state.currentTime >= state.duration) {
+                            state.currentTime = 0;
+                            this.togglePlay(false);
+                        }
+                        this.applyTime();
+                    }, 1000 / 60);
+                } else {
+                    clearInterval(playInterval);
+                }
+            },
+            applyTime() {
+                const t = state.currentTime;
+                document.getElementById('scrubber').value = (t / state.duration) * 10000;
+                document.getElementById('playhead').style.left = `calc(140px + ${(t / state.duration) * 100}%)`;
+                
+                const ms = String(Math.floor(t % 1000)).padStart(3, '0');
+                const sec = String(Math.floor((t / 1000) % 60)).padStart(2, '0');
+                const min = String(Math.floor(t / 60000)).padStart(2, '0');
+                document.getElementById('time-display').innerText = `${min}:${sec}.${ms}`;
+
+                canvas.getObjects().forEach(obj => {
+                    if (!obj.animData) return;
+                    const kfs = obj.animData.keyframes;
+                    if (kfs.length > 0) {
+                        const sorted = [...kfs].sort((a,b) => a.time - b.time);
+                        const next = sorted.find(k => k.time > t);
+                        const prev = [...sorted].reverse().find(k => k.time <= t);
+                        if (prev && next) {
+                            const ratio = (t - prev.time) / (next.time - prev.time);
+                            obj.set({
+                                left: prev.left + (next.left - prev.left) * ratio,
+                                top: prev.top + (next.top - prev.top) * ratio,
+                                scaleX: prev.scaleX + (next.scaleX - prev.scaleX) * ratio,
+                                scaleY: prev.scaleY + (next.scaleY - prev.scaleY) * ratio,
+                                angle: prev.angle + (next.angle - prev.angle) * ratio,
+                                opacity: prev.opacity + (next.opacity - prev.opacity) * ratio
+                            });
+                        } else if (prev) obj.set(prev);
+                        else if (next) obj.set(next);
+                    }
+                    const invs = obj.animData.intervals;
+                    if (invs.length > 0) {
+                        const isVisible = invs.some(i => t >= i.start && t <= i.end);
+                        obj.set('visible', isVisible);
+                    }
+                });
+                canvas.requestRenderAll();
+            },
+            addKeyframe() {
+                const obj = canvas.getActiveObject();
+                if (!obj) return;
+                const kf = {
+                    time: state.currentTime,
+                    left: obj.left, top: obj.top,
+                    scaleX: obj.scaleX, scaleY: obj.scaleY,
+                    angle: obj.angle, opacity: obj.opacity
+                };
+                const existing = obj.animData.keyframes.findIndex(k => Math.abs(k.time - kf.time) < 100);
+                if (existing !== -1) obj.animData.keyframes[existing] = kf;
+                else obj.animData.keyframes.push(kf);
+                this.updateTracks();
+            },
+            addInterval() {
+                const obj = canvas.getActiveObject();
+                if (!obj) return;
+                obj.animData.intervals.push({
+                    start: state.currentTime,
+                    end: Math.min(state.currentTime + 1000, state.duration)
+                });
+                this.updateTracks();
+            },
+            updateTracks() {
+                const container = document.getElementById('tracks-list');
+                container.innerHTML = '';
+                canvas.getObjects().forEach(obj => {
+                    const row = document.createElement('div');
+                    row.className = 'track-row';
+                    const info = document.createElement('div');
+                    info.className = 'track-info';
+                    info.innerText = obj.id || obj.type;
+                    const content = document.createElement('div');
+                    content.className = 'track-content';
+                    obj.animData.keyframes.forEach(k => {
+                        const dot = document.createElement('div');
+                        dot.className = 'keyframe';
+                        dot.style.left = (k.time / state.duration * 100) + '%';
+                        content.appendChild(dot);
+                    });
+                    obj.animData.intervals.forEach((inv) => {
+                        const bar = document.createElement('div');
+                        bar.className = 'vis-interval';
+                        bar.style.left = (inv.start / state.duration * 100) + '%';
+                        bar.style.width = ((inv.end - inv.start) / state.duration * 100) + '%';
+                        content.appendChild(bar);
+                    });
+                    row.appendChild(info);
+                    row.appendChild(content);
+                    container.appendChild(row);
+                });
+            }
+        };
+
+        document.getElementById('scrubber').addEventListener('input', (e) => {
+            state.currentTime = (e.target.value / 10000) * state.duration;
+            animator.applyTime();
+        });
+
+        document.querySelectorAll('#transform-panel input').forEach(input => {
+            input.addEventListener('input', (e) => {
+                const obj = canvas.getActiveObject();
+                if (!obj) return;
+                const prop = e.target.dataset.prop;
+                let val = parseFloat(e.target.value);
+                if (prop === 'scaleX' || prop === 'scaleY') obj.set(prop, val / 100);
+                else obj.set(prop, val);
+                canvas.requestRenderAll();
+                animator.updateTracks();
+            });
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if ((e.key === 'Delete' || e.key === 'Backspace') && document.activeElement.tagName !== 'INPUT') ui.deleteSelected();
+            if (e.ctrlKey && e.key === 'g') { e.preventDefault(); ui.groupSelected(); }
+        });
+
+        init();
+    </script>
+</body>
+</html>
