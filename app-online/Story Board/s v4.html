@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProAnim Storyboard Tool v3.1</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --accent: #3b82f6;
+            --border: #475569;
+            --timeline-height: 260px;
+            --sidebar-width: 300px;
+        }
+
+        body { background-color: var(--bg-primary); color: #f1f5f9; overflow: hidden; font-family: 'Inter', sans-serif; }
+
+        .app-grid {
+            display: grid;
+            grid-template-columns: var(--sidebar-width) 1fr 320px;
+            grid-template-rows: 60px 1fr var(--timeline-height);
+            height: 100vh;
+        }
+
+        header { grid-area: 1 / 1 / 2 / 4; border-bottom: 1px solid var(--border); background: var(--bg-secondary); }
+        .left-sidebar { grid-area: 2 / 1 / 3 / 2; border-right: 1px solid var(--border); overflow-y: auto; }
+        main { grid-area: 2 / 2 / 3 / 3; position: relative; overflow: auto; background: #020617; display: flex; align-items: center; justify-content: center; }
+        .right-sidebar { grid-area: 2 / 3 / 3 / 4; border-left: 1px solid var(--border); background: var(--bg-secondary); }
+        footer { grid-area: 3 / 1 / 4 / 4; border-top: 1px solid var(--border); background: var(--bg-secondary); z-index: 40; }
+
+        .canvas-wrapper { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); background: #fff; transition: transform 0.2s ease; }
+
+        /* Layer Tree Styles */
+        .layer-item { @apply flex items-center gap-2 p-2 rounded text-[11px] hover:bg-slate-700 cursor-pointer transition-all; }
+        .layer-item.active { @apply bg-blue-600/30 border-l-2 border-blue-500; }
+        .layer-item.dragging { opacity: 0.5; background: var(--bg-tertiary); }
+
+        /* Timeline Controls */
+        .timeline-tracks { overflow-x: auto; overflow-y: auto; flex-grow: 1; position: relative; }
+        .track-row { height: 36px; border-bottom: 1px solid var(--border); display: flex; align-items: center; min-width: 5000px; }
+        .track-label { width: 200px; min-width: 200px; padding: 0 12px; background: var(--bg-secondary); position: sticky; left: 0; z-index: 20; border-right: 1px solid var(--border); font-size: 11px; color: #94a3b8; }
+        .track-content { position: relative; flex-grow: 1; height: 100%; }
+        
+        .playhead { position: absolute; top: 0; width: 2px; height: 100%; background: #f43f5e; z-index: 30; pointer-events: none; }
+        .playhead::before { content: ''; position: absolute; top: 0; left: -6px; border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 10px solid #f43f5e; }
+
+        .keyframe { position: absolute; width: 10px; height: 10px; background: var(--accent); transform: rotate(45deg); top: 50%; margin-top: -5px; cursor: pointer; border: 1px solid white; z-index: 5; }
+        .visibility-bar { position: absolute; height: 14px; background: rgba(59, 130, 246, 0.35); border: 1px solid var(--accent); border-radius: 2px; top: 50%; margin-top: -7px; }
+        .audio-track { background: rgba(16, 185, 129, 0.05) !important; }
+
+        .loading-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; display: none; align-items: center; justify-content: center; flex-direction: column; }
+        
+        input[type="number"], select { background: var(--bg-tertiary); border: 1px solid var(--border); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+        .btn-primary { @apply bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm font-medium transition-all; }
+        .tool-icon-btn { @apply p-2 rounded text-slate-400 hover:text-white hover:bg-slate-700 transition-all; }
+        .tool-icon-btn:disabled { @apply opacity-30 cursor-not-allowed; }
+    </style>
+</head>
+<body>
+
+    <div id="loader" class="loading-overlay">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+        <p id="loader-text">Exporting...</p>
+    </div>
+
+    <div class="app-grid">
+        <header class="flex items-center justify-between px-6">
+            <div class="flex items-center gap-6">
+                <div class="text-xl font-black text-blue-500 tracking-tighter flex items-center">
+                    <i class="fas fa-layer-group mr-2"></i>PROANIM <span class="ml-2 text-[10px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded">V3.1</span>
+                </div>
+                <div class="flex items-center gap-1 ml-4">
+                    <button onclick="groupSelected()" class="tool-icon-btn" title="Group (Ctrl+G)"><i class="fas fa-object-group"></i></button>
+                    <button onclick="ungroupSelected()" class="tool-icon-btn" title="Ungroup (Ctrl+Shift+G)"><i class="fas fa-object-ungroup"></i></button>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button onclick="undo()" id="undo-btn" class="tool-icon-btn" disabled><i class="fas fa-undo"></i></button>
+                <button onclick="redo()" id="redo-btn" class="tool-icon-btn" disabled><i class="fas fa-redo"></i></button>
+                <div class="h-8 w-px bg-slate-700 mx-2"></div>
+                <button onclick="exportJSON()" class="btn-primary bg-slate-700 hover:bg-slate-600"><i class="fas fa-file-code mr-2"></i>JSON</button>
+                <button onclick="exportVideo('webm')" class="btn-primary"><i class="fas fa-film mr-2"></i>Render</button>
+            </div>
+        </header>
+
+        <aside class="left-sidebar bg-slate-900 flex flex-col">
+            <div class="p-4 border-b border-slate-800">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Scenes</span>
+                    <button onclick="addScene()" class="text-blue-500 text-sm"><i class="fas fa-plus"></i></button>
+                </div>
+                <div id="scene-list" class="space-y-1"></div>
+            </div>
+
+            <div class="p-4 flex-grow overflow-y-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Hierarchy</span>
+                    <div class="flex gap-2">
+                        <button onclick="deleteSelected()" class="text-rose-500 text-sm"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+                <div id="layer-tree" class="space-y-0.5"></div>
+            </div>
+
+            <div class="p-4 border-t border-slate-800 bg-slate-900/50 grid grid-cols-4 gap-2">
+                <button onclick="importAsset()" class="tool-icon-btn" title="Image"><i class="fas fa-image"></i></button>
+                <button onclick="addText()" class="tool-icon-btn" title="Text"><i class="fas fa-font"></i></button>
+                <button onclick="addShape('rect')" class="tool-icon-btn" title="Rect"><i class="fas fa-square"></i></button>
+                <button onclick="importAudio()" class="tool-icon-btn" title="Audio"><i class="fas fa-music"></i></button>
+            </div>
+        </aside>
+
+        <main id="viewport">
+            <div class="canvas-wrapper">
+                <canvas id="c"></canvas>
+            </div>
+            <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-6 bg-slate-900/90 backdrop-blur px-6 py-2 rounded-full border border-slate-700">
+                <button onclick="changeZoom(-0.1)" class="text-slate-400"><i class="fas fa-minus"></i></button>
+                <span id="zoom-val" class="text-xs font-mono w-10 text-center">100%</span>
+                <button onclick="changeZoom(0.1)" class="text-slate-400"><i class="fas fa-plus"></i></button>
+            </div>
+        </main>
+
+        <aside class="right-sidebar">
+            <div id="prop-empty" class="h-full flex flex-col items-center justify-center p-8 text-center text-slate-500">
+                <p class="text-xs">Select an element to edit properties</p>
+            </div>
+
+            <div id="prop-panel" class="hidden p-5 space-y-6">
+                <section>
+                    <h4 class="text-[10px] font-bold text-slate-500 uppercase mb-4">Element</h4>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-[10px] text-slate-400">Name</label>
+                            <input type="text" id="p-name" class="w-full bg-slate-800 border-slate-700 rounded p-2 text-xs text-white">
+                        </div>
+                    </div>
+                </section>
+                <section>
+                    <h4 class="text-[10px] font-bold text-slate-500 uppercase mb-4">Transform</h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-1"><label class="text-[10px] text-slate-400">X</label><input type="number" id="p-x" class="w-full"></div>
+                        <div class="space-y-1"><label class="text-[10px] text-slate-400">Y</label><input type="number" id="p-y" class="w-full"></div>
+                        <div class="space-y-1"><label class="text-[10px] text-slate-400">Scale %</label><input type="number" id="p-s" step="1" class="w-full"></div>
+                        <div class="space-y-1"><label class="text-[10px] text-slate-400">Rotate</label><input type="number" id="p-r" class="w-full"></div>
+                    </div>
+                </section>
+                <div class="pt-4 border-t border-slate-700">
+                    <button onclick="addKeyframe()" class="w-full btn-primary py-2.5 rounded-lg flex items-center justify-center gap-2">
+                        <i class="fas fa-key text-xs"></i> Record Keyframe
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <footer class="flex flex-col">
+            <div class="h-12 border-b border-slate-700 flex items-center justify-between px-6 bg-slate-900/50">
+                <div class="flex items-center gap-6">
+                    <button onclick="togglePlay()" id="play-toggle" class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
+                        <i class="fas fa-play text-xs ml-0.5"></i>
+                    </button>
+                    <div class="text-sm font-mono text-blue-400">
+                        <span id="time-cur">00:00.0</span> <span class="text-slate-600">/</span> <span id="time-total">00:10.0</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="flex bg-slate-800 rounded p-0.5">
+                        <button onclick="setVisPoint('in')" class="px-3 py-1 text-[10px] font-bold text-slate-400 hover:text-white">SET IN</button>
+                        <button onclick="setVisPoint('out')" class="px-3 py-1 text-[10px] font-bold text-slate-400 hover:text-white">SET OUT</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="timeline-tracks" id="tl-body">
+                <div id="playhead" class="playhead" style="left: 200px;"></div>
+                <div id="tl-content"></div>
+            </div>
+        </footer>
+    </div>
+
+    <input type="file" id="asset-upload" class="hidden">
+    <input type="file" id="audio-upload" class="hidden" accept="audio/*">
+
+    <script>
+        let canvas, scenes = [], activeIdx = 0;
+        let isPlaying = false, currentTime = 0, duration = 10, fps = 30;
+        let canvasScale = 1, undoStack = [], redoStack = [];
+        let activeAudio = null;
+        let dragSource = null;
+
+        const PX_PER_SEC = 150;
+        const Easing = {
+            linear: t => t,
+            easeInOut: t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+        };
+
+        window.onload = () => {
+            initCanvas();
+            initApp();
+            addScene();
+            requestAnimationFrame(tick);
+        };
+
+        function initCanvas() {
+            canvas = new fabric.Canvas('c', {
+                width: 1920, height: 1080,
+                backgroundColor: '#ffffff',
+                preserveObjectStacking: true
+            });
+
+            canvas.on('object:modified', () => { save(); updateProps(); });
+            canvas.on('selection:created', showProps);
+            canvas.on('selection:updated', showProps);
+            canvas.on('selection:cleared', hideProps);
+            
+            fitCanvas();
+            window.addEventListener('resize', fitCanvas);
+        }
+
+        function initApp() {
+            window.addEventListener('keydown', e => {
+                if(e.target.tagName === 'INPUT') return;
+                if(e.code === 'Space') { e.preventDefault(); togglePlay(); }
+                if(e.code === 'Delete') deleteSelected();
+                if(e.ctrlKey && e.key === 'g') { e.preventDefault(); groupSelected(); }
+                if(e.ctrlKey && e.shiftKey && e.key === 'G') { e.preventDefault(); ungroupSelected(); }
+                if(e.ctrlKey && e.key === 'z') undo();
+                if(e.ctrlKey && e.key === 'y') redo();
+            });
+
+            document.getElementById('p-name').onchange = e => {
+                const obj = canvas.getActiveObject();
+                if(obj) { obj.name = e.target.value; renderHierarchy(); renderTimeline(); save(); }
+            };
+
+            const bind = (id, prop, isScale = false) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.oninput = e => {
+                    const obj = canvas.getActiveObject();
+                    if(!obj) return;
+                    let val = parseFloat(e.target.value);
+                    if(isScale) val /= 100;
+                    obj.set(prop, val);
+                    obj.setCoords();
+                    canvas.renderAll();
+                };
+            };
+            bind('p-x', 'left'); bind('p-y', 'top');
+            bind('p-s', 'scaleX', true); bind('p-s', 'scaleY', true);
+            bind('p-r', 'angle');
+        }
+
+        // --- GROUPING SYSTEM ---
+
+        function groupSelected() {
+            if (!canvas.getActiveObject()) return;
+            if (canvas.getActiveObject().type !== 'activeSelection') return;
+
+            canvas.getActiveObject().toGroup();
+            const group = canvas.getActiveObject();
+            decorate(group, 'group');
+            group.name = "New Group";
+            canvas.requestRenderAll();
+            renderHierarchy();
+            renderTimeline();
+            save();
+        }
+
+        function ungroupSelected() {
+            const obj = canvas.getActiveObject();
+            if (!obj || obj.type !== 'group') return;
+            obj.toActiveSelection();
+            canvas.requestRenderAll();
+            renderHierarchy();
+            renderTimeline();
+            save();
+        }
+
+        // --- HIERARCHY & DRAG-DROP ---
+
+        function renderHierarchy() {
+            const container = document.getElementById('layer-tree');
+            container.innerHTML = '';
+            
+            const objects = canvas.getObjects();
+            [...objects].reverse().forEach((obj, idx) => {
+                renderHierarchyNode(obj, container, 0);
+            });
+        }
+
+        function renderHierarchyNode(obj, container, depth) {
+            const row = document.createElement('div');
+            row.className = `layer-item ${canvas.getActiveObject() === obj ? 'active' : ''}`;
+            row.draggable = true;
+            
+            row.ondragstart = (e) => { dragSource = obj; row.classList.add('dragging'); };
+            row.ondragend = () => { row.classList.remove('dragging'); };
+            row.ondragover = (e) => e.preventDefault();
+            row.ondrop = (e) => {
+                e.preventDefault();
+                if (!dragSource || dragSource === obj) return;
+                const objects = canvas.getObjects();
+                const fromIdx = objects.indexOf(dragSource);
+                const toIdx = objects.indexOf(obj);
+                
+                canvas.remove(dragSource);
+                canvas.insertAt(dragSource, toIdx);
+                canvas.setActiveObject(dragSource);
+                renderHierarchy();
+                renderTimeline();
+                save();
+            };
+
+            const icon = document.createElement('i');
+            icon.className = `fas ${obj.type === 'group' ? 'fa-folder-open' : (obj.meta?.type === 'text' ? 'fa-font' : 'fa-shapes')} mr-1 opacity-50`;
+            row.appendChild(icon);
+
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'flex-grow truncate';
+            nameSpan.innerText = obj.name || (obj.type.charAt(0).toUpperCase() + obj.type.slice(1));
+            nameSpan.ondblclick = (e) => {
+                e.stopPropagation();
+                const inp = document.createElement('input');
+                inp.value = nameSpan.innerText;
+                inp.className = 'bg-slate-800 text-white border-none w-full outline-none p-1 rounded';
+                nameSpan.innerHTML = '';
+                nameSpan.appendChild(inp);
+                inp.focus();
+                inp.onblur = () => { obj.name = inp.value; renderHierarchy(); renderTimeline(); };
+                inp.onkeydown = (ev) => { if(ev.key === 'Enter') inp.blur(); };
+            };
+            row.appendChild(nameSpan);
+
+            const lockBtn = document.createElement('button');
+            lockBtn.className = 'hover:text-white transition-colors p-1';
+            lockBtn.innerHTML = `<i class="fas ${obj.selectable ? 'fa-unlock' : 'fa-lock text-amber-500'}"></i>`;
+            lockBtn.onclick = (e) => { 
+                e.stopPropagation(); 
+                obj.selectable = !obj.selectable; 
+                obj.evented = obj.selectable;
+                canvas.discardActiveObject();
+                canvas.renderAll();
+                renderHierarchy(); 
+            };
+            
+            const eyeBtn = document.createElement('button');
+            eyeBtn.className = 'hover:text-white transition-colors p-1';
+            eyeBtn.innerHTML = `<i class="fas ${!obj.hidden ? 'fa-eye' : 'fa-eye-slash text-slate-500'}"></i>`;
+            eyeBtn.onclick = (e) => { 
+                e.stopPropagation(); 
+                obj.hidden = !obj.hidden; 
+                canvas.renderAll(); 
+                renderHierarchy(); 
+                renderTimeline();
+            };
+
+            row.appendChild(lockBtn);
+            row.appendChild(eyeBtn);
+
+            row.onclick = () => { 
+                canvas.setActiveObject(obj); 
+                canvas.renderAll(); 
+                renderHierarchy(); 
+                showProps(); 
+            };
+
+            container.appendChild(row);
+        }
+
+        // --- VISIBILITY ANIMATION ---
+
+        function setVisPoint(type) {
+            const obj = canvas.getActiveObject();
+            if(!obj) return;
+            
+            if(!obj.intervals) obj.intervals = [{start: 0, end: duration}];
+            
+            const currentInterval = obj.intervals[obj.intervals.length - 1];
+            if(type === 'in') currentInterval.start = currentTime;
+            else currentInterval.end = currentTime;
+            
+            renderTimeline();
+            save();
+        }
+
+        // --- AUDIO ---
+
+        function importAudio() {
+            const up = document.getElementById('audio-upload');
+            up.onchange = e => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = f => {
+                    scenes[activeIdx].audio = { name: file.name, data: f.target.result };
+                    // Reset current audio if exists
+                    if(activeAudio) { activeAudio.pause(); activeAudio = null; }
+                    activeAudio = new Audio(f.target.result);
+                    renderTimeline();
+                    save();
+                };
+                reader.readAsDataURL(file);
+            };
+            up.click();
+        }
+
+        // --- CORE ANIMATION ENGINE ---
+
+        function tick() {
+            if(isPlaying) {
+                currentTime += 1 / fps;
+                if(currentTime >= duration) {
+                    currentTime = 0;
+                    if(activeAudio) activeAudio.currentTime = 0;
+                }
+                updateUI();
+                applyAnims(currentTime);
+            }
+            requestAnimationFrame(tick);
+        }
+
+        function applyAnims(time) {
+            canvas.getObjects().forEach(obj => {
+                const intervals = obj.intervals || [{start: 0, end: duration}];
+                const isVisibleInTime = intervals.some(inv => time >= inv.start && time <= inv.end);
+                obj.visible = isVisibleInTime && !obj.hidden;
+
+                if(obj.kfs && obj.kfs.length > 0) {
+                    const sorted = [...obj.kfs].sort((a,b) => a.t - b.t);
+                    let prev = sorted.filter(k => k.t <= time).pop();
+                    let next = sorted.filter(k => k.t > time)[0];
+
+                    if(prev && next) {
+                        const alpha = (time - prev.t) / (next.t - prev.t);
+                        const ease = Easing[next.e || 'linear'](alpha);
+                        obj.set({
+                            left: prev.x + (next.x - prev.x) * ease,
+                            top: prev.y + (next.y - prev.y) * ease,
+                            scaleX: prev.s + (next.s - prev.s) * ease,
+                            scaleY: prev.s + (next.s - prev.s) * ease,
+                            angle: prev.r + (next.r - prev.r) * ease
+                        });
+                    } else if(prev) {
+                        obj.set({ left: prev.x, top: prev.y, scaleX: prev.s, scaleY: prev.s, angle: prev.r });
+                    }
+                }
+            });
+            canvas.renderAll();
+        }
+
+        // --- UTILS & RENDERING ---
+
+        function addScene() {
+            scenes.push({ id: Date.now(), name: `Scene ${scenes.length + 1}`, res: [1920, 1080], objects: [], duration: 10, audio: null });
+            renderSceneList();
+            switchScene(scenes.length - 1);
+            save();
+        }
+
+        function switchScene(idx) {
+            if(scenes[activeIdx]) scenes[activeIdx].objects = canvas.toJSON(['id', 'name', 'kfs', 'intervals', 'meta', 'hidden', 'selectable']);
+            
+            activeIdx = idx;
+            const s = scenes[idx];
+            
+            canvas.clear();
+            if(activeAudio) { activeAudio.pause(); activeAudio = null; }
+            
+            if(s.audio) {
+                activeAudio = new Audio(s.audio.data);
+            }
+
+            if(s.objects && s.objects.objects) {
+                canvas.loadFromJSON(s.objects, () => {
+                    canvas.renderAll();
+                    renderHierarchy();
+                    renderTimeline();
+                });
+            } else {
+                renderHierarchy();
+                renderTimeline();
+            }
+            renderSceneList();
+        }
+
+        function decorate(obj, type) {
+            obj.id = 'obj_' + Math.random().toString(36).substr(2, 9);
+            obj.name = type + '_' + canvas.getObjects().length;
+            obj.kfs = [];
+            obj.intervals = [{start: 0, end: duration}];
+            obj.meta = {type};
+        }
+
+        function renderTimeline() {
+            const container = document.getElementById('tl-content');
+            container.innerHTML = '';
+
+            // Render Audio Track first if exists
+            const s = scenes[activeIdx];
+            if(s && s.audio) {
+                const row = document.createElement('div');
+                row.className = 'track-row audio-track';
+                row.innerHTML = `<div class="track-label truncate font-bold"><i class="fas fa-music mr-2"></i>${s.audio.name}</div><div class="track-content"><div class="visibility-bar" style="left: 0; width: ${duration * PX_PER_SEC}px; background: rgba(16, 185, 129, 0.2); border-color: #10b981;"></div></div>`;
+                container.appendChild(row);
+            }
+
+            canvas.getObjects().forEach(obj => {
+                const row = document.createElement('div');
+                row.className = 'track-row';
+                const label = document.createElement('div');
+                label.className = 'track-label truncate';
+                label.innerText = obj.name || 'Object';
+                
+                const content = document.createElement('div');
+                content.className = 'track-content';
+                content.onclick = e => { if (e.target === content) seek((e.clientX - content.getBoundingClientRect().left) / PX_PER_SEC); };
+
+                // Visibility Bars
+                (obj.intervals || []).forEach(inv => {
+                    const bar = document.createElement('div');
+                    bar.className = 'visibility-bar';
+                    bar.style.left = (inv.start * PX_PER_SEC) + 'px';
+                    bar.style.width = ((inv.end - inv.start) * PX_PER_SEC) + 'px';
+                    content.appendChild(bar);
+                });
+
+                // Keyframes
+                (obj.kfs || []).forEach(k => {
+                    const dot = document.createElement('div');
+                    dot.className = 'keyframe';
+                    dot.style.left = (k.t * PX_PER_SEC) + 'px';
+                    content.appendChild(dot);
+                });
+
+                row.appendChild(label); row.appendChild(content);
+                container.appendChild(row);
+            });
+            updateUI();
+        }
+
+        function addText() {
+            const t = new fabric.IText('ProAnim Text', { left: 400, top: 400, fontSize: 80, fill: '#334155', fontFamily: 'Arial' });
+            decorate(t, 'text');
+            canvas.add(t).setActiveObject(t);
+            renderHierarchy(); renderTimeline(); save();
+        }
+
+        function addShape(type) {
+            const s = new fabric.Rect({ left: 300, top: 300, width: 250, height: 250, fill: '#3b82f6', rx: 10, ry: 10 });
+            decorate(s, 'shape');
+            canvas.add(s).setActiveObject(s);
+            renderHierarchy(); renderTimeline(); save();
+        }
+
+        function importAsset() {
+            const up = document.getElementById('asset-upload');
+            up.onchange = e => {
+                const reader = new FileReader();
+                reader.onload = f => {
+                    fabric.Image.fromURL(f.target.result, img => {
+                        img.scaleToWidth(500);
+                        decorate(img, 'image');
+                        canvas.add(img).setActiveObject(img);
+                        renderHierarchy(); renderTimeline(); save();
+                    });
+                };
+                reader.readAsDataURL(e.target.files[0]);
+            };
+            up.click();
+        }
+
+        function deleteSelected() {
+            canvas.getActiveObjects().forEach(o => canvas.remove(o));
+            canvas.discardActiveObject();
+            renderHierarchy(); renderTimeline(); save();
+        }
+
+        function togglePlay() {
+            isPlaying = !isPlaying;
+            document.getElementById('play-toggle').innerHTML = isPlaying ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play ml-0.5"></i>';
+            if(activeAudio) {
+                if(isPlaying) {
+                    activeAudio.currentTime = currentTime;
+                    activeAudio.play().catch(() => {});
+                } else {
+                    activeAudio.pause();
+                }
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('playhead').style.left = (200 + currentTime * PX_PER_SEC) + 'px';
+            document.getElementById('time-cur').innerText = formatTime(currentTime);
+        }
+
+        function formatTime(s) {
+            const m = Math.floor(s / 60);
+            const sec = (s % 60).toFixed(1);
+            return `${m.toString().padStart(2,'0')}:${sec.toString().padStart(4,'0')}`;
+        }
+
+        function seek(t) {
+            currentTime = Math.max(0, Math.min(t, duration));
+            if(activeAudio) {
+                activeAudio.currentTime = currentTime;
+                if(!isPlaying) activeAudio.pause();
+            }
+            updateUI();
+            applyAnims(currentTime);
+        }
+
+        function fitCanvas() {
+            const v = document.getElementById('viewport');
+            const wrap = document.querySelector('.canvas-wrapper');
+            const ratio = Math.min((v.clientWidth-80)/canvas.width, (v.clientHeight-80)/canvas.height);
+            canvasScale = Math.min(ratio, 1);
+            wrap.style.transform = `scale(${canvasScale})`;
+            document.getElementById('zoom-val').innerText = Math.round(canvasScale * 100) + '%';
+        }
+
+        function changeZoom(d) { canvasScale += d; fitCanvas(); }
+
+        function showProps() {
+            document.getElementById('prop-empty').classList.add('hidden');
+            document.getElementById('prop-panel').classList.remove('hidden');
+            updateProps();
+        }
+
+        function hideProps() {
+            document.getElementById('prop-empty').classList.remove('hidden');
+            document.getElementById('prop-panel').classList.add('hidden');
+        }
+
+        function updateProps() {
+            const obj = canvas.getActiveObject();
+            if(!obj) return;
+            document.getElementById('p-name').value = obj.name || '';
+            document.getElementById('p-x').value = Math.round(obj.left);
+            document.getElementById('p-y').value = Math.round(obj.top);
+            document.getElementById('p-s').value = Math.round(obj.scaleX * 100);
+            document.getElementById('p-r').value = Math.round(obj.angle);
+        }
+
+        function addKeyframe() {
+            const obj = canvas.getActiveObject();
+            if(!obj) return;
+            const k = { t: currentTime, x: obj.left, y: obj.top, s: obj.scaleX, r: obj.angle, e: 'easeInOut' };
+            obj.kfs = obj.kfs || [];
+            const idx = obj.kfs.findIndex(x => Math.abs(x.t - currentTime) < 0.05);
+            if(idx > -1) obj.kfs[idx] = k; else obj.kfs.push(k);
+            renderTimeline(); save();
+        }
+
+        function save() {
+            if (!scenes[activeIdx]) return;
+            // Capture current canvas objects before saving scenes
+            scenes[activeIdx].objects = canvas.toJSON(['id', 'name', 'kfs', 'intervals', 'meta', 'hidden', 'selectable']);
+            
+            const state = JSON.stringify(scenes);
+            if(undoStack.length > 0 && state === undoStack[undoStack.length-1]) return;
+            undoStack.push(state);
+            if(undoStack.length > 30) undoStack.shift();
+            redoStack = [];
+            updateUndoBtns();
+        }
+
+        function updateUndoBtns() {
+            document.getElementById('undo-btn').disabled = undoStack.length < 2;
+            document.getElementById('redo-btn').disabled = redoStack.length === 0;
+        }
+
+        function undo() {
+            if(undoStack.length < 2) return;
+            redoStack.push(undoStack.pop());
+            scenes = JSON.parse(undoStack[undoStack.length-1]);
+            switchScene(activeIdx);
+            updateUndoBtns();
+        }
+
+        function redo() {
+            if(redoStack.length === 0) return;
+            const next = redoStack.pop();
+            undoStack.push(next);
+            scenes = JSON.parse(next);
+            switchScene(activeIdx);
+            updateUndoBtns();
+        }
+
+        function renderSceneList() {
+            const list = document.getElementById('scene-list');
+            list.innerHTML = '';
+            scenes.forEach((s, i) => {
+                const item = document.createElement('div');
+                item.className = `p-2 rounded text-xs cursor-pointer ${i === activeIdx ? 'bg-blue-600 text-white font-bold' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`;
+                item.innerText = s.name;
+                item.onclick = () => switchScene(i);
+                list.appendChild(item);
+            });
+        }
+
+        async function exportVideo() {
+            const btn = event.target;
+            btn.disabled = true;
+            document.getElementById('loader').style.display = 'flex';
+            const stream = document.querySelector('canvas').captureStream(30);
+            const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
+            const chunks = [];
+            recorder.ondataavailable = e => chunks.push(e.data);
+            recorder.onstop = () => {
+                const blob = new Blob(chunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = `animation_${Date.now()}.webm`; a.click();
+                document.getElementById('loader').style.display = 'none';
+                btn.disabled = false;
+            };
+            seek(0); isPlaying = true;
+            recorder.start();
+            setTimeout(() => { recorder.stop(); isPlaying = false; togglePlay(); }, duration * 1000 + 200);
+        }
+
+        function exportJSON() {
+            const blob = new Blob([JSON.stringify(scenes)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = 'proanim_project.json'; a.click();
+        }
+    </script>
+</body>
+</html>
