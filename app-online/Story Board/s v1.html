@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Storyboard Animator - Responsive</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-dark: #121212;
+            --bg-panel: #1e1e1e;
+            --accent: #3b82f6;
+            --border: #333;
+            --sidebar-w: 280px;
+            --timeline-h: 240px;
+        }
+
+        body { 
+            background-color: var(--bg-dark); 
+            color: #e0e0e0; 
+            overflow: hidden; 
+            height: 100vh; 
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Responsive Layout Rules */
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--bg-panel);
+            border-right: 1px solid var(--border);
+            transition: transform 0.3s ease, width 0.3s ease;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .canvas-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-dark);
+            min-width: 0; /* Flexbox fix */
+        }
+
+        .timeline-section {
+            height: var(--timeline-h);
+            background: var(--bg-panel);
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            transition: height 0.3s ease;
+        }
+
+        /* Screen Breakpoints */
+        @media (max-width: 1200px) {
+            :root { --sidebar-w: 240px; }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: absolute;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                transform: translateX(-100%);
+            }
+            .sidebar.open { transform: translateX(0); width: 80%; }
+            .timeline-section { height: 180px; }
+            .timeline-section.collapsed { height: 40px; }
+        }
+
+        /* Canvas scaling */
+        #canvas-wrapper {
+            flex: 1;
+            overflow: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background-image: radial-gradient(#333 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .canvas-scaler {
+            transform-origin: center center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* Timeline Components */
+        .timeline-track { position: relative; height: 36px; background: #252525; border-bottom: 1px solid #333; min-width: 100%; }
+        .keyframe { 
+            position: absolute; width: 12px; height: 12px; background: var(--accent); 
+            transform: rotate(45deg) translate(-50%, -50%); cursor: pointer; top: 50%;
+            z-index: 10;
+        }
+        .playhead { position: absolute; top: 0; bottom: 0; width: 2px; background: #ef4444; z-index: 50; pointer-events: none; }
+        .playhead::after { content: ''; position: absolute; top: 0; left: -5px; width: 12px; height: 12px; background: #ef4444; border-radius: 50%; }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+
+        /* Touch Targets */
+        button, select, input { min-height: 36px; min-width: 36px; }
+        .layer-item { min-height: 44px; }
+    </style>
+</head>
+<body>
+
+    <!-- Top Header -->
+    <header class="h-14 border-b border-[#333] bg-[#1e1e1e] flex items-center justify-between px-4 z-[110]">
+        <div class="flex items-center gap-2">
+            <button onclick="toggleSidebar()" class="md:hidden text-gray-400 p-2"><i class="fas fa-bars"></i></button>
+            <h1 class="text-lg font-bold text-blue-500 hidden sm:block"><i class="fas fa-film mr-2"></i>StoryAnim</h1>
+        </div>
+        
+        <div class="flex items-center gap-1 sm:gap-2">
+            <button onclick="document.getElementById('import-image').click()" class="p-2 bg-gray-800 hover:bg-gray-700 rounded text-xs" title="Import PNG"><i class="fas fa-image"></i><span class="hidden lg:inline ml-1"> Import</span></button>
+            <div class="h-6 w-[1px] bg-[#333] mx-1"></div>
+            <button onclick="groupSelected()" class="p-2 bg-gray-800 hover:bg-gray-700 rounded text-xs" title="Group (Ctrl+G)"><i class="fas fa-object-group"></i></button>
+            <button onclick="ungroupSelected()" class="p-2 bg-gray-800 hover:bg-gray-700 rounded text-xs" title="Ungroup (Ctrl+Shift+G)"><i class="fas fa-object-ungroup"></i></button>
+            <button onclick="deleteSelected()" class="p-2 bg-red-900/30 hover:bg-red-800 text-red-400 rounded text-xs" title="Delete Selected"><i class="fas fa-trash"></i></button>
+            <div class="h-6 w-[1px] bg-[#333] mx-1"></div>
+            <button onclick="exportVideo()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded text-xs font-bold text-white shadow-lg"><i class="fas fa-video mr-1"></i><span class="hidden sm:inline"> Render</span></button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- Responsive Sidebar -->
+        <aside id="main-sidebar" class="sidebar">
+            <!-- Scene Manager -->
+            <div class="p-3 border-b border-[#333]">
+                <div class="flex justify-between items-center mb-3">
+                    <span class="text-xs font-bold uppercase tracking-wider text-gray-500">Scenes</span>
+                    <button onclick="addScene()" class="text-blue-400 hover:text-blue-300 text-xs"><i class="fas fa-plus-circle mr-1"></i>Add</button>
+                </div>
+                <div id="scene-list" class="space-y-1 max-h-40 overflow-y-auto pr-1"></div>
+            </div>
+
+            <!-- Layer Tree -->
+            <div class="flex-1 flex flex-col overflow-hidden">
+                <div class="p-3 border-b border-[#333]">
+                    <span class="text-xs font-bold uppercase tracking-wider text-gray-500">Layers</span>
+                </div>
+                <div id="layer-tree" class="flex-1 overflow-y-auto text-xs p-1"></div>
+            </div>
+            
+            <!-- Mobile Close -->
+            <button onclick="toggleSidebar()" class="md:hidden p-4 text-center border-t border-[#333] text-xs text-gray-500 italic">Close Sidebar</button>
+        </aside>
+
+        <!-- Canvas Section -->
+        <section class="canvas-section">
+            <div class="h-12 sm:h-10 bg-[#252525] border-b border-[#333] flex items-center justify-between px-4 overflow-x-auto whitespace-nowrap">
+                <div class="flex items-center gap-4 text-xs">
+                    <div class="flex items-center gap-2">
+                        <span class="text-gray-500 hidden sm:inline">Res:</span>
+                        <select id="res-preset" onchange="updateResolution()" class="bg-[#121212] border border-[#333] rounded px-1 py-1 outline-none max-w-[120px]">
+                            <option value="1920x1080">1080p (16:9)</option>
+                            <option value="3840x2160">4K (16:9)</option>
+                            <option value="1080x1920">1080p (9:16)</option>
+                            <option value="1080x1080">Square (1:1)</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-gray-500 hidden sm:inline">BG:</span>
+                        <input type="color" id="bg-color" oninput="updateBgColor(this.value)" class="w-6 h-6 border-none bg-transparent cursor-pointer rounded">
+                        <button onclick="document.getElementById('import-bg-image').click()" class="text-gray-400 hover:text-blue-400"><i class="fas fa-file-image"></i></button>
+                    </div>
+                </div>
+                <div id="zoom-info" class="text-gray-500 text-[10px] hidden sm:block">Zoom: 100%</div>
+            </div>
+
+            <div id="canvas-wrapper">
+                <div id="canvas-container-box" class="canvas-scaler">
+                    <canvas id="main-canvas"></canvas>
+                </div>
+            </div>
+
+            <!-- Bottom Timeline -->
+            <footer id="timeline-panel" class="timeline-section">
+                <div class="h-10 border-b border-[#333] flex items-center justify-between px-2 sm:px-4 bg-[#1e1e1e]">
+                    <div class="flex items-center gap-2 sm:gap-3">
+                        <button onclick="togglePlayback()" id="btn-play" class="w-7 h-7 rounded-full bg-blue-600 hover:bg-blue-500 flex items-center justify-center">
+                            <i class="fas fa-play text-[10px] text-white"></i>
+                        </button>
+                        <div class="text-[10px] sm:text-xs font-mono text-gray-400">
+                            <span id="current-time">0:00.0</span>s
+                        </div>
+                        <button onclick="toggleLoop()" id="btn-loop" class="text-[10px] px-1.5 py-1 rounded bg-gray-800 border border-[#444] text-gray-500" title="Loop Toggle">
+                            <i class="fas fa-redo"></i>
+                        </button>
+                    </div>
+                    <div class="flex gap-1 sm:gap-2">
+                        <button onclick="addKeyframe()" class="px-2 py-1 bg-blue-900/30 text-blue-400 border border-blue-800/50 rounded text-[10px] hover:bg-blue-800/50">
+                            <i class="fas fa-key"></i> <span class="hidden sm:inline">Add Key</span>
+                        </button>
+                        <button onclick="deleteKeyframe()" class="p-1 text-gray-500 hover:text-red-400"><i class="fas fa-minus-circle"></i></button>
+                        <button onclick="toggleTimelineCollapse()" class="md:hidden p-1 text-gray-500"><i class="fas fa-chevron-down"></i></button>
+                    </div>
+                </div>
+
+                <div class="flex-1 flex overflow-hidden">
+                    <div id="timeline-labels" class="w-32 sm:w-48 border-r border-[#333] bg-[#1a1a1a] overflow-y-auto"></div>
+                    <div class="flex-1 overflow-x-auto relative" id="timeline-scroll-area">
+                        <div id="timeline-ruler" class="h-6 bg-[#222] border-b border-[#333] relative"></div>
+                        <div id="timeline-tracks-container" class="relative">
+                            <div id="playhead" class="playhead"></div>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </section>
+    </div>
+
+    <!-- Modals & Hidden Inputs -->
+    <input type="file" id="import-image" accept="image/png,image/jpeg" class="hidden">
+    <input type="file" id="import-bg-image" accept="image/png,image/jpeg" class="hidden">
+
+    <script>
+        const state = {
+            scenes: [],
+            activeSceneIndex: 0,
+            isPlaying: false,
+            currentTime: 0,
+            duration: 5.0,
+            pixelsPerSecond: 100,
+            loop: false,
+            appId: typeof __app_id !== 'undefined' ? __app_id : 'storyboard-v1'
+        };
+
+        let canvas;
+        
+        window.onload = () => {
+            initCanvas();
+            addScene();
+            setupEventListeners();
+            requestAnimationFrame(animationLoop);
+            window.addEventListener('resize', handleResize);
+        };
+
+        function initCanvas() {
+            canvas = new fabric.Canvas('main-canvas', {
+                width: 1920,
+                height: 1080,
+                backgroundColor: '#000',
+                preserveObjectStacking: true,
+                subTargetCheck: true,
+                fireMiddleClick: true
+            });
+
+            fabric.Object.prototype.set({
+                transparentCorners: false,
+                cornerColor: '#3b82f6',
+                cornerSize: 12,
+                cornerStyle: 'circle',
+                borderColor: '#3b82f6',
+                borderDashArray: [3, 3]
+            });
+
+            canvas.on('selection:created', updateUI);
+            canvas.on('selection:updated', updateUI);
+            canvas.on('selection:cleared', updateUI);
+            canvas.on('object:modified', () => { renderLayerTree(); renderTimeline(); });
+        }
+
+        // UI Helpers
+        function toggleSidebar() {
+            document.getElementById('main-sidebar').classList.toggle('open');
+        }
+
+        function toggleTimelineCollapse() {
+            document.getElementById('timeline-panel').classList.toggle('collapsed');
+        }
+
+        function handleResize() {
+            const scene = state.scenes[state.activeSceneIndex];
+            if (scene) updateResolutionUI(scene.width, scene.height);
+        }
+
+        // Scene Logic
+        function addScene() {
+            const id = 'scene-' + Date.now();
+            state.scenes.push({
+                id, name: `Scene ${state.scenes.length + 1}`,
+                width: 1920, height: 1080, bgColor: '#000000',
+                bgImage: null, bgMode: 'cover', objects: [], audio: null
+            });
+            switchScene(state.scenes.length - 1);
+        }
+
+        function switchScene(index) {
+            if (state.scenes[state.activeSceneIndex]) {
+                state.scenes[state.activeSceneIndex].objects = canvas.toJSON(['id', 'locked', 'keyframes', 'name', 'subTargetCheck']);
+            }
+            state.activeSceneIndex = index;
+            const s = state.scenes[index];
+            canvas.clear();
+            canvas.loadFromJSON(s.objects, () => {
+                canvas.backgroundColor = s.bgColor;
+                updateResolutionUI(s.width, s.height);
+                applyBackground(s);
+                canvas.renderAll();
+                renderSceneList();
+                renderLayerTree();
+                renderTimeline();
+                updatePlaybackDisplay();
+            });
+        }
+
+        function updateResolution() {
+            const [w, h] = document.getElementById('res-preset').value.split('x').map(Number);
+            const s = state.scenes[state.activeSceneIndex];
+            s.width = w; s.height = h;
+            updateResolutionUI(w, h);
+        }
+
+        function updateResolutionUI(w, h) {
+            canvas.setDimensions({ width: w, height: h });
+            const wrapper = document.getElementById('canvas-wrapper');
+            const padding = window.innerWidth < 768 ? 20 : 60;
+            const scale = Math.min((wrapper.clientWidth - padding) / w, (wrapper.clientHeight - padding) / h, 1);
+            const container = document.getElementById('canvas-container-box');
+            container.style.transform = `scale(${scale})`;
+            document.getElementById('zoom-info').innerText = `Zoom: ${Math.round(scale * 100)}%`;
+        }
+
+        function applyBackground(s) {
+            if (!s.bgImage) { canvas.setBackgroundImage(null, canvas.renderAll.bind(canvas)); return; }
+            fabric.Image.fromURL(s.bgImage, (img) => {
+                const aspect = canvas.width / canvas.height;
+                const imgAspect = img.width / img.height;
+                if (s.bgMode === 'cover') {
+                    img.scale(aspect > imgAspect ? canvas.width / img.width : canvas.height / img.height);
+                } else {
+                    img.scale(aspect > imgAspect ? canvas.height / img.height : canvas.width / img.width);
+                }
+                canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas), {
+                    originX: 'center', originY: 'center', top: canvas.height/2, left: canvas.width/2
+                });
+            });
+        }
+
+        function updateBgColor(val) {
+            state.scenes[state.activeSceneIndex].bgColor = val;
+            canvas.setBackgroundColor(val, canvas.renderAll.bind(canvas));
+        }
+
+        // Object Handling
+        function handleImageImport(e, isBg = false) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (f) => {
+                const data = f.target.result;
+                if (isBg) {
+                    state.scenes[state.activeSceneIndex].bgImage = data;
+                    applyBackground(state.scenes[state.activeSceneIndex]);
+                } else {
+                    fabric.Image.fromURL(data, (img) => {
+                        img.set({
+                            id: 'obj-' + Date.now(),
+                            name: 'Image ' + (canvas.getObjects().length + 1),
+                            keyframes: [],
+                            originX: 'center', originY: 'center',
+                            left: canvas.width/2, top: canvas.height/2
+                        });
+                        img.scaleToWidth(canvas.width * 0.3);
+                        canvas.add(img);
+                        canvas.setActiveObject(img);
+                        updateUI();
+                    });
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function groupSelected() {
+            const active = canvas.getActiveObject();
+            if (!active || active.type !== 'activeSelection') return;
+            active.toGroup();
+            const group = canvas.getActiveObject();
+            group.set({
+                id: 'grp-' + Date.now(),
+                name: 'Group ' + canvas.getObjects().length,
+                keyframes: [],
+                subTargetCheck: true
+            });
+            updateUI();
+        }
+
+        function ungroupSelected() {
+            const active = canvas.getActiveObject();
+            if (!active || active.type !== 'group') return;
+            active.toActiveSelection();
+            updateUI();
+        }
+
+        function deleteSelected() {
+            const active = canvas.getActiveObjects();
+            if (active.length === 0) return;
+            if (confirm(`Delete ${active.length} item(s)?`)) {
+                active.forEach(o => canvas.remove(o));
+                canvas.discardActiveObject();
+                updateUI();
+            }
+        }
+
+        // Animation Loop
+        function animationLoop() {
+            if (state.isPlaying) {
+                state.currentTime += 1/60;
+                if (state.currentTime >= state.duration) {
+                    if (state.loop) state.currentTime = 0;
+                    else { state.currentTime = state.duration; state.isPlaying = false; updatePlaybackUI(); }
+                }
+                applyTimeline(state.currentTime);
+                updatePlaybackDisplay();
+            }
+            requestAnimationFrame(animationLoop);
+        }
+
+        function applyTimeline(time) {
+            canvas.getObjects().forEach(obj => {
+                interpolate(obj, time);
+                if (obj.type === 'group') {
+                    obj._objects.forEach(child => interpolate(child, time));
+                }
+            });
+            canvas.renderAll();
+        }
+
+        function interpolate(obj, time) {
+            if (!obj.keyframes || obj.keyframes.length === 0) return;
+            const kfs = [...obj.keyframes].sort((a, b) => a.time - b.time);
+            let start = null, end = null;
+            for (let k of kfs) {
+                if (k.time <= time) start = k;
+                if (k.time >= time) { end = k; break; }
+            }
+            if (!start && end) setObjState(obj, end.data);
+            else if (start && !end) setObjState(obj, start.data);
+            else if (start && end && start !== end) {
+                const t = (time - start.time) / (end.time - start.time);
+                const d = {};
+                for (let p in start.data) d[p] = start.data[p] + (end.data[p] - start.data[p]) * t;
+                setObjState(obj, d);
+            } else if (start) setObjState(obj, start.data);
+        }
+
+        function setObjState(obj, data) {
+            obj.set({ left: data.left, top: data.top, scaleX: data.scaleX, scaleY: data.scaleY, angle: data.angle, opacity: data.opacity ?? 1 });
+            obj.setCoords();
+        }
+
+        function addKeyframe() {
+            const active = canvas.getActiveObject();
+            if (!active) return;
+            const kf = {
+                id: 'kf-' + Date.now(),
+                time: state.currentTime,
+                data: { left: active.left, top: active.top, scaleX: active.scaleX, scaleY: active.scaleY, angle: active.angle, opacity: active.opacity }
+            };
+            active.keyframes = (active.keyframes || []).filter(k => Math.abs(k.time - state.currentTime) > 0.05);
+            active.keyframes.push(kf);
+            renderTimeline();
+        }
+
+        function deleteKeyframe() {
+            const active = canvas.getActiveObject();
+            if (!active || !active.keyframes) return;
+            active.keyframes = active.keyframes.filter(k => Math.abs(k.time - state.currentTime) > 0.1);
+            renderTimeline();
+        }
+
+        // Render UI
+        function renderSceneList() {
+            const list = document.getElementById('scene-list');
+            list.innerHTML = '';
+            state.scenes.forEach((s, i) => {
+                const div = document.createElement('div');
+                div.className = `flex items-center justify-between px-3 py-2 rounded cursor-pointer text-xs group ${i === state.activeSceneIndex ? 'bg-blue-600 text-white' : 'hover:bg-gray-800 text-gray-400'}`;
+                div.onclick = () => switchScene(i);
+                div.innerHTML = `
+                    <div class="flex items-center gap-2"><i class="fas fa-film"></i><span class="truncate max-w-[120px]">${s.name}</span></div>
+                    <button onclick="deleteScene(${i}, event)" class="opacity-0 group-hover:opacity-100 hover:text-red-300"><i class="fas fa-times"></i></button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function deleteScene(idx, e) {
+            e.stopPropagation();
+            if (state.scenes.length <= 1) return;
+            if (confirm('Delete this scene?')) {
+                state.scenes.splice(idx, 1);
+                switchScene(Math.min(state.activeSceneIndex, state.scenes.length - 1));
+            }
+        }
+
+        function renderLayerTree() {
+            const tree = document.getElementById('layer-tree');
+            tree.innerHTML = '';
+            const active = canvas.getActiveObject();
+            canvas.getObjects().slice().reverse().forEach(obj => createLayerRow(obj, tree, 0, active));
+        }
+
+        function createLayerRow(obj, cont, depth, active) {
+            const row = document.createElement('div');
+            const isActive = active === obj;
+            row.className = `layer-item flex items-center gap-2 px-3 py-1 rounded cursor-pointer transition-colors ${isActive ? 'bg-blue-600/20 border-l-2 border-blue-500' : 'hover:bg-gray-800'}`;
+            row.style.paddingLeft = `${depth * 16 + 12}px`;
+            
+            row.innerHTML = `
+                <div class="flex-1 flex items-center gap-2 overflow-hidden" onclick="selectObj('${obj.id}')">
+                    <i class="fas ${obj.type === 'group' ? 'fa-folder' : 'fa-image'} text-gray-500"></i>
+                    <span class="truncate">${obj.name || obj.type}</span>
+                </div>
+                <div class="flex gap-3 text-gray-500">
+                    <button onclick="toggleLock('${obj.id}', event)" class="${obj.lockMovementX ? 'text-yellow-500' : ''}"><i class="fas ${obj.lockMovementX ? 'fa-lock' : 'fa-lock-open'}"></i></button>
+                    <button onclick="toggleVis('${obj.id}', event)" class="${!obj.visible ? 'text-red-500' : ''}"><i class="fas ${obj.visible ? 'fa-eye' : 'fa-eye-slash'}"></i></button>
+                </div>
+            `;
+            cont.appendChild(row);
+            if (obj.type === 'group') {
+                obj._objects.forEach(child => createLayerRow(child, cont, depth + 1, active));
+            }
+        }
+
+        function selectObj(id) {
+            const o = findById(id);
+            if (o) { canvas.setActiveObject(o); canvas.requestRenderAll(); updateUI(); }
+        }
+
+        function findById(id) {
+            let res = null;
+            canvas.getObjects().forEach(o => {
+                if (o.id === id) res = o;
+                if (o.type === 'group') o._objects.forEach(c => { if (c.id === id) res = c; });
+            });
+            return res;
+        }
+
+        function toggleLock(id, e) {
+            e.stopPropagation();
+            const o = findById(id);
+            const l = !o.lockMovementX;
+            o.set({ lockMovementX: l, lockMovementY: l, lockScalingX: l, lockScalingY: l, lockRotation: l, selectable: !l, evented: !l });
+            updateUI();
+        }
+
+        function toggleVis(id, e) {
+            e.stopPropagation();
+            const o = findById(id);
+            o.set('visible', !o.visible);
+            updateUI();
+        }
+
+        function renderTimeline() {
+            const labels = document.getElementById('timeline-labels');
+            const tracks = document.getElementById('timeline-tracks-container');
+            const ruler = document.getElementById('timeline-ruler');
+            labels.innerHTML = '';
+            tracks.innerHTML = '<div id="playhead" class="playhead"></div>';
+            ruler.innerHTML = '';
+
+            for (let i = 0; i <= state.duration; i++) {
+                const m = document.createElement('div');
+                m.className = 'absolute top-0 bottom-0 border-l border-gray-700 text-[9px] pl-1 pt-1 text-gray-500';
+                m.style.left = `${i * state.pixelsPerSecond}px`;
+                m.innerText = i + 's';
+                ruler.appendChild(m);
+            }
+
+            const active = canvas.getActiveObject();
+            canvas.getObjects().forEach(obj => createTrack(obj, labels, tracks, 0, active));
+            updatePlaybackDisplay();
+        }
+
+        function createTrack(obj, lCont, tCont, d, active) {
+            const label = document.createElement('div');
+            label.className = `h-[36px] flex items-center px-4 border-b border-[#333] text-[10px] truncate ${active === obj ? 'bg-blue-600/10 font-bold text-blue-400' : ''}`;
+            label.style.paddingLeft = `${d * 12 + 16}px`;
+            label.innerText = obj.name || obj.type;
+            lCont.appendChild(label);
+
+            const track = document.createElement('div');
+            track.className = 'timeline-track';
+            track.style.width = `${state.duration * state.pixelsPerSecond}px`;
+            if (obj.keyframes) {
+                obj.keyframes.forEach(k => {
+                    const dot = document.createElement('div');
+                    dot.className = 'keyframe';
+                    dot.style.left = `${k.time * state.pixelsPerSecond}px`;
+                    track.appendChild(dot);
+                });
+            }
+            tCont.appendChild(track);
+            if (obj.type === 'group') obj._objects.forEach(c => createTrack(c, lCont, tCont, d + 1, active));
+        }
+
+        function togglePlayback() { state.isPlaying = !state.isPlaying; updatePlaybackUI(); }
+        function updatePlaybackUI() {
+            document.getElementById('btn-play').innerHTML = state.isPlaying ? '<i class="fas fa-pause text-white"></i>' : '<i class="fas fa-play text-white"></i>';
+        }
+        function updatePlaybackDisplay() {
+            const p = document.getElementById('playhead');
+            const t = document.getElementById('current-time');
+            if (p) p.style.left = `${state.currentTime * state.pixelsPerSecond}px`;
+            if (t) t.innerText = state.currentTime.toFixed(1);
+        }
+        function toggleLoop() { state.loop = !state.loop; document.getElementById('btn-loop').classList.toggle('text-blue-400'); }
+
+        function updateUI() { renderLayerTree(); renderTimeline(); canvas.requestRenderAll(); }
+
+        async function exportVideo() {
+            const stream = canvas.getElement().captureStream(30);
+            const rec = new MediaRecorder(stream, { mimeType: 'video/webm' });
+            const chunks = [];
+            rec.ondataavailable = e => chunks.push(e.data);
+            rec.onstop = () => {
+                const b = new Blob(chunks, { type: 'video/webm' });
+                const u = URL.createObjectURL(b);
+                const a = document.createElement('a');
+                a.href = u; a.download = `storyboard-${Date.now()}.webm`; a.click();
+            };
+            state.currentTime = 0; state.isPlaying = true; rec.start();
+            const check = setInterval(() => {
+                if (state.currentTime >= state.duration) { clearInterval(check); state.isPlaying = false; rec.stop(); }
+            }, 100);
+        }
+
+        function setupEventListeners() {
+            document.getElementById('import-image').onchange = e => handleImageImport(e);
+            document.getElementById('import-bg-image').onchange = e => handleImageImport(e, true);
+            
+            const scrub = document.getElementById('timeline-scroll-area');
+            const handleScrub = (e) => {
+                const rect = scrub.getBoundingClientRect();
+                const x = (e.clientX || e.touches[0].clientX) - rect.left + scrub.scrollLeft;
+                state.currentTime = Math.max(0, Math.min(state.duration, x / state.pixelsPerSecond));
+                applyTimeline(state.currentTime);
+                updatePlaybackDisplay();
+            };
+
+            scrub.addEventListener('mousedown', (e) => {
+                handleScrub(e);
+                const mv = me => handleScrub(me);
+                const up = () => { window.removeEventListener('mousemove', mv); window.removeEventListener('mouseup', up); };
+                window.addEventListener('mousemove', mv);
+                window.addEventListener('mouseup', up);
+            });
+
+            scrub.addEventListener('touchstart', (e) => {
+                handleScrub(e);
+                const mv = me => { me.preventDefault(); handleScrub(me); };
+                const up = () => { window.removeEventListener('touchmove', mv); window.removeEventListener('touchend', up); };
+                window.addEventListener('touchmove', mv, { passive: false });
+                window.addEventListener('touchend', up);
+            });
+
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Delete' && document.activeElement.tagName !== 'INPUT') deleteSelected();
+                if (e.ctrlKey && e.key === 'g') { e.preventDefault(); groupSelected(); }
+                if (e.ctrlKey && e.shiftKey && e.key === 'G') { e.preventDefault(); ungroupSelected(); }
+                if (e.key === ' ') { e.preventDefault(); togglePlayback(); }
+            });
+        }
+    </script>
+</body>
+</html>
