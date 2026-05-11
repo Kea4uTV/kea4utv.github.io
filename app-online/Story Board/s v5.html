@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AnimFrame - Professional Storyboard Tool</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <style>
+        body { background-color: #0f0f12; color: #e2e8f0; font-family: 'Inter', system-ui, -apple-system, sans-serif; overflow: hidden; }
+        .panel-bg { background-color: #1a1a20; border-color: #2d2d39; }
+        .sidebar { width: 260px; flex-shrink: 0; display: flex; flex-direction: column; border-right: 1px solid #2d2d39; }
+        .right-sidebar { width: 280px; border-left: 1px solid #2d2d39; }
+        
+        /* Interactive Elements */
+        .btn-icon { padding: 8px; border-radius: 6px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; background: #2d2d39; border: 1px solid #3f3f4e; color: #cbd5e1; cursor: pointer; }
+        .btn-icon:hover:not(:disabled) { background: #3b3b4a; border-color: #6366f1; color: white; }
+        .btn-icon.active { background: #4f46e5; border-color: #6366f1; color: white; }
+        .btn-icon:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* Timeline */
+        #timeline-container { height: 240px; border-top: 1px solid #2d2d39; background: #15151a; }
+        .track-header { width: 180px; height: 32px; border-bottom: 1px solid #2d2d39; display: flex; align-items: center; padding: 0 12px; font-size: 0.75rem; color: #94a3b8; background: #1a1a20; }
+        .track-lane { height: 32px; border-bottom: 1px solid #25252e; position: relative; width: 100%; min-width: 3000px; }
+        .keyframe { position: absolute; width: 10px; height: 10px; background: #10b981; top: 50%; transform: translate(-50%, -50%) rotate(45deg); cursor: pointer; z-index: 10; border: 1px solid #064e3b; }
+        .keyframe:hover { scale: 1.3; }
+        .visibility-bar { position: absolute; height: 16px; top: 8px; background: rgba(79, 70, 229, 0.3); border: 1px solid #4f46e5; border-radius: 3px; cursor: move; }
+        
+        #playhead { position: absolute; top: 0; bottom: 0; width: 2px; background: #f43f5e; z-index: 50; pointer-events: none; }
+        #playhead-handle { position: absolute; top: -5px; left: -6px; width: 14px; height: 14px; background: #f43f5e; border-radius: 50%; cursor: ew-resize; pointer-events: auto; }
+
+        /* Tree Styles */
+        .tree-node { padding: 6px 10px; border-radius: 4px; margin-bottom: 2px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.8rem; }
+        .tree-node:hover { background: #2d2d39; }
+        .tree-node.active { background: #4f46e5; color: white; }
+
+        /* Canvas Wrapper */
+        #viewport { flex-grow: 1; background: #09090b; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; outline: none; }
+        canvas { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7); }
+
+        /* Custom inputs */
+        input, select { background: #26262e; border: 1px solid #3f3f4e; color: #f1f5f9; font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; width: 100%; }
+        label { font-size: 0.7rem; color: #94a3b8; margin-bottom: 2px; display: block; }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <!-- Top Toolbar -->
+    <header class="h-14 panel-bg border-b px-4 flex items-center justify-between z-50">
+        <div class="flex items-center gap-6">
+            <div class="flex items-center gap-2 text-indigo-400 font-bold tracking-tight">
+                <i class="fa-solid fa-clapperboard text-xl"></i>
+                <span class="text-lg">AnimFrame</span>
+            </div>
+            
+            <div class="h-8 w-px bg-gray-700"></div>
+
+            <div class="flex items-center gap-4">
+                <div class="flex flex-col w-40">
+                    <label>Resolution</label>
+                    <select id="res-select" onchange="App.updateRes()">
+                        <option value="1920x1080">16:9 HD (1920x1080)</option>
+                        <option value="1080x1920">9:16 Mobile (1080x1920)</option>
+                        <option value="1080x1080">1:1 Square (1080x1080)</option>
+                    </select>
+                </div>
+                <div class="flex flex-col">
+                    <label>Background</label>
+                    <input type="color" id="bg-color" value="#ffffff" class="w-8 h-8 p-0 border-0 cursor-pointer" onchange="App.setBg(this.value)">
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <div class="group relative">
+                <button class="btn-icon bg-indigo-600 border-indigo-500 text-white px-4 gap-2">
+                    <i class="fa-solid fa-file-export"></i> Export <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                </button>
+                <div class="hidden group-hover:block absolute right-0 top-full pt-1 w-48 z-50">
+                    <div class="panel-bg border rounded-md shadow-xl overflow-hidden text-xs">
+                        <button onclick="App.export('frame')" class="w-full text-left px-4 py-3 hover:bg-indigo-600 transition">Current Frame (PNG)</button>
+                        <button onclick="App.saveProject()" class="w-full text-left px-4 py-3 border-t border-gray-700 hover:bg-indigo-600 transition">Project File (.json)</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+        
+        <!-- Left Sidebar -->
+        <aside class="sidebar panel-bg flex flex-col">
+            <!-- Scene Manager -->
+            <div class="p-4 border-b border-gray-800">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">Scenes</span>
+                    <button onclick="App.addScene()" class="text-indigo-400 hover:text-white transition"><i class="fa-solid fa-plus-circle"></i></button>
+                </div>
+                <div id="scene-list" class="space-y-1 max-h-40 overflow-y-auto pr-1"></div>
+            </div>
+
+            <!-- Creation Tools -->
+            <div class="p-4 border-b border-gray-800">
+                <span class="text-xs font-semibold uppercase tracking-wider text-gray-500 block mb-3">Assets</span>
+                <div class="grid grid-cols-3 gap-2">
+                    <button class="btn-icon" title="Add Text" onclick="App.addText()"><i class="fa-solid fa-font"></i></button>
+                    <button class="btn-icon" title="Add Square" onclick="App.addShape('rect')"><i class="fa-solid fa-square"></i></button>
+                    <button class="btn-icon" title="Add Circle" onclick="App.addShape('circle')"><i class="fa-solid fa-circle"></i></button>
+                    
+                    <label class="btn-icon cursor-pointer" title="Import Image">
+                        <i class="fa-solid fa-image"></i>
+                        <input type="file" class="hidden" accept="image/*" onchange="App.handleImport(this)">
+                    </label>
+                    <button class="btn-icon" title="Undo" id="undo-btn" onclick="App.undo()"><i class="fa-solid fa-rotate-left"></i></button>
+                    <button class="btn-icon" title="Redo" id="redo-btn" onclick="App.redo()"><i class="fa-solid fa-rotate-right"></i></button>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-2 mt-2">
+                    <button class="btn-icon text-[10px]" onclick="App.group()"><i class="fa-solid fa-object-group mr-1"></i> Group</button>
+                    <button class="btn-icon text-[10px]" onclick="App.ungroup()"><i class="fa-solid fa-object-ungroup mr-1"></i> Ungroup</button>
+                    <button class="btn-icon text-[10px] col-span-2 border-red-900/50 hover:bg-red-900/20" onclick="App.deleteSelected()"><i class="fa-solid fa-trash mr-1"></i> Delete Selected</button>
+                </div>
+            </div>
+
+            <!-- Layer Tree -->
+            <div class="flex-1 flex flex-col min-h-0">
+                <div class="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
+                    <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">Layers</span>
+                </div>
+                <div id="layer-tree" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
+            </div>
+        </aside>
+
+        <!-- Main Viewport -->
+        <main class="flex-1 flex flex-col relative overflow-hidden">
+            <div id="viewport" tabindex="0">
+                <!-- Canvas Control Overlays -->
+                <div class="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/40 backdrop-blur-md p-1.5 rounded-lg border border-white/10 z-40">
+                    <button class="btn-icon h-8 w-8 !bg-transparent !border-0" onclick="App.zoom('out')" title="Zoom Out"><i class="fa-solid fa-minus"></i></button>
+                    <span id="zoom-text" class="text-[10px] font-mono min-w-[40px] text-center">100%</span>
+                    <button class="btn-icon h-8 w-8 !bg-transparent !border-0" onclick="App.zoom('in')" title="Zoom In"><i class="fa-solid fa-plus"></i></button>
+                    <div class="w-px h-4 bg-white/20 mx-1"></div>
+                    <button id="onion-btn" class="btn-icon h-8 w-8 !bg-transparent !border-0" onclick="App.toggle('onion')" title="Onion Skin"><i class="fa-solid fa-layer-group"></i></button>
+                    <button id="grid-btn" class="btn-icon h-8 w-8 !bg-transparent !border-0" onclick="App.toggle('grid')" title="Grid"><i class="fa-solid fa-border-all"></i></button>
+                    <button id="snap-btn" class="btn-icon h-8 w-8 !bg-transparent !border-0" onclick="App.toggle('snap')" title="Snapping"><i class="fa-solid fa-magnet"></i></button>
+                </div>
+
+                <div class="relative flex items-center justify-center w-full h-full">
+                    <canvas id="c"></canvas>
+                    <canvas id="onion-layer" class="absolute pointer-events-none opacity-40"></canvas>
+                </div>
+            </div>
+
+            <!-- Bottom Timeline -->
+            <div id="timeline-container" class="flex flex-col">
+                <div class="h-10 border-b border-gray-800 flex items-center px-4 justify-between bg-[#1a1a20]">
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-1">
+                            <button onclick="App.play()" class="w-8 h-8 flex items-center justify-center hover:text-indigo-400" id="play-btn"><i class="fa-solid fa-play"></i></button>
+                            <button onclick="App.stop()" class="w-8 h-8 flex items-center justify-center hover:text-indigo-400"><i class="fa-solid fa-stop"></i></button>
+                        </div>
+                        <div class="h-4 w-px bg-gray-700"></div>
+                        <span id="time-display" class="font-mono text-xs text-indigo-400">00:00:00</span>
+                        <div class="flex items-center gap-2 ml-2">
+                            <button onclick="App.toggle('loop')" id="loop-btn" class="text-[10px] opacity-50 hover:opacity-100" title="Loop"><i class="fa-solid fa-repeat"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-1">
+                            <button onclick="App.setIn()" class="px-2 py-1 bg-gray-800 hover:bg-gray-700 text-[10px] rounded">Set In</button>
+                            <button onclick="App.setOut()" class="px-2 py-1 bg-gray-800 hover:bg-gray-700 text-[10px] rounded">Set Out</button>
+                        </div>
+                        <div class="h-4 w-px bg-gray-700"></div>
+                        <div class="flex items-center gap-2">
+                            <label class="m-0 text-[10px]">Ease:</label>
+                            <select id="ease-select" class="h-7 text-[10px] w-24">
+                                <option value="linear">Linear</option>
+                                <option value="easeInQuad">Quad In</option>
+                                <option value="easeOutQuad">Quad Out</option>
+                                <option value="easeInOutQuad">Quad In/Out</option>
+                            </select>
+                        </div>
+                        <button onclick="App.addKeyframe()" class="btn-icon h-7 px-3 text-[10px] bg-indigo-600 border-indigo-500 text-white">
+                            <i class="fa-solid fa-key mr-1"></i> Add Keyframe
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex flex-1 min-h-0 overflow-hidden">
+                    <div id="timeline-headers" class="flex-shrink-0 flex flex-col border-r border-gray-800 overflow-y-auto"></div>
+                    <div id="timeline-scroll" class="flex-1 overflow-auto relative">
+                        <div id="time-ruler" class="h-6 border-b border-gray-800 relative bg-[#15151a] sticky top-0 z-20"></div>
+                        <div id="timeline-tracks" class="relative" onmousedown="App.onTimelineClick(event)">
+                            <div id="playhead">
+                                <div id="playhead-handle" onmousedown="App.onPlayheadDown(event)"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Sidebar (Properties) -->
+        <aside class="right-sidebar panel-bg p-4 overflow-y-auto">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-sm font-bold">Transform</h3>
+                <i class="fa-solid fa-sliders text-gray-500"></i>
+            </div>
+
+            <div id="props-panel" class="space-y-6 hidden">
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label>Position X</label>
+                            <input type="number" id="prop-x" oninput="App.updateProp('left', this.value)">
+                        </div>
+                        <div>
+                            <label>Position Y</label>
+                            <input type="number" id="prop-y" oninput="App.updateProp('top', this.value)">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label>Scale X (%)</label>
+                            <input type="number" id="prop-sx" oninput="App.updateProp('scaleX', this.value/100)">
+                        </div>
+                        <div>
+                            <label>Scale Y (%)</label>
+                            <input type="number" id="prop-sy" oninput="App.updateProp('scaleY', this.value/100)">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label>Rotation</label>
+                            <input type="number" id="prop-angle" oninput="App.updateProp('angle', this.value)">
+                        </div>
+                        <div>
+                            <label>Opacity</label>
+                            <input type="range" id="prop-opacity" min="0" max="1" step="0.01" oninput="App.updateProp('opacity', this.value)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="h-px bg-gray-800"></div>
+
+                <div id="style-props" class="space-y-4"></div>
+            </div>
+
+            <div id="props-empty" class="h-64 flex flex-col items-center justify-center text-gray-600 text-center px-4">
+                <i class="fa-solid fa-mouse-pointer text-3xl mb-4 opacity-20"></i>
+                <p class="text-xs">Select an object to modify its properties</p>
+            </div>
+        </aside>
+    </div>
+
+<script>
+const App = {
+    canvas: null,
+    oCtx: null,
+    scenes: [],
+    currentSceneIdx: 0,
+    isPlaying: false,
+    currentTime: 0,
+    duration: 10000,
+    zoomLevel: 1,
+    history: [],
+    historyIdx: -1,
+    isSnap: true,
+    isGrid: false,
+    isOnion: false,
+    isLoop: true,
+    pxPerSec: 100,
+    fps: 30,
+    lastFrameTime: 0,
+
+    init() {
+        this.canvas = new fabric.Canvas('c', {
+            preserveObjectStacking: true,
+            selection: true,
+            backgroundColor: '#ffffff'
+        });
+
+        const onionEl = document.getElementById('onion-layer');
+        this.oCtx = onionEl.getContext('2d');
+        
+        this.setupEvents();
+        this.addScene("Initial Scene");
+        this.syncUI();
+        
+        requestAnimationFrame((t) => this.loop(t));
+    },
+
+    setupEvents() {
+        this.canvas.on('object:modified', () => this.saveState());
+        this.canvas.on('object:moving', (e) => this.handleSnapping(e));
+        this.canvas.on('selection:created', () => this.onSelect());
+        this.canvas.on('selection:updated', () => this.onSelect());
+        this.canvas.on('selection:cleared', () => this.onSelect());
+        
+        window.addEventListener('resize', () => this.onResize());
+        this.onResize();
+
+        window.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT') return;
+            if (e.code === 'Space') { e.preventDefault(); this.isPlaying ? this.stop() : this.play(); }
+            if (e.key === 'Delete' || e.key === 'Backspace') this.deleteSelected();
+            if (e.ctrlKey && e.key === 'z') { e.preventDefault(); this.undo(); }
+            if (e.ctrlKey && e.key === 'y') { e.preventDefault(); this.redo(); }
+        });
+    },
+
+    handleSnapping(e) {
+        if (!this.isSnap) return;
+        const target = e.target;
+        const snap = 20;
+        target.set({
+            left: Math.round(target.left / snap) * snap,
+            top: Math.round(target.top / snap) * snap
+        });
+    },
+
+    onResize() {
+        const viewport = document.getElementById('viewport');
+        const scene = this.scenes[this.currentSceneIdx];
+        if (!scene) return;
+
+        const pad = 40;
+        const scale = Math.min(
+            (viewport.clientWidth - pad) / scene.width,
+            (viewport.clientHeight - pad) / scene.height
+        );
+        
+        this.zoomLevel = scale;
+        this.canvas.setDimensions({ 
+            width: scene.width * scale, 
+            height: scene.height * scale 
+        });
+        this.canvas.setZoom(scale);
+
+        const onionEl = document.getElementById('onion-layer');
+        onionEl.width = scene.width * scale;
+        onionEl.height = scene.height * scale;
+
+        this.syncUI();
+    },
+
+    syncUI() {
+        document.getElementById('zoom-text').innerText = `${Math.round(this.zoomLevel * 100)}%`;
+        document.getElementById('onion-btn').classList.toggle('active', this.isOnion);
+        document.getElementById('grid-btn').classList.toggle('active', this.isGrid);
+        document.getElementById('snap-btn').classList.toggle('active', this.isSnap);
+        document.getElementById('loop-btn').classList.toggle('opacity-100', this.isLoop);
+        document.getElementById('loop-btn').classList.toggle('opacity-50', !this.isLoop);
+        
+        this.renderSceneList();
+        this.renderLayerTree();
+        this.updateTimeline();
+    },
+
+    saveState() {
+        const json = JSON.stringify(this.canvas.toJSON(['customData', 'id']));
+        if (this.historyIdx < this.history.length - 1) {
+            this.history = this.history.slice(0, this.historyIdx + 1);
+        }
+        this.history.push(json);
+        if (this.history.length > 50) this.history.shift();
+        this.historyIdx = this.history.length - 1;
+        this.renderLayerTree();
+        this.updateTimeline();
+    },
+
+    undo() {
+        if (this.historyIdx > 0) {
+            this.historyIdx--;
+            this.loadHistoryState();
+        }
+    },
+
+    redo() {
+        if (this.historyIdx < this.history.length - 1) {
+            this.historyIdx++;
+            this.loadHistoryState();
+        }
+    },
+
+    loadHistoryState() {
+        const state = this.history[this.historyIdx];
+        this.canvas.loadFromJSON(state, () => {
+            this.canvas.renderAll();
+            this.renderLayerTree();
+            this.updateTimeline();
+        });
+    },
+
+    addScene(name) {
+        const scene = {
+            id: 'scene_' + Date.now(),
+            name: name || `Scene ${this.scenes.length + 1}`,
+            width: 1920,
+            height: 1080,
+            bgColor: '#ffffff',
+            objects: []
+        };
+        this.scenes.push(scene);
+        this.currentSceneIdx = this.scenes.length - 1;
+        this.canvas.clear();
+        this.canvas.backgroundColor = scene.bgColor;
+        this.saveState();
+        this.syncUI();
+    },
+
+    removeScene(idx) {
+        if (this.scenes.length <= 1) return;
+        this.scenes.splice(idx, 1);
+        this.currentSceneIdx = Math.max(0, this.currentSceneIdx - 1);
+        this.switchScene(this.currentSceneIdx);
+    },
+
+    renderSceneList() {
+        const container = document.getElementById('scene-list');
+        container.innerHTML = this.scenes.map((s, i) => `
+            <div class="tree-node ${i === this.currentSceneIdx ? 'active' : ''}" onclick="App.switchScene(${i})">
+                <i class="fa-solid fa-film text-[10px]"></i>
+                <span class="truncate flex-1">${s.name}</span>
+                ${this.scenes.length > 1 ? `<i class="fa-solid fa-times hover:text-red-400 p-1" onclick="event.stopPropagation(); App.removeScene(${i})"></i>` : ''}
+            </div>
+        `).join('');
+    },
+
+    switchScene(idx) {
+        this.currentSceneIdx = idx;
+        const scene = this.scenes[idx];
+        document.getElementById('res-select').value = `${scene.width}x${scene.height}`;
+        document.getElementById('bg-color').value = scene.bgColor;
+        this.canvas.backgroundColor = scene.bgColor;
+        this.onResize();
+        this.syncUI();
+    },
+
+    updateRes() {
+        const val = document.getElementById('res-select').value;
+        const [w, h] = val.split('x').map(Number);
+        this.scenes[this.currentSceneIdx].width = w;
+        this.scenes[this.currentSceneIdx].height = h;
+        this.onResize();
+    },
+
+    setBg(color) {
+        this.scenes[this.currentSceneIdx].bgColor = color;
+        this.canvas.backgroundColor = color;
+        this.canvas.renderAll();
+        this.saveState();
+    },
+
+    _initCustomData(obj, type, name) {
+        obj.id = 'obj_' + Math.random().toString(36).substr(2, 9);
+        obj.customData = {
+            name: name,
+            type: type,
+            keyframes: [],
+            visibility: [{in: 0, out: this.duration}]
+        };
+    },
+
+    addText() {
+        const text = new fabric.IText('Double Click', {
+            left: 100, top: 100, fontSize: 60, fontFamily: 'Arial', fill: '#333333'
+        });
+        this._initCustomData(text, 'text', 'Text Layer');
+        this.canvas.add(text);
+        this.canvas.setActiveObject(text);
+        this.saveState();
+    },
+
+    addShape(type) {
+        let obj;
+        if (type === 'rect') obj = new fabric.Rect({ width: 200, height: 200, fill: '#4f46e5' });
+        else obj = new fabric.Circle({ radius: 100, fill: '#10b981' });
+        
+        obj.set({ left: 100, top: 100 });
+        this._initCustomData(obj, type, type === 'rect' ? 'Square' : 'Circle');
+        this.canvas.add(obj);
+        this.canvas.setActiveObject(obj);
+        this.saveState();
+    },
+
+    handleImport(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            fabric.Image.fromURL(e.target.result, (img) => {
+                img.scaleToWidth(400);
+                img.set({ left: 100, top: 100 });
+                this._initCustomData(img, 'image', file.name);
+                this.canvas.add(img);
+                this.canvas.setActiveObject(img);
+                this.saveState();
+            });
+        };
+        reader.readAsDataURL(file);
+    },
+
+    onSelect() {
+        const obj = this.canvas.getActiveObject();
+        const panel = document.getElementById('props-panel');
+        const empty = document.getElementById('props-empty');
+        const stylePanel = document.getElementById('style-props');
+        
+        if (!obj || obj.type === 'activeSelection') {
+            panel.classList.add('hidden');
+            empty.classList.remove('hidden');
+            return;
+        }
+
+        panel.classList.remove('hidden');
+        empty.classList.add('hidden');
+
+        document.getElementById('prop-x').value = Math.round(obj.left);
+        document.getElementById('prop-y').value = Math.round(obj.top);
+        document.getElementById('prop-sx').value = Math.round(obj.scaleX * 100);
+        document.getElementById('prop-sy').value = Math.round(obj.scaleY * 100);
+        document.getElementById('prop-angle').value = Math.round(obj.angle);
+        document.getElementById('prop-opacity').value = obj.opacity;
+
+        let stylesHtml = '';
+        if (obj.fill !== undefined) {
+            stylesHtml += `<div><label>Fill Color</label><input type="color" value="${obj.fill}" class="w-full h-8 cursor-pointer" onchange="App.updateProp('fill', this.value)"></div>`;
+        }
+        if (obj.fontFamily !== undefined) {
+            stylesHtml += `<div><label>Font</label><select class="w-full" onchange="App.updateProp('fontFamily', this.value)">
+                <option value="Arial" ${obj.fontFamily === 'Arial' ? 'selected' : ''}>Arial</option>
+                <option value="serif" ${obj.fontFamily === 'serif' ? 'selected' : ''}>Serif</option>
+                <option value="Impact" ${obj.fontFamily === 'Impact' ? 'selected' : ''}>Impact</option>
+            </select></div>`;
+        }
+        stylePanel.innerHTML = stylesHtml;
+        
+        this.renderLayerTree();
+    },
+
+    updateProp(prop, val) {
+        const obj = this.canvas.getActiveObject();
+        if (!obj) return;
+        obj.set(prop, prop === 'fill' || prop === 'fontFamily' ? val : parseFloat(val));
+        this.canvas.renderAll();
+    },
+
+    play() {
+        if (this.currentTime >= this.duration) this.currentTime = 0;
+        this.isPlaying = true;
+        document.getElementById('play-btn').innerHTML = '<i class="fa-solid fa-pause"></i>';
+        this.lastFrameTime = performance.now();
+    },
+
+    stop() {
+        this.isPlaying = false;
+        document.getElementById('play-btn').innerHTML = '<i class="fa-solid fa-play"></i>';
+    },
+
+    loop(timestamp) {
+        if (this.isPlaying) {
+            const delta = timestamp - (this.lastFrameTime || timestamp);
+            this.lastFrameTime = timestamp;
+            this.currentTime += delta;
+
+            if (this.currentTime >= this.duration) {
+                if (this.isLoop) this.currentTime = 0;
+                else {
+                    this.currentTime = this.duration;
+                    this.stop();
+                }
+            }
+            this.applyAnimation();
+        }
+        
+        if (this.isOnion) this.drawOnion();
+        else this.oCtx.clearRect(0,0,this.oCtx.canvas.width, this.oCtx.canvas.height);
+
+        this.updateTimeUI();
+        requestAnimationFrame((t) => this.loop(t));
+    },
+
+    drawOnion() {
+        this.oCtx.clearRect(0,0,this.oCtx.canvas.width, this.oCtx.canvas.height);
+        // Simplified onion skin: draw a frame from 200ms ago
+        const originalTime = this.currentTime;
+        this.currentTime = Math.max(0, originalTime - 200);
+        this.applyAnimation();
+        
+        const dataUrl = this.canvas.toDataURL();
+        const img = new Image();
+        img.onload = () => {
+            this.oCtx.globalAlpha = 0.3;
+            this.oCtx.drawImage(img, 0, 0);
+            this.currentTime = originalTime;
+            this.applyAnimation();
+        };
+        img.src = dataUrl;
+    },
+
+    applyAnimation() {
+        const time = this.currentTime;
+        this.canvas.getObjects().forEach(obj => {
+            if (!obj.customData) return;
+            
+            const isVisible = obj.customData.visibility.some(v => time >= v.in && time <= v.out);
+            obj.visible = isVisible;
+
+            const kfs = obj.customData.keyframes;
+            if (kfs.length === 0) return;
+
+            let start = null, end = null;
+            for (let i = 0; i < kfs.length; i++) {
+                if (kfs[i].time <= time) start = kfs[i];
+                if (kfs[i].time >= time && !end) end = kfs[i];
+            }
+
+            if (start && end && start !== end) {
+                const alpha = (time - start.time) / (end.time - start.time);
+                const lerp = (a, b, t) => a + (b - a) * t;
+                obj.set({
+                    left: lerp(start.props.left, end.props.left, alpha),
+                    top: lerp(start.props.top, end.props.top, alpha),
+                    scaleX: lerp(start.props.scaleX, end.props.scaleX, alpha),
+                    scaleY: lerp(start.props.scaleY, end.props.scaleY, alpha),
+                    angle: lerp(start.props.angle, end.props.angle, alpha),
+                    opacity: lerp(start.props.opacity, end.props.opacity, alpha)
+                });
+            } else if (start) {
+                obj.set(start.props);
+            }
+        });
+        this.canvas.renderAll();
+    },
+
+    updateTimeline() {
+        const headers = document.getElementById('timeline-headers');
+        const tracks = document.getElementById('timeline-tracks');
+        const ruler = document.getElementById('time-ruler');
+        
+        headers.innerHTML = '';
+        tracks.querySelectorAll('.track-lane').forEach(l => l.remove());
+        ruler.innerHTML = '';
+
+        for (let i = 0; i <= this.duration; i += 1000) {
+            const tick = document.createElement('div');
+            tick.className = 'absolute top-0 bottom-0 border-l border-gray-700 text-[9px] pl-1 pt-1 pointer-events-none';
+            tick.style.left = (i / 1000) * this.pxPerSec + 'px';
+            tick.innerText = (i / 1000) + 's';
+            ruler.appendChild(tick);
+        }
+
+        this.canvas.getObjects().forEach((obj) => {
+            if (!obj.customData) return;
+            
+            const h = document.createElement('div');
+            h.className = `track-header truncate ${this.canvas.getActiveObject() === obj ? 'bg-indigo-900/30' : ''}`;
+            h.innerHTML = `<i class="fa-solid fa-layer-group mr-2 opacity-50"></i> <span class="truncate">${obj.customData.name}</span>`;
+            h.onclick = () => { this.canvas.setActiveObject(obj); this.onSelect(); };
+            headers.appendChild(h);
+
+            const lane = document.createElement('div');
+            lane.className = 'track-lane';
+            
+            obj.customData.visibility.forEach(v => {
+                const bar = document.createElement('div');
+                bar.className = 'visibility-bar';
+                bar.style.left = (v.in / 1000) * this.pxPerSec + 'px';
+                bar.style.width = ((v.out - v.in) / 1000) * this.pxPerSec + 'px';
+                lane.appendChild(bar);
+            });
+
+            obj.customData.keyframes.forEach((kf) => {
+                const k = document.createElement('div');
+                k.className = 'keyframe';
+                k.style.left = (kf.time / 1000) * this.pxPerSec + 'px';
+                k.onclick = (e) => {
+                    e.stopPropagation();
+                    this.currentTime = kf.time;
+                    this.applyAnimation();
+                };
+                lane.appendChild(k);
+            });
+
+            tracks.appendChild(lane);
+        });
+    },
+
+    updateTimeUI() {
+        const x = (this.currentTime / 1000) * this.pxPerSec;
+        document.getElementById('playhead').style.left = x + 'px';
+        
+        const totalSec = Math.floor(this.currentTime / 1000);
+        const ms = Math.floor((this.currentTime % 1000) / 10);
+        const s = totalSec % 60;
+        const m = Math.floor(totalSec / 60);
+        document.getElementById('time-display').innerText = 
+            `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}:${ms.toString().padStart(2,'0')}`;
+    },
+
+    onPlayheadDown(e) {
+        this.isDraggingPlayhead = true;
+        const move = (evt) => {
+            const rect = document.getElementById('timeline-tracks').getBoundingClientRect();
+            const scroll = document.getElementById('timeline-scroll').scrollLeft;
+            let x = evt.clientX - rect.left + scroll;
+            this.currentTime = Math.max(0, Math.min(this.duration, (x / this.pxPerSec) * 1000));
+            this.applyAnimation();
+        };
+        const up = () => {
+            this.isDraggingPlayhead = false;
+            window.removeEventListener('mousemove', move);
+            window.removeEventListener('mouseup', up);
+        };
+        window.addEventListener('mousemove', move);
+        window.addEventListener('mouseup', up);
+    },
+
+    onTimelineClick(e) {
+        if (e.target !== document.getElementById('timeline-tracks')) return;
+        const rect = e.target.getBoundingClientRect();
+        const scroll = document.getElementById('timeline-scroll').scrollLeft;
+        let x = e.clientX - rect.left + scroll;
+        this.currentTime = Math.max(0, Math.min(this.duration, (x / this.pxPerSec) * 1000));
+        this.applyAnimation();
+    },
+
+    addKeyframe() {
+        const obj = this.canvas.getActiveObject();
+        if (!obj || !obj.customData) return;
+
+        const kf = {
+            time: Math.round(this.currentTime),
+            props: {
+                left: obj.left,
+                top: obj.top,
+                scaleX: obj.scaleX,
+                scaleY: obj.scaleY,
+                angle: obj.angle,
+                opacity: obj.opacity
+            },
+            ease: document.getElementById('ease-select').value
+        };
+
+        const existing = obj.customData.keyframes.findIndex(k => Math.abs(k.time - kf.time) < 50);
+        if (existing !== -1) obj.customData.keyframes[existing] = kf;
+        else obj.customData.keyframes.push(kf);
+
+        obj.customData.keyframes.sort((a,b) => a.time - b.time);
+        this.updateTimeline();
+        this.saveState();
+    },
+
+    setIn() {
+        const obj = this.canvas.getActiveObject();
+        if (!obj || !obj.customData) return;
+        obj.customData.visibility[0].in = this.currentTime;
+        this.updateTimeline();
+        this.saveState();
+    },
+
+    setOut() {
+        const obj = this.canvas.getActiveObject();
+        if (!obj || !obj.customData) return;
+        obj.customData.visibility[0].out = this.currentTime;
+        this.updateTimeline();
+        this.saveState();
+    },
+
+    toggle(feat) {
+        if (feat === 'snap') this.isSnap = !this.isSnap;
+        if (feat === 'grid') this.isGrid = !this.isGrid;
+        if (feat === 'onion') this.isOnion = !this.isOnion;
+        if (feat === 'loop') this.isLoop = !this.isLoop;
+        this.syncUI();
+    },
+
+    zoom(dir) {
+        if (dir === 'in') this.zoomLevel *= 1.1;
+        else this.zoomLevel *= 0.9;
+        this.onResize();
+    },
+
+    renderLayerTree() {
+        const container = document.getElementById('layer-tree');
+        const active = this.canvas.getActiveObject();
+        container.innerHTML = this.canvas.getObjects().slice().reverse().map(obj => {
+            if (!obj.customData) return '';
+            return `
+                <div class="tree-node ${active === obj ? 'active' : ''}" onclick="App.canvas.setActiveObject(App.getObjectById('${obj.id}')); App.onSelect();">
+                    <i class="fa-solid fa-layer-group opacity-50"></i>
+                    <span class="flex-1 truncate">${obj.customData.name}</span>
+                    <i class="fa-solid ${obj.visible ? 'fa-eye' : 'fa-eye-slash'} opacity-50" onclick="event.stopPropagation(); App.toggleVisibility('${obj.id}')"></i>
+                </div>
+            `;
+        }).join('');
+    },
+
+    toggleVisibility(id) {
+        const obj = this.getObjectById(id);
+        if (obj) {
+            obj.visible = !obj.visible;
+            this.canvas.renderAll();
+            this.renderLayerTree();
+        }
+    },
+
+    getObjectById(id) {
+        return this.canvas.getObjects().find(o => o.id === id);
+    },
+
+    group() {
+        if (!this.canvas.getActiveObject() || this.canvas.getActiveObject().type !== 'activeSelection') return;
+        this.canvas.getActiveObject().toGroup();
+        this.canvas.requestRenderAll();
+        this.saveState();
+    },
+
+    ungroup() {
+        if (!this.canvas.getActiveObject() || this.canvas.getActiveObject().type !== 'group') return;
+        this.canvas.getActiveObject().toActiveSelection();
+        this.canvas.requestRenderAll();
+        this.saveState();
+    },
+
+    deleteSelected() {
+        const active = this.canvas.getActiveObjects();
+        if (active.length === 0) return;
+        active.forEach(o => this.canvas.remove(o));
+        this.canvas.discardActiveObject();
+        this.saveState();
+        this.syncUI();
+    },
+
+    saveProject() {
+        const data = {
+            scenes: this.scenes,
+            canvas: this.canvas.toJSON(['customData', 'id'])
+        };
+        const blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'animframe-project.json';
+        link.click();
+    },
+
+    export(type) {
+        if (type === 'frame') {
+            const dataUrl = this.canvas.toDataURL({ format: 'png' });
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = `frame-${Math.floor(this.currentTime)}.png`;
+            link.click();
+        }
+    }
+};
+
+window.onload = () => App.init();
+</script>
+</body>
+</html>
