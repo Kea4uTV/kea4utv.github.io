@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ឧបករណ៍ផ្គុំរូបភាព PNG ទៅ GIF | PNG to GIF Combiner</title>
+
+    <!-- ប្រើ CDN ដែលមានស្ថេរភាពសម្រាប់ gifshot -->
+    <script src="https://cdn.jsdelivr.net/npm/gifshot@0.4.5/dist/gifshot.min.js">
+    </script>
+
+    <style>
+        :root {
+            --bg: #f0f2f5;
+            --surface: #ffffff;
+            --border: #e0e4e8;
+            --text: #1a1d23;
+            --text-secondary: #5f6672;
+            --accent: #5b5ef7;
+            --accent-hover: #4a4de0;
+            --danger: #e0556a;
+            --success: #2eac68;
+            --shadow: 0 4px 16px rgba(0,0,0,0.08);
+            --radius: 16px;
+            --radius-xs: 8px;
+            --font-khmer: 'Noto Sans Khmer', 'Khmer OS', system-ui, sans-serif;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: var(--font-khmer);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        .header {
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(8px);
+            border-bottom:1px solid var(--border);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap:16px;
+            flex-wrap: wrap;
+            position: sticky;
+            top:0;
+            z-index:100;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        .header-logo { display:flex; align-items:center; gap:12px; font-size:1.35rem; font-weight:700; }
+        .header-logo .icon { width:42px; height:42px; background:var(--accent); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.5rem; color:#fff; }
+        .header-badge { font-size:0.8rem; background:#eef0ff; color:var(--accent); padding:5px 12px; border-radius:20px; font-weight:600; }
+        .main-container {
+            max-width:1300px;
+            margin:0 auto;
+            padding:24px 20px 40px;
+            display:grid;
+            grid-template-columns: 340px 1fr;
+            gap:24px;
+            align-items:start;
+        }
+        @media (max-width:900px){ .main-container{grid-template-columns:1fr; max-width:600px;} }
+        .card {
+            background:var(--surface);
+            border-radius:var(--radius);
+            padding:20px 22px;
+            box-shadow:var(--shadow);
+            border:1px solid var(--border);
+            margin-bottom:20px;
+        }
+        .card-title { font-size:1rem; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+        .card-title .dot { width:8px; height:8px; background:var(--accent); border-radius:50%; }
+        label { display:block; font-weight:600; font-size:0.88rem; margin-bottom:4px; }
+        .helper { font-size:0.78rem; color:var(--text-secondary); margin-bottom:8px; display:block; }
+        input[type="color"] { width:100%; height:44px; border:2px solid var(--border); border-radius:8px; cursor:pointer; padding:3px; }
+        input[type="number"], select {
+            width:100%; padding:10px 14px; border:2px solid var(--border); border-radius:8px;
+            font-size:0.9rem; font-family:var(--font-khmer); background:#f8f9fa; color:var(--text); transition:0.2s;
+        }
+        input[type="number"]:focus, select:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 4px rgba(91,94,247,0.08); background:#fff; }
+        .btn {
+            display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:12px 20px;
+            font-size:0.9rem; font-weight:600; border-radius:8px; cursor:pointer; border:none; transition:0.2s;
+            font-family:var(--font-khmer);
+        }
+        .btn-primary { background:var(--accent); color:#fff; box-shadow:0 2px 8px rgba(91,94,247,0.3); }
+        .btn-primary:hover { background:var(--accent-hover); }
+        .btn-primary:disabled { background:#c4c6d4; box-shadow:none; cursor:not-allowed; }
+        .btn-outline { background:#fff; border:2px solid var(--border); color:var(--text); }
+        .btn-outline:hover { border-color:var(--accent); color:var(--accent); background:#eef0ff; }
+        .btn-sm { padding:6px 12px; font-size:0.8rem; border-radius:6px; }
+        .upload-zone {
+            border:3px dashed var(--border); border-radius:var(--radius); padding:40px 24px; text-align:center;
+            cursor:pointer; background:#f8f9fa; position:relative; min-height:160px;
+            display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+        }
+        .upload-zone:hover, .upload-zone.drag-over { border-color:var(--accent); background:#eef0ff; }
+        .upload-zone input[type="file"] { position:absolute; inset:0; opacity:0; cursor:pointer; }
+        .upload-icon { font-size:3rem; opacity:0.5; }
+        .upload-text { font-weight:600; font-size:1rem; }
+        .upload-hint { font-size:0.82rem; color:var(--text-secondary); }
+        .frame-list { display:flex; flex-wrap:wrap; gap:10px; max-height:420px; overflow-y:auto; padding:4px; align-content:flex-start; min-height:60px; }
+        .frame-item {
+            position:relative; width:90px; height:90px; border-radius:8px; overflow:hidden;
+            border:2px solid var(--border); cursor:grab; background:#fafafa; display:flex; align-items:center; justify-content:center;
+            flex-shrink:0;
+        }
+        .frame-item:hover { border-color:var(--accent); }
+        .frame-item img { max-width:100%; max-height:100%; object-fit:contain; pointer-events:none; }
+        .frame-number {
+            position:absolute; top:3px; left:3px; background:rgba(0,0,0,0.7); color:#fff; font-size:0.7rem; font-weight:700;
+            width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+        }
+        .frame-remove {
+            position:absolute; top:3px; right:3px; width:22px; height:22px; border-radius:50%; background:rgba(220,50,70,0.85);
+            color:#fff; border:none; cursor:pointer; font-size:0.7rem; display:flex; align-items:center; justify-content:center;
+            opacity:0; transition:0.2s;
+        }
+        .frame-item:hover .frame-remove { opacity:1; }
+        .preview-area { background:#fafbfc; border-radius:10px; min-height:200px; display:flex; align-items:center; justify-content:center; overflow:hidden; border:2px dashed var(--border); }
+        .preview-area img { max-width:100%; max-height:400px; object-fit:contain; }
+        .preview-checkerboard {
+            background-image:linear-gradient(45deg,#e8e8e8 25%,transparent 25%),linear-gradient(-45deg,#e8e8e8 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#e8e8e8 75%),linear-gradient(-45deg,transparent 75%,#e8e8e8 75%);
+            background-size:20px 20px; background-position:0 0,0 10px,10px -10px,-10px 0px;
+        }
+        .progress-wrap { margin-top:12px; display:none; }
+        .progress-wrap.active { display:block; }
+        .progress-bar { height:8px; background:#e8eaef; border-radius:10px; overflow:hidden; }
+        .progress-fill { height:100%; background:var(--accent); border-radius:10px; width:0%; transition:width 0.3s; }
+        .progress-text { font-size:0.8rem; color:var(--text-secondary); margin-top:4px; text-align:center; }
+        .toast {
+            position:fixed; bottom:24px; right:24px; background:#1a1d23; color:#fff; padding:14px 20px; border-radius:8px;
+            font-weight:600; font-size:0.88rem; z-index:999; opacity:0; transform:translateY(20px); transition:0.3s;
+            pointer-events:none; box-shadow:0 12px 32px rgba(0,0,0,0.12);
+        }
+        .toast.show { opacity:1; transform:translateY(0); }
+        .toast.success { background:var(--success); }
+        .toast.error { background:var(--danger); }
+    </style>
+</head>
+<body>
+
+<header class="header">
+    <div>
+        <div class="header-logo"><span class="icon">🎞️</span><span>ផ្គុំ PNG ទៅ GIF</span></div>
+        <div class="header-subtitle">ឧបករណ៍បង្កើត GIF ពីរូបភាព PNG ជាមួយផ្ទៃខាងក្រោយ</div>
+    </div>
+    <span class="header-badge" id="frameCountBadge">០ ស៊ុម</span>
+</header>
+
+<div class="main-container">
+    <aside>
+        <div class="card">
+            <div class="card-title"><span class="dot"></span> ផ្ទៃខាងក្រោយ</div>
+            <label for="bgType">ប្រភេទ</label>
+            <select id="bgType">
+                <option value="color">ពណ៌សុទ្ធ</option>
+                <option value="image">រូបភាពផ្ទៃខាងក្រោយ</option>
+                <option value="transparent">ថ្លា (គ្មានផ្ទៃខាងក្រោយ)</option>
+            </select>
+            <div id="bgColorGroup" style="margin-top:12px;">
+                <label for="bgColor">ពណ៌</label>
+                <input type="color" id="bgColor" value="#ffffff">
+            </div>
+            <div id="bgImageGroup" style="margin-top:12px; display:none;">
+                <label>រូបភាពផ្ទៃខាងក្រោយ</label>
+                <input type="file" id="bgImageInput" accept="image/*">
+                <span class="helper" id="bgImageName">មិនទាន់ជ្រើសរើស</span>
+                <button class="btn btn-outline btn-sm" id="clearBgImage" style="display:none;">✕ ដកចេញ</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title"><span class="dot"></span> ការកំណត់ស៊ុម</div>
+            <label for="frameDelay">ពេលវេលាក្នុងមួយស៊ុម (ms)</label>
+            <input type="number" id="frameDelay" value="500" min="50" max="10000" step="50">
+            <label for="outputWidth" style="margin-top:12px;">ទទឹងលទ្ធផល (px)</label>
+            <input type="number" id="outputWidth" value="500" min="50" max="2000">
+            <label for="outputHeight" style="margin-top:8px;">កម្ពស់លទ្ធផល (px)</label>
+            <input type="number" id="outputHeight" value="500" min="50" max="2000">
+            <button class="btn btn-outline btn-sm" id="autoSizeBtn" style="width:100%; margin-top:8px;">📐 ស្វ័យប្រវត្តិ</button>
+            <label for="loopCount" style="margin-top:12px;">ចាក់ឡើងវិញ</label>
+            <select id="loopCount">
+                <option value="0">♾️ មិនចេះចប់</option>
+                <option value="1">១ ដង</option>
+                <option value="2">២ ដង</option>
+                <option value="3">៣ ដង</option>
+                <option value="5">៥ ដង</option>
+                <option value="10">១០ ដង</option>
+            </select>
+        </div>
+
+        <div class="card">
+            <button class="btn btn-primary" id="generateBtn" style="width:100%; padding:14px;" disabled>⚡ បង្កើត GIF</button>
+            <div class="progress-wrap" id="progressWrap">
+                <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+                <div class="progress-text" id="progressText">កំពុងដំណើរការ...</div>
+            </div>
+            <button class="btn btn-outline" id="downloadBtn" style="width:100%; margin-top:10px; display:none;">💾 ទាញយក GIF</button>
+            <button class="btn btn-outline" id="clearAllBtn" style="width:100%; margin-top:8px;">🗑️ សម្អាតទាំងអស់</button>
+        </div>
+    </aside>
+
+    <section>
+        <div class="card" style="padding:0; overflow:hidden;">
+            <div class="upload-zone" id="uploadZone">
+                <span class="upload-icon">📁</span>
+                <span class="upload-text">ទម្លាក់ឯកសារ PNG នៅទីនេះ</span>
+                <span class="upload-hint">ឬចុចដើម្បីជ្រើសរើស (អាចច្រើន)</span>
+                <input type="file" id="fileInput" accept="image/png" multiple>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top:16px;">
+            <div class="card-title"><span class="dot"></span> ស៊ុមរូបភាព <span id="frameListCount">(០)</span></div>
+            <div class="frame-list" id="frameList">
+                <div class="no-frames" id="noFramesMsg">📭 មិនទាន់មានរូបភាព</div>
+            </div>
+            <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+                <button class="btn btn-outline btn-sm" id="reverseOrderBtn">🔄 បញ្ច្រាសលំដាប់</button>
+                <button class="btn btn-outline btn-sm" id="duplicateAllBtn">📋 ចម្លងទាំងអស់</button>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top:16px;">
+            <div class="card-title"><span class="dot"></span> មើលជាមុន</div>
+            <div class="preview-area preview-checkerboard" id="previewArea">
+                <span id="previewPlaceholder">បង្កើត GIF ដើម្បីមើលលទ្ធផល</span>
+                <img id="previewImage" src="" alt="GIF Preview" style="display:none;">
+            </div>
+        </div>
+    </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    (function() {
+        // រង់ចាំ gifshot ផ្ទុករួច
+        function waitForGifshot(callback) {
+            if (typeof gifshot !== 'undefined') {
+                callback();
+                return;
+            }
+            let attempts = 0;
+            const interval = setInterval(() => {
+                if (typeof gifshot !== 'undefined') {
+                    clearInterval(interval);
+                    callback();
+                }
+                attempts++;
+                if (attempts > 50) {
+                    clearInterval(interval);
+                    showToast('មិនអាចផ្ទុកបណ្ណាល័យ gifshot សូមពិនិត្យការភ្ជាប់អ៊ីនធឺណិត', 'error');
+                }
+            }, 200);
+        }
+
+        // DOM elements
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const frameList = document.getElementById('frameList');
+        const frameListCount = document.getElementById('frameListCount');
+        const frameCountBadge = document.getElementById('frameCountBadge');
+        const noFramesMsg = document.getElementById('noFramesMsg');
+        const previewImage = document.getElementById('previewImage');
+        const previewPlaceholder = document.getElementById('previewPlaceholder');
+        const generateBtn = document.getElementById('generateBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const clearAllBtn = document.getElementById('clearAllBtn');
+        const reverseOrderBtn = document.getElementById('reverseOrderBtn');
+        const duplicateAllBtn = document.getElementById('duplicateAllBtn');
+        const autoSizeBtn = document.getElementById('autoSizeBtn');
+        const progressWrap = document.getElementById('progressWrap');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const toast = document.getElementById('toast');
+        const bgType = document.getElementById('bgType');
+        const bgColorGroup = document.getElementById('bgColorGroup');
+        const bgImageGroup = document.getElementById('bgImageGroup');
+        const bgColor = document.getElementById('bgColor');
+        const bgImageInput = document.getElementById('bgImageInput');
+        const bgImageName = document.getElementById('bgImageName');
+        const clearBgImageBtn = document.getElementById('clearBgImage');
+        const frameDelayInput = document.getElementById('frameDelay');
+        const outputWidthInput = document.getElementById('outputWidth');
+        const outputHeightInput = document.getElementById('outputHeight');
+        const loopCountSelect = document.getElementById('loopCount');
+
+        let frames = [];
+        let backgroundImageDataURL = null;
+        let generatedGifDataURL = null;
+        let frameIdCounter = 0;
+        let gifshotReady = false;
+
+        // Toast
+        let toastTimer;
+        function showToast(msg, type='') {
+            clearTimeout(toastTimer);
+            toast.textContent = msg;
+            toast.className = 'toast '+type+' show';
+            toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
+        // UI update
+        function updateFrameUI() {
+            const count = frames.length;
+            frameListCount.textContent = `(${count})`;
+            frameCountBadge.textContent = `${count} ស៊ុម`;
+            noFramesMsg.style.display = count === 0 ? 'block' : 'none';
+            generateBtn.disabled = (count === 0 || !gifshotReady);
+            generatedGifDataURL = null;
+            downloadBtn.style.display = 'none';
+            previewImage.style.display = 'none';
+            previewPlaceholder.style.display = 'block';
+        }
+
+        function renderFrameList() {
+            frameList.innerHTML = '';
+            if (frames.length === 0) {
+                frameList.innerHTML = '<div class="no-frames" id="noFramesMsg">📭 មិនទាន់មានរូបភាព</div>';
+            } else {
+                frames.forEach((frame, idx) => {
+                    const div = document.createElement('div');
+                    div.className = 'frame-item';
+                    div.draggable = true;
+                    div.dataset.index = idx;
+                    div.innerHTML = `
+                        <span class="frame-number">${idx+1}</span>
+                        <button class="frame-remove" data-index="${idx}">✕</button>
+                        <img src="${frame.dataURL}" alt="frame">
+                    `;
+                    div.addEventListener('dragstart', handleDragStart);
+                    div.addEventListener('dragover', handleDragOver);
+                    div.addEventListener('drop', handleDrop);
+                    div.addEventListener('dragend', handleDragEnd);
+                    div.querySelector('.frame-remove').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        frames.splice(idx,1);
+                        renderFrameList();
+                        showToast('បានដកចេញ ✓');
+                    });
+                    frameList.appendChild(div);
+                });
+            }
+            updateFrameUI();
+        }
+
+        function addFrames(files) {
+            const pngFiles = Array.from(files).filter(f => f.type==='image/png' || f.name.endsWith('.png'));
+            if (!pngFiles.length) { showToast('សូមជ្រើសរើសឯកសារ PNG តែប៉ុណ្ណោះ','error'); return; }
+            const readers = pngFiles.map(file => new Promise(resolve => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = new Image();
+                    img.onload = () => resolve({ id:++frameIdCounter, dataURL:e.target.result, width:img.naturalWidth, height:img.naturalHeight, name:file.name });
+                    img.onerror = () => resolve(null);
+                    img.src = e.target.result;
+                };
+                reader.onerror = () => resolve(null);
+                reader.readAsDataURL(file);
+            }));
+            Promise.all(readers).then(results => {
+                const valid = results.filter(r => r);
+                frames.push(...valid);
+                renderFrameList();
+                if (valid.length) showToast(`បានបន្ថែម ${valid.length} ស៊ុម ✓`, 'success');
+                autoSuggestSize();
+            });
+        }
+
+        function autoSuggestSize() {
+            if (!frames.length) return;
+            let maxW=0, maxH=0;
+            frames.forEach(f => { if(f.width>maxW) maxW=f.width; if(f.height>maxH) maxH=f.height; });
+            outputWidthInput.value = Math.max(maxW,100);
+            outputHeightInput.value = Math.max(maxH,100);
+            showToast(`ទំហំស្វ័យប្រវត្តិ: ${outputWidthInput.value}×${outputHeightInput.value} px`,'success');
+        }
+
+        // Drag & drop logic
+        let draggedIdx = null;
+        function handleDragStart(e) { draggedIdx = parseInt(this.dataset.index); this.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; }
+        function handleDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect='move'; this.classList.add('drag-target'); }
+        function handleDrop(e) {
+            e.preventDefault(); this.classList.remove('drag-target');
+            const to = parseInt(this.dataset.index);
+            if (draggedIdx !== null && draggedIdx !== to) {
+                const [moved] = frames.splice(draggedIdx,1);
+                frames.splice(to,0,moved);
+                renderFrameList();
+            }
+            draggedIdx = null;
+        }
+        function handleDragEnd(e) { this.classList.remove('dragging'); document.querySelectorAll('.frame-item').forEach(el=>el.classList.remove('drag-target')); }
+
+        // Upload events
+        uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+        uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+        uploadZone.addEventListener('drop', e => {
+            e.preventDefault(); uploadZone.classList.remove('drag-over');
+            if (e.dataTransfer.files.length) addFrames(e.dataTransfer.files);
+        });
+        fileInput.addEventListener('change', () => { if(fileInput.files.length) addFrames(fileInput.files); fileInput.value=''; });
+
+        // Background type toggle
+        bgType.addEventListener('change', () => {
+            const v = bgType.value;
+            bgColorGroup.style.display = v==='color' ? 'block' : 'none';
+            bgImageGroup.style.display = v==='image' ? 'block' : 'none';
+        });
+        bgImageInput.addEventListener('change', () => {
+            const file = bgImageInput.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                backgroundImageDataURL = e.target.result;
+                bgImageName.textContent = file.name;
+                clearBgImageBtn.style.display = 'inline-block';
+                showToast('បានកំណត់រូបភាពផ្ទៃខាងក្រោយ ✓', 'success');
+            };
+            reader.readAsDataURL(file);
+        });
+        clearBgImageBtn.addEventListener('click', () => {
+            backgroundImageDataURL = null;
+            bgImageName.textContent = 'មិនទាន់ជ្រើសរើស';
+            bgImageInput.value = '';
+            clearBgImageBtn.style.display = 'none';
+        });
+        autoSizeBtn.addEventListener('click', autoSuggestSize);
+        reverseOrderBtn.addEventListener('click', () => {
+            if(frames.length<2) { showToast('ត្រូវការយ៉ាងហោច ២ ស៊ុម','error'); return; }
+            frames.reverse(); renderFrameList(); showToast('បានបញ្ច្រាស ✓','success');
+        });
+        duplicateAllBtn.addEventListener('click', () => {
+            if(!frames.length) { showToast('គ្មានស៊ុម','error'); return; }
+            const dupes = frames.map(f => ({...f, id:++frameIdCounter}));
+            frames.push(...dupes);
+            renderFrameList();
+            showToast(`បានចម្លង ${dupes.length} ស៊ុម ✓`,'success');
+        });
+        clearAllBtn.addEventListener('click', () => {
+            if(!frames.length && !generatedGifDataURL) { showToast('មិនមានអ្វីសម្អាត'); return; }
+            if(confirm('តើអ្នកចង់សម្អាតទាំងអស់មែនទេ?')) {
+                frames = []; generatedGifDataURL = null; backgroundImageDataURL = null;
+                bgImageName.textContent = 'មិនទាន់ជ្រើសរើស'; bgImageInput.value=''; clearBgImageBtn.style.display='none';
+                downloadBtn.style.display='none'; previewImage.style.display='none'; previewPlaceholder.style.display='block';
+                progressWrap.classList.remove('active'); progressFill.style.width='0%';
+                renderFrameList(); showToast('បានសម្អាត ✓','success');
+            }
+        });
+
+        // Compose one frame (background + PNG)
+        function composeFrame(frameDataURL, w, h, bgTypeVal, bgColorVal, bgImg) {
+            return new Promise((resolve, reject) => {
+                const canvas = document.createElement('canvas');
+                canvas.width = w; canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                const drawFg = () => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const scale = Math.min(w/img.naturalWidth, h/img.naturalHeight, 1);
+                        const dw = img.naturalWidth*scale, dh = img.naturalHeight*scale;
+                        ctx.drawImage(img, (w-dw)/2, (h-dh)/2, dw, dh);
+                        resolve(canvas.toDataURL('image/png'));
+                    };
+                    img.onerror = () => reject(new Error('មិនអាចផ្ទុករូបភាពស៊ុម'));
+                    img.src = frameDataURL;
+                };
+                if (bgTypeVal === 'color') {
+                    ctx.fillStyle = bgColorVal;
+                    ctx.fillRect(0,0,w,h);
+                    drawFg();
+                } else if (bgTypeVal === 'image' && bgImg) {
+                    const bg = new Image();
+                    bg.onload = () => {
+                        const scale = Math.max(w/bg.naturalWidth, h/bg.naturalHeight);
+                        const sw = bg.naturalWidth*scale, sh = bg.naturalHeight*scale;
+                        ctx.drawImage(bg, (w-sw)/2, (h-sh)/2, sw, sh);
+                        drawFg();
+                    };
+                    bg.onerror = () => { ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h); drawFg(); };
+                    bg.src = bgImg;
+                } else {
+                    drawFg();
+                }
+            });
+        }
+
+        // Generate GIF (កែតម្រូវ timing)
+        async function generateGif() {
+            if (!frames.length) return;
+            const outW = parseInt(outputWidthInput.value) || 500;
+            const outH = parseInt(outputHeightInput.value) || 500;
+            const delayMs = parseInt(frameDelayInput.value) || 500;
+            const bgTypeVal = bgType.value;
+            const bgColorVal = bgColor.value;
+            const loop = parseInt(loopCountSelect.value) || 0;
+            if (outW<50 || outH<50 || outW>2000 || outH>2000) { showToast('ទំហំចន្លោះ ៥០-២០០០px','error'); return; }
+
+            generateBtn.disabled = true;
+            progressWrap.classList.add('active');
+            progressFill.style.width = '0%';
+            progressText.textContent = 'កំពុងរៀបចំស៊ុម...';
+
+            const composed = [];
+            for (let i=0; i<frames.length; i++) {
+                progressText.textContent = `ស៊ុម ${i+1}/${frames.length}...`;
+                progressFill.style.width = `${Math.round((i/frames.length)*40)}%`;
+                try {
+                    const dataUrl = await composeFrame(frames[i].dataURL, outW, outH, bgTypeVal, bgColorVal, backgroundImageDataURL);
+                    composed.push(dataUrl);
+                } catch (e) {
+                    showToast('បរាជ័យក្នុងការផ្គុំស៊ុម: '+e.message, 'error');
+                    generateBtn.disabled = false;
+                    progressWrap.classList.remove('active');
+                    return;
+                }
+            }
+
+            progressText.textContent = 'កំពុងបង្កើត GIF...';
+            progressFill.style.width = '50%';
+
+            // សំខាន់៖ បំលែងមិល្លីវិនាទីទៅជា ១/១០០ វិនាទី (centiseconds)
+            const frameDurationCs = Math.max(1, Math.round(delayMs / 10));
+
+            gifshot.createGIF({
+                images: composed,
+                gifWidth: outW,
+                gifHeight: outH,
+                frameDuration: frameDurationCs,   // ពេលបង្ហាញស៊ុមនីមួយៗ (1 = 0.01វិ)
+                numFrames: composed.length,
+                sampleInterval: 1,
+                progressCallback: function(p) {
+                    const pct = 50 + Math.round(p * 45);
+                    progressFill.style.width = pct + '%';
+                    progressText.textContent = `កំពុងបង្កើត... ${Math.round(p*100)}%`;
+                }
+            }, function(obj) {
+                progressFill.style.width = '100%';
+                if (!obj.error && obj.image) {
+                    generatedGifDataURL = obj.image;
+                    progressText.textContent = 'រួចរាល់! ✅';
+                    previewImage.src = obj.image;
+                    previewImage.style.display = 'block';
+                    previewPlaceholder.style.display = 'none';
+                    downloadBtn.style.display = 'block';
+                    showToast('GIF បានបង្កើតដោយជោគជ័យ! 🎉', 'success');
+                } else {
+                    progressText.textContent = 'មានបញ្ហា ❌';
+                    showToast('បរាជ័យ: ' + (obj.error || 'មិនស្គាល់'), 'error');
+                }
+                generateBtn.disabled = false;
+                setTimeout(() => {
+                    if (progressText.textContent.includes('រួចរាល់')) {
+                        progressWrap.classList.remove('active');
+                        progressFill.style.width = '0%';
+                    }
+                }, 2500);
+            });
+        }
+
+        generateBtn.addEventListener('click', generateGif);
+        downloadBtn.addEventListener('click', () => {
+            if (!generatedGifDataURL) return showToast('សូមបង្កើត GIF ជាមុន','error');
+            const a = document.createElement('a');
+            a.href = generatedGifDataURL;
+            a.download = `animated_${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.gif`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            showToast('កំពុងទាញយក... 💾','success');
+        });
+
+        // ពេលផ្ទុករួច
+        waitForGifshot(() => {
+            gifshotReady = true;
+            updateFrameUI();
+            console.log('✅ gifshot រួចរាល់');
+        });
+
+        // initial UI
+        bgColorGroup.style.display = 'block';
+        bgImageGroup.style.display = 'none';
+        renderFrameList();
+    })();
+</script>
+</body>
+</html>
