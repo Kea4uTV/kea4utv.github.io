@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canva Editor - Full Features</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gifuct-js@2.1.2/dist/gifuct-js.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --panel-bg: #25253e;
+            --accent: #7c5cfc;
+            --timeline-bg: #16162a;
+            --danger: #e74c3c;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: #eee;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            user-select: none;
+        }
+        .main-container { display: flex; flex: 1; overflow: hidden; }
+        .left-panel {
+            width: 240px; background: var(--panel-bg); border-right: 1px solid #444;
+            padding: 10px; overflow-y: auto;
+        }
+        .left-panel h3 { font-size: 14px; margin: 10px 0 6px; color: #ccc; }
+        .drop-area {
+            border: 2px dashed #666; padding: 20px; text-align: center;
+            border-radius: 8px; margin: 10px 0; background: #1e1e35; cursor: pointer;
+        }
+        .center-area {
+            flex: 1; display: flex; align-items: center; justify-content: center;
+            background: #0a0a14; position: relative; overflow: hidden;
+        }
+        .canvas-container { box-shadow: 0 0 40px rgba(0,0,0,0.9); background: #2d2d44; }
+        .right-panel {
+            width: 280px; background: var(--panel-bg); border-left: 1px solid #444;
+            display: flex; flex-direction: column; overflow-y: auto; padding: 10px;
+        }
+        .layer-item {
+            display: flex; align-items: center; padding: 6px; background: #30304a;
+            margin: 3px 0; border-radius: 4px; gap: 6px; cursor: pointer; font-size: 12px;
+        }
+        .layer-item.selected { background: #4a3a7c; }
+        .layer-item.locked { opacity: 0.6; }
+        .layer-item .thumb { width: 35px; height: 35px; background: #555; border-radius: 4px; object-fit: cover; }
+        .layer-item .name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .layer-item i { cursor: pointer; padding: 2px; color: #aaa; }
+        .layer-item i:hover { color: white; }
+        .group-children { margin-left: 15px; border-left: 1px solid #555; padding-left: 5px; }
+        .timeline-panel {
+            height: 180px; background: var(--timeline-bg); border-top: 1px solid #333;
+            display: flex; flex-direction: column; padding: 5px;
+        }
+        .timeline-controls { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+        .timeline-ruler { height: 24px; background: #222; position: relative; margin-bottom: 2px; cursor: pointer; }
+        .timeline-tracks { flex: 1; overflow-y: auto; position: relative; cursor: pointer; }
+        .playhead {
+            position: absolute; top: 0; bottom: 0; width: 2px; background: #ff5555;
+            z-index: 10; pointer-events: none;
+        }
+        .track-row { height: 26px; margin: 1px 0; position: relative; }
+        .bar {
+            position: absolute; height: 22px; background: #4a90d9; border-radius: 3px;
+            cursor: grab; min-width: 10px;
+        }
+        .bar .resize-handle {
+            position: absolute; top: 0; bottom: 0; width: 8px; cursor: col-resize;
+            background: rgba(255,255,255,0.2);
+        }
+        .bar .resize-handle.left { left: 0; border-radius: 3px 0 0 3px; }
+        .bar .resize-handle.right { right: 0; border-radius: 0 3px 3px 0; }
+        .key-diamond {
+            position: absolute; width: 8px; height: 8px; background: gold;
+            transform: rotate(45deg); top: 50%; margin-top: -4px; cursor: pointer;
+        }
+        button, select, input[type="range"] { cursor: pointer; }
+        input[type="color"] { width: 30px; height: 25px; border: none; }
+        .timeline-btn {
+            background: #3a3a5a; border: none; color: white; padding: 6px 10px;
+            border-radius: 4px; cursor: pointer;
+        }
+        .preset-section select, .preset-section input { width: 100%; margin: 4px 0; padding: 4px; background: #30304a; color: white; border: 1px solid #555; border-radius: 4px; }
+    </style>
+</head>
+<body>
+<div class="main-container">
+    <!-- LEFT PANEL -->
+    <div class="left-panel">
+        <h3><i class="fas fa-expand"></i> Resolution</h3>
+        <select id="resSelect" style="width:100%; padding:6px; background:#30304a; color:white; border:1px solid #555; border-radius:4px;">
+            <optgroup label="Landscape 16:9">
+                <option value="1920,1080" selected>1080p 1920x1080</option>
+                <option value="1280,720">720p 1280x720</option>
+                <option value="3840,2160">4K 3840x2160</option>
+            </optgroup>
+            <optgroup label="Portrait 9:16">
+                <option value="1080,1920">1080p 1080x1920</option>
+                <option value="720,1280">720p 720x1280</option>
+            </optgroup>
+            <optgroup label="Square 1:1">
+                <option value="1080,1080">1080x1080</option>
+                <option value="720,720">720x720</option>
+            </optgroup>
+        </select>
+
+        <h3><i class="fas fa-cloud-upload-alt"></i> Add Media</h3>
+        <div class="drop-area" id="dropArea">
+            <i class="fas fa-image fa-2x"></i><br>Drop images/GIFs here
+        </div>
+        <button id="uploadBtn" style="width:100%; padding:8px; background:var(--accent); border:none; color:white; border-radius:4px;">Browse Files</button>
+        <input type="file" id="fileInput" accept="image/*" multiple hidden>
+
+        <h3>Motion Presets</h3>
+        <div class="preset-section">
+            <select id="presetSelect">
+                <option value="">-- Choose Preset --</option>
+                <option value="slide-right">Slide →</option>
+                <option value="slide-left">Slide ←</option>
+                <option value="slide-down">Slide ↓</option>
+                <option value="slide-up">Slide ↑</option>
+                <option value="zoom-in">Zoom In</option>
+                <option value="zoom-out">Zoom Out</option>
+                <option value="rotate360">Rotate 360°</option>
+                <option value="mirror-h">Mirror H</option>
+                <option value="mirror-v">Mirror V</option>
+                <option value="blink">Blink</option>
+                <option value="chroma-fade">Chroma Fade</option>
+            </select>
+            <label>Duration (s): <input type="range" id="presetDuration" min="0.5" max="5" step="0.1" value="2"></label>
+            <span id="presetDurVal">2s</span>
+            <button id="applyPresetBtn" style="width:100%; padding:6px; background:var(--accent); border:none; color:white; border-radius:4px;">Apply Preset</button>
+        </div>
+
+        <h3>Canvas Zoom</h3>
+        <div style="display:flex; gap:5px; align-items:center;">
+            <input type="range" id="zoomSlider" min="20" max="200" value="100" style="flex:1;">
+            <span id="zoomVal">100%</span>
+            <button id="fitBtn" title="Fit to Screen"><i class="fas fa-compress"></i></button>
+        </div>
+    </div>
+
+    <!-- CENTER CANVAS -->
+    <div class="center-area" id="centerArea">
+        <div class="canvas-container" id="canvasWrapper">
+            <canvas id="mainCanvas"></canvas>
+        </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+        <h3><i class="fas fa-layer-group"></i> Layers</h3>
+        <div style="display:flex; gap:5px; margin-bottom:8px;">
+            <button id="groupBtn" class="timeline-btn"><i class="fas fa-object-group"></i> Group</button>
+            <button id="ungroupBtn" class="timeline-btn"><i class="fas fa-object-ungroup"></i> Ungroup</button>
+        </div>
+        <div id="layerList" style="flex:1; overflow-y:auto;"></div>
+        <h3>Properties</h3>
+        <div id="propertiesPanel" style="font-size:12px;"><p>Select a layer or group</p></div>
+    </div>
+</div>
+
+<!-- TIMELINE -->
+<div class="timeline-panel">
+    <div class="timeline-controls">
+        <button id="rewindBtn" class="timeline-btn" title="Rewind 2s"><i class="fas fa-backward"></i></button>
+        <button id="playBtn" class="timeline-btn"><i class="fas fa-play"></i></button>
+        <button id="pauseBtn" class="timeline-btn"><i class="fas fa-pause"></i></button>
+        <button id="stopBtn" class="timeline-btn"><i class="fas fa-stop"></i></button>
+        <button id="forwardBtn" class="timeline-btn" title="Fast-Forward 2s"><i class="fas fa-forward"></i></button>
+        <span id="timeDisplay">00:00.000</span>
+        <button id="addKeyBtn" class="timeline-btn" style="margin-left:auto;"><i class="fas fa-key"></i> Keyframe</button>
+        <button id="audioBtn" class="timeline-btn"><i class="fas fa-music"></i> Audio</button>
+        <input type="file" id="audioInput" accept="audio/*" hidden>
+    </div>
+    <div class="timeline-ruler" id="ruler"></div>
+    <div class="timeline-tracks" id="tracksContainer"><div class="playhead" id="playhead"></div></div>
+</div>
+
+<script>
+    // ========== CHROMA KEY FILTER ==========
+    fabric.Image.filters.ChromaKey = fabric.util.createClass(fabric.Image.filters.BaseFilter, {
+        type: 'ChromaKey',
+        color: '#00ff00',
+        tolerance: 30,
+        enabled: false,
+        applyTo2d: function(options) {
+            if (!this.enabled) return;
+            const data = options.imageData.data;
+            const target = this.hexToRgb(this.color);
+            const tol = this.tolerance * 4.5;
+            for (let i = 0; i < data.length; i += 4) {
+                const dr = data[i] - target.r, dg = data[i+1] - target.g, db = data[i+2] - target.b;
+                if (Math.sqrt(dr*dr+dg*dg+db*db) <= tol) data[i+3] = 0;
+            }
+        },
+        hexToRgb: (hex) => (/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex) ? { r: parseInt(RegExp.$1,16), g: parseInt(RegExp.$2,16), b: parseInt(RegExp.$3,16) } : {r:0,g:255,b:0}),
+        toObject: function() {
+            return fabric.util.object.extend(this.callSuper('toObject'), { color: this.color, tolerance: this.tolerance, enabled: this.enabled });
+        }
+    });
+    fabric.Image.filters.ChromaKey.fromObject = fabric.Image.filters.BaseFilter.fromObject;
+
+    // ========== GLOBAL STATE ==========
+    let canvasW = 1920, canvasH = 1080;
+    let zoomPercent = 100;
+    let allNodes = [], rootNodes = [];
+    let selectedNodeId = null, selectedKeyTime = null;
+    let currentTime = 0, duration = 120, isPlaying = false;
+    let audioCtx = null, audioBuffer = null, audioSource = null;
+    const timelineScale = 60;
+    let checkedIds = new Set();
+
+    const fabricCanvas = new fabric.Canvas('mainCanvas', {
+        width: canvasW, height: canvasH,
+        backgroundColor: '#2d2d44', preserveObjectStacking: true,
+    });
+
+    // ========== DATA STRUCTURES ==========
+    function createLayerNode(name, obj) {
+        return { id: 'ly_' + Date.now() + Math.random().toString(36).substr(2,4), type: 'layer', name, obj, locked: false, hidden: false, chromaOn: false, chromaColor: '#00ff00', chromaTol: 30, startTime: 0, endTime: 60, keyframes: [], parentId: null };
+    }
+    function createGroupNode(name) {
+        return { id: 'grp_' + Date.now() + Math.random().toString(36).substr(2,4), type: 'group', name, children: [], locked: false, hidden: false, slideshow: false, slideshowSpeed: 1.0, slideshowPlaying: false, slideshowCurrentIndex: 0, slideshowIntervalId: null, startTime: 0, endTime: 60, parentId: null };
+    }
+    function getNodeById(id) { return allNodes.find(n => n.id === id); }
+    function getChildNodes(node) { return node.type === 'group' ? node.children.map(id => getNodeById(id)).filter(Boolean) : []; }
+    function getParentNode(childId) { return allNodes.find(n => n.type === 'group' && n.children.includes(childId)); }
+    function getAllLeafObjects(node) {
+        if (node.type === 'layer') return [node.obj];
+        return getChildNodes(node).reduce((arr, child) => arr.concat(getAllLeafObjects(child)), []);
+    }
+
+    // ========== CANVAS HELPERS ==========
+    function fitScale() { return Math.min((window.innerWidth - 520) / canvasW, (window.innerHeight - 200) / canvasH); }
+    function applyZoom() {
+        const scale = fitScale() * (zoomPercent / 100);
+        fabricCanvas.setZoom(scale);
+        fabricCanvas.setWidth(canvasW * scale);
+        fabricCanvas.setHeight(canvasH * scale);
+        document.getElementById('zoomVal').textContent = zoomPercent + '%';
+        fabricCanvas.renderAll();
+    }
+    function autoScaleAndCenter(obj) {
+        const maxDim = Math.min(canvasW, canvasH) * 0.4;
+        const imgW = obj.width * obj.scaleX, imgH = obj.height * obj.scaleY;
+        let scale = 1;
+        if (imgW > maxDim || imgH > maxDim) scale = Math.min(maxDim / imgW, maxDim / imgH);
+        else if (imgW < maxDim * 0.3 && imgH < maxDim * 0.3) scale = Math.max(maxDim * 0.3 / imgW, maxDim * 0.3 / imgH);
+        obj.set({ scaleX: obj.scaleX * scale, scaleY: obj.scaleY * scale });
+        obj.set({ left: (canvasW - obj.getScaledWidth()) / 2, top: (canvasH - obj.getScaledHeight()) / 2 });
+        obj.setCoords();
+    }
+
+    // ========== ADD LAYER FROM FILE ==========
+    function addLayerFromFile(file) {
+        const name = file.name || 'Layer';
+        if (file.type === 'image/gif') {
+            const reader = new FileReader();
+            reader.onload = e => {
+                const gif = new GIF(e.target.result);
+                gif.decompressFrames(true).then(frames => {
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = frames[0].dims.width; tempCanvas.height = frames[0].dims.height;
+                    const ctx = tempCanvas.getContext('2d');
+                    const imgData = ctx.createImageData(tempCanvas.width, tempCanvas.height);
+                    imgData.data.set(frames[0].patch);
+                    ctx.putImageData(imgData, 0, 0);
+                    fabric.Image.fromURL(tempCanvas.toDataURL(), img => {
+                        img.gifFrames = frames;
+                        autoScaleAndCenter(img);
+                        finalizeLayer(img, name);
+                    });
+                });
+            };
+            reader.readAsArrayBuffer(file);
+        } else {
+            fabric.Image.fromURL(URL.createObjectURL(file), img => {
+                autoScaleAndCenter(img);
+                finalizeLayer(img, name);
+            }, { crossOrigin: 'anonymous' });
+        }
+    }
+
+    function finalizeLayer(obj, name) {
+        obj.filters = [new fabric.Image.filters.ChromaKey({ enabled: false })];
+        obj.applyFilters();
+        const node = createLayerNode(name, obj);
+        node.keyframes.push({
+            time: 0, x: obj.left, y: obj.top, scaleX: obj.scaleX, scaleY: obj.scaleY,
+            angle: obj.angle, flipX: obj.flipX || false, flipY: obj.flipY || false,
+            visible: true, chromaOn: false, chromaColor: '#00ff00', chromaTol: 30
+        });
+        allNodes.push(node);
+        rootNodes.push(node);
+        obj.nodeId = node.id;
+        fabricCanvas.add(obj);
+        selectNode(node.id);
+        updateLayerList();
+        renderTimeline();
+    }
+
+    // ========== SELECTION ==========
+    function selectNode(id) {
+        selectedNodeId = id;
+        checkedIds.clear();
+        const node = getNodeById(id);
+        if (!node || node.locked) { fabricCanvas.discardActiveObject(); selectedKeyTime = null; updateProperties(); updateLayerList(); return; }
+        if (node.type === 'layer') {
+            fabricCanvas.setActiveObject(node.obj);
+        } else {
+            const objs = getAllLeafObjects(node).filter(o => { const ln = allNodes.find(n => n.obj === o); return ln && !ln.locked; });
+            if (objs.length) fabricCanvas.setActiveObject(new fabric.ActiveSelection(objs, { canvas: fabricCanvas }));
+            else fabricCanvas.discardActiveObject();
+        }
+        selectedKeyTime = null;
+        updateProperties();
+        updateLayerList();
+    }
+
+    // ========== GROUP / UNGROUP ==========
+    function groupChecked() {
+        const ids = [...checkedIds];
+        if (ids.length < 2) return alert('Please check at least 2 layers/groups.');
+        const nodes = ids.map(id => getNodeById(id)).filter(Boolean);
+        if (nodes.length < 2) return;
+        const group = createGroupNode('Group ' + (allNodes.filter(n => n.type === 'group').length + 1));
+        allNodes.push(group); rootNodes.push(group);
+        nodes.forEach(node => {
+            const parent = getParentNode(node.id);
+            if (parent) parent.children = parent.children.filter(cid => cid !== node.id);
+            else rootNodes = rootNodes.filter(n => n.id !== node.id);
+            group.children.push(node.id);
+            node.parentId = group.id;
+        });
+        checkedIds.clear();
+        selectNode(group.id);
+        updateLayerList();
+        renderTimeline();
+        refreshCanvas();
+    }
+    function ungroupSelected() {
+        const node = getNodeById(selectedNodeId);
+        if (!node || node.type !== 'group') return alert('Select a group first.');
+        const children = [...node.children];
+        const parent = getParentNode(node.id);
+        if (parent) { parent.children = parent.children.filter(cid => cid !== node.id); parent.children.push(...children); children.forEach(cid => { const c = getNodeById(cid); if(c) c.parentId = parent.id; }); }
+        else { rootNodes = rootNodes.filter(n => n.id !== node.id); rootNodes.push(...children.map(cid => getNodeById(cid)).filter(Boolean)); children.forEach(cid => { const c = getNodeById(cid); if(c) c.parentId = null; }); }
+        allNodes = allNodes.filter(n => n.id !== node.id);
+        if (node.slideshowPlaying) stopSlideshowPlay(node);
+        if (selectedNodeId === node.id) selectedNodeId = null;
+        fabricCanvas.discardActiveObject();
+        updateLayerList();
+        renderTimeline();
+        refreshCanvas();
+    }
+
+    // ========== SLIDESHOW ==========
+    function startSlideshowPlay(node) {
+        if (node.slideshowPlaying) return;
+        node.slideshowPlaying = true; node.slideshowCurrentIndex = 0;
+        showSlideshowFrame(node);
+        node.slideshowIntervalId = setInterval(() => {
+            node.slideshowCurrentIndex = (node.slideshowCurrentIndex + 1) % node.children.length;
+            showSlideshowFrame(node);
+        }, node.slideshowSpeed * 1000);
+    }
+    function stopSlideshowPlay(node) {
+        node.slideshowPlaying = false;
+        if (node.slideshowIntervalId) { clearInterval(node.slideshowIntervalId); node.slideshowIntervalId = null; }
+    }
+    function showSlideshowFrame(node) {
+        getChildNodes(node).forEach(child => { if (child.type === 'layer') child.obj.visible = false; });
+        const cur = getNodeById(node.children[node.slideshowCurrentIndex]);
+        if (cur && cur.type === 'layer') cur.obj.visible = !cur.hidden;
+        fabricCanvas.renderAll();
+    }
+
+    // ========== VISIBILITY ==========
+    function getAllLeafNodes(roots) {
+        let leaves = [];
+        roots.forEach(node => {
+            if (node.type === 'layer') leaves.push(node);
+            else if (node.type === 'group') {
+                if (node.slideshow && node.slideshowPlaying) {
+                    const cur = getNodeById(node.children[node.slideshowCurrentIndex]);
+                    if (cur && cur.type === 'layer') leaves.push(cur);
+                } else leaves = leaves.concat(getAllLeafNodes(getChildNodes(node)));
+            }
+        });
+        return leaves;
+    }
+    function refreshCanvas() {
+        const visible = getAllLeafNodes(rootNodes);
+        allNodes.forEach(node => {
+            if (node.type === 'layer') {
+                node.obj.visible = visible.includes(node) && !node.hidden && (currentTime >= node.startTime && currentTime <= node.endTime);
+            }
+        });
+        fabricCanvas.renderAll();
+    }
+
+    // ========== KEYFRAMES ==========
+    function addKeyframeAtCurrent(node) {
+        if (!node || node.type !== 'layer' || node.locked) return;
+        const time = currentTime;
+        const idx = node.keyframes.findIndex(k => Math.abs(k.time - time) < 0.001);
+        const kf = {
+            time, x: node.obj.left, y: node.obj.top, scaleX: node.obj.scaleX, scaleY: node.obj.scaleY,
+            angle: node.obj.angle, flipX: node.obj.flipX || false, flipY: node.obj.flipY || false,
+            visible: true, chromaOn: node.chromaOn, chromaColor: node.chromaColor, chromaTol: node.chromaTol
+        };
+        if (idx >= 0) node.keyframes[idx] = kf;
+        else { node.keyframes.push(kf); node.keyframes.sort((a,b)=>a.time-b.time); }
+        selectedKeyTime = time;
+        updateProperties();
+        renderTimeline();
+    }
+    function deleteKeyframe(node, time) {
+        if (!node || node.keyframes.length <= 1) return alert('Cannot delete the only keyframe.');
+        const idx = node.keyframes.findIndex(k => Math.abs(k.time - time) < 0.001);
+        if (idx >= 0) { node.keyframes.splice(idx,1); if (Math.abs(selectedKeyTime - time) < 0.001) selectedKeyTime = null; updateProperties(); renderTimeline(); }
+    }
+    function getInterpolatedState(node, time) {
+        const kfs = node.keyframes; if (!kfs.length) return null;
+        let prev = kfs[0], next = kfs[kfs.length-1];
+        for (let i=0; i<kfs.length; i++) { if (kfs[i].time <= time) prev = kfs[i]; if (kfs[i].time > time) { next = kfs[i]; break; } }
+        const t = (next.time === prev.time) ? 0 : (time - prev.time) / (next.time - prev.time);
+        const lerp = (a,b) => a + (b-a)*t;
+        return {
+            x: lerp(prev.x,next.x), y: lerp(prev.y,next.y), scaleX: lerp(prev.scaleX,next.scaleX), scaleY: lerp(prev.scaleY,next.scaleY),
+            angle: lerp(prev.angle,next.angle), flipX: t<0.5?prev.flipX:next.flipX, flipY: t<0.5?prev.flipY:next.flipY,
+            visible: prev.visible, chromaOn: prev.chromaOn, chromaColor: prev.chromaColor, chromaTol: prev.chromaTol
+        };
+    }
+    function applyKeyframes() {
+        allNodes.forEach(node => {
+            if (node.type !== 'layer' || node.locked || node.hidden) return;
+            const state = getInterpolatedState(node, currentTime);
+            if (!state) return;
+            node.obj.set({ left: state.x, top: state.y, scaleX: state.scaleX, scaleY: state.scaleY, angle: state.angle, flipX: state.flipX, flipY: state.flipY, visible: state.visible });
+            const filter = node.obj.filters?.find(f => f.type === 'ChromaKey');
+            if (filter && (state.chromaOn !== filter.enabled || state.chromaColor !== filter.color || state.chromaTol !== filter.tolerance)) {
+                filter.enabled = state.chromaOn; filter.color = state.chromaColor; filter.tolerance = state.chromaTol;
+                node.obj.applyFilters();
+            }
+            node.obj.setCoords();
+        });
+        refreshCanvas();
+    }
+
+    // ========== TIMELINE ==========
+    function renderTimeline() {
+        const tracks = document.getElementById('tracksContainer');
+        tracks.querySelectorAll('.track-row').forEach(el => el.remove());
+        allNodes.filter(n => n.type === 'layer').forEach(node => {
+            const row = document.createElement('div'); row.className = 'track-row';
+            row.style.width = (duration * timelineScale) + 'px';
+            const bar = document.createElement('div'); bar.className = 'bar';
+            bar.style.left = (node.startTime * timelineScale) + 'px';
+            bar.style.width = ((node.endTime - node.startTime) * timelineScale) + 'px';
+            const leftHandle = document.createElement('div'); leftHandle.className = 'resize-handle left';
+            const rightHandle = document.createElement('div'); rightHandle.className = 'resize-handle right';
+            leftHandle.addEventListener('mousedown', e => { e.stopPropagation(); startBarDrag(e, node, 'left'); });
+            rightHandle.addEventListener('mousedown', e => { e.stopPropagation(); startBarDrag(e, node, 'right'); });
+            bar.appendChild(leftHandle); bar.appendChild(rightHandle);
+            bar.addEventListener('mousedown', e => { if (!e.target.classList.contains('resize-handle')) startBarDrag(e, node, 'move'); });
+            node.keyframes.forEach(kf => {
+                const d = document.createElement('div'); d.className = 'key-diamond';
+                d.style.left = (kf.time * timelineScale - 4) + 'px';
+                d.onclick = e => { e.stopPropagation(); selectNode(node.id); selectedKeyTime = kf.time; updateProperties(); };
+                bar.appendChild(d);
+            });
+            row.appendChild(bar);
+            tracks.appendChild(row);
+        });
+        document.getElementById('playhead').style.left = (currentTime * timelineScale) + 'px';
+    }
+    let dragInfo = null;
+    function startBarDrag(e, node, edge) {
+        dragInfo = { node, edge, startX: e.clientX };
+        window.addEventListener('mousemove', onBarDrag);
+        window.addEventListener('mouseup', stopBarDrag);
+    }
+    function onBarDrag(e) {
+        if (!dragInfo) return;
+        const dx = (e.clientX - dragInfo.startX) / timelineScale;
+        if (dragInfo.edge === 'left') dragInfo.node.startTime = Math.max(0, dragInfo.node.startTime + dx);
+        else if (dragInfo.edge === 'right') dragInfo.node.endTime = Math.max(dragInfo.node.startTime + 0.1, dragInfo.node.endTime + dx);
+        else { const dur = dragInfo.node.endTime - dragInfo.node.startTime; dragInfo.node.startTime = Math.max(0, dragInfo.node.startTime + dx); dragInfo.node.endTime = dragInfo.node.startTime + dur; }
+        dragInfo.startX = e.clientX;
+        renderTimeline();
+    }
+    function stopBarDrag() {
+        window.removeEventListener('mousemove', onBarDrag);
+        window.removeEventListener('mouseup', stopBarDrag);
+        dragInfo = null;
+    }
+
+    // ========== PLAYBACK ==========
+    function play() { if (!isPlaying) { isPlaying = true; lastTime = performance.now(); requestAnimationFrame(tick); } }
+    function pause() { isPlaying = false; if (audioSource) { audioSource.stop(); audioSource = null; } }
+    function stop() { pause(); setCurrentTime(0); }
+    let lastTime = 0;
+    function tick(now) {
+        if (!isPlaying) return;
+        const dt = (now - lastTime) / 1000;
+        lastTime = now;
+        setCurrentTime(currentTime + dt);
+        requestAnimationFrame(tick);
+    }
+    function setCurrentTime(time) {
+        currentTime = Math.max(0, Math.min(duration, time));
+        applyKeyframes();
+        document.getElementById('timeDisplay').textContent = new Date(currentTime * 1000).toISOString().substr(11,12);
+        document.getElementById('playhead').style.left = (currentTime * timelineScale) + 'px';
+    }
+
+    // ========== AUDIO ==========
+    async function loadAudio(file) {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const arrayBuffer = await file.arrayBuffer();
+        audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    }
+
+    // ========== UI UPDATES ==========
+    function updateLayerList() {
+        const container = document.getElementById('layerList');
+        container.innerHTML = '';
+        function renderNode(node, parentEl, depth) {
+            const div = document.createElement('div'); div.className = 'layer-item' + (node.id === selectedNodeId ? ' selected' : '') + (node.locked ? ' locked' : '');
+            div.style.marginLeft = depth * 10 + 'px';
+            const check = document.createElement('input'); check.type = 'checkbox'; check.checked = checkedIds.has(node.id);
+            check.addEventListener('click', e => { e.stopPropagation(); check.checked ? checkedIds.add(node.id) : checkedIds.delete(node.id); updateLayerList(); });
+            div.appendChild(check);
+            if (node.type === 'layer') {
+                const thumb = document.createElement('img'); thumb.className = 'thumb';
+                thumb.src = node.obj.toDataURL({width:35, height:35});
+                thumb.onerror = () => { thumb.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="35" height="35"><rect width="35" height="35" fill="%23555"/></svg>'; };
+                div.appendChild(thumb);
+                const name = document.createElement('span'); name.className = 'name'; name.textContent = node.name; div.appendChild(name);
+                const lock = document.createElement('i'); lock.className = 'fas ' + (node.locked ? 'fa-lock' : 'fa-lock-open');
+                lock.onclick = e => { e.stopPropagation(); node.locked = !node.locked; updateLayerList(); };
+                const eye = document.createElement('i'); eye.className = 'fas ' + (node.hidden ? 'fa-eye-slash' : 'fa-eye');
+                eye.onclick = e => { e.stopPropagation(); node.hidden = !node.hidden; node.obj.visible = !node.hidden; refreshCanvas(); updateLayerList(); };
+                const chroma = document.createElement('i'); chroma.className = 'fas fa-fill-drip';
+                chroma.onclick = e => { e.stopPropagation(); selectNode(node.id); };
+                div.append(lock, eye, chroma);
+            } else {
+                const icon = document.createElement('i'); icon.className = 'fas fa-folder'; icon.style.color = '#ffb347';
+                const name = document.createElement('span'); name.className = 'name'; name.textContent = node.name + ' (' + node.children.length + ')';
+                const lock = document.createElement('i'); lock.className = 'fas ' + (node.locked ? 'fa-lock' : 'fa-lock-open');
+                lock.onclick = e => { e.stopPropagation(); node.locked = !node.locked; updateLayerList(); };
+                const eye = document.createElement('i'); eye.className = 'fas ' + (node.hidden ? 'fa-eye-slash' : 'fa-eye');
+                eye.onclick = e => { e.stopPropagation(); node.hidden = !node.hidden; refreshCanvas(); updateLayerList(); };
+                const slide = document.createElement('i'); slide.className = 'fas ' + (node.slideshow ? (node.slideshowPlaying ? 'fa-stop' : 'fa-play') : 'fa-images');
+                slide.onclick = e => { e.stopPropagation(); toggleSlideshow(node); };
+                div.append(icon, name, lock, eye, slide);
+            }
+            div.addEventListener('click', e => { if (e.target.tagName !== 'INPUT') selectNode(node.id); });
+            parentEl.appendChild(div);
+            if (node.type === 'group') {
+                const childContainer = document.createElement('div'); childContainer.className = 'group-children';
+                parentEl.appendChild(childContainer);
+                getChildNodes(node).forEach(child => renderNode(child, childContainer, depth + 1));
+            }
+        }
+        rootNodes.forEach(node => renderNode(node, container, 0));
+    }
+
+    function updateProperties() {
+        const panel = document.getElementById('propertiesPanel');
+        const node = getNodeById(selectedNodeId);
+        if (!node) { panel.innerHTML = '<p>Select a layer or group</p>'; return; }
+        if (node.type === 'group') {
+            panel.innerHTML = `
+                <p><b>${node.name}</b></p>
+                <div><label>Slideshow</label><input type="checkbox" id="propSlideshow" ${node.slideshow?'checked':''}></div>
+                <div><label>Speed (s)</label><input type="range" id="propSlideSpeed" min="0.1" max="10" step="0.1" value="${node.slideshowSpeed}" ${!node.slideshow?'disabled':''}></div>
+                <button id="propSlidePlay" class="timeline-btn">${node.slideshowPlaying ? '⏸ Stop' : '▶ Play'}</button>
+            `;
+            document.getElementById('propSlideshow').onchange = e => {
+                node.slideshow = e.target.checked;
+                if (node.slideshow) startSlideshowPlay(node);
+                else { stopSlideshowPlay(node); getChildNodes(node).forEach(c => { if(c.type==='layer') c.obj.visible = !c.hidden; }); }
+                document.getElementById('propSlideSpeed').disabled = !node.slideshow;
+                refreshCanvas(); updateLayerList();
+            };
+            document.getElementById('propSlideSpeed').oninput = e => {
+                node.slideshowSpeed = parseFloat(e.target.value);
+                if (node.slideshowPlaying) { stopSlideshowPlay(node); startSlideshowPlay(node); }
+            };
+            document.getElementById('propSlidePlay').onclick = () => {
+                if (node.slideshowPlaying) stopSlideshowPlay(node); else startSlideshowPlay(node);
+                refreshCanvas(); updateProperties();
+            };
+            return;
+        }
+        const kf = node.keyframes.find(k => Math.abs(k.time - (selectedKeyTime ?? 0)) < 0.001) || node.keyframes[0];
+        let html = `
+            <div><label>X</label><input type="range" id="px" min="0" max="${canvasW}" value="${kf.x}" ${node.locked?'disabled':''}></div>
+            <div><label>Y</label><input type="range" id="py" min="0" max="${canvasH}" value="${kf.y}" ${node.locked?'disabled':''}></div>
+            <div><label>Rot</label><input type="range" id="pa" min="0" max="360" value="${kf.angle}" ${node.locked?'disabled':''}></div>
+            <div><label>Scale</label><input type="range" id="ps" min="10" max="200" value="${kf.scaleX*100}" ${node.locked?'disabled':''}></div>
+            <div><label>Flip H</label><input type="checkbox" id="pfh" ${kf.flipX?'checked':''} ${node.locked?'disabled':''}></div>
+            <div><label>Flip V</label><input type="checkbox" id="pfv" ${kf.flipY?'checked':''} ${node.locked?'disabled':''}></div>
+            <div><label>Visible</label><input type="checkbox" id="pvis" ${kf.visible?'checked':''} ${node.locked?'disabled':''}></div>
+            <div><label>Chroma</label><input type="checkbox" id="pchroma" ${node.chromaOn?'checked':''} ${node.locked?'disabled':''}></div>
+            <div><label>Color</label><input type="color" id="pcc" value="${node.chromaColor}" ${node.locked||!node.chromaOn?'disabled':''}></div>
+            <div><label>Tol</label><input type="range" id="pct" min="0" max="100" value="${node.chromaTol}" ${node.locked||!node.chromaOn?'disabled':''}></div>
+        `;
+        if (selectedKeyTime !== null && node.keyframes.length > 1) html += `<button class="timeline-btn" id="deleteKfBtn" style="background:var(--danger); margin-top:4px;">Delete Keyframe</button>`;
+        panel.innerHTML = html;
+
+        if (!node.locked) {
+            document.getElementById('px').oninput = e => { kf.x = +e.target.value; node.obj.set({left:kf.x}); fabricCanvas.renderAll(); };
+            document.getElementById('py').oninput = e => { kf.y = +e.target.value; node.obj.set({top:kf.y}); fabricCanvas.renderAll(); };
+            document.getElementById('pa').oninput = e => { kf.angle = +e.target.value; node.obj.set({angle:kf.angle}); fabricCanvas.renderAll(); };
+            document.getElementById('ps').oninput = e => { const s = +e.target.value/100; kf.scaleX = kf.scaleY = s; node.obj.set({scaleX:s, scaleY:s}); fabricCanvas.renderAll(); };
+            document.getElementById('pfh').onchange = e => { kf.flipX = e.target.checked; node.obj.set({flipX:kf.flipX}); fabricCanvas.renderAll(); };
+            document.getElementById('pfv').onchange = e => { kf.flipY = e.target.checked; node.obj.set({flipY:kf.flipY}); fabricCanvas.renderAll(); };
+            document.getElementById('pvis').onchange = e => { kf.visible = e.target.checked; };
+            document.getElementById('pchroma').onchange = e => {
+                kf.chromaOn = e.target.checked; node.chromaOn = e.target.checked;
+                document.getElementById('pcc').disabled = document.getElementById('pct').disabled = !e.target.checked;
+                updateChromaFilter(node);
+            };
+            document.getElementById('pcc').oninput = e => { kf.chromaColor = e.target.value; node.chromaColor = e.target.value; updateChromaFilter(node); };
+            document.getElementById('pct').oninput = e => { kf.chromaTol = +e.target.value; node.chromaTol = +e.target.value; updateChromaFilter(node); };
+            const delBtn = document.getElementById('deleteKfBtn');
+            if (delBtn) delBtn.onclick = () => deleteKeyframe(node, selectedKeyTime);
+        }
+    }
+
+    function updateChromaFilter(node) {
+        const filter = node.obj.filters?.find(f => f.type === 'ChromaKey');
+        if (filter) { filter.enabled = node.chromaOn; filter.color = node.chromaColor; filter.tolerance = node.chromaTol; node.obj.applyFilters(); fabricCanvas.renderAll(); }
+    }
+
+    function toggleSlideshow(node) {
+        if (!node || node.type !== 'group') return;
+        if (node.slideshow) { node.slideshow = false; stopSlideshowPlay(node); getChildNodes(node).forEach(c => { if(c.type==='layer') c.obj.visible = !c.hidden; }); }
+        else { node.slideshow = true; startSlideshowPlay(node); }
+        refreshCanvas(); updateLayerList(); updateProperties();
+    }
+
+    // ========== MOTION PRESET (DROPDOWN + SLIDER) ==========
+    function applyPreset() {
+        const node = getNodeById(selectedNodeId);
+        if (!node || node.type !== 'layer' || node.locked) return alert('Please select an unlocked layer.');
+        const preset = document.getElementById('presetSelect').value;
+        if (!preset) return alert('Choose a preset.');
+        const dur = parseFloat(document.getElementById('presetDuration').value);
+        const start = currentTime;
+        const startKf = {
+            time: start, x: node.obj.left, y: node.obj.top,
+            scaleX: node.obj.scaleX, scaleY: node.obj.scaleY,
+            angle: node.obj.angle, flipX: node.obj.flipX || false, flipY: node.obj.flipY || false,
+            visible: true, chromaOn: node.chromaOn, chromaColor: node.chromaColor, chromaTol: node.chromaTol
+        };
+        const endKf = { ...startKf, time: start + dur };
+        switch(preset) {
+            case 'slide-right': endKf.x = canvasW; break;
+            case 'slide-left': endKf.x = -node.obj.width * node.obj.scaleX; break;
+            case 'slide-down': endKf.y = canvasH; break;
+            case 'slide-up': endKf.y = -node.obj.height * node.obj.scaleY; break;
+            case 'zoom-in': endKf.scaleX = 1.5; endKf.scaleY = 1.5; break;
+            case 'zoom-out': endKf.scaleX = 0.5; endKf.scaleY = 0.5; break;
+            case 'rotate360': endKf.angle += 360; break;
+            case 'mirror-h': endKf.flipX = !startKf.flipX; break;
+            case 'mirror-v': endKf.flipY = !startKf.flipY; break;
+            case 'blink':
+                node.keyframes = node.keyframes.filter(k => k.time < start || k.time > start + dur);
+                for (let t = start; t < start+dur; t += 0.5) node.keyframes.push({...startKf, time: t, visible: Math.floor((t-start)*2)%2===0});
+                node.keyframes.sort((a,b)=>a.time-b.time); renderTimeline(); return;
+            case 'chroma-fade':
+                startKf.chromaOn = false; startKf.chromaTol = 0;
+                endKf.chromaOn = true; endKf.chromaTol = 100; break;
+        }
+        node.keyframes = node.keyframes.filter(k => k.time < start || k.time > start+dur);
+        node.keyframes.push(startKf, endKf);
+        node.keyframes.sort((a,b)=>a.time-b.time);
+        renderTimeline();
+    }
+
+    // ========== EVENT LISTENERS ==========
+    window.onload = () => {
+        applyZoom();
+        document.getElementById('resSelect').onchange = e => { const [w,h] = e.target.value.split(',').map(Number); canvasW=w; canvasH=h; fabricCanvas.setWidth(w); fabricCanvas.setHeight(h); applyZoom(); };
+        document.getElementById('zoomSlider').oninput = e => { zoomPercent = +e.target.value; applyZoom(); };
+        document.getElementById('fitBtn').onclick = () => { zoomPercent=100; document.getElementById('zoomSlider').value=100; applyZoom(); };
+        document.getElementById('uploadBtn').onclick = () => document.getElementById('fileInput').click();
+        document.getElementById('fileInput').onchange = e => { for(let f of e.target.files) addLayerFromFile(f); };
+        document.getElementById('dropArea').ondrop = e => { e.preventDefault(); for(let f of e.dataTransfer.files) addLayerFromFile(f); };
+        document.getElementById('dropArea').ondragover = e => e.preventDefault();
+        document.getElementById('groupBtn').onclick = groupChecked;
+        document.getElementById('ungroupBtn').onclick = ungroupSelected;
+        document.getElementById('playBtn').onclick = play;
+        document.getElementById('pauseBtn').onclick = pause;
+        document.getElementById('stopBtn').onclick = stop;
+        document.getElementById('rewindBtn').onclick = () => setCurrentTime(currentTime - 2);
+        document.getElementById('forwardBtn').onclick = () => setCurrentTime(currentTime + 2);
+        document.getElementById('ruler').addEventListener('click', e => setCurrentTime((e.clientX - document.getElementById('ruler').getBoundingClientRect().left) / timelineScale));
+        document.getElementById('tracksContainer').addEventListener('click', e => {
+            if (e.target === document.getElementById('tracksContainer') || e.target.classList.contains('track-row'))
+                setCurrentTime((e.clientX - document.getElementById('tracksContainer').getBoundingClientRect().left + document.getElementById('tracksContainer').scrollLeft) / timelineScale);
+        });
+        document.getElementById('addKeyBtn').onclick = () => { const node = getNodeById(selectedNodeId); if (node && node.type === 'layer') addKeyframeAtCurrent(node); };
+        document.getElementById('audioBtn').onclick = () => document.getElementById('audioInput').click();
+        document.getElementById('audioInput').onchange = e => { if (e.target.files[0]) loadAudio(e.target.files[0]); };
+        document.getElementById('applyPresetBtn').onclick = applyPreset;
+        document.getElementById('presetDuration').oninput = e => { document.getElementById('presetDurVal').textContent = e.target.value + 's'; };
+
+        fabricCanvas.on('object:modified', e => {
+            const targets = e.target?._objects || [e.target];
+            targets.forEach(obj => {
+                const node = allNodes.find(n => n.obj === obj);
+                if (node && node.type === 'layer' && !node.locked) {
+                    const existing = node.keyframes.find(k => Math.abs(k.time - currentTime) < 0.001);
+                    if (existing) { existing.x = obj.left; existing.y = obj.top; existing.scaleX = obj.scaleX; existing.scaleY = obj.scaleY; existing.angle = obj.angle; }
+                    else addKeyframeAtCurrent(node);
+                }
+            });
+        });
+        window.addEventListener('resize', applyZoom);
+        renderTimeline();
+    };
+</script>
+</body>
+</html>
