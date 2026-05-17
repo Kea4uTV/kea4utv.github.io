@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ឧបករណ៍ប្តូរឈ្មោះឯកសារតាមកាលបរិច្ឆេទ</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js">
+    </script>
+    <style>
+        :root {
+            --bg: #f0f4f8;
+            --card-bg: #ffffff;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-light: #eef2ff;
+            --text: #1e293b;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --success-bg: #ecfdf5;
+            --warning: #f59e0b;
+            --warning-bg: #fffbeb;
+            --danger: #ef4444;
+            --danger-bg: #fef2f2;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.08), 0 4px 10px rgba(0, 0, 0, 0.05);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Noto Sans Khmer', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #e8edf5 0%, #dce3f0 30%, #eef1f7 60%, #f0f4f8 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--text);
+        }
+
+        /* Subtle animated background shapes */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -200px;
+            right: -150px;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(79, 70, 229, 0.04) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+            animation: float 20s ease-in-out infinite;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -250px;
+            left: -200px;
+            width: 700px;
+            height: 700px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.03) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+            animation: float 25s ease-in-out infinite reverse;
+        }
+        @keyframes float {
+            0%,
+            100% {
+                transform: translate(0, 0);
+            }
+            33% {
+                transform: translate(30px, -40px);
+            }
+            66% {
+                transform: translate(-20px, 20px);
+            }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        /* Card */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            padding: 32px 28px;
+            border: 1px solid var(--border);
+            transition: all var(--transition);
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+        .header .icon-wrap {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--primary-light);
+            margin-bottom: 14px;
+            font-size: 28px;
+        }
+        .header h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 6px;
+            letter-spacing: -0.3px;
+        }
+        .header p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Badge for mode */
+        .mode-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        .mode-badge.native {
+            background: #ecfdf5;
+            color: #059669;
+        }
+        .mode-badge.fallback {
+            background: #fffbeb;
+            color: #b45309;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 11px 22px;
+            border-radius: 25px;
+            font-size: 0.92rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all var(--transition);
+            font-family: inherit;
+            white-space: nowrap;
+            letter-spacing: 0.1px;
+        }
+        .btn:active {
+            transform: scale(0.97);
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+        }
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            box-shadow: 0 4px 16px rgba(79, 70, 229, 0.4);
+            transform: translateY(-1px);
+        }
+        .btn-primary:disabled {
+            background: #a5b4fc;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+        .btn-outline {
+            background: #fff;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+        .btn-outline:hover {
+            background: var(--primary-light);
+        }
+        .btn-danger {
+            background: #fff;
+            color: var(--danger);
+            border: 2px solid var(--danger);
+        }
+        .btn-danger:hover {
+            background: var(--danger-bg);
+        }
+        .btn-sm {
+            padding: 7px 16px;
+            font-size: 0.8rem;
+            border-radius: 20px;
+        }
+
+        /* Button row */
+        .btn-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        /* Alert / info box */
+        .alert {
+            padding: 14px 18px;
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            line-height: 1.5;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .alert-info {
+            background: #f0f4ff;
+            border: 1px solid #c7d2fe;
+            color: #3730a3;
+        }
+        .alert-warning {
+            background: var(--warning-bg);
+            border: 1px solid #fcd34d;
+            color: #92400e;
+        }
+        .alert-success {
+            background: var(--success-bg);
+            border: 1px solid #6ee7b7;
+            color: #065f46;
+        }
+        .alert-danger {
+            background: var(--danger-bg);
+            border: 1px solid #fca5a5;
+            color: #991b1b;
+        }
+        .alert-icon {
+            font-size: 1.2rem;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        /* Stats row */
+        .stats-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+        .stat-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 7px 14px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        .stat-chip strong {
+            color: var(--text);
+        }
+
+        /* Table */
+        .table-wrap {
+            overflow-x: auto;
+            max-height: 420px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            margin-bottom: 20px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .table-wrap::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        .table-wrap::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .table-wrap::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            min-width: 600px;
+        }
+        table thead {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+        table thead th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: var(--text-secondary);
+            padding: 12px 14px;
+            text-align: left;
+            border-bottom: 2px solid var(--border);
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            white-space: nowrap;
+        }
+        table tbody td {
+            padding: 10px 14px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+        table tbody tr {
+            transition: background var(--transition);
+        }
+        table tbody tr:hover {
+            background: #fafbfc;
+        }
+        table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        .old-name {
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+            word-break: break-all;
+            max-width: 220px;
+        }
+        .new-name {
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 0.84rem;
+            white-space: nowrap;
+        }
+        .file-size {
+            color: var(--text-secondary);
+            font-size: 0.78rem;
+            white-space: nowrap;
+        }
+        .file-date {
+            color: var(--text-secondary);
+            font-size: 0.78rem;
+            white-space: nowrap;
+        }
+        .row-num {
+            color: #94a3b8;
+            font-weight: 500;
+            font-size: 0.78rem;
+        }
+
+        /* Progress */
+        .progress-wrap {
+            margin-bottom: 18px;
+            display: none;
+        }
+        .progress-wrap.active {
+            display: block;
+        }
+        .progress-bar-outer {
+            background: #e2e8f0;
+            border-radius: 10px;
+            height: 10px;
+            overflow: hidden;
+        }
+        .progress-bar-inner {
+            background: linear-gradient(90deg, #4f46e5, #7c3aed);
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        .progress-text {
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            opacity: 0.6;
+        }
+        .empty-state p {
+            font-size: 0.9rem;
+        }
+
+        /* Hidden */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 1000;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-size: 0.88rem;
+            font-weight: 500;
+            box-shadow: var(--shadow-lg);
+            animation: slideIn 0.35s ease;
+            max-width: 400px;
+            color: #fff;
+        }
+        .toast.success {
+            background: #059669;
+        }
+        .toast.error {
+            background: #dc2626;
+        }
+        .toast.info {
+            background: #4f46e5;
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateY(80px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .card {
+                padding: 20px 14px;
+                border-radius: 12px;
+            }
+            .header h1 {
+                font-size: 1.3rem;
+            }
+            .btn {
+                padding: 10px 16px;
+                font-size: 0.82rem;
+            }
+            .btn-row {
+                gap: 8px;
+            }
+            table {
+                font-size: 0.75rem;
+            }
+            .table-wrap {
+                max-height: 300px;
+            }
+        }
+
+        /* Dark mode support (auto) */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0f172a;
+                --card-bg: #1e293b;
+                --text: #f1f5f9;
+                --text-secondary: #94a3b8;
+                --border: #334155;
+                --primary-light: #1e1b4b;
+                --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+                --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.4);
+                --success-bg: #064e3b;
+                --warning-bg: #451a03;
+                --danger-bg: #450a0a;
+            }
+            body {
+                background: linear-gradient(135deg, #0f172a 0%, #1a1f35 50%, #0f172a 100%);
+            }
+            .card {
+                background: var(--card-bg);
+            }
+            table thead th {
+                background: #1e293b;
+            }
+            table tbody tr:hover {
+                background: #283548;
+            }
+            .stat-chip {
+                background: #283548;
+            }
+            .btn-outline {
+                background: transparent;
+            }
+            .btn-danger {
+                background: transparent;
+            }
+            .alert-info {
+                background: #1e1b4b;
+                border-color: #3730a3;
+                color: #c7d2fe;
+            }
+            .table-wrap::-webkit-scrollbar-thumb {
+                background: #475569;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="card">
+            <!-- Header -->
+            <div class="header">
+                <div class="icon-wrap">📁</div>
+                <h1>ឧបករណ៍ប្តូរឈ្មោះឯកសារ</h1>
+                <p>ប្តូរឈ្មោះឯកសារទាំងអស់ក្នុងថត ទៅជាលេខរៀងតាមលំដាប់កាលបរិច្ឆេទ<br><small>(ឯកសារដែលចាស់ជាងគេ ឬដាក់ចូលថតមុនគេ នឹងក្លាយជាលេខ ១)</small></p>
+                <span class="mode-badge native hidden" id="badgeNative">✅ របៀបកែក្នុងថតផ្ទាល់ (Native)</span>
+                <span class="mode-badge fallback hidden" id="badgeFallback">📦 របៀបទាញយកជា ZIP (Fallback)</span>
+            </div>
+
+            <!-- Alert: Info -->
+            <div class="alert alert-info hidden" id="alertInfoNative">
+                <span class="alert-icon">💡</span>
+                <span><strong>របៀបប្រើ៖</strong> ជ្រើសរើសថតឯកសារ → ពិនិត្យមើលលទ្ធផល → ចុច "ចាប់ផ្តើមប្តូរឈ្មោះ"។ ឯកសារនឹងត្រូវបានកែឈ្មោះដោយផ្ទាល់ក្នុងថត។ <strong>សូមបម្រុងទុកឯកសារសំខាន់ៗជាមុន!</strong></span>
+            </div>
+            <div class="alert alert-info hidden" id="alertInfoFallback">
+                <span class="alert-icon">💡</span>
+                <span><strong>របៀបប្រើ៖</strong> ជ្រើសរើសឯកសារពីថត → ពិនិត្យមើលលទ្ធផល → ទាញយកជា ZIP។ ឯកសារដើមនឹង <strong>មិនត្រូវបានកែប្រែ</strong> ទេ។ សាកសមសម្រាប់ browser ដែលមិនគាំទ្រ File System Access API។</span>
+            </div>
+
+            <!-- Buttons -->
+            <div class="btn-row">
+                <button class="btn btn-primary" id="btnSelectFolder" title="ជ្រើសរើសថតឯកសារ (ត្រូវការ Chrome/Edge)">
+                    📂 ជ្រើសរើសថតឯកសារ
+                </button>
+                <button class="btn btn-outline hidden" id="btnSelectFiles" title="ជ្រើសរើសឯកសារច្រើន (សម្រាប់ browser ផ្សេងៗ)">
+                    📎 ជ្រើសរើសឯកសារ
+                </button>
+                <button class="btn btn-outline hidden" id="btnClear" title="សម្អាត ហើយចាប់ផ្តើមសាជាថ្មី">
+                    🔄 សម្អាត
+                </button>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-row hidden" id="statsRow">
+                <span class="stat-chip">📄 ឯកសារសរុប៖ <strong id="statCount">0</strong></span>
+                <span class="stat-chip">📅 ចាស់ជាងគេ៖ <strong id="statOldest">-</strong></span>
+                <span class="stat-chip">📅 ថ្មីជាងគេ៖ <strong id="statNewest">-</strong></span>
+            </div>
+
+            <!-- Progress -->
+            <div class="progress-wrap" id="progressWrap">
+                <div class="progress-bar-outer">
+                    <div class="progress-bar-inner" id="progressBar"></div>
+                </div>
+                <div class="progress-text" id="progressText">កំពុងដំណើរការ...</div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-wrap hidden" id="tableWrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ល.រ</th>
+                            <th>ឈ្មោះដើម</th>
+                            <th>ឈ្មោះថ្មី</th>
+                            <th>កាលបរិច្ឆេទ</th>
+                            <th>ទំហំ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+
+            <!-- Empty state -->
+            <div class="empty-state" id="emptyState">
+                <div class="icon">📭</div>
+                <p>សូមជ្រើសរើសថតឯកសារដើម្បីចាប់ផ្តើម</p>
+                <p style="font-size:0.78rem;color:#94a3b8;">គាំទ្រ Chrome, Edge, Opera និង browser ដែលមាន File System Access API</p>
+            </div>
+
+            <!-- Action button -->
+            <div class="btn-row hidden" id="actionRow">
+                <button class="btn btn-primary" id="btnRename" disabled>
+                    ✏️ ចាប់ផ្តើមប្តូរឈ្មោះ
+                </button>
+                <button class="btn btn-outline hidden" id="btnDownloadZip" disabled>
+                    📥 ទាញយកជា ZIP
+                </button>
+            </div>
+
+            <!-- Post-action summary -->
+            <div class="alert alert-success hidden" id="alertSuccess"></div>
+            <div class="alert alert-danger hidden" id="alertError"></div>
+        </div>
+    </div>
+
+    <!-- Hidden file input for fallback -->
+    <input type="file" id="hiddenFileInput" webkitdirectory multiple style="display:none;">
+    <input type="file" id="hiddenFileInputMulti" multiple style="display:none;">
+
+    <script>
+        (function() {
+            // ──────────────────────────────────────
+            // DOM Elements
+            // ──────────────────────────────────────
+            const btnSelectFolder = document.getElementById('btnSelectFolder');
+            const btnSelectFiles = document.getElementById('btnSelectFiles');
+            const btnClear = document.getElementById('btnClear');
+            const btnRename = document.getElementById('btnRename');
+            const btnDownloadZip = document.getElementById('btnDownloadZip');
+            const tableWrap = document.getElementById('tableWrap');
+            const tableBody = document.getElementById('tableBody');
+            const emptyState = document.getElementById('emptyState');
+            const statsRow = document.getElementById('statsRow');
+            const statCount = document.getElementById('statCount');
+            const statOldest = document.getElementById('statOldest');
+            const statNewest = document.getElementById('statNewest');
+            const progressWrap = document.getElementById('progressWrap');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            const actionRow = document.getElementById('actionRow');
+            const alertSuccess = document.getElementById('alertSuccess');
+            const alertError = document.getElementById('alertError');
+            const badgeNative = document.getElementById('badgeNative');
+            const badgeFallback = document.getElementById('badgeFallback');
+            const alertInfoNative = document.getElementById('alertInfoNative');
+            const alertInfoFallback = document.getElementById('alertInfoFallback');
+            const hiddenFileInput = document.getElementById('hiddenFileInput');
+            const hiddenFileInputMulti = document.getElementById('hiddenFileInputMulti');
+
+            // ──────────────────────────────────────
+            // State
+            // ──────────────────────────────────────
+            let fileEntries = []; // { name, lastModified, size, extension, fileHandle, fileObj }
+            let directoryHandle = null; // For native mode
+            let isNativeMode = false;
+            let isFallbackMode = false;
+
+            // ──────────────────────────────────────
+            // Feature Detection
+            // ──────────────────────────────────────
+            function checkNativeSupport() {
+                return typeof window.showDirectoryPicker === 'function';
+            }
+
+            function initModeUI() {
+                if (checkNativeSupport()) {
+                    isNativeMode = true;
+                    isFallbackMode = false;
+                    badgeNative.classList.remove('hidden');
+                    badgeFallback.classList.add('hidden');
+                    alertInfoNative.classList.remove('hidden');
+                    alertInfoFallback.classList.add('hidden');
+                    btnSelectFolder.classList.remove('hidden');
+                    btnSelectFiles.classList.add('hidden');
+                } else {
+                    isNativeMode = false;
+                    isFallbackMode = true;
+                    badgeNative.classList.add('hidden');
+                    badgeFallback.classList.remove('hidden');
+                    alertInfoNative.classList.add('hidden');
+                    alertInfoFallback.classList.remove('hidden');
+                    btnSelectFolder.classList.add('hidden');
+                    btnSelectFiles.classList.remove('hidden');
+                }
+            }
+
+            // ──────────────────────────────────────
+            // Helpers
+            // ──────────────────────────────────────
+            function formatDate(timestamp) {
+                if (!timestamp) return '-';
+                const d = new Date(timestamp);
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                const hours = String(d.getHours()).padStart(2, '0');
+                const mins = String(d.getMinutes()).padStart(2, '0');
+                const secs = String(d.getSeconds()).padStart(2, '0');
+                return `${year}-${month}-${day} ${hours}:${mins}:${secs}`;
+            }
+
+            function formatSize(bytes) {
+                if (bytes === 0) return '0 B';
+                const k = 1024;
+                const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                const sz = parseFloat((bytes / Math.pow(k, i)).toFixed(2));
+                return `${sz} ${sizes[i]}`;
+            }
+
+            function getExtension(filename) {
+                const lastDot = filename.lastIndexOf('.');
+                if (lastDot <= 0) return ''; // No extension or dotfile like ".hidden"
+                return filename.substring(lastDot); // includes the dot, e.g., ".jpg"
+            }
+
+            function getBaseName(filename) {
+                const lastDot = filename.lastIndexOf('.');
+                if (lastDot <= 0) return filename;
+                return filename.substring(0, lastDot);
+            }
+
+            function getPadding(total) {
+                if (total >= 1000) return 4;
+                if (total >= 100) return 3;
+                if (total >= 10) return 2;
+                return 1;
+            }
+
+            function getNewName(index, total, extension) {
+                const pad = getPadding(total);
+                const num = String(index).padStart(pad, '0');
+                return num + extension;
+            }
+
+            function showToast(message, type = 'info') {
+                // Remove existing toasts
+                document.querySelectorAll('.toast').forEach(t => t.remove());
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.textContent = message;
+                document.body.appendChild(toast);
+                setTimeout(() => {
+                    toast.style.animation = 'fadeOut 0.4s ease forwards';
+                    setTimeout(() => toast.remove(), 400);
+                }, 3500);
+            }
+
+            // ──────────────────────────────────────
+            // Reset state
+            // ──────────────────────────────────────
+            function resetState() {
+                fileEntries = [];
+                directoryHandle = null;
+                tableBody.innerHTML = '';
+                tableWrap.classList.add('hidden');
+                statsRow.classList.add('hidden');
+                actionRow.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                alertSuccess.classList.add('hidden');
+                alertError.classList.add('hidden');
+                progressWrap.classList.remove('active');
+                progressBar.style.width = '0%';
+                progressText.textContent = '';
+                btnRename.disabled = true;
+                btnDownloadZip.disabled = true;
+                btnRename.classList.remove('hidden');
+                btnDownloadZip.classList.add('hidden');
+                btnClear.classList.add('hidden');
+                statCount.textContent = '0';
+                statOldest.textContent = '-';
+                statNewest.textContent = '-';
+                // Re-init mode UI
+                initModeUI();
+            }
+
+            // ──────────────────────────────────────
+            // Process files (common)
+            // ──────────────────────────────────────
+            function processFileList(filesArray) {
+                fileEntries = filesArray.map((file, i) => {
+                    const ext = getExtension(file.name);
+                    return {
+                        name: file.name,
+                        lastModified: file.lastModified || Date.now(),
+                        size: file.size,
+                        extension: ext,
+                        fileHandle: file.fileHandle || null, // may be present in native mode
+                        fileObj: file, // the File object itself
+                        originalIndex: i,
+                    };
+                });
+
+                // Sort by lastModified ascending (oldest first)
+                fileEntries.sort((a, b) => {
+                    if (a.lastModified !== b.lastModified) {
+                        return a.lastModified - b.lastModified;
+                    }
+                    // If same date, sort by name
+                    return a.name.localeCompare(b.name);
+                });
+
+                // Update UI
+                updatePreview();
+            }
+
+            function updatePreview() {
+                if (fileEntries.length === 0) {
+                    tableBody.innerHTML = '';
+                    tableWrap.classList.add('hidden');
+                    statsRow.classList.add('hidden');
+                    actionRow.classList.add('hidden');
+                    emptyState.classList.remove('hidden');
+                    btnClear.classList.add('hidden');
+                    return;
+                }
+
+                const total = fileEntries.length;
+                const pad = getPadding(total);
+
+                tableBody.innerHTML = '';
+                fileEntries.forEach((entry, idx) => {
+                    const newName = getNewName(idx + 1, total, entry.extension);
+                    entry.newName = newName; // Store for later
+                    entry.sortIndex = idx;
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                            <td class="row-num">${idx + 1}</td>
+                            <td class="old-name" title="${escapeHtml(entry.name)}">${escapeHtml(entry.name)}</td>
+                            <td class="new-name">${escapeHtml(newName)}</td>
+                            <td class="file-date">${formatDate(entry.lastModified)}</td>
+                            <td class="file-size">${formatSize(entry.size)}</td>
+                        `;
+                    tableBody.appendChild(tr);
+                });
+
+                // Update stats
+                statCount.textContent = total;
+                statOldest.textContent = formatDate(fileEntries[0].lastModified);
+                statNewest.textContent = formatDate(fileEntries[total - 1].lastModified);
+
+                // Show UI elements
+                tableWrap.classList.remove('hidden');
+                statsRow.classList.remove('hidden');
+                actionRow.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+                btnClear.classList.remove('hidden');
+                alertSuccess.classList.add('hidden');
+                alertError.classList.add('hidden');
+
+                // Enable buttons
+                btnRename.disabled = false;
+                btnDownloadZip.disabled = false;
+
+                // Show appropriate action button
+                if (isNativeMode) {
+                    btnRename.classList.remove('hidden');
+                    btnDownloadZip.classList.add('hidden');
+                } else {
+                    btnRename.classList.add('hidden');
+                    btnDownloadZip.classList.remove('hidden');
+                }
+            }
+
+            function escapeHtml(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            // ──────────────────────────────────────
+            // Native Mode: Select Folder
+            // ──────────────────────────────────────
+            async function selectFolderNative() {
+                try {
+                    directoryHandle = await window.showDirectoryPicker({
+                        mode: 'readwrite',
+                    });
+                    const files = [];
+                    for await (const entry of directoryHandle.values()) {
+                        if (entry.kind === 'file') {
+                            const fileHandle = entry;
+                            const file = await fileHandle.getFile();
+                            // Attach handle to file object for later use
+                            file.fileHandle = fileHandle;
+                            files.push(file);
+                        }
+                    }
+                    if (files.length === 0) {
+                        showToast('មិនមានឯកសារក្នុងថតនេះទេ។', 'info');
+                        resetState();
+                        return;
+                    }
+                    isNativeMode = true;
+                    isFallbackMode = false;
+                    badgeNative.classList.remove('hidden');
+                    badgeFallback.classList.add('hidden');
+                    alertInfoNative.classList.remove('hidden');
+                    alertInfoFallback.classList.add('hidden');
+                    btnRename.classList.remove('hidden');
+                    btnDownloadZip.classList.add('hidden');
+                    processFileList(files);
+                    showToast(`បានរកឃើញ ${files.length} ឯកសារ`, 'success');
+                } catch (err) {
+                    if (err.name === 'AbortError' || err.name === 'DOMException') {
+                        // User cancelled - do nothing
+                        return;
+                    }
+                    console.error('Error selecting folder:', err);
+                    showToast('មានបញ្ហាក្នុងការបើកថត៖ ' + err.message, 'error');
+                }
+            }
+
+            // ──────────────────────────────────────
+            // Native Mode: Rename in place
+            // ──────────────────────────────────────
+            async function renameInPlace() {
+                if (!directoryHandle || fileEntries.length === 0) {
+                    showToast('សូមជ្រើសរើសថតឯកសារជាមុន', 'info');
+                    return;
+                }
+
+                // Confirm
+                const total = fileEntries.length;
+                const confirmed = confirm(
+                    `តើអ្នកពិតជាចង់ប្តូរឈ្មោះ ${total} ឯកសារមែនទេ?\n\n` +
+                    `ឯកសារនឹងត្រូវប្តូរឈ្មោះជាលេខរៀង (${getNewName(1, total, fileEntries[0].extension)} ដល់ ${getNewName(total, total, fileEntries[total-1].extension)})\n\n` +
+                    `⚠️ សូមបម្រុងទុកឯកសារសំខាន់ៗជាមុន!\n` +
+                    `សកម្មភាពនេះមិនអាចត្រឡប់ក្រោយបានទេតាមរយៈឧបករណ៍នេះ។`
+                );
+                if (!confirmed) return;
+
+                // Disable buttons during operation
+                btnRename.disabled = true;
+                btnSelectFolder.disabled = true;
+                btnClear.disabled = true;
+                progressWrap.classList.add('active');
+                progressBar.style.width = '0%';
+                progressText.textContent = 'កំពុងអានឯកសារ...';
+                alertError.classList.add('hidden');
+                alertSuccess.classList.add('hidden');
+
+                try {
+                    // Step 1: Read all file contents into memory
+                    const fileDataArray = [];
+                    for (let i = 0; i < fileEntries.length; i++) {
+                        const entry = fileEntries[i];
+                        progressText.textContent = `កំពុងអាន៖ ${entry.name} (${i + 1}/${total})`;
+                        progressBar.style.width = `${Math.round(((i + 1) / total) * 33)}%`;
+
+                        let arrayBuffer;
+                        if (entry.fileObj && entry.fileObj.arrayBuffer) {
+                            arrayBuffer = await entry.fileObj.arrayBuffer();
+                        } else if (entry.fileHandle) {
+                            const file = await entry.fileHandle.getFile();
+                            arrayBuffer = await file.arrayBuffer();
+                        } else {
+                            throw new Error(`មិនអាចអានឯកសារ៖ ${entry.name}`);
+                        }
+                        fileDataArray.push({
+                            arrayBuffer,
+                            newName: entry.newName,
+                            originalFileHandle: entry.fileHandle,
+                            originalName: entry.name,
+                        });
+                    }
+
+                    // Step 2: Delete all original files
+                    progressText.textContent = 'កំពុងលុបឯកសារដើម...';
+                    progressBar.style.width = '40%';
+                    const handlesToRemove = [];
+                    for await (const entry of directoryHandle.values()) {
+                        if (entry.kind === 'file') {
+                            handlesToRemove.push(entry);
+                        }
+                    }
+                    for (let i = 0; i < handlesToRemove.length; i++) {
+                        try {
+                            await handlesToRemove[i].remove();
+                        } catch (rmErr) {
+                            console.warn('Could not remove:', handlesToRemove[i].name, rmErr);
+                        }
+                        progressBar.style.width = `${40 + Math.round(((i + 1) / handlesToRemove.length) * 20)}%`;
+                    }
+
+                    // Step 3: Create new files with sequential names
+                    progressText.textContent = 'កំពុងបង្កើតឯកសារថ្មី...';
+                    progressBar.style.width = '65%';
+                    for (let i = 0; i < fileDataArray.length; i++) {
+                        const fd = fileDataArray[i];
+                        progressText.textContent = `កំពុងសរសេរ៖ ${fd.newName} (${i + 1}/${total})`;
+                        const newFileHandle = await directoryHandle.getFileHandle(fd.newName, {
+                            create: true,
+                        });
+                        const writable = await newFileHandle.createWritable();
+                        await writable.write(fd.arrayBuffer);
+                        await writable.close();
+                        progressBar.style.width = `${65 + Math.round(((i + 1) / total) * 35)}%`;
+                    }
+
+                    progressBar.style.width = '100%';
+                    progressText.textContent = '✅ បានបញ្ចប់!';
+                    showToast(`បានប្តូរឈ្មោះ ${total} ឯកសារដោយជោគជ័យ!`, 'success');
+
+                    // Show success
+                    alertSuccess.classList.remove('hidden');
+                    alertSuccess.innerHTML =
+                        `<span class="alert-icon">✅</span><span><strong>ជោគជ័យ!</strong> បានប្តូរឈ្មោះ ${total} ឯកសារដោយជោគជ័យ។ ឯកសារត្រូវបានដាក់ឈ្មោះជាលេខរៀងតាមកាលបរិច្ឆេទ (ចាស់ជាងគេ = លេខ ១)។</span>`;
+
+                    // Reset file entries to reflect new state
+                    fileEntries = [];
+                    tableBody.innerHTML = '';
+                    tableWrap.classList.add('hidden');
+                    statsRow.classList.add('hidden');
+                    actionRow.classList.add('hidden');
+                    emptyState.classList.remove('hidden');
+                    statCount.textContent = '0';
+
+                } catch (err) {
+                    console.error('Rename error:', err);
+                    progressText.textContent = '❌ មានបញ្ហា';
+                    alertError.classList.remove('hidden');
+                    alertError.innerHTML =
+                        `<span class="alert-icon">❌</span><span><strong>មានបញ្ហា!</strong> ${escapeHtml(err.message)}។ សូមព្យាយាមម្តងទៀត។ ប្រសិនបើឯកសារខ្លះត្រូវបានលុប សូមពិនិត្យមើលថតឯកសារ។</span>`;
+                    showToast('មានបញ្ហាក្នុងការប្តូរឈ្មោះ៖ ' + err.message, 'error');
+                } finally {
+                    btnRename.disabled = true;
+                    btnSelectFolder.disabled = false;
+                    btnClear.disabled = false;
+                    setTimeout(() => {
+                        progressWrap.classList.remove('active');
+                        progressBar.style.width = '0%';
+                        progressText.textContent = '';
+                    }, 2000);
+                }
+            }
+
+            // ──────────────────────────────────────
+            // Fallback Mode: Select Files
+            // ──────────────────────────────────────
+            function selectFilesFallback() {
+                // Try webkitdirectory first
+                hiddenFileInput.click();
+            }
+
+            function handleFallbackFileSelection(event) {
+                const files = Array.from(event.target.files);
+                if (files.length === 0) {
+                    resetState();
+                    return;
+                }
+                isNativeMode = false;
+                isFallbackMode = true;
+                badgeNative.classList.add('hidden');
+                badgeFallback.classList.remove('hidden');
+                alertInfoNative.classList.add('hidden');
+                alertInfoFallback.classList.remove('hidden');
+                btnRename.classList.add('hidden');
+                btnDownloadZip.classList.remove('hidden');
+                directoryHandle = null;
+                processFileList(files);
+                showToast(`បានរកឃើញ ${files.length} ឯកសារ (របៀប ZIP)`, 'success');
+                // Reset input so same folder can be re-selected
+                event.target.value = '';
+            }
+
+            // ──────────────────────────────────────
+            // Fallback Mode: Download ZIP
+            // ──────────────────────────────────────
+            async function downloadAsZip() {
+                if (fileEntries.length === 0) {
+                    showToast('សូមជ្រើសរើសឯកសារជាមុន', 'info');
+                    return;
+                }
+
+                const total = fileEntries.length;
+                btnDownloadZip.disabled = true;
+                btnSelectFiles.disabled = true;
+                btnClear.disabled = true;
+                progressWrap.classList.add('active');
+                progressBar.style.width = '0%';
+                progressText.textContent = 'កំពុងរៀបចំ ZIP...';
+                alertError.classList.add('hidden');
+                alertSuccess.classList.add('hidden');
+
+                try {
+                    const zip = new JSZip();
+                    for (let i = 0; i < fileEntries.length; i++) {
+                        const entry = fileEntries[i];
+                        progressText.textContent = `កំពុងបន្ថែម៖ ${entry.newName} (${i + 1}/${total})`;
+                        progressBar.style.width = `${Math.round(((i + 1) / total) * 90)}%`;
+                        const blob = entry.fileObj;
+                        zip.file(entry.newName, blob);
+                    }
+
+                    progressText.textContent = 'កំពុងបង្កើតឯកសារ ZIP...';
+                    progressBar.style.width = '95%';
+                    const zipBlob = await zip.generateAsync({
+                        type: 'blob',
+                        compression: 'DEFLATE',
+                        compressionOptions: { level: 6 },
+                    });
+
+                    // Trigger download
+                    const url = URL.createObjectURL(zipBlob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'renamed_files.zip';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+
+                    progressBar.style.width = '100%';
+                    progressText.textContent = '✅ បានទាញយក!';
+                    showToast(`បានទាញយក ZIP ដែលមាន ${total} ឯកសារ!`, 'success');
+
+                    alertSuccess.classList.remove('hidden');
+                    alertSuccess.innerHTML =
+                        `<span class="alert-icon">✅</span><span><strong>ជោគជ័យ!</strong> បានទាញយកឯកសារ ZIP ដែលមាន ${total} ឯកសារដែលបានប្តូរឈ្មោះ។ សូមស្រង់យកទៅកាន់ថតរបស់អ្នក។ ឯកសារដើមមិនត្រូវបានកែប្រែទេ។</span>`;
+
+                } catch (err) {
+                    console.error('ZIP error:', err);
+                    alertError.classList.remove('hidden');
+                    alertError.innerHTML =
+                        `<span class="alert-icon">❌</span><span><strong>មានបញ្ហា!</strong> ${escapeHtml(err.message)}</span>`;
+                    showToast('មានបញ្ហាក្នុងការបង្កើត ZIP៖ ' + err.message, 'error');
+                } finally {
+                    btnDownloadZip.disabled = false;
+                    btnSelectFiles.disabled = false;
+                    btnClear.disabled = false;
+                    setTimeout(() => {
+                        progressWrap.classList.remove('active');
+                        progressBar.style.width = '0%';
+                        progressText.textContent = '';
+                    }, 2000);
+                }
+            }
+
+            // ──────────────────────────────────────
+            // Event Listeners
+            // ──────────────────────────────────────
+            btnSelectFolder.addEventListener('click', selectFolderNative);
+            btnSelectFiles.addEventListener('click', selectFilesFallback);
+            btnClear.addEventListener('click', resetState);
+            btnRename.addEventListener('click', renameInPlace);
+            btnDownloadZip.addEventListener('click', downloadAsZip);
+            hiddenFileInput.addEventListener('change', handleFallbackFileSelection);
+            hiddenFileInputMulti.addEventListener('change', handleFallbackFileSelection);
+
+            // Also support drag-and-drop for fallback
+            document.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+            document.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const items = e.dataTransfer.items;
+                if (!items) return;
+                const files = [];
+                const processEntry = async (item) => {
+                    if (item.kind === 'file') {
+                        const file = item.getAsFile();
+                        if (file) files.push(file);
+                    }
+                };
+                const promises = [];
+                for (const item of items) {
+                    promises.push(processEntry(item));
+                }
+                Promise.all(promises).then(() => {
+                    if (files.length > 0 && !isNativeMode) {
+                        isFallbackMode = true;
+                        badgeNative.classList.add('hidden');
+                        badgeFallback.classList.remove('hidden');
+                        alertInfoNative.classList.add('hidden');
+                        alertInfoFallback.classList.remove('hidden');
+                        btnRename.classList.add('hidden');
+                        btnDownloadZip.classList.remove('hidden');
+                        directoryHandle = null;
+                        processFileList(files);
+                        showToast(`បានទទួល ${files.length} ឯកសារតាម Drag & Drop`, 'success');
+                    }
+                });
+            });
+
+            // ──────────────────────────────────────
+            // Initialize
+            // ──────────────────────────────────────
+            function init() {
+                resetState();
+                initModeUI();
+                if (checkNativeSupport()) {
+                    badgeNative.classList.remove('hidden');
+                    alertInfoNative.classList.remove('hidden');
+                    btnSelectFolder.classList.remove('hidden');
+                } else {
+                    badgeFallback.classList.remove('hidden');
+                    alertInfoFallback.classList.remove('hidden');
+                    btnSelectFiles.classList.remove('hidden');
+                }
+            }
+
+            init();
+
+            console.log('📁 ឧបករណ៍ប្តូរឈ្មោះឯកសារតាមកាលបរិច្ឆេទ - រួចរាល់');
+            console.log('   Native mode supported:', checkNativeSupport());
+            console.log('   ប្រើ Chrome ឬ Edge សម្រាប់ការកែឈ្មោះក្នុងថតផ្ទាល់');
+        })();
+    </script>
+</body>
+</html>
