@@ -173,7 +173,6 @@
             transform: scale(calc(var(--scale-x, 1) * 1.15), calc(var(--scale-y, 1) * 1.15));
             font-weight: 900 !important;
         }
-        /* Pulse */
         .active-syllable.effect-pulse {
             transform: scale(calc(var(--scale-x, 1) * 1.15), calc(var(--scale-y, 1) * 1.15));
             animation: pulseOpacity 0.6s infinite alternate;
@@ -182,7 +181,6 @@
             from { opacity: 0.7; }
             to   { opacity: 1; }
         }
-        /* Shake */
         .active-syllable.effect-shake {
             transform: scale(calc(var(--scale-x, 1) * 1.15), calc(var(--scale-y, 1) * 1.15));
             animation: shakeX 0.4s infinite;
@@ -192,13 +190,11 @@
             25%     { transform: scale(calc(var(--scale-x, 1) * 1.15), calc(var(--scale-y, 1) * 1.15)) translateX(-5px); }
             75%     { transform: scale(calc(var(--scale-x, 1) * 1.15), calc(var(--scale-y, 1) * 1.15)) translateX(5px); }
         }
-        /* Space Expand */
         .active-syllable.effect-space-expand {
             transform: scale(calc(var(--scale-x, 1) * 1.15), calc(var(--scale-y, 1) * 1.15));
             letter-spacing: calc(var(--char-spacing, 0px) + 10px) !important;
             transition: letter-spacing 0.2s ease;
         }
-        /* Rainbow Shadow */
         .active-syllable.effect-rainbow-shadow {
             transform: scale(calc(var(--scale-x, 1) * 1.15), calc(var(--scale-y, 1) * 1.15));
             animation: rainbowShadow 1s linear infinite;
@@ -212,12 +208,10 @@
             83%  { text-shadow: 0 0 10px #8800ff, 0 0 20px #8800ff; }
             100% { text-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000; }
         }
-        /* Italic */
         .active-syllable.effect-italic {
             transform: scale(calc(var(--scale-x, 1) * 1.15), calc(var(--scale-y, 1) * 1.15));
             font-style: italic !important;
         }
-        /* Combo - glow + rotate */
         .active-syllable.effect-combo {
             transform: scale(calc(var(--scale-x, 1) * 1.15), calc(var(--scale-y, 1) * 1.15)) rotate(3deg);
             text-shadow: 0 0 15px var(--secondary-color, #fbbf24), 0 0 30px var(--secondary-color, #fbbf24);
@@ -386,7 +380,6 @@
 
         <aside class="col-span-3 bg-slate-950 overflow-hidden flex flex-col">
             <div class="flex overflow-x-auto border-b border-slate-800 bg-slate-900 no-scrollbar">
-
                 <div class="absolute bottom-4 right-4 z-[50] flex items-center gap-1 bg-slate-900/90 p-1.5 rounded-lg shadow-xl backdrop-blur border border-slate-700">
                     <button onclick="changePreviewZoom(-0.1)" class="w-6 h-6 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-white rounded text-xs transition-colors">-</button>
                     <span id="zoomDisp" class="text-[9px] font-bold text-blue-400 flex items-center w-10 justify-center">FIT</span>
@@ -658,7 +651,7 @@
                    <h3 class="text-[10px] font-bold text-blue-400 uppercase">Syllable Styling & Sync</h3>
                    <p class="text-[7px] text-slate-500">កំណត់ស្ទីល និង Upload Font សម្រាប់ពាក្យនីមួយៗ</p>
                 </div>
-                <!-- Highlight Effect Selector with all 12 options -->
+                <!-- Highlight Effect Selector -->
                 <div class="input-group mb-2">
                     <label class="inspector-label">របៀបរំលេច (Highlight Effect)</label>
                     <select id="highlightEffectSelect" onchange="updateHighlightEffect()">
@@ -1482,6 +1475,7 @@
             return globalInputState['highlightEffect'] || 'default';
         }
 
+        // IMPORTANT FIX: Immediate effect application
         function updateHighlightEffect() {
             if (editingLineId === null) {
                 globalInputState['highlightEffect'] = document.getElementById('highlightEffectSelect').value;
@@ -1492,6 +1486,32 @@
                     line.customInputState['highlightEffect'] = document.getElementById('highlightEffectSelect').value;
                 }
             }
+
+            // Apply new effect to all currently active syllables instantly
+            const currentTime = wavesurfer.getCurrentTime();
+            const allEffectClasses = [
+                'effect-default', 'effect-glow', 'effect-bounce', 'effect-rotate',
+                'effect-underline', 'effect-bold', 'effect-pulse', 'effect-shake',
+                'effect-space-expand', 'effect-rainbow-shadow', 'effect-italic', 'effect-combo'
+            ];
+            const activeLines = allLines.filter(l => currentTime >= l.startTime && currentTime <= l.endTime);
+            activeLines.forEach(activeLine => {
+                const effect = getCurrentHighlightEffect(activeLine);
+                activeLine.syllables.forEach((s, i) => {
+                    if (s.isSpace) return;
+                    const span = document.getElementById(`syllable-${activeLine.id}-${i}`);
+                    if (span) {
+                        // Remove old effect classes
+                        span.classList.remove(...allEffectClasses);
+                        const isActive = s.time !== null && currentTime >= s.time;
+                        if (isActive) {
+                            span.classList.add('effect-' + effect);
+                        }
+                    }
+                });
+            });
+
+            // Also do a full re-render to ensure future syllables get the effect
             forceReRender();
         }
 
