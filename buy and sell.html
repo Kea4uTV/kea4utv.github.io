@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="គណនាទំនិញ">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0a5e40">
+    <title>ឧបករណ៍គណនា ទិញចូល-លក់ចេញ</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
+    </script>
+    <style>
+        :root {
+            --green: #0a6e4a;
+            --green-dark: #075a3b;
+            --green-light: #e6f5ef;
+            --red: #c0392b;
+            --red-light: #fef4f3;
+            --gold: #b87d0b;
+            --gold-light: #fef9ef;
+            --bg: #f2f5f2;
+            --card: #ffffff;
+            --text: #1a2e20;
+            --text2: #5a6d5e;
+            --border: #dce5de;
+            --border-light: #eef3ef;
+            --shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+            --radius: 14px;
+            --radius-sm: 10px;
+            --radius-xs: 8px;
+            --font: 'Kantumruy Pro', 'Noto Sans Khmer', 'Battambang', 'Khmer OS', system-ui, sans-serif;
+            --safe-bottom: env(safe-area-inset-bottom, 10px);
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        input,
+        button {
+            -webkit-appearance: none;
+            appearance: none;
+            font-family: var(--font);
+        }
+        input {
+            -webkit-user-select: text;
+            user-select: text;
+        }
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            min-height: 100vh;
+            padding: 6px 8px;
+            padding-bottom: calc(90px + var(--safe-bottom));
+            background-attachment: fixed;
+        }
+        .app {
+            max-width: 460px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .header {
+            text-align: center;
+            padding: 4px 0 0;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: rgba(242, 245, 242, 0.85);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            border-radius: 0 0 16px 16px;
+            padding-bottom: 6px;
+        }
+        .header .logo-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--green), #085a38);
+            border-radius: 12px;
+            font-size: 22px;
+            color: #fff;
+            box-shadow: 0 3px 12px rgba(10, 110, 74, 0.3);
+            margin-bottom: 2px;
+        }
+        .header h1 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #0a3b26;
+        }
+        .header .sub {
+            font-size: 0.65rem;
+            color: var(--text2);
+        }
+        .top-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+            align-items: center;
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 7px 10px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-light);
+            position: sticky;
+            top: 68px;
+            z-index: 9;
+        }
+        .seg-group {
+            display: flex;
+            background: #e6ece7;
+            border-radius: 20px;
+            padding: 3px;
+            gap: 2px;
+        }
+        .seg-btn {
+            padding: 8px 14px;
+            border: none;
+            background: transparent;
+            border-radius: 18px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #5a6d5e;
+            transition: 0.2s;
+            white-space: nowrap;
+            min-height: 36px;
+        }
+        .seg-btn.active {
+            background: #fff;
+            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+        }
+        .seg-btn.buy-active.active {
+            color: var(--green);
+            font-weight: 700;
+        }
+        .seg-btn.sell-active.active {
+            color: var(--red);
+            font-weight: 700;
+        }
+        .currency-row {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: #f8faf8;
+            border-radius: 18px;
+            padding: 3px 3px 3px 8px;
+            border: 1px solid var(--border-light);
+        }
+        .currency-row .lbl {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--text2);
+            white-space: nowrap;
+        }
+        .cur-toggle {
+            display: flex;
+            background: #e6ece7;
+            border-radius: 16px;
+            padding: 2px;
+            gap: 1px;
+        }
+        .cur-btn {
+            padding: 6px 11px;
+            border: none;
+            background: transparent;
+            border-radius: 14px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #5a6d5e;
+            transition: 0.2s;
+            min-height: 32px;
+        }
+        .cur-btn.active {
+            background: #fff;
+            color: #0a3b26;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+            font-weight: 700;
+        }
+        .rate-input {
+            width: 55px;
+            padding: 5px 4px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 0.65rem;
+            text-align: center;
+            background: #fff;
+            color: var(--text);
+            min-height: 30px;
+        }
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 12px 14px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-light);
+        }
+        .card-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #0a3b26;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding-bottom: 7px;
+            border-bottom: 2px solid var(--border-light);
+        }
+        .card-title .dot {
+            width: 26px;
+            height: 26px;
+            border-radius: 7px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        .dot-buy {
+            background: var(--green-light);
+            color: var(--green);
+        }
+        .dot-sell {
+            background: var(--red-light);
+            color: var(--red);
+        }
+        .dot-form {
+            background: var(--gold-light);
+            color: var(--gold);
+        }
+        .form-group {
+            margin-bottom: 7px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #4a5d4e;
+            margin-bottom: 2px;
+        }
+        .form-group label .u {
+            font-weight: 400;
+            color: #8a9a8e;
+            font-size: 0.63rem;
+        }
+        .form-row {
+            display: flex;
+            gap: 7px;
+        }
+        .form-row .form-group {
+            flex: 1;
+        }
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-xs);
+            font-size: 0.85rem;
+            transition: 0.2s;
+            background: #fafcfb;
+            color: var(--text);
+            outline: none;
+            min-height: 44px;
+        }
+        input:focus {
+            border-color: var(--green);
+            box-shadow: 0 0 0 3px rgba(10, 110, 74, 0.06);
+            background: #fff;
+        }
+        .btn {
+            padding: 12px 18px;
+            border: none;
+            border-radius: var(--radius-xs);
+            cursor: pointer;
+            font-size: 0.82rem;
+            font-weight: 600;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            white-space: nowrap;
+            min-height: 46px;
+        }
+        .btn-calc {
+            background: var(--green);
+            color: #fff;
+            width: 100%;
+            font-size: 0.9rem;
+            border-radius: var(--radius-sm);
+            box-shadow: 0 4px 14px rgba(10, 110, 74, 0.28);
+            font-weight: 700;
+        }
+        .btn-calc:active {
+            background: #065837;
+            transform: scale(0.97);
+        }
+        .btn-add {
+            background: #fff;
+            color: var(--green);
+            border: 2px solid var(--green);
+            width: 100%;
+            font-weight: 700;
+            margin-top: 10px;
+        }
+        .btn-add:active {
+            background: var(--green-light);
+        }
+        .btn-outline {
+            background: #fff;
+            color: var(--green);
+            border: 2px solid var(--green);
+        }
+        .btn-outline:active {
+            background: #f0faf6;
+        }
+        .btn-ghost {
+            background: #fff;
+            color: #777;
+            border: 2px solid #ddd;
+        }
+        .btn-ghost:active {
+            background: #fafafa;
+        }
+        .btn-danger {
+            background: #fff;
+            color: var(--red);
+            border: 2px solid #e8c8c4;
+        }
+        .btn-danger:active {
+            background: #fef5f4;
+            border-color: var(--red);
+        }
+        .btn-sm {
+            padding: 8px 13px;
+            font-size: 0.7rem;
+            min-height: 36px;
+            border-radius: 18px;
+        }
+        .btn-group {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 4px;
+        }
+        .result-panel {
+            display: none;
+            background: #f9fbfa;
+            border: 2px dashed var(--green);
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+            margin-top: 8px;
+            animation: fadeIn 0.3s ease;
+        }
+        .result-panel.show {
+            display: block;
+        }
+        .result-panel.sell-result {
+            border-color: var(--red);
+            background: #fef9f9;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-6px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            font-size: 0.75rem;
+            border-bottom: 1px dotted #e8efe9;
+            gap: 8px;
+        }
+        .result-row:last-child {
+            border-bottom: none;
+        }
+        .result-label {
+            color: var(--text2);
+            flex-shrink: 0;
+        }
+        .result-value {
+            font-weight: 700;
+            text-align: right;
+            color: #0a3b26;
+        }
+        .profit-highlight {
+            font-size: 0.85rem;
+        }
+        .profit-highlight.positive {
+            color: #1e7e34;
+        }
+        .profit-highlight.negative {
+            color: #c0392b;
+        }
+        .table-wrap {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-light);
+            max-height: 45vh;
+            overflow-y: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.64rem;
+            min-width: 850px;
+        }
+        table thead {
+            background: #f5f8f6;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+        table th {
+            padding: 7px 4px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 0.6rem;
+            color: #3d5548;
+            border-bottom: 2px solid #dde4e0;
+            white-space: nowrap;
+        }
+        table td {
+            padding: 6px 4px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-light);
+            white-space: nowrap;
+            font-size: 0.62rem;
+        }
+        tr.row-buy {
+            border-left: 3px solid var(--green);
+        }
+        tr.row-sell {
+            border-left: 3px solid var(--red);
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.58rem;
+            font-weight: 700;
+        }
+        .badge-buy {
+            background: var(--green-light);
+            color: var(--green);
+        }
+        .badge-sell {
+            background: var(--red-light);
+            color: var(--red);
+        }
+        .t-profit {
+            color: #1e7e34;
+            font-weight: 700;
+        }
+        .t-loss {
+            color: #c0392b;
+            font-weight: 700;
+        }
+        .del-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #cbd5e0;
+            font-size: 0.9rem;
+            padding: 3px 7px;
+            border-radius: 50%;
+            transition: 0.2s;
+            min-height: 30px;
+        }
+        .del-btn:active {
+            color: #e74c3c;
+            background: #fef5f4;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 20px;
+            color: #b0bdb7;
+        }
+        .summary-card {
+            background: #fff;
+            border-radius: var(--radius);
+            padding: 12px 14px;
+            box-shadow: var(--shadow);
+            border: 2px solid #e4ebe6;
+            position: relative;
+        }
+        .summary-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 12px;
+            right: 12px;
+            height: 2px;
+            background: linear-gradient(90deg, var(--green), var(--gold), var(--red));
+        }
+        .summary-title {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #0a3b26;
+            margin-bottom: 8px;
+            padding-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+        }
+        @media (min-width: 380px) {
+            .summary-grid {
+                grid-template-columns: 1fr 1fr 1fr;
+            }
+        }
+        .s-item {
+            background: #f9fbfa;
+            border-radius: var(--radius-sm);
+            padding: 8px;
+            text-align: center;
+            border: 1px solid var(--border-light);
+        }
+        .s-item .s-label {
+            font-size: 0.6rem;
+            color: #6b7d70;
+            margin-bottom: 1px;
+        }
+        .s-item .s-value {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #0a3b26;
+        }
+        .s-item.hl-profit .s-value {
+            color: #1e7e34;
+        }
+        .s-item.hl-loss .s-value {
+            color: #c0392b;
+        }
+        .sticky-bottom {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #fff;
+            border-top: 2px solid var(--border-light);
+            padding: 7px 10px;
+            padding-bottom: calc(7px + var(--safe-bottom));
+            z-index: 20;
+            display: flex;
+            gap: 7px;
+            justify-content: center;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .sticky-bottom .btn {
+            flex: 1;
+            max-width: 180px;
+        }
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(140px);
+            background: #1a3c2a;
+            color: #fff;
+            padding: 9px 20px;
+            border-radius: 22px;
+            font-weight: 600;
+            font-size: 0.72rem;
+            z-index: 100;
+            transition: transform 0.3s ease;
+            box-shadow: 0 5px 18px rgba(0, 0, 0, 0.2);
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+        .toast.success {
+            background: #0a6e4a;
+        }
+        .toast.error {
+            background: #c0392b;
+        }
+        #captureArea {
+            position: fixed;
+            left: -9999px;
+            top: 0;
+            width: 880px;
+            background: #fff;
+            padding: 18px;
+            border-radius: 12px;
+            font-family: var(--font);
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="header">
+            <div class="logo-icon">🧮</div>
+            <h1>គណនាទំនិញ</h1>
+            <p class="sub">ទិញចូល · លក់ចេញ · ខាតចំណេញ</p>
+        </div>
+        <div class="top-bar">
+            <div class="seg-group">
+                <button class="seg-btn buy-active active" id="btnBuy">📥 ទិញចូល</button>
+                <button class="seg-btn sell-active" id="btnSell">📤 លក់ចេញ</button>
+            </div>
+            <div class="currency-row">
+                <span class="lbl">រូបិយប័ណ្ណ</span>
+                <div class="cur-toggle">
+                    <button class="cur-btn active" id="btnUSD">$ ដុល្លា</button>
+                    <button class="cur-btn" id="btnKHR">៛ រៀល</button>
+                </div>
+                <input type="number" class="rate-input" id="exchangeRate" value="4000" min="1" step="1" oninput="onRateChange()">
+                <span style="font-size:0.6rem;">៛/$</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <span class="dot dot-form" id="formIcon">📝</span>
+                <span id="formTitle">បំពេញព័ត៌មាន ទិញចូល</span>
+            </div>
+            <form autocomplete="off" onsubmit="return false;">
+                <div class="form-group">
+                    <label>🏷️ ឈ្មោះទំនិញ <span class="u">(ស្រេចចិត្ត)</span></label>
+                    <input type="text" id="itemName" placeholder="ឧ. ត្រីសាលម៉ុង">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>📦 ចំនួន <span class="u">(ឯកតា)</span></label>
+                        <input type="number" id="quantity" placeholder="0" min="0" step="any" inputmode="decimal">
+                    </div>
+                    <div class="form-group">
+                        <label id="priceLabel">💵 តម្លៃទិញ/ឯកតា</label>
+                        <input type="number" id="unitPrice" placeholder="0" min="0" step="0.01" inputmode="decimal">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>🔻 បញ្ចុះតម្លៃ (%)</label>
+                        <input type="number" id="discountPercent" placeholder="0" min="0" max="100" step="0.01" inputmode="decimal">
+                    </div>
+                    <div class="form-group">
+                        <label>🚚 ថ្លៃឈ្នួលដឹក</label>
+                        <input type="number" id="shippingCost" placeholder="0" min="0" step="0.01" inputmode="decimal">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>⚖️ គីឡូដើម <span class="u">(kg)</span></label>
+                        <input type="number" id="originalKg" placeholder="0" min="0" step="0.01" inputmode="decimal">
+                    </div>
+                    <div class="form-group">
+                        <label>✂️ កាត់គីឡូចោល <span class="u">(kg)</span></label>
+                        <input type="number" id="cutKg" placeholder="0" min="0" step="0.01" inputmode="decimal">
+                    </div>
+                </div>
+                <div class="form-group" id="sellPriceGroup" style="display:none;">
+                    <label>🏷️ តម្លៃលក់ក្នុងមួយឯកតា</label>
+                    <input type="number" id="sellPrice" placeholder="0" min="0" step="0.01" inputmode="decimal">
+                </div>
+                <button type="button" class="btn btn-calc" id="calcBtn">🔢 គណនា</button>
+                <div class="result-panel" id="resultPanel">
+                    <div class="result-row"><span class="result-label">💰 តម្លៃដើមសរុប</span><span class="result-value" id="resTotalCost">0.00</span></div>
+                    <div class="result-row"><span class="result-label">💲 ក្រោយបញ្ចុះតម្លៃ</span><span class="result-value" id="resAfterDiscount">0.00</span></div>
+                    <div class="result-row"><span class="result-label">📊 តម្លៃសរុបពិត (បូកឈ្នួលដឹក)</span><span class="result-value" id="resEffective">0.00</span></div>
+                    <div class="result-row"><span class="result-label">✅ គីឡូសុទ្ធ</span><span class="result-value" id="resNetKg">0.00 kg</span></div>
+                    <div class="result-row"><span class="result-label">💎 តម្លៃក្នុង១គីឡូសុទ្ធ</span><span class="result-value" id="resPricePerKg">0.00</span></div>
+                    <div class="result-row" id="resProfitRow" style="display:none;"><span class="result-label">📈 ខាត/ចំណេញប៉ាន់ស្មាន</span><span class="result-value" id="resProfitLoss">0.00</span></div>
+                    <button type="button" class="btn btn-add" id="addToTableBtn">➕ បន្ថែមចូលតារាង</button>
+                </div>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-ghost btn-sm" onclick="clearForm()">🔄 សម្អាតទម្រង់</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-title"><span class="dot" style="background:#eef4fb;color:#2c5f8a;">📑</span> តារាងទិន្នន័យទាំងអស់</div>
+            <div class="table-wrap">
+                <table id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>ល.រ</th><th>ប្រភេទ</th><th>ឈ្មោះ</th><th>ចំនួន</th><th>តម្លៃដើម</th><th>បញ្ចុះ%</th><th>ក្រោយបញ្ចុះ</th><th>ឈ្នួលដឹក</th><th>តម្លៃសរុប</th><th>គីឡូដើម</th><th>កាត់គីឡូ</th><th>គីឡូសុទ្ធ</th><th>តម្លៃ/គីឡូ</th><th>ខាត/ចំណេញ</th><th>លុប</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"><tr class="empty-row"><td colspan="15"><div class="empty-state"><span style="font-size:2rem;">📭</span><p>មិនទាន់មានធាតុចូល</p></div></td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-title">📊 តារាងពេលវាលា (សង្ខេបសរុប)</div>
+            <div class="summary-grid">
+                <div class="s-item"><div class="s-label">សរុបតម្លៃដើម</div><div class="s-value" id="sumCost">0.00</div></div>
+                <div class="s-item"><div class="s-label">សរុបក្រោយបញ្ចុះ</div><div class="s-value" id="sumAfterDisc">0.00</div></div>
+                <div class="s-item"><div class="s-label">សរុបឈ្នួលដឹក</div><div class="s-value" id="sumShip">0.00</div></div>
+                <div class="s-item"><div class="s-label">សរុបចំណាយពិត</div><div class="s-value" id="sumEff">0.00</div></div>
+                <div class="s-item"><div class="s-label">សរុបគីឡូដើម</div><div class="s-value" id="sumOrigKg">0.00 kg</div></div>
+                <div class="s-item"><div class="s-label">សរុបគីឡូសុទ្ធ</div><div class="s-value" id="sumNetKg">0.00 kg</div></div>
+                <div class="s-item"><div class="s-label">សរុបចំណូលលក់</div><div class="s-value" id="sumRev">0.00</div></div>
+                <div class="s-item" id="sumPlItem"><div class="s-label">សរុបខាត/ចំណេញ</div><div class="s-value" id="sumPL">0.00</div></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="sticky-bottom">
+        <button class="btn btn-outline btn-sm" onclick="saveAsImage()">💾 រក្សាទុកជារូបភាព</button>
+        <button class="btn btn-danger btn-sm" onclick="clearAllData()">🗑️ លុបទាំងអស់</button>
+    </div>
+    <div class="toast" id="toast"></div>
+    <div id="captureArea"><h2>📊 តារាងពេលវាលា</h2><div class="cap-date" id="captureDate"></div><div id="captureTableWrap"></div><div id="captureSummaryWrap"></div></div>
+
+    <script>
+        (function() {
+            // State
+            let mode = 'buy'; // 'buy' | 'sell'
+            let currency = 'USD'; // 'USD' | 'KHR'
+            let rate = 4000;
+            let entries = [];
+            let counter = 0;
+            let lastCalc = null;
+
+            // DOM
+            const $ = id => document.getElementById(id);
+            const dom = {
+                btnBuy: $('btnBuy'), btnSell: $('btnSell'), btnUSD: $('btnUSD'), btnKHR: $('btnKHR'),
+                exchangeRate: $('exchangeRate'), formTitle: $('formTitle'), formIcon: $('formIcon'),
+                priceLabel: $('priceLabel'), sellPriceGroup: $('sellPriceGroup'),
+                itemName: $('itemName'), quantity: $('quantity'), unitPrice: $('unitPrice'),
+                discountPercent: $('discountPercent'), shippingCost: $('shippingCost'),
+                originalKg: $('originalKg'), cutKg: $('cutKg'), sellPrice: $('sellPrice'),
+                resultPanel: $('resultPanel'), resTotalCost: $('resTotalCost'),
+                resAfterDiscount: $('resAfterDiscount'), resEffective: $('resEffective'),
+                resNetKg: $('resNetKg'), resPricePerKg: $('resPricePerKg'),
+                resProfitRow: $('resProfitRow'), resProfitLoss: $('resProfitLoss'),
+                addToTableBtn: $('addToTableBtn'), tableBody: $('tableBody'),
+                sumCost: $('sumCost'), sumAfterDisc: $('sumAfterDisc'), sumShip: $('sumShip'),
+                sumEff: $('sumEff'), sumOrigKg: $('sumOrigKg'), sumNetKg: $('sumNetKg'),
+                sumRev: $('sumRev'), sumPL: $('sumPL'), sumPlItem: $('sumPlItem'),
+                captureDate: $('captureDate'), captureTableWrap: $('captureTableWrap'),
+                captureSummaryWrap: $('captureSummaryWrap'), toast: $('toast')
+            };
+
+            // Utils
+            const parseVal = id => { const v = parseFloat($(id).value); return isNaN(v) || v < 0 ? 0 : v; };
+            const fmt = (n, khr) => {
+                if (Math.abs(n) < 0.0001) return khr ? '0' : '0.00';
+                if (khr) return Math.round(n).toLocaleString('en-US');
+                return n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            };
+            const sym = () => currency === 'KHR' ? '៛' : '$';
+            const fmtMoney = (usd) => {
+                if (currency === 'KHR') return fmt(usd * rate, true) + ' ៛';
+                return '$' + fmt(usd, false);
+            };
+            const toUSD = (disp) => currency === 'KHR' && rate > 0 ? disp / rate : disp;
+            const fromUSD = (usd) => currency === 'KHR' ? usd * rate : usd;
+
+            // Mode switch
+            function setMode(m) {
+                mode = m;
+                dom.btnBuy.classList.toggle('active', m === 'buy');
+                dom.btnSell.classList.toggle('active', m === 'sell');
+                if (m === 'buy') {
+                    dom.formTitle.textContent = 'បំពេញព័ត៌មាន ទិញចូល';
+                    dom.formIcon.className = 'dot dot-buy'; dom.formIcon.textContent = '📥';
+                    dom.sellPriceGroup.style.display = 'none';
+                    dom.resProfitRow.style.display = 'none';
+                    dom.resultPanel.classList.remove('sell-result');
+                } else {
+                    dom.formTitle.textContent = 'បំពេញព័ត៌មាន លក់ចេញ';
+                    dom.formIcon.className = 'dot dot-sell'; dom.formIcon.textContent = '📤';
+                    dom.sellPriceGroup.style.display = 'block';
+                    dom.resProfitRow.style.display = 'flex';
+                    dom.resultPanel.classList.add('sell-result');
+                }
+                updatePriceLabel();
+                hideResult();
+            }
+
+            function updatePriceLabel() {
+                dom.priceLabel.innerHTML = '💵 តម្លៃទិញ/ឯកតា <span class="u">(' + sym() + ')</span>';
+            }
+
+            // Currency switch
+            function setCurrency(cur) {
+                if (currency === cur) return;
+                const fields = ['unitPrice', 'shippingCost', 'sellPrice'];
+                const oldRate = rate;
+                if (currency === 'USD' && cur === 'KHR') {
+                    fields.forEach(id => { const el = $(id); const v = parseFloat(el.value); if (!isNaN(v) && v > 0) el.value = Math.round(v * rate); });
+                } else if (currency === 'KHR' && cur === 'USD') {
+                    fields.forEach(id => { const el = $(id); const v = parseFloat(el.value); if (!isNaN(v) && v > 0 && rate > 0) el.value = (v / rate).toFixed(2); });
+                }
+                currency = cur;
+                dom.btnUSD.classList.toggle('active', cur === 'USD');
+                dom.btnKHR.classList.toggle('active', cur === 'KHR');
+                updatePriceLabel();
+                refreshDisplays();
+                hideResult();
+            }
+
+            function onRateChange() {
+                const n = parseFloat(dom.exchangeRate.value);
+                if (!isNaN(n) && n > 0) {
+                    rate = n;
+                    refreshDisplays();
+                    hideResult();
+                }
+            }
+
+            function refreshDisplays() { renderTable(); updateSummary(); }
+
+            // Calculate
+            function calculate() {
+                const qty = parseVal('quantity');
+                const unitPriceDisp = parseVal('unitPrice');
+                const discountPct = Math.min(parseVal('discountPercent'), 100);
+                const shippingDisp = parseVal('shippingCost');
+                const origKg = parseVal('originalKg');
+                const cutKg = parseVal('cutKg');
+                const sellPriceDisp = mode === 'sell' ? parseVal('sellPrice') : 0;
+
+                if (qty <= 0 && origKg <= 0) {
+                    showToast('សូមបញ្ចូល ចំនួន ឬ គីឡូដើម យ៉ាងហោចណាស់មួយ', 'error');
+                    return false;
+                }
+                if (unitPriceDisp <= 0) {
+                    showToast('សូមបញ្ចូលតម្លៃក្នុងមួយឯកតា', 'error');
+                    return false;
+                }
+
+                const unitPriceUSD = toUSD(unitPriceDisp);
+                const shippingUSD = toUSD(shippingDisp);
+                const sellPriceUSD = mode === 'sell' ? toUSD(sellPriceDisp) : 0;
+
+                const totalCostUSD = qty * unitPriceUSD;
+                const discountAmtUSD = totalCostUSD * (discountPct / 100);
+                const afterDiscountUSD = totalCostUSD - discountAmtUSD;
+                const effectiveUSD = afterDiscountUSD + shippingUSD;
+                const netKg = Math.max(0, origKg - cutKg);
+                const pricePerKgUSD = netKg > 0.001 ? effectiveUSD / netKg : 0;
+                const revenueUSD = mode === 'sell' ? qty * sellPriceUSD : 0;
+                const profitUSD = mode === 'sell' ? revenueUSD - effectiveUSD : 0;
+
+                lastCalc = {
+                    qty, unitPriceUSD, discountPct, shippingUSD, origKg, cutKg, netKg,
+                    totalCostUSD, afterDiscountUSD, effectiveUSD, pricePerKgUSD,
+                    sellPriceUSD, revenueUSD, profitUSD, mode,
+                    itemName: dom.itemName.value.trim()
+                };
+
+                dom.resTotalCost.textContent = fmtMoney(totalCostUSD);
+                dom.resAfterDiscount.textContent = fmtMoney(afterDiscountUSD);
+                dom.resEffective.textContent = fmtMoney(effectiveUSD);
+                dom.resNetKg.textContent = fmt(netKg, false) + ' kg';
+                dom.resPricePerKg.textContent = fmtMoney(pricePerKgUSD);
+
+                if (mode === 'sell') {
+                    dom.resProfitRow.style.display = 'flex';
+                    const sign = profitUSD >= 0 ? '+' : '';
+                    dom.resProfitLoss.textContent = sign + fmtMoney(Math.abs(profitUSD));
+                    dom.resProfitLoss.className = 'result-value profit-highlight ' + (profitUSD >= 0 ? 'positive' : 'negative');
+                } else {
+                    dom.resProfitRow.style.display = 'none';
+                }
+                dom.resultPanel.classList.add('show');
+                dom.resultPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                showToast('✅ គណនារួចរាល់', 'success');
+                return true;
+            }
+
+            function hideResult() {
+                dom.resultPanel.classList.remove('show');
+                lastCalc = null;
+            }
+
+            // Add to table
+            function addToTable() {
+                if (!lastCalc) { showToast('សូមចុច "គណនា" ជាមុនសិន', 'error'); return; }
+                const r = lastCalc;
+                counter++;
+                const entry = {
+                    id: counter, mode: r.mode, itemName: r.itemName || '(គ្មានឈ្មោះ)',
+                    quantity: r.qty, unitPriceUSD: r.unitPriceUSD, totalOriginalCostUSD: r.totalCostUSD,
+                    discountPercent: r.discountPct, discountAmountUSD: r.totalCostUSD * (r.discountPct / 100),
+                    priceAfterDiscountUSD: r.afterDiscountUSD, shippingCostUSD: r.shippingUSD,
+                    effectiveTotalUSD: r.effectiveUSD, originalKg: r.origKg, cutKg: r.cutKg,
+                    netKg: r.netKg, pricePerNetKgUSD: r.pricePerKgUSD,
+                    sellPriceUSD: r.sellPriceUSD, totalRevenueUSD: r.revenueUSD, profitLossUSD: r.profitUSD
+                };
+                entries.push(entry);
+                lastCalc = null;
+                hideResult();
+                renderTable();
+                updateSummary();
+                clearForm();
+                showToast('✅ បានបន្ថែមចូលតារាង', 'success');
+                $('tableCard')?.scrollIntoView({ behavior: 'smooth' });
+            }
+
+            function renderTable() {
+                const tbody = dom.tableBody;
+                if (entries.length === 0) {
+                    tbody.innerHTML = '<tr class="empty-row"><td colspan="15"><div class="empty-state"><span style="font-size:2rem;">📭</span><p>មិនទាន់មានធាតុចូល</p></div></td></tr>';
+                    return;
+                }
+                let h = '';
+                entries.forEach((e, i) => {
+                    const rc = e.mode === 'buy' ? 'row-buy' : 'row-sell';
+                    const bc = e.mode === 'buy' ? 'badge-buy' : 'badge-sell';
+                    const bt = e.mode === 'buy' ? 'ទិញចូល' : 'លក់ចេញ';
+                    const plClass = e.profitLossUSD >= 0 ? 't-profit' : 't-loss';
+                    const plSign = e.profitLossUSD >= 0 ? '+' : '';
+                    const plDisp = e.mode === 'sell' ? (plSign + fmtMoney(Math.abs(e.profitLossUSD))) : '-';
+                    h += `<tr class="${rc}">
+                        <td>${i+1}</td><td><span class="badge ${bc}">${bt}</span></td>
+                        <td>${esc(e.itemName)}</td><td>${fmt(e.quantity,false)}</td>
+                        <td>${fmtMoney(e.totalOriginalCostUSD)}</td><td>${fmt(e.discountPercent,false)}%</td>
+                        <td>${fmtMoney(e.priceAfterDiscountUSD)}</td><td>${fmtMoney(e.shippingCostUSD)}</td>
+                        <td>${fmtMoney(e.effectiveTotalUSD)}</td><td>${fmt(e.originalKg,false)} kg</td>
+                        <td>${fmt(e.cutKg,false)} kg</td><td>${fmt(e.netKg,false)} kg</td>
+                        <td>${fmtMoney(e.pricePerNetKgUSD)}</td>
+                        <td class="${e.mode==='sell' ? plClass : ''}">${plDisp}</td>
+                        <td><button class="del-btn" onclick="delEntry(${e.id})">🗑️</button></td></tr>`;
+                });
+                tbody.innerHTML = h;
+            }
+
+            function esc(s) { const d = document.createElement('div');
+                d.textContent = s; return d.innerHTML; }
+
+            window.delEntry = function(id) {
+                entries = entries.filter(e => e.id !== id);
+                renderTable();
+                updateSummary();
+                showToast('🗑️ បានលុប', 'error');
+            };
+
+            function updateSummary() {
+                let tc = 0,
+                    ad = 0,
+                    sh = 0,
+                    ef = 0,
+                    ok = 0,
+                    nk = 0,
+                    rv = 0,
+                    pl = 0;
+                entries.forEach(e => {
+                    tc += e.totalOriginalCostUSD;
+                    ad += e.priceAfterDiscountUSD;
+                    sh += e.shippingCostUSD;
+                    ef += e.effectiveTotalUSD;
+                    ok += e.originalKg;
+                    nk += e.netKg;
+                    if (e.mode === 'sell') { rv += e.totalRevenueUSD;
+                        pl += e.profitLossUSD; }
+                });
+                dom.sumCost.textContent = fmtMoney(tc);
+                dom.sumAfterDisc.textContent = fmtMoney(ad);
+                dom.sumShip.textContent = fmtMoney(sh);
+                dom.sumEff.textContent = fmtMoney(ef);
+                dom.sumOrigKg.textContent = fmt(ok, false) + ' kg';
+                dom.sumNetKg.textContent = fmt(nk, false) + ' kg';
+                dom.sumRev.textContent = fmtMoney(rv);
+                const sign = pl >= 0 ? '+' : '';
+                dom.sumPL.textContent = sign + fmtMoney(Math.abs(pl));
+                dom.sumPlItem.classList.remove('hl-profit', 'hl-loss');
+                dom.sumPlItem.classList.add(pl >= 0 ? 'hl-profit' : 'hl-loss');
+            }
+
+            function clearForm() {
+                dom.itemName.value = '';
+                dom.quantity.value = '';
+                dom.unitPrice.value = '';
+                dom.discountPercent.value = '';
+                dom.shippingCost.value = '';
+                dom.originalKg.value = '';
+                dom.cutKg.value = '';
+                dom.sellPrice.value = '';
+                hideResult();
+            }
+
+            window.clearAllData = function() {
+                if (entries.length === 0) { showToast('មិនមានទិន្នន័យ', 'error'); return; }
+                if (confirm('លុបទិន្នន័យទាំងអស់?')) {
+                    entries = [];
+                    counter = 0;
+                    lastCalc = null;
+                    hideResult();
+                    renderTable();
+                    updateSummary();
+                    showToast('បានលុបទាំងអស់', 'error');
+                }
+            };
+
+            // Save image
+            window.saveAsImage = function() {
+                if (entries.length === 0) { showToast('គ្មានទិន្នន័យ', 'error'); return; }
+                const now = new Date();
+                const ds = now.toLocaleDateString('km-KH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit',
+                    minute: '2-digit' });
+                dom.captureDate.textContent = 'កាលបរិច្ឆេទ៖ ' + ds + ' | រូបិយប័ណ្ណ៖ ' + (currency === 'KHR' ? 'រៀល' :
+                    'ដុល្លារ') + ' | ១$ = ' + rate + '៛';
+                let th = '<table style="width:100%;border-collapse:collapse;font-size:10px;margin-top:6px;"><thead><tr style="background:#f5f8f6;">';
+                ['ល.រ', 'ប្រភេទ', 'ឈ្មោះ', 'ចំនួន', 'តម្លៃដើម', 'បញ្ចុះ%', 'ក្រោយបញ្ចុះ', 'ឈ្នួលដឹក', 'តម្លៃសរុប', 'គីឡូដើម', 'កាត់គីឡូ', 'គីឡូសុទ្ធ', 'តម្លៃ/គីឡូ', 'ខាត/ចំណេញ']
+                .forEach(h => th += '<th style="padding:5px 3px;border:1px solid #dde4e0;">' + h + '</th>');
+                th += '</tr></thead><tbody>';
+                entries.forEach((e, i) => {
+                    const ps = e.profitLossUSD >= 0 ? '+' : '';
+                    const pd = e.mode === 'sell' ? (ps + fmtMoney(Math.abs(e.profitLossUSD))) : '-';
+                    th += `<tr style="border-left:3px solid ${e.mode==='buy'?'#0a6e4a':'#c0392b'};">
+                        <td style="padding:4px 3px;border:1px solid #eef3ef;">${i+1}</td>
+                        <td>${e.mode==='buy'?'ទិញចូល':'លក់ចេញ'}</td><td>${esc(e.itemName)}</td>
+                        <td>${fmt(e.quantity,false)}</td><td>${fmtMoney(e.totalOriginalCostUSD)}</td>
+                        <td>${fmt(e.discountPercent,false)}%</td><td>${fmtMoney(e.priceAfterDiscountUSD)}</td>
+                        <td>${fmtMoney(e.shippingCostUSD)}</td><td>${fmtMoney(e.effectiveTotalUSD)}</td>
+                        <td>${fmt(e.originalKg,false)} kg</td><td>${fmt(e.cutKg,false)} kg</td>
+                        <td>${fmt(e.netKg,false)} kg</td><td>${fmtMoney(e.pricePerNetKgUSD)}</td><td>${pd}</td></tr>`;
+                });
+                th += '</tbody></table>';
+                let stc = 0,
+                    sad = 0,
+                    ssh = 0,
+                    sef = 0,
+                    snk = 0,
+                    spl = 0;
+                entries.forEach(e => { stc += e.totalOriginalCostUSD;
+                    sad += e.priceAfterDiscountUSD;
+                    ssh += e.shippingCostUSD;
+                    sef += e.effectiveTotalUSD;
+                    snk += e.netKg; if (e.mode === 'sell') spl += e.profitLossUSD; });
+                const pss = spl >= 0 ? '+' : '';
+                const summ = `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-top:8px;font-size:10px;">
+                    <div style="background:#f9fbfa;padding:6px;border-radius:5px;text-align:center;border:1px solid #eef3ef;"><strong>សរុបតម្លៃដើម</strong><br>${fmtMoney(stc)}</div>
+                    <div style="background:#f9fbfa;padding:6px;border-radius:5px;text-align:center;border:1px solid #eef3ef;"><strong>សរុបក្រោយបញ្ចុះ</strong><br>${fmtMoney(sad)}</div>
+                    <div style="background:#f9fbfa;padding:6px;border-radius:5px;text-align:center;border:1px solid #eef3ef;"><strong>សរុបឈ្នួលដឹក</strong><br>${fmtMoney(ssh)}</div>
+                    <div style="background:#f9fbfa;padding:6px;border-radius:5px;text-align:center;border:1px solid #eef3ef;"><strong>សរុបចំណាយពិត</strong><br>${fmtMoney(sef)}</div>
+                    <div style="background:#f9fbfa;padding:6px;border-radius:5px;text-align:center;border:1px solid #eef3ef;"><strong>សរុបគីឡូសុទ្ធ</strong><br>${fmt(snk,false)} kg</div>
+                    <div style="background:#f9fbfa;padding:6px;border-radius:5px;text-align:center;border:1px solid #eef3ef;"><strong>សរុបខាត/ចំណេញ</strong><br>${pss}${fmtMoney(Math.abs(spl))}</div></div>`;
+                dom.captureTableWrap.innerHTML = th;
+                dom.captureSummaryWrap.innerHTML = summ;
+
+                const cap = $('captureArea');
+                cap.style.position = 'fixed';
+                cap.style.left = '5px';
+                cap.style.top = '5px';
+                cap.style.zIndex = '99999';
+                cap.style.width = '860px';
+                cap.style.background = '#fff';
+                cap.style.maxHeight = '95vh';
+                cap.style.overflow = 'auto';
+                html2canvas(cap, { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false }).then(canvas => {
+                    cap.style.position = 'fixed';
+                    cap.style.left = '-9999px';
+                    cap.style.top = '0';
+                    cap.style.zIndex = '';
+                    cap.style.width = '880px';
+                    cap.style.maxHeight = '';
+                    const a = document.createElement('a');
+                    a.download = 'តារាងពេលវាលា_' + new Date().toISOString().slice(0, 10) + '.png';
+                    a.href = canvas.toDataURL('image/png');
+                    a.click();
+                    showToast('💾 រក្សាទុករូបភាពបានជោគជ័យ', 'success');
+                }).catch(() => {
+                    cap.style.position = 'fixed';
+                    cap.style.left = '-9999px';
+                    cap.style.top = '0';
+                    cap.style.zIndex = '';
+                    cap.style.width = '880px';
+                    cap.style.maxHeight = '';
+                    showToast('មានបញ្ហា សូមព្យាយាមម្តងទៀត', 'error');
+                });
+            };
+
+            function showToast(msg, type) {
+                const t = dom.toast;
+                t.textContent = msg;
+                t.className = 'toast ' + (type || 'success');
+                t.offsetHeight;
+                t.classList.add('show');
+                clearTimeout(t._t);
+                t._t = setTimeout(() => t.classList.remove('show'), 2200);
+            }
+
+            // Event listeners
+            dom.btnBuy.addEventListener('click', () => setMode('buy'));
+            dom.btnSell.addEventListener('click', () => setMode('sell'));
+            dom.btnUSD.addEventListener('click', () => setCurrency('USD'));
+            dom.btnKHR.addEventListener('click', () => setCurrency('KHR'));
+            $('calcBtn').addEventListener('click', calculate);
+            dom.addToTableBtn.addEventListener('click', addToTable);
+            window.onRateChange = onRateChange;
+
+            // Init
+            rate = parseFloat(dom.exchangeRate.value) || 4000;
+            setMode('buy');
+            setCurrency('USD');
+            renderTable();
+            updateSummary();
+            hideResult();
+        })();
+    </script>
+</body>
+</html>
