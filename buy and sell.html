@@ -2,1124 +2,1042 @@
 <html lang="km">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="គណនាទំនិញ">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#0a5e40">
-    <title>ឧបករណ៍គណនា ទិញចូល-លក់ចេញ</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
-    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>កម្មវិធីគណនាទិញ-លក់ទំនិញ</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts (Kantumruy Pro & Battambang for Khmer) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Battambang:wght@400;700&family=Kantumruy+Pro:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- html2canvas for saving as image -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
     <style>
-        :root {
-            --green: #0a6e4a;
-            --green-dark: #075a3b;
-            --green-light: #e6f5ef;
-            --red: #c0392b;
-            --red-light: #fef4f3;
-            --gold: #b87d0b;
-            --gold-light: #fef9ef;
-            --bg: #f2f5f2;
-            --card: #ffffff;
-            --text: #1a2e20;
-            --text2: #5a6d5e;
-            --border: #dce5de;
-            --border-light: #eef3ef;
-            --shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
-            --radius: 14px;
-            --radius-sm: 10px;
-            --radius-xs: 8px;
-            --font: 'Kantumruy Pro', 'Noto Sans Khmer', 'Battambang', 'Khmer OS', system-ui, sans-serif;
-            --safe-bottom: env(safe-area-inset-bottom, 10px);
-        }
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        body {
+            font-family: 'Kantumruy Pro', 'Battambang', 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8fafc;
             -webkit-tap-highlight-color: transparent;
         }
-        input,
-        button {
-            -webkit-appearance: none;
-            appearance: none;
-            font-family: var(--font);
+        .gradient-bg {
+            background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
         }
-        input {
-            -webkit-user-select: text;
-            user-select: text;
+        .premium-shadow {
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08);
         }
-        body {
-            font-family: var(--font);
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.5;
-            min-height: 100vh;
-            padding: 6px 8px;
-            padding-bottom: calc(90px + var(--safe-bottom));
-            background-attachment: fixed;
-        }
-        .app {
-            max-width: 460px;
-            margin: 0 auto;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .header {
-            text-align: center;
-            padding: 4px 0 0;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            background: rgba(242, 245, 242, 0.85);
-            backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
-            border-radius: 0 0 16px 16px;
-            padding-bottom: 6px;
-        }
-        .header .logo-icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, var(--green), #085a38);
-            border-radius: 12px;
-            font-size: 22px;
-            color: #fff;
-            box-shadow: 0 3px 12px rgba(10, 110, 74, 0.3);
-            margin-bottom: 2px;
-        }
-        .header h1 {
-            font-size: 1.05rem;
-            font-weight: 700;
-            color: #0a3b26;
-        }
-        .header .sub {
-            font-size: 0.65rem;
-            color: var(--text2);
-        }
-        .top-bar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            justify-content: center;
-            align-items: center;
-            background: var(--card);
-            border-radius: var(--radius);
-            padding: 7px 10px;
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border-light);
-            position: sticky;
-            top: 68px;
-            z-index: 9;
-        }
-        .seg-group {
-            display: flex;
-            background: #e6ece7;
-            border-radius: 20px;
-            padding: 3px;
-            gap: 2px;
-        }
-        .seg-btn {
-            padding: 8px 14px;
-            border: none;
-            background: transparent;
-            border-radius: 18px;
-            cursor: pointer;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: #5a6d5e;
-            transition: 0.2s;
-            white-space: nowrap;
-            min-height: 36px;
-        }
-        .seg-btn.active {
-            background: #fff;
-            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
-        }
-        .seg-btn.buy-active.active {
-            color: var(--green);
-            font-weight: 700;
-        }
-        .seg-btn.sell-active.active {
-            color: var(--red);
-            font-weight: 700;
-        }
-        .currency-row {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            background: #f8faf8;
-            border-radius: 18px;
-            padding: 3px 3px 3px 8px;
-            border: 1px solid var(--border-light);
-        }
-        .currency-row .lbl {
-            font-size: 0.65rem;
-            font-weight: 600;
-            color: var(--text2);
-            white-space: nowrap;
-        }
-        .cur-toggle {
-            display: flex;
-            background: #e6ece7;
-            border-radius: 16px;
-            padding: 2px;
-            gap: 1px;
-        }
-        .cur-btn {
-            padding: 6px 11px;
-            border: none;
-            background: transparent;
-            border-radius: 14px;
-            cursor: pointer;
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: #5a6d5e;
-            transition: 0.2s;
-            min-height: 32px;
-        }
-        .cur-btn.active {
-            background: #fff;
-            color: #0a3b26;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-            font-weight: 700;
-        }
-        .rate-input {
-            width: 55px;
-            padding: 5px 4px;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            font-size: 0.65rem;
-            text-align: center;
-            background: #fff;
-            color: var(--text);
-            min-height: 30px;
-        }
-        .card {
-            background: var(--card);
-            border-radius: var(--radius);
-            padding: 12px 14px;
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border-light);
-        }
-        .card-title {
-            font-size: 0.85rem;
-            font-weight: 700;
-            color: #0a3b26;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding-bottom: 7px;
-            border-bottom: 2px solid var(--border-light);
-        }
-        .card-title .dot {
-            width: 26px;
-            height: 26px;
-            border-radius: 7px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            flex-shrink: 0;
-        }
-        .dot-buy {
-            background: var(--green-light);
-            color: var(--green);
-        }
-        .dot-sell {
-            background: var(--red-light);
-            color: var(--red);
-        }
-        .dot-form {
-            background: var(--gold-light);
-            color: var(--gold);
-        }
-        .form-group {
-            margin-bottom: 7px;
-        }
-        .form-group label {
-            display: block;
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: #4a5d4e;
-            margin-bottom: 2px;
-        }
-        .form-group label .u {
-            font-weight: 400;
-            color: #8a9a8e;
-            font-size: 0.63rem;
-        }
-        .form-row {
-            display: flex;
-            gap: 7px;
-        }
-        .form-row .form-group {
-            flex: 1;
-        }
-        input[type="text"],
-        input[type="number"] {
-            width: 100%;
-            padding: 10px 12px;
-            border: 2px solid var(--border);
-            border-radius: var(--radius-xs);
-            font-size: 0.85rem;
-            transition: 0.2s;
-            background: #fafcfb;
-            color: var(--text);
-            outline: none;
-            min-height: 44px;
-        }
-        input:focus {
-            border-color: var(--green);
-            box-shadow: 0 0 0 3px rgba(10, 110, 74, 0.06);
-            background: #fff;
-        }
-        .btn {
-            padding: 12px 18px;
-            border: none;
-            border-radius: var(--radius-xs);
-            cursor: pointer;
-            font-size: 0.82rem;
-            font-weight: 600;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-            white-space: nowrap;
-            min-height: 46px;
-        }
-        .btn-calc {
-            background: var(--green);
-            color: #fff;
-            width: 100%;
-            font-size: 0.9rem;
-            border-radius: var(--radius-sm);
-            box-shadow: 0 4px 14px rgba(10, 110, 74, 0.28);
-            font-weight: 700;
-        }
-        .btn-calc:active {
-            background: #065837;
-            transform: scale(0.97);
-        }
-        .btn-add {
-            background: #fff;
-            color: var(--green);
-            border: 2px solid var(--green);
-            width: 100%;
-            font-weight: 700;
-            margin-top: 10px;
-        }
-        .btn-add:active {
-            background: var(--green-light);
-        }
-        .btn-outline {
-            background: #fff;
-            color: var(--green);
-            border: 2px solid var(--green);
-        }
-        .btn-outline:active {
-            background: #f0faf6;
-        }
-        .btn-ghost {
-            background: #fff;
-            color: #777;
-            border: 2px solid #ddd;
-        }
-        .btn-ghost:active {
-            background: #fafafa;
-        }
-        .btn-danger {
-            background: #fff;
-            color: var(--red);
-            border: 2px solid #e8c8c4;
-        }
-        .btn-danger:active {
-            background: #fef5f4;
-            border-color: var(--red);
-        }
-        .btn-sm {
-            padding: 8px 13px;
-            font-size: 0.7rem;
-            min-height: 36px;
-            border-radius: 18px;
-        }
-        .btn-group {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-            margin-top: 4px;
-        }
-        .result-panel {
-            display: none;
-            background: #f9fbfa;
-            border: 2px dashed var(--green);
-            border-radius: var(--radius-sm);
-            padding: 10px 12px;
-            margin-top: 8px;
-            animation: fadeIn 0.3s ease;
-        }
-        .result-panel.show {
-            display: block;
-        }
-        .result-panel.sell-result {
-            border-color: var(--red);
-            background: #fef9f9;
-        }
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(-6px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        .result-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 5px 0;
-            font-size: 0.75rem;
-            border-bottom: 1px dotted #e8efe9;
-            gap: 8px;
-        }
-        .result-row:last-child {
-            border-bottom: none;
-        }
-        .result-label {
-            color: var(--text2);
-            flex-shrink: 0;
-        }
-        .result-value {
-            font-weight: 700;
-            text-align: right;
-            color: #0a3b26;
-        }
-        .profit-highlight {
-            font-size: 0.85rem;
-        }
-        .profit-highlight.positive {
-            color: #1e7e34;
-        }
-        .profit-highlight.negative {
-            color: #c0392b;
-        }
-        .table-wrap {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--border-light);
-            max-height: 45vh;
-            overflow-y: auto;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.64rem;
-            min-width: 850px;
-        }
-        table thead {
-            background: #f5f8f6;
-            position: sticky;
-            top: 0;
-            z-index: 2;
-        }
-        table th {
-            padding: 7px 4px;
-            text-align: center;
-            font-weight: 700;
-            font-size: 0.6rem;
-            color: #3d5548;
-            border-bottom: 2px solid #dde4e0;
-            white-space: nowrap;
-        }
-        table td {
-            padding: 6px 4px;
-            text-align: center;
-            border-bottom: 1px solid var(--border-light);
-            white-space: nowrap;
-            font-size: 0.62rem;
-        }
-        tr.row-buy {
-            border-left: 3px solid var(--green);
-        }
-        tr.row-sell {
-            border-left: 3px solid var(--red);
-        }
-        .badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 0.58rem;
-            font-weight: 700;
-        }
-        .badge-buy {
-            background: var(--green-light);
-            color: var(--green);
-        }
-        .badge-sell {
-            background: var(--red-light);
-            color: var(--red);
-        }
-        .t-profit {
-            color: #1e7e34;
-            font-weight: 700;
-        }
-        .t-loss {
-            color: #c0392b;
-            font-weight: 700;
-        }
-        .del-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: #cbd5e0;
-            font-size: 0.9rem;
-            padding: 3px 7px;
-            border-radius: 50%;
-            transition: 0.2s;
-            min-height: 30px;
-        }
-        .del-btn:active {
-            color: #e74c3c;
-            background: #fef5f4;
-        }
-        .empty-state {
-            text-align: center;
-            padding: 20px;
-            color: #b0bdb7;
-        }
-        .summary-card {
-            background: #fff;
-            border-radius: var(--radius);
-            padding: 12px 14px;
-            box-shadow: var(--shadow);
-            border: 2px solid #e4ebe6;
-            position: relative;
-        }
-        .summary-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 12px;
-            right: 12px;
-            height: 2px;
-            background: linear-gradient(90deg, var(--green), var(--gold), var(--red));
-        }
-        .summary-title {
-            font-size: 0.82rem;
-            font-weight: 700;
-            color: #0a3b26;
-            margin-bottom: 8px;
-            padding-top: 5px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .summary-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 5px;
-        }
-        @media (min-width: 380px) {
-            .summary-grid {
-                grid-template-columns: 1fr 1fr 1fr;
-            }
-        }
-        .s-item {
-            background: #f9fbfa;
-            border-radius: var(--radius-sm);
-            padding: 8px;
-            text-align: center;
-            border: 1px solid var(--border-light);
-        }
-        .s-item .s-label {
-            font-size: 0.6rem;
-            color: #6b7d70;
-            margin-bottom: 1px;
-        }
-        .s-item .s-value {
-            font-size: 0.82rem;
-            font-weight: 700;
-            color: #0a3b26;
-        }
-        .s-item.hl-profit .s-value {
-            color: #1e7e34;
-        }
-        .s-item.hl-loss .s-value {
-            color: #c0392b;
-        }
-        .sticky-bottom {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: #fff;
-            border-top: 2px solid var(--border-light);
-            padding: 7px 10px;
-            padding-bottom: calc(7px + var(--safe-bottom));
-            z-index: 20;
-            display: flex;
-            gap: 7px;
-            justify-content: center;
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
-        }
-        .sticky-bottom .btn {
-            flex: 1;
-            max-width: 180px;
-        }
-        .toast {
-            position: fixed;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%) translateY(140px);
-            background: #1a3c2a;
-            color: #fff;
-            padding: 9px 20px;
-            border-radius: 22px;
-            font-weight: 600;
-            font-size: 0.72rem;
-            z-index: 100;
-            transition: transform 0.3s ease;
-            box-shadow: 0 5px 18px rgba(0, 0, 0, 0.2);
-            pointer-events: none;
-            white-space: nowrap;
-        }
-        .toast.show {
-            transform: translateX(-50%) translateY(0);
-        }
-        .toast.success {
-            background: #0a6e4a;
-        }
-        .toast.error {
-            background: #c0392b;
-        }
-        #captureArea {
-            position: fixed;
-            left: -9999px;
-            top: 0;
-            width: 880px;
-            background: #fff;
-            padding: 18px;
-            border-radius: 12px;
-            font-family: var(--font);
+        .receipt-shadow {
+            box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.1);
         }
     </style>
 </head>
-<body>
-    <div class="app">
-        <div class="header">
-            <div class="logo-icon">🧮</div>
-            <h1>គណនាទំនិញ</h1>
-            <p class="sub">ទិញចូល · លក់ចេញ · ខាតចំណេញ</p>
-        </div>
-        <div class="top-bar">
-            <div class="seg-group">
-                <button class="seg-btn buy-active active" id="btnBuy">📥 ទិញចូល</button>
-                <button class="seg-btn sell-active" id="btnSell">📤 លក់ចេញ</button>
+<body class="bg-slate-50 text-slate-800 flex flex-col min-h-screen">
+
+    <!-- Header Section -->
+    <header class="bg-slate-900 text-white sticky top-0 z-50 px-4 py-4 flex items-center justify-between border-b border-slate-800">
+        <div class="flex items-center space-x-3">
+            <div class="gradient-bg text-white p-2.5 rounded-xl shadow-md">
+                <i class="fa-solid fa-coins text-lg"></i>
             </div>
-            <div class="currency-row">
-                <span class="lbl">រូបិយប័ណ្ណ</span>
-                <div class="cur-toggle">
-                    <button class="cur-btn active" id="btnUSD">$ ដុល្លា</button>
-                    <button class="cur-btn" id="btnKHR">៛ រៀល</button>
+            <div>
+                <h1 class="text-base font-bold leading-tight tracking-wide">ប្រព័ន្ធគណនាទិញ-លក់</h1>
+                <p class="text-[10px] text-slate-400 font-medium">ជំនួយការហិរញ្ញវត្ថុឆ្លាតវៃ</p>
+            </div>
+        </div>
+        <div class="text-right">
+            <span id="current-time" class="text-xs font-semibold font-mono bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 text-blue-400">--:--:--</span>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow p-4 max-w-md mx-auto w-full pb-28">
+        
+        <!-- Transaction Type Switcher -->
+        <div class="bg-slate-200/60 p-1.5 rounded-2xl flex mb-6 border border-slate-300/40">
+            <button onclick="setType('buy')" id="btn-buy" class="flex-1 py-3 rounded-xl text-sm font-bold flex items-center justify-center space-x-2 transition-all duration-300 bg-white text-blue-600 shadow-sm">
+                <i class="fa-solid fa-circle-down"></i>
+                <span>ទិញចូល (Buy)</span>
+            </button>
+            <button onclick="setType('sell')" id="btn-sell" class="flex-1 py-3 rounded-xl text-sm font-bold flex items-center justify-center space-x-2 transition-all duration-300 text-slate-500 hover:text-slate-800">
+                <i class="fa-solid fa-circle-up"></i>
+                <span>លក់ចេញ (Sell)</span>
+            </button>
+        </div>
+
+        <!-- Shop Profile Configuration Card -->
+        <div class="bg-white rounded-2xl premium-shadow border border-slate-100 p-5 mb-5 space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h2 class="text-sm font-bold text-slate-800 flex items-center">
+                    <span class="w-2.5 h-4 bg-indigo-600 rounded-sm mr-2 block"></span>
+                    កំណត់ព័ត៌មានហាង & យីហោ (លើវិក្កយបត្រ)
+                </h2>
+                <i class="fa-solid fa-store text-indigo-500 text-base"></i>
+            </div>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase">រូបភាពគណនី / ឡូហ្គោហាង (Profile / Logo)</label>
+                        <button onclick="toggleField('logo')" id="tog-logo" class="text-[11px] font-bold text-blue-600 flex items-center space-x-1" title="លាក់/បង្ហាញ លើវិក្កយបត្រ">
+                            <i class="fa-solid fa-eye"></i> <span>បង្ហាញ</span>
+                        </button>
+                    </div>
+                    <input type="file" id="shop-logo-input" accept="image/*" onchange="loadLogo(event)" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100 cursor-pointer">
                 </div>
-                <input type="number" class="rate-input" id="exchangeRate" value="4000" min="1" step="1" oninput="onRateChange()">
-                <span style="font-size:0.6rem;">៛/$</span>
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase">ឈ្មោះហាង / ស្លាកយីហោ</label>
+                        <button onclick="toggleField('shopName')" id="tog-shopName" class="text-[11px] font-bold text-blue-600 flex items-center space-x-1">
+                            <i class="fa-solid fa-eye"></i> <span>បង្ហាញ</span>
+                        </button>
+                    </div>
+                    <input type="text" id="shop-name-input" oninput="updateShopInfo()" placeholder="ឧ. ហាងលក់ចាប់ហួយ ម៉ាក់ ម៉ារី" class="w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition">
+                </div>
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase">លេខទូរស័ព្ទទំនាក់ទំនង</label>
+                        <button onclick="toggleField('phone')" id="tog-phone" class="text-[11px] font-bold text-blue-600 flex items-center space-x-1">
+                            <i class="fa-solid fa-eye"></i> <span>បង្ហាញ</span>
+                        </button>
+                    </div>
+                    <input type="text" id="shop-phone-input" oninput="updateShopInfo()" placeholder="ឧ. 012 345 678 / 098 765 432" class="w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition">
+                </div>
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase">អត្ថបទខ្លីបញ្ជាក់បន្ថែម (នៅផ្នែកខាងក្រោមបង្អស់)</label>
+                        <button onclick="toggleField('note')" id="tog-note" class="text-[11px] font-bold text-blue-600 flex items-center space-x-1">
+                            <i class="fa-solid fa-eye"></i> <span>បង្ហាញ</span>
+                        </button>
+                    </div>
+                    <textarea id="shop-note-input" oninput="updateShopInfo()" placeholder="ឧ. សូមពិនិត្យទំនិញ និងលុយកាក់ឱ្យបានត្រឹមត្រូវ មុនចាកចេញ។ សូមអរគុណ!" rows="2" class="w-full bg-slate-50/80 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition"></textarea>
+                </div>
             </div>
         </div>
 
-        <div class="card">
-            <div class="card-title">
-                <span class="dot dot-form" id="formIcon">📝</span>
-                <span id="formTitle">បំពេញព័ត៌មាន ទិញចូល</span>
+        <!-- Activity Photos Section (New Feature) -->
+        <div class="bg-white rounded-2xl premium-shadow border border-slate-100 p-5 mb-5 space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h2 class="text-sm font-bold text-slate-800 flex items-center">
+                    <span class="w-2.5 h-4 bg-violet-600 rounded-sm mr-2 block"></span>
+                    រូបភាពសកម្មភាពផ្ញើរ ឬបង្ហាញទំនិញ
+                </h2>
+                <button onclick="toggleField('activityImages')" id="tog-activityImages" class="text-[11px] font-bold text-blue-600 flex items-center space-x-1">
+                    <i class="fa-solid fa-eye"></i> <span>បង្ហាញ</span>
+                </button>
             </div>
-            <form autocomplete="off" onsubmit="return false;">
-                <div class="form-group">
-                    <label>🏷️ ឈ្មោះទំនិញ <span class="u">(ស្រេចចិត្ត)</span></label>
-                    <input type="text" id="itemName" placeholder="ឧ. ត្រីសាលម៉ុង">
+            <div class="space-y-3 text-xs">
+                <p class="text-[11px] text-slate-400">អ្នកអាចបញ្ចូលរូបថតការផ្ញើទំនិញ ឡានដឹក ឬផលិតផលជាក់ស្តែង ដើម្បីបង្ហាញនៅបាតវិក្កយបត្រ។</p>
+                <div>
+                    <input type="file" id="activity-images-input" accept="image/*" multiple onchange="loadActivityImages(event)" class="hidden">
+                    <button onclick="document.getElementById('activity-images-input').click()" class="w-full bg-violet-50 hover:bg-violet-100 active:scale-[0.99] text-violet-700 border border-dashed border-violet-300 rounded-xl py-3 text-xs font-bold flex items-center justify-center space-x-2 transition cursor-pointer">
+                        <i class="fa-solid fa-images text-sm"></i>
+                        <span>ជ្រើសរើសរូបភាពសកម្មភាព...</span>
+                    </button>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>📦 ចំនួន <span class="u">(ឯកតា)</span></label>
-                        <input type="number" id="quantity" placeholder="0" min="0" step="any" inputmode="decimal">
-                    </div>
-                    <div class="form-group">
-                        <label id="priceLabel">💵 តម្លៃទិញ/ឯកតា</label>
-                        <input type="number" id="unitPrice" placeholder="0" min="0" step="0.01" inputmode="decimal">
-                    </div>
+                <!-- Mini preview list in settings -->
+                <div id="activity-inputs-preview" class="grid grid-cols-4 gap-2 pt-1 empty:hidden">
+                    <!-- Javascript will append loaded thumbnails here -->
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>🔻 បញ្ចុះតម្លៃ (%)</label>
-                        <input type="number" id="discountPercent" placeholder="0" min="0" max="100" step="0.01" inputmode="decimal">
-                    </div>
-                    <div class="form-group">
-                        <label>🚚 ថ្លៃឈ្នួលដឹក</label>
-                        <input type="number" id="shippingCost" placeholder="0" min="0" step="0.01" inputmode="decimal">
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>⚖️ គីឡូដើម <span class="u">(kg)</span></label>
-                        <input type="number" id="originalKg" placeholder="0" min="0" step="0.01" inputmode="decimal">
-                    </div>
-                    <div class="form-group">
-                        <label>✂️ កាត់គីឡូចោល <span class="u">(kg)</span></label>
-                        <input type="number" id="cutKg" placeholder="0" min="0" step="0.01" inputmode="decimal">
-                    </div>
-                </div>
-                <div class="form-group" id="sellPriceGroup" style="display:none;">
-                    <label>🏷️ តម្លៃលក់ក្នុងមួយឯកតា</label>
-                    <input type="number" id="sellPrice" placeholder="0" min="0" step="0.01" inputmode="decimal">
-                </div>
-                <button type="button" class="btn btn-calc" id="calcBtn">🔢 គណនា</button>
-                <div class="result-panel" id="resultPanel">
-                    <div class="result-row"><span class="result-label">💰 តម្លៃដើមសរុប</span><span class="result-value" id="resTotalCost">0.00</span></div>
-                    <div class="result-row"><span class="result-label">💲 ក្រោយបញ្ចុះតម្លៃ</span><span class="result-value" id="resAfterDiscount">0.00</span></div>
-                    <div class="result-row"><span class="result-label">📊 តម្លៃសរុបពិត (បូកឈ្នួលដឹក)</span><span class="result-value" id="resEffective">0.00</span></div>
-                    <div class="result-row"><span class="result-label">✅ គីឡូសុទ្ធ</span><span class="result-value" id="resNetKg">0.00 kg</span></div>
-                    <div class="result-row"><span class="result-label">💎 តម្លៃក្នុង១គីឡូសុទ្ធ</span><span class="result-value" id="resPricePerKg">0.00</span></div>
-                    <div class="result-row" id="resProfitRow" style="display:none;"><span class="result-label">📈 ខាត/ចំណេញប៉ាន់ស្មាន</span><span class="result-value" id="resProfitLoss">0.00</span></div>
-                    <button type="button" class="btn btn-add" id="addToTableBtn">➕ បន្ថែមចូលតារាង</button>
-                </div>
-                <div class="btn-group">
-                    <button type="button" class="btn btn-ghost btn-sm" onclick="clearForm()">🔄 សម្អាតទម្រង់</button>
-                </div>
-            </form>
-        </div>
-
-        <div class="card">
-            <div class="card-title"><span class="dot" style="background:#eef4fb;color:#2c5f8a;">📑</span> តារាងទិន្នន័យទាំងអស់</div>
-            <div class="table-wrap">
-                <table id="dataTable">
-                    <thead>
-                        <tr>
-                            <th>ល.រ</th><th>ប្រភេទ</th><th>ឈ្មោះ</th><th>ចំនួន</th><th>តម្លៃដើម</th><th>បញ្ចុះ%</th><th>ក្រោយបញ្ចុះ</th><th>ឈ្នួលដឹក</th><th>តម្លៃសរុប</th><th>គីឡូដើម</th><th>កាត់គីឡូ</th><th>គីឡូសុទ្ធ</th><th>តម្លៃ/គីឡូ</th><th>ខាត/ចំណេញ</th><th>លុប</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody"><tr class="empty-row"><td colspan="15"><div class="empty-state"><span style="font-size:2rem;">📭</span><p>មិនទាន់មានធាតុចូល</p></div></td></tr></tbody>
-                </table>
             </div>
         </div>
 
-        <div class="summary-card">
-            <div class="summary-title">📊 តារាងពេលវាលា (សង្ខេបសរុប)</div>
-            <div class="summary-grid">
-                <div class="s-item"><div class="s-label">សរុបតម្លៃដើម</div><div class="s-value" id="sumCost">0.00</div></div>
-                <div class="s-item"><div class="s-label">សរុបក្រោយបញ្ចុះ</div><div class="s-value" id="sumAfterDisc">0.00</div></div>
-                <div class="s-item"><div class="s-label">សរុបឈ្នួលដឹក</div><div class="s-value" id="sumShip">0.00</div></div>
-                <div class="s-item"><div class="s-label">សរុបចំណាយពិត</div><div class="s-value" id="sumEff">0.00</div></div>
-                <div class="s-item"><div class="s-label">សរុបគីឡូដើម</div><div class="s-value" id="sumOrigKg">0.00 kg</div></div>
-                <div class="s-item"><div class="s-label">សរុបគីឡូសុទ្ធ</div><div class="s-value" id="sumNetKg">0.00 kg</div></div>
-                <div class="s-item"><div class="s-label">សរុបចំណូលលក់</div><div class="s-value" id="sumRev">0.00</div></div>
-                <div class="s-item" id="sumPlItem"><div class="s-label">សរុបខាត/ចំណេញ</div><div class="s-value" id="sumPL">0.00</div></div>
+        <!-- Form Input Card -->
+        <div class="bg-white rounded-2xl premium-shadow border border-slate-100 p-5 mb-5 space-y-5">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h2 class="text-sm font-bold text-slate-800 flex items-center">
+                    <span class="w-2.5 h-4 bg-blue-600 rounded-sm mr-2 block"></span>
+                    បញ្ចូលព័ត៌មានប្រតិបត្តិការ
+                </h2>
+                <i class="fa-solid fa-calculator text-slate-300 text-lg"></i>
+            </div>
+
+            <!-- Product Name -->
+            <div class="relative">
+                <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">ឈ្មោះទំនិញ / មុខទំនិញ</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <i class="fa-solid fa-box-open text-xs"></i>
+                    </span>
+                    <input type="text" id="prod-name" placeholder="ឧ. ស្រូវផ្ការំដួល, ផ្លែស្វាយ..." class="w-full bg-slate-50/80 border border-slate-200 rounded-xl pl-10 pr-3 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                </div>
+            </div>
+
+            <!-- Currency Selection & Base Price -->
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">រូបិយប័ណ្ណ</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                            <i class="fa-solid fa-money-bill-transfer text-xs"></i>
+                        </span>
+                        <select id="currency" onchange="calculate()" class="w-full bg-slate-50/80 border border-slate-200 rounded-xl pl-10 pr-3 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition appearance-none">
+                            <option value="KHR">៛ រៀល (KHR)</option>
+                            <option value="USD">$ ដុល្លារ (USD)</option>
+                        </select>
+                        <span class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400 text-xs">
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </span>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">តម្លៃដើម / ឯកតា</label>
+                        <button onclick="toggleField('price')" id="tog-price" class="text-[11px] font-bold text-blue-600 flex items-center space-x-1">
+                            <i class="fa-solid fa-eye"></i> <span>បង្ហាញ</span>
+                        </button>
+                    </div>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                            <i class="fa-solid fa-tag text-xs"></i>
+                        </span>
+                        <input type="number" id="base-price" oninput="calculate()" placeholder="0.00" class="w-full bg-slate-50/80 border border-slate-200 rounded-xl pl-10 pr-3 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Weights Section -->
+            <div class="p-4 bg-amber-50/40 rounded-2xl border border-amber-100/70 space-y-3">
+                <div class="flex justify-between items-center">
+                    <span class="block text-xs font-bold text-amber-800 flex items-center">
+                        <i class="fa-solid fa-scale-balanced mr-2 text-amber-600"></i> គណនាទម្ងន់ទំនិញ (គីឡូក្រាម)
+                    </span>
+                    <div class="flex space-x-3">
+                        <button onclick="toggleField('baseWeight')" id="tog-baseWeight" class="text-[10px] font-bold text-blue-600 flex items-center space-x-1">
+                            <i class="fa-solid fa-eye"></i> <span>គីឡូដើម</span>
+                        </button>
+                        <button onclick="toggleField('minusWeight')" id="tog-minusWeight" class="text-[10px] font-bold text-blue-600 flex items-center space-x-1">
+                            <i class="fa-solid fa-eye"></i> <span>កាត់គីឡូ</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-bold text-amber-700/80 mb-1">ទម្ងន់ដើមសរុប</label>
+                        <div class="relative">
+                            <input type="number" id="base-weight" oninput="calculate()" placeholder="0.00" class="w-full bg-white border border-amber-200/80 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500 transition">
+                            <span class="absolute right-3 inset-y-0 flex items-center text-[10px] font-bold text-slate-400">គីឡូ</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-amber-700/80 mb-1">ដក / កាត់គីឡូ</label>
+                        <div class="relative">
+                            <input type="number" id="minus-weight" oninput="calculate()" placeholder="0.00" class="w-full bg-white border border-amber-200/80 rounded-xl px-3 py-2.5 text-sm font-bold text-red-600 focus:outline-none focus:ring-2 focus:ring-amber-500 transition">
+                            <span class="absolute right-3 inset-y-0 flex items-center text-[10px] font-bold text-red-400">គីឡូ</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expenses / Reductions -->
+            <div class="grid grid-cols-2 gap-4 pt-1">
+                <div>
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">បញ្ចុះតម្លៃ (Discount)</label>
+                        <button onclick="toggleField('discount')" id="tog-discount" class="text-[11px] font-bold text-blue-600 flex items-center space-x-1">
+                            <i class="fa-solid fa-eye"></i> <span>បង្ហាញ</span>
+                        </button>
+                    </div>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 text-xs">
+                            <i class="fa-solid fa-percent text-emerald-500"></i>
+                        </span>
+                        <input type="number" id="discount" oninput="calculate()" placeholder="0.00" class="w-full bg-slate-50/80 border border-slate-200 rounded-xl pl-8 pr-3 py-2.5 text-sm font-bold text-emerald-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">ថ្លៃឈ្នួលដឹកជញ្ជូន</label>
+                        <button onclick="toggleField('shipping')" id="tog-shipping" class="text-[11px] font-bold text-blue-600 flex items-center space-x-1">
+                            <i class="fa-solid fa-eye"></i> <span>បង្ហាញ</span>
+                        </button>
+                    </div>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 text-xs">
+                            <i class="fa-solid fa-truck text-orange-500"></i>
+                        </span>
+                        <input type="number" id="shipping" oninput="calculate()" placeholder="0.00" class="w-full bg-slate-50/80 border border-slate-200 rounded-xl pl-8 pr-3 py-2.5 text-sm font-bold text-orange-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Live Calculation Badge -->
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 flex flex-col">
+                    <span class="text-[10px] font-semibold text-slate-400 uppercase">ទម្ងន់ទូទាត់</span>
+                    <span class="text-sm font-bold text-slate-700 mt-0.5"><span id="actual-weight-lbl">0.00</span> គីឡូ</span>
+                </div>
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 flex flex-col">
+                    <span class="text-[10px] font-semibold text-slate-400 uppercase">ថ្លៃទំនិញសរុប</span>
+                    <span id="subtotal-lbl" class="text-sm font-bold text-slate-700 mt-0.5">0.00</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profit & Loss Target -->
+        <div class="bg-white rounded-2xl premium-shadow border border-slate-100 p-5 mb-6">
+            <h2 class="text-sm font-bold text-slate-800 pb-3 border-b border-slate-100 flex items-center mb-4">
+                <span class="w-2.5 h-4 bg-emerald-500 rounded-sm mr-2 block"></span>
+                វិភាគការចំណេញ ឬខាតប៉ាន់ស្មាន
+            </h2>
+            <div class="bg-emerald-50/30 p-4 rounded-2xl border border-emerald-100/50 space-y-3">
+                <label class="block text-xs font-bold text-emerald-800 leading-relaxed">តម្លៃប៉ាន់ស្មាន លក់ចេញ/ទិញចូល ក្នុង ១ ឯកតា</label>
+                <div class="flex space-x-2">
+                    <div class="relative flex-grow">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-emerald-500">
+                            <i class="fa-solid fa-chart-line text-xs"></i>
+                        </span>
+                        <input type="number" id="target-unit-price" oninput="calculate()" placeholder="បញ្ចូលតម្លៃរំពឹងទុក..." class="w-full bg-white border border-emerald-200 rounded-xl pl-8 pr-3 py-2.5 text-sm font-bold text-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition">
+                    </div>
+                    <div class="bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center shadow-sm" id="target-curr-lbl">
+                        KHR
+                    </div>
+                </div>
+                <p class="text-[10px] text-slate-400">ប្រព័ន្ធនឹងធ្វើការប្រៀបធៀបដើម្បីរកការចំណេញ ឬខាតភ្លាមៗជូនអ្នក។</p>
+            </div>
+        </div>
+
+        <!-- Import & Export JSON Data Card -->
+        <div class="bg-gradient-to-br from-indigo-900 to-slate-900 rounded-2xl premium-shadow border border-slate-800 p-5 mb-6 text-white space-y-4">
+            <div class="flex items-center justify-between pb-2 border-b border-white/10">
+                <h2 class="text-xs font-bold tracking-wider uppercase flex items-center">
+                    <i class="fa-solid fa-file-invoice-dollar text-emerald-400 mr-2 text-sm"></i>
+                    រក្សាទុកទិន្នន័យ & នាំចូលកែសម្រួល
+                </h2>
+                <span class="bg-emerald-500/20 text-emerald-400 text-[9px] px-2 py-0.5 rounded-md font-bold uppercase">JSON</span>
+            </div>
+            <p class="text-[11px] text-slate-300/90 leading-relaxed">
+                អ្នកអាចរក្សាទុកឯកសារប្រតិបត្តិការនេះចូលទូរស័ព្ទ ដើម្បីយកមកដំណើរការកែសម្រួល ឬប្រើប្រាស់ឡើងវិញនៅពេលក្រោយបាន។
+            </p>
+            <div class="grid grid-cols-2 gap-3 pt-1 text-xs">
+                <!-- Export Button -->
+                <button onclick="exportData()" class="bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] py-2.5 px-3 rounded-xl font-bold flex items-center justify-center space-x-2 transition duration-200">
+                    <i class="fa-solid fa-file-export"></i>
+                    <span>រក្សាទុកឯកសារ</span>
+                </button>
+                <!-- Import Button Wrapper -->
+                <div class="relative">
+                    <input type="file" id="import-file-input" accept=".json" onchange="importData(event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                    <button class="w-full bg-slate-800 hover:bg-slate-700 active:scale-[0.98] py-2.5 px-3 rounded-xl font-bold flex items-center justify-center space-x-2 transition duration-200 border border-slate-700">
+                        <i class="fa-solid fa-file-import text-emerald-400"></i>
+                        <span>នាំចូលមកកែវិញ</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Premium Receipt Section for Saving as Image -->
+        <div id="report-card" class="bg-white rounded-3xl receipt-shadow border border-slate-100 overflow-hidden mb-8 relative">
+            <!-- Header Pattern and Info -->
+            <div class="gradient-bg text-white p-6 relative">
+                <!-- Decorative Circle Backgrounds -->
+                <div class="absolute -top-12 -right-12 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
+                <div class="absolute -bottom-16 -left-16 w-36 h-36 bg-blue-500/20 rounded-full blur-2xl"></div>
+
+                <div class="flex justify-between items-start relative z-10">
+                    <div class="bg-white/20 px-2.5 py-1 rounded-lg text-[9px] uppercase font-bold tracking-widest text-white/95" id="badge-type">
+                        ទិញចូល
+                    </div>
+                    <div class="text-[10px] text-blue-100 font-mono font-bold" id="report-id">
+                        ID: TX-000000
+                    </div>
+                </div>
+
+                <!-- Shop Identity Section (Logo + Brand + Phone) -->
+                <div id="rep-shop-header" class="flex items-center space-x-3.5 mt-4 relative z-10 border-b border-white/10 pb-4 text-left">
+                    <div id="rep-shop-logo-container" class="w-14 h-14 rounded-full bg-white/15 border border-white/30 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
+                        <img id="rep-shop-logo" src="https://placehold.co/100x100/3b82f6/ffffff?text=SHOP" alt="Logo" class="w-full h-full object-cover">
+                    </div>
+                    <div class="text-left flex-grow">
+                        <h2 id="rep-shop-name" class="text-base font-extrabold tracking-wide leading-snug">យីហោហាងរបស់អ្នក</h2>
+                        <p id="rep-shop-phone" class="text-[10px] text-blue-100/90 font-semibold mt-0.5"><i class="fa-solid fa-phone text-[8px] mr-1"></i> លេខទូរស័ព្ទ៖ មិនទាន់កំណត់</p>
+                    </div>
+                </div>
+
+                <div class="text-center mt-4 relative z-10">
+                    <h3 class="text-lg font-bold tracking-wide">របាយការណ៍ទូទាត់ប្រាក់</h3>
+                    <p class="text-xs text-blue-100/90 mt-1" id="report-date">ថ្ងៃទី -- ខែ -- ឆ្នាំ --</p>
+                </div>
+            </div>
+
+            <!-- Receipt Teeth Cut Design (Visual Only) -->
+            <div class="flex justify-between px-2 -mt-1.5 relative z-20">
+                <div class="flex space-x-1.5 w-full justify-around">
+                    <script>
+                        for(let i=0; i<15; i++) {
+                            document.write('<div class="w-3 h-3 bg-slate-50/50 rounded-full transform rotate-45"></div>');
+                        }
+                    </script>
+                </div>
+            </div>
+
+            <!-- Receipt Content -->
+            <div class="p-6 space-y-5 bg-white">
+                <!-- Product Details -->
+                <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                    <div>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">មុខទំនិញដែលបានគណនា</span>
+                        <strong id="rep-prod-name" class="text-base font-bold text-slate-800 mt-1 block">-</strong>
+                    </div>
+                    <div class="bg-blue-50 text-blue-600 px-3 py-2 rounded-xl text-center">
+                        <i class="fa-solid fa-receipt text-base"></i>
+                    </div>
+                </div>
+
+                <!-- Receipt Table List -->
+                <div class="space-y-3.5 text-sm">
+                    <div id="row-rep-base-price" class="flex justify-between items-center text-slate-500">
+                        <span>តម្លៃឯកតា៖</span>
+                        <span id="rep-base-price" class="font-bold text-slate-800">0.00</span>
+                    </div>
+                    <div id="row-rep-base-weight" class="flex justify-between items-center text-slate-500">
+                        <span>ទម្ងន់ដើមសរុប៖</span>
+                        <span id="rep-base-weight" class="font-bold text-slate-800">0.00 គីឡូ</span>
+                    </div>
+                    <div id="row-rep-minus-weight" class="flex justify-between items-center text-red-500/90">
+                        <span>ដក/កាត់គីឡូ៖</span>
+                        <span id="rep-minus-weight" class="font-bold">- 0.00 គីឡូ</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-slate-50 px-3 py-2.5 rounded-xl border border-slate-100 font-semibold text-slate-700">
+                        <span class="text-xs">ទម្ងន់ទូទាត់ជាក់ស្តែង៖</span>
+                        <span id="rep-actual-weight" class="font-bold text-blue-600">0.00 គីឡូ</span>
+                    </div>
+                    
+                    <div class="border-t border-dashed border-slate-200 my-4"></div>
+                    
+                    <div id="row-rep-discount" class="flex justify-between items-center text-emerald-600/90">
+                        <span>ការបញ្ចុះតម្លៃ (Discount)៖</span>
+                        <span id="rep-discount" class="font-bold">- 0.00</span>
+                    </div>
+                    <div id="row-rep-shipping" class="flex justify-between items-center text-orange-500/90">
+                        <span>ថ្លៃឈ្នួលដឹកជញ្ជូន៖</span>
+                        <span id="rep-shipping" class="font-bold">+ 0.00</span>
+                    </div>
+
+                    <!-- Highlighted Grand Total -->
+                    <div class="bg-slate-900 text-white p-4 rounded-2xl flex justify-between items-center mt-5 shadow-inner">
+                        <div>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block" id="rep-total-label">ទឹកប្រាក់សរុបត្រូវទូទាត់</span>
+                            <span class="text-[9px] text-slate-500 block mt-0.5">(រាប់បញ្ចូលទាំងថ្លៃដឹក និងចុះថ្លៃ)</span>
+                        </div>
+                        <span id="rep-grand-total" class="text-xl font-black text-blue-400">0.00</span>
+                    </div>
+                </div>
+
+                <!-- Analysis Profit & Loss Dashboard inside Receipt (Always hidden when saving as image) -->
+                <div id="rep-profit-container" class="border-t border-slate-100 pt-4">
+                    <div id="profit-box" class="p-4 rounded-2xl text-center bg-slate-50 border border-slate-100">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block" id="profit-title">លទ្ធផលប៉ាន់ស្មាន</span>
+                        <div id="profit-value" class="text-xl font-black mt-1 text-slate-300">--</div>
+                        <p id="profit-desc" class="text-[10px] text-slate-400 mt-1.5">សូមបញ្ចូលតម្លៃរំពឹងទុក ដើម្បីវិភាគចំណេញ/ខាត</p>
+                    </div>
+                </div>
+
+                <!-- Bottom Shop Note / Disclaimer Section -->
+                <div id="rep-disclaimer-box" class="bg-slate-50 border border-slate-100/80 rounded-2xl p-3.5 text-center text-slate-500 text-xs mt-2">
+                    <p id="rep-shop-note" class="italic leading-relaxed">សូមអរគុណសម្រាប់ការគាំទ្រ! សូមពិនិត្យទំនិញ និងទូទាត់ប្រាក់ឱ្យបានត្រឹមត្រូវ។</p>
+                </div>
+
+                <!-- Activity Images Section (Appears at bottom vertically, stitched on save) -->
+                <div id="rep-activity-images-container" class="space-y-3.5 mt-4 border-t border-slate-100 pt-4 hidden">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">រូបភាពសកម្មភាពជាក់ស្តែង</span>
+                    <div id="rep-activity-images-list" class="flex flex-col space-y-3">
+                        <!-- Dynamic vertical images render here -->
+                    </div>
+                </div>
+
+                <!-- Fake stamp & Barcode for visual beauty -->
+                <div id="row-rep-barcode" class="flex justify-between items-center pt-4 border-t border-slate-100 text-[10px] text-slate-400">
+                    <div class="flex flex-col space-y-0.5">
+                        <span class="font-mono">VERIFIED BY SMART APP</span>
+                        <span class="text-[8px] text-slate-300 font-mono">MD5: B482F6D1A0</span>
+                    </div>
+                    <!-- Micro Barcode with its own quick hide option -->
+                    <div class="flex items-center space-x-2">
+                        <button onclick="toggleField('barcode')" id="tog-barcode" class="text-[10px] text-slate-300 hover:text-blue-500" title="លាក់/បង្ហាញ បាកូដ"><i class="fa-solid fa-eye"></i></button>
+                        <div id="barcode-gfx" class="flex flex-col items-end opacity-60">
+                            <div class="h-6 w-24 flex items-stretch">
+                                <script>
+                                    const bars = [1,2,1,3,1,2,3,1,2,1,2,1,3,1];
+                                    bars.forEach(w => {
+                                        document.write(`<div class="bg-slate-800 mr-[1px]" style="flex-grow: ${w}"></div>`);
+                                    });
+                                </script>
+                            </div>
+                            <span class="text-[8px] font-mono mt-0.5">APP-CALC-MOBILE</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stamp Badge -->
+                <div class="absolute bottom-16 right-6 opacity-10 pointer-events-none">
+                    <div class="w-16 h-16 border-4 border-blue-600 rounded-full flex items-center justify-center text-blue-600 font-black text-[10px] tracking-widest transform rotate-12">
+                        PAID
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Control Buttons -->
+        <div class="space-y-3">
+            <button onclick="saveAsImage()" class="w-full gradient-bg hover:opacity-95 active:scale-[0.98] text-white py-3.5 px-4 rounded-2xl font-bold shadow-lg shadow-blue-500/20 transition-all duration-200 flex items-center justify-center space-x-2 text-sm">
+                <i class="fa-solid fa-cloud-arrow-down text-base"></i>
+                <span>រក្សាទុករូបភាពរបាយការណ៍ (Save Image)</span>
+            </button>
+            <button onclick="resetForm()" class="w-full bg-slate-200/80 hover:bg-slate-200 active:scale-[0.98] text-slate-600 py-3 px-4 rounded-2xl font-bold transition-all duration-200 flex items-center justify-center space-x-2 text-xs">
+                <i class="fa-solid fa-arrows-rotate"></i>
+                <span>សម្អាតទិន្នន័យទាំងអស់ (Reset)</span>
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Bottom Nav Mobile Bar -->
+    <div class="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 py-3 px-5 shadow-2xl z-40 max-w-md mx-auto">
+        <div class="flex justify-between items-center text-xs">
+            <div class="flex items-center space-x-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span class="text-slate-400 font-semibold">កម្មវិធីដំណើរការធម្មតា</span>
+            </div>
+            <div class="text-slate-500 text-[11px] font-medium">
+                កំណែទម្រង់ v3.3 Premium 📱
             </div>
         </div>
     </div>
 
-    <div class="sticky-bottom">
-        <button class="btn btn-outline btn-sm" onclick="saveAsImage()">💾 រក្សាទុកជារូបភាព</button>
-        <button class="btn btn-danger btn-sm" onclick="clearAllData()">🗑️ លុបទាំងអស់</button>
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-slate-900/95 backdrop-blur-sm text-white px-5 py-3 rounded-2xl text-xs font-bold shadow-xl opacity-0 pointer-events-none transition-all duration-300 z-50 flex items-center space-x-2.5 border border-slate-800">
+        <div class="bg-emerald-500 text-white rounded-full p-1 w-5 h-5 flex items-center justify-center text-[10px]">
+            <i class="fa-solid fa-check"></i>
+        </div>
+        <span id="toast-msg">រក្សាទុកបានជោគជ័យ!</span>
     </div>
-    <div class="toast" id="toast"></div>
-    <div id="captureArea"><h2>📊 តារាងពេលវាលា</h2><div class="cap-date" id="captureDate"></div><div id="captureTableWrap"></div><div id="captureSummaryWrap"></div></div>
 
     <script>
-        (function() {
-            // State
-            let mode = 'buy'; // 'buy' | 'sell'
-            let currency = 'USD'; // 'USD' | 'KHR'
-            let rate = 4000;
-            let entries = [];
-            let counter = 0;
-            let lastCalc = null;
+        // App State for visibility fields
+        let visibleFields = {
+            logo: true,
+            shopName: true,
+            phone: true,
+            note: true,
+            price: true,
+            baseWeight: true,
+            minusWeight: true,
+            discount: true,
+            shipping: true,
+            barcode: true,
+            activityImages: true
+        };
 
-            // DOM
-            const $ = id => document.getElementById(id);
-            const dom = {
-                btnBuy: $('btnBuy'), btnSell: $('btnSell'), btnUSD: $('btnUSD'), btnKHR: $('btnKHR'),
-                exchangeRate: $('exchangeRate'), formTitle: $('formTitle'), formIcon: $('formIcon'),
-                priceLabel: $('priceLabel'), sellPriceGroup: $('sellPriceGroup'),
-                itemName: $('itemName'), quantity: $('quantity'), unitPrice: $('unitPrice'),
-                discountPercent: $('discountPercent'), shippingCost: $('shippingCost'),
-                originalKg: $('originalKg'), cutKg: $('cutKg'), sellPrice: $('sellPrice'),
-                resultPanel: $('resultPanel'), resTotalCost: $('resTotalCost'),
-                resAfterDiscount: $('resAfterDiscount'), resEffective: $('resEffective'),
-                resNetKg: $('resNetKg'), resPricePerKg: $('resPricePerKg'),
-                resProfitRow: $('resProfitRow'), resProfitLoss: $('resProfitLoss'),
-                addToTableBtn: $('addToTableBtn'), tableBody: $('tableBody'),
-                sumCost: $('sumCost'), sumAfterDisc: $('sumAfterDisc'), sumShip: $('sumShip'),
-                sumEff: $('sumEff'), sumOrigKg: $('sumOrigKg'), sumNetKg: $('sumNetKg'),
-                sumRev: $('sumRev'), sumPL: $('sumPL'), sumPlItem: $('sumPlItem'),
-                captureDate: $('captureDate'), captureTableWrap: $('captureTableWrap'),
-                captureSummaryWrap: $('captureSummaryWrap'), toast: $('toast')
-            };
+        let transactionType = 'buy'; // 'buy' or 'sell'
+        let shopLogoData = ''; // To hold logo image in base64 format
+        let activityImagesData = []; // Array of base64 strings for activities
+        
+        // Helper formatting functions
+        function formatNumber(num, currency) {
+            if (isNaN(num)) return "0.00";
+            if (currency === "KHR") {
+                return new Intl.NumberFormat('km-KH', { style: 'currency', currency: 'KHR', maximumFractionDigits: 0 }).format(num);
+            } else {
+                return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(num);
+            }
+        }
 
-            // Utils
-            const parseVal = id => { const v = parseFloat($(id).value); return isNaN(v) || v < 0 ? 0 : v; };
-            const fmt = (n, khr) => {
-                if (Math.abs(n) < 0.0001) return khr ? '0' : '0.00';
-                if (khr) return Math.round(n).toLocaleString('en-US');
-                return n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-            };
-            const sym = () => currency === 'KHR' ? '៛' : '$';
-            const fmtMoney = (usd) => {
-                if (currency === 'KHR') return fmt(usd * rate, true) + ' ៛';
-                return '$' + fmt(usd, false);
-            };
-            const toUSD = (disp) => currency === 'KHR' && rate > 0 ? disp / rate : disp;
-            const fromUSD = (usd) => currency === 'KHR' ? usd * rate : usd;
-
-            // Mode switch
-            function setMode(m) {
-                mode = m;
-                dom.btnBuy.classList.toggle('active', m === 'buy');
-                dom.btnSell.classList.toggle('active', m === 'sell');
-                if (m === 'buy') {
-                    dom.formTitle.textContent = 'បំពេញព័ត៌មាន ទិញចូល';
-                    dom.formIcon.className = 'dot dot-buy'; dom.formIcon.textContent = '📥';
-                    dom.sellPriceGroup.style.display = 'none';
-                    dom.resProfitRow.style.display = 'none';
-                    dom.resultPanel.classList.remove('sell-result');
+        // Toggle visibility of fields in Receipt and updates UI button style
+        function toggleField(fieldName) {
+            visibleFields[fieldName] = !visibleFields[fieldName];
+            
+            const btn = document.getElementById(`tog-${fieldName}`);
+            const stateText = visibleFields[fieldName] ? "បង្ហាញ" : "លាក់";
+            
+            if (btn) {
+                if (visibleFields[fieldName]) {
+                    btn.innerHTML = `<i class="fa-solid fa-eye"></i> <span>${stateText}</span>`;
+                    btn.className = btn.className.replace("text-red-500", "text-blue-600").replace("text-slate-400", "text-blue-600");
                 } else {
-                    dom.formTitle.textContent = 'បំពេញព័ត៌មាន លក់ចេញ';
-                    dom.formIcon.className = 'dot dot-sell'; dom.formIcon.textContent = '📤';
-                    dom.sellPriceGroup.style.display = 'block';
-                    dom.resProfitRow.style.display = 'flex';
-                    dom.resultPanel.classList.add('sell-result');
-                }
-                updatePriceLabel();
-                hideResult();
-            }
-
-            function updatePriceLabel() {
-                dom.priceLabel.innerHTML = '💵 តម្លៃទិញ/ឯកតា <span class="u">(' + sym() + ')</span>';
-            }
-
-            // Currency switch
-            function setCurrency(cur) {
-                if (currency === cur) return;
-                const fields = ['unitPrice', 'shippingCost', 'sellPrice'];
-                const oldRate = rate;
-                if (currency === 'USD' && cur === 'KHR') {
-                    fields.forEach(id => { const el = $(id); const v = parseFloat(el.value); if (!isNaN(v) && v > 0) el.value = Math.round(v * rate); });
-                } else if (currency === 'KHR' && cur === 'USD') {
-                    fields.forEach(id => { const el = $(id); const v = parseFloat(el.value); if (!isNaN(v) && v > 0 && rate > 0) el.value = (v / rate).toFixed(2); });
-                }
-                currency = cur;
-                dom.btnUSD.classList.toggle('active', cur === 'USD');
-                dom.btnKHR.classList.toggle('active', cur === 'KHR');
-                updatePriceLabel();
-                refreshDisplays();
-                hideResult();
-            }
-
-            function onRateChange() {
-                const n = parseFloat(dom.exchangeRate.value);
-                if (!isNaN(n) && n > 0) {
-                    rate = n;
-                    refreshDisplays();
-                    hideResult();
+                    btn.innerHTML = `<i class="fa-solid fa-eye-slash"></i> <span class="line-through">${stateText}</span>`;
+                    btn.className = btn.className.replace("text-blue-600", "text-red-500");
                 }
             }
 
-            function refreshDisplays() { renderTable(); updateSummary(); }
+            // Apply visibility directly on receipt preview elements
+            updateReceiptVisibility();
+        }
 
-            // Calculate
-            function calculate() {
-                const qty = parseVal('quantity');
-                const unitPriceDisp = parseVal('unitPrice');
-                const discountPct = Math.min(parseVal('discountPercent'), 100);
-                const shippingDisp = parseVal('shippingCost');
-                const origKg = parseVal('originalKg');
-                const cutKg = parseVal('cutKg');
-                const sellPriceDisp = mode === 'sell' ? parseVal('sellPrice') : 0;
+        function updateReceiptVisibility() {
+            // Logo
+            const repLogo = document.getElementById('rep-shop-logo-container');
+            if (repLogo) repLogo.style.display = visibleFields.logo ? 'flex' : 'none';
 
-                if (qty <= 0 && origKg <= 0) {
-                    showToast('សូមបញ្ចូល ចំនួន ឬ គីឡូដើម យ៉ាងហោចណាស់មួយ', 'error');
-                    return false;
-                }
-                if (unitPriceDisp <= 0) {
-                    showToast('សូមបញ្ចូលតម្លៃក្នុងមួយឯកតា', 'error');
-                    return false;
-                }
+            // Shop Name
+            const repShopName = document.getElementById('rep-shop-name');
+            if (repShopName) repShopName.style.display = visibleFields.shopName ? 'block' : 'none';
 
-                const unitPriceUSD = toUSD(unitPriceDisp);
-                const shippingUSD = toUSD(shippingDisp);
-                const sellPriceUSD = mode === 'sell' ? toUSD(sellPriceDisp) : 0;
+            // Shop Phone
+            const repShopPhone = document.getElementById('rep-shop-phone');
+            if (repShopPhone) repShopPhone.style.display = visibleFields.phone ? 'block' : 'none';
 
-                const totalCostUSD = qty * unitPriceUSD;
-                const discountAmtUSD = totalCostUSD * (discountPct / 100);
-                const afterDiscountUSD = totalCostUSD - discountAmtUSD;
-                const effectiveUSD = afterDiscountUSD + shippingUSD;
-                const netKg = Math.max(0, origKg - cutKg);
-                const pricePerKgUSD = netKg > 0.001 ? effectiveUSD / netKg : 0;
-                const revenueUSD = mode === 'sell' ? qty * sellPriceUSD : 0;
-                const profitUSD = mode === 'sell' ? revenueUSD - effectiveUSD : 0;
-
-                lastCalc = {
-                    qty, unitPriceUSD, discountPct, shippingUSD, origKg, cutKg, netKg,
-                    totalCostUSD, afterDiscountUSD, effectiveUSD, pricePerKgUSD,
-                    sellPriceUSD, revenueUSD, profitUSD, mode,
-                    itemName: dom.itemName.value.trim()
-                };
-
-                dom.resTotalCost.textContent = fmtMoney(totalCostUSD);
-                dom.resAfterDiscount.textContent = fmtMoney(afterDiscountUSD);
-                dom.resEffective.textContent = fmtMoney(effectiveUSD);
-                dom.resNetKg.textContent = fmt(netKg, false) + ' kg';
-                dom.resPricePerKg.textContent = fmtMoney(pricePerKgUSD);
-
-                if (mode === 'sell') {
-                    dom.resProfitRow.style.display = 'flex';
-                    const sign = profitUSD >= 0 ? '+' : '';
-                    dom.resProfitLoss.textContent = sign + fmtMoney(Math.abs(profitUSD));
-                    dom.resProfitLoss.className = 'result-value profit-highlight ' + (profitUSD >= 0 ? 'positive' : 'negative');
+            // Hide whole shop header if all three logo, name and phone are hidden
+            const repShopHeader = document.getElementById('rep-shop-header');
+            if (repShopHeader) {
+                if (!visibleFields.logo && !visibleFields.shopName && !visibleFields.phone) {
+                    repShopHeader.style.display = 'none';
                 } else {
-                    dom.resProfitRow.style.display = 'none';
+                    repShopHeader.style.display = 'flex';
                 }
-                dom.resultPanel.classList.add('show');
-                dom.resultPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                showToast('✅ គណនារួចរាល់', 'success');
-                return true;
             }
 
-            function hideResult() {
-                dom.resultPanel.classList.remove('show');
-                lastCalc = null;
+            // Table Rows
+            document.getElementById('row-rep-base-price').style.display = visibleFields.price ? 'flex' : 'none';
+            document.getElementById('row-rep-base-weight').style.display = visibleFields.baseWeight ? 'flex' : 'none';
+            document.getElementById('row-rep-minus-weight').style.display = visibleFields.minusWeight ? 'flex' : 'none';
+            document.getElementById('row-rep-discount').style.display = visibleFields.discount ? 'flex' : 'none';
+            document.getElementById('row-rep-shipping').style.display = visibleFields.shipping ? 'flex' : 'none';
+
+            // Disclaimer Note
+            document.getElementById('rep-disclaimer-box').style.display = visibleFields.note ? 'block' : 'none';
+
+            // Activity Images Section Visibility
+            const actContainer = document.getElementById('rep-activity-images-container');
+            if (actContainer) {
+                if (visibleFields.activityImages && activityImagesData.length > 0) {
+                    actContainer.style.display = 'block';
+                } else {
+                    actContainer.style.display = 'none';
+                }
             }
 
-            // Add to table
-            function addToTable() {
-                if (!lastCalc) { showToast('សូមចុច "គណនា" ជាមុនសិន', 'error'); return; }
-                const r = lastCalc;
-                counter++;
-                const entry = {
-                    id: counter, mode: r.mode, itemName: r.itemName || '(គ្មានឈ្មោះ)',
-                    quantity: r.qty, unitPriceUSD: r.unitPriceUSD, totalOriginalCostUSD: r.totalCostUSD,
-                    discountPercent: r.discountPct, discountAmountUSD: r.totalCostUSD * (r.discountPct / 100),
-                    priceAfterDiscountUSD: r.afterDiscountUSD, shippingCostUSD: r.shippingUSD,
-                    effectiveTotalUSD: r.effectiveUSD, originalKg: r.origKg, cutKg: r.cutKg,
-                    netKg: r.netKg, pricePerNetKgUSD: r.pricePerKgUSD,
-                    sellPriceUSD: r.sellPriceUSD, totalRevenueUSD: r.revenueUSD, profitLossUSD: r.profitUSD
+            // Barcode
+            document.getElementById('barcode-gfx').style.display = visibleFields.barcode ? 'flex' : 'none';
+        }
+
+        // Handle logo file selection and convert to Base64
+        function loadLogo(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    shopLogoData = e.target.result;
+                    document.getElementById('rep-shop-logo').src = shopLogoData;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Handle Multiple Activity Images uploading
+        function loadActivityImages(event) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    activityImagesData.push(e.target.result);
+                    renderActivityImages();
+                    updateReceiptVisibility();
                 };
-                entries.push(entry);
-                lastCalc = null;
-                hideResult();
-                renderTable();
-                updateSummary();
-                clearForm();
-                showToast('✅ បានបន្ថែមចូលតារាង', 'success');
-                $('tableCard')?.scrollIntoView({ behavior: 'smooth' });
+                reader.readAsDataURL(file);
+            });
+            // Clear input so upload same file is possible
+            event.target.value = '';
+        }
+
+        // Remove single activity image from list
+        function removeActivityImage(index) {
+            activityImagesData.splice(index, 1);
+            renderActivityImages();
+            updateReceiptVisibility();
+            showToast("បានលុបរូបភាពសកម្មភាព!");
+        }
+
+        // Render activity images thumbnails and receipt images vertically
+        function renderActivityImages() {
+            const inputPreviewContainer = document.getElementById('activity-inputs-preview');
+            const receiptListContainer = document.getElementById('rep-activity-images-list');
+
+            // Clear first
+            inputPreviewContainer.innerHTML = '';
+            receiptListContainer.innerHTML = '';
+
+            activityImagesData.forEach((base64Data, index) => {
+                // 1. Render thumbnail for Settings/Controls card
+                const thumbDiv = document.createElement('div');
+                thumbDiv.className = 'relative aspect-square rounded-xl overflow-hidden border border-slate-200 shadow-sm group bg-slate-50';
+                thumbDiv.innerHTML = `
+                    <img src="${base64Data}" class="w-full h-full object-cover">
+                    <button onclick="removeActivityImage(${index})" class="absolute top-1 right-1 bg-red-500/90 hover:bg-red-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] shadowtransition">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                `;
+                inputPreviewContainer.appendChild(thumbDiv);
+
+                // 2. Render Vertical List for actual Receipt (to be captured inside Save Image)
+                const receiptDiv = document.createElement('div');
+                receiptDiv.className = 'w-full rounded-2xl overflow-hidden border border-slate-100 shadow-sm bg-white p-1';
+                receiptDiv.innerHTML = `
+                    <img src="${base64Data}" class="w-full h-auto rounded-xl object-contain max-h-[300px] mx-auto block">
+                `;
+                receiptListContainer.appendChild(receiptDiv);
+            });
+        }
+
+        // Live update shop details on receipt preview
+        function updateShopInfo() {
+            const nameInput = document.getElementById('shop-name-input').value.trim();
+            const phoneInput = document.getElementById('shop-phone-input').value.trim();
+            const noteInput = document.getElementById('shop-note-input').value.trim();
+
+            const repName = document.getElementById('rep-shop-name');
+            const repPhone = document.getElementById('rep-shop-phone');
+            const repNote = document.getElementById('rep-shop-note');
+
+            if (nameInput) {
+                repName.innerText = nameInput;
+            } else {
+                repName.innerText = "យីហោហាងរបស់អ្នក";
             }
 
-            function renderTable() {
-                const tbody = dom.tableBody;
-                if (entries.length === 0) {
-                    tbody.innerHTML = '<tr class="empty-row"><td colspan="15"><div class="empty-state"><span style="font-size:2rem;">📭</span><p>មិនទាន់មានធាតុចូល</p></div></td></tr>';
-                    return;
+            if (phoneInput) {
+                repPhone.innerHTML = `<i class="fa-solid fa-phone text-[8px] mr-1"></i> លេខទូរស័ព្ទ៖ ${phoneInput}`;
+            } else {
+                repPhone.innerHTML = `<i class="fa-solid fa-phone text-[8px] mr-1"></i> លេខទូរស័ព្ទ៖ មិនទាន់កំណត់`;
+            }
+
+            if (noteInput) {
+                repNote.innerText = noteInput;
+            } else {
+                repNote.innerText = "សូមអរគុណសម្រាប់ការគាំទ្រ! សូមពិនិត្យទំនិញ និងទូទាត់ប្រាក់ឱ្យបានត្រឹមត្រូវ។";
+            }
+        }
+
+        // Live Clock
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('km-KH', { hour12: false });
+            document.getElementById('current-time').innerText = timeString;
+            
+            // Set date for the report
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('report-date').innerText = 'កាលបរិច្ឆេទ៖ ' + now.toLocaleDateString('km-KH', options);
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Generate Transaction ID
+        function generateID() {
+            const now = new Date();
+            const year = now.getFullYear().toString().slice(-2);
+            const month = (now.getMonth() + 1).toString().padStart(2, '0');
+            const date = now.getDate().toString().padStart(2, '0');
+            const rand = Math.floor(100 + Math.random() * 900);
+            document.getElementById('report-id').innerText = `ID: TX-${year}${month}${date}-${rand}`;
+        }
+        generateID();
+
+        // Toggle Buy / Sell
+        function setType(type) {
+            transactionType = type;
+            const btnBuy = document.getElementById('btn-buy');
+            const btnSell = document.getElementById('btn-sell');
+            const badgeType = document.getElementById('badge-type');
+            const repTotalLabel = document.getElementById('rep-total-label');
+
+            if (type === 'buy') {
+                btnBuy.className = "flex-1 py-3 rounded-xl text-sm font-bold flex items-center justify-center space-x-2 transition-all duration-300 bg-white text-blue-600 shadow-sm border border-slate-100";
+                btnSell.className = "flex-1 py-3 rounded-xl text-sm font-bold flex items-center justify-center space-x-2 transition-all duration-300 text-slate-500 hover:text-slate-800";
+                badgeType.innerText = "ទិញចូល";
+                badgeType.className = "bg-white/20 px-2.5 py-1 rounded-lg text-[9px] uppercase font-bold tracking-widest text-white/95";
+                repTotalLabel.innerText = "ទឹកប្រាក់សរុបត្រូវទូទាត់ (ចេញ)";
+            } else {
+                btnSell.className = "flex-1 py-3 rounded-xl text-sm font-bold flex items-center justify-center space-x-2 transition-all duration-300 bg-white text-emerald-600 shadow-sm border border-slate-100";
+                btnBuy.className = "flex-1 py-3 rounded-xl text-sm font-bold flex items-center justify-center space-x-2 transition-all duration-300 text-slate-500 hover:text-slate-800";
+                badgeType.innerText = "លក់ចេញ";
+                badgeType.className = "bg-emerald-500/80 px-2.5 py-1 rounded-lg text-[9px] uppercase font-bold tracking-widest text-white/95";
+                repTotalLabel.innerText = "ទឹកប្រាក់សរុបទទួលបាន (ចូល)";
+            }
+            calculate();
+        }
+
+        // Live calculation logic
+        function calculate() {
+            // Read values
+            const prodName = document.getElementById('prod-name').value || "ទំនិញទូទៅ";
+            const currency = document.getElementById('currency').value;
+            const basePrice = parseFloat(document.getElementById('base-price').value) || 0;
+            const baseWeight = parseFloat(document.getElementById('base-weight').value) || 0;
+            const minusWeight = parseFloat(document.getElementById('minus-weight').value) || 0;
+            const discount = parseFloat(document.getElementById('discount').value) || 0;
+            const shipping = parseFloat(document.getElementById('shipping').value) || 0;
+            const targetUnitPrice = parseFloat(document.getElementById('target-unit-price').value) || 0;
+
+            // Target Currency Label update
+            document.getElementById('target-curr-lbl').innerText = currency;
+
+            // Weight calculation
+            const actualWeight = Math.max(0, baseWeight - minusWeight);
+            
+            // Subtotal (Base Price * Actual Weight)
+            const subtotal = basePrice * actualWeight;
+
+            // Grand Total
+            const grandTotal = Math.max(0, subtotal - discount + shipping);
+
+            // Update Input-level labels
+            document.getElementById('actual-weight-lbl').innerText = actualWeight.toFixed(2);
+            document.getElementById('subtotal-lbl').innerText = formatNumber(subtotal, currency);
+
+            // Update Report UI
+            document.getElementById('rep-prod-name').innerText = prodName;
+            document.getElementById('rep-base-price').innerText = formatNumber(basePrice, currency);
+            document.getElementById('rep-base-weight').innerText = baseWeight.toFixed(2) + " គីឡូ";
+            document.getElementById('rep-minus-weight').innerText = "- " + minusWeight.toFixed(2) + " គីឡូ";
+            document.getElementById('rep-actual-weight').innerText = actualWeight.toFixed(2) + " គីឡូ";
+            document.getElementById('rep-discount').innerText = "- " + formatNumber(discount, currency);
+            document.getElementById('rep-shipping').innerText = "+ " + formatNumber(shipping, currency);
+            document.getElementById('rep-grand-total').innerText = formatNumber(grandTotal, currency);
+
+            // Profit & Loss calculation
+            const profitBox = document.getElementById('profit-box');
+            const profitValue = document.getElementById('profit-value');
+            const profitDesc = document.getElementById('profit-desc');
+            const profitTitle = document.getElementById('profit-title');
+
+            if (targetUnitPrice > 0 && actualWeight > 0) {
+                const targetTotal = targetUnitPrice * actualWeight;
+                let finalPnl = 0;
+                
+                if (transactionType === 'buy') {
+                    finalPnl = targetTotal - grandTotal;
+                    profitTitle.innerText = "លទ្ធផលប៉ាន់ស្មាន (បើលក់ចេញវិញ)";
+                } else {
+                    finalPnl = grandTotal - targetTotal;
+                    profitTitle.innerText = "លទ្ធផលប៉ាន់ស្មាន (ធៀបនឹងថ្លៃដើមទិញ)";
                 }
-                let h = '';
-                entries.forEach((e, i) => {
-                    const rc = e.mode === 'buy' ? 'row-buy' : 'row-sell';
-                    const bc = e.mode === 'buy' ? 'badge-buy' : 'badge-sell';
-                    const bt = e.mode === 'buy' ? 'ទិញចូល' : 'លក់ចេញ';
-                    const plClass = e.profitLossUSD >= 0 ? 't-profit' : 't-loss';
-                    const plSign = e.profitLossUSD >= 0 ? '+' : '';
-                    const plDisp = e.mode === 'sell' ? (plSign + fmtMoney(Math.abs(e.profitLossUSD))) : '-';
-                    h += `<tr class="${rc}">
-                        <td>${i+1}</td><td><span class="badge ${bc}">${bt}</span></td>
-                        <td>${esc(e.itemName)}</td><td>${fmt(e.quantity,false)}</td>
-                        <td>${fmtMoney(e.totalOriginalCostUSD)}</td><td>${fmt(e.discountPercent,false)}%</td>
-                        <td>${fmtMoney(e.priceAfterDiscountUSD)}</td><td>${fmtMoney(e.shippingCostUSD)}</td>
-                        <td>${fmtMoney(e.effectiveTotalUSD)}</td><td>${fmt(e.originalKg,false)} kg</td>
-                        <td>${fmt(e.cutKg,false)} kg</td><td>${fmt(e.netKg,false)} kg</td>
-                        <td>${fmtMoney(e.pricePerNetKgUSD)}</td>
-                        <td class="${e.mode==='sell' ? plClass : ''}">${plDisp}</td>
-                        <td><button class="del-btn" onclick="delEntry(${e.id})">🗑️</button></td></tr>`;
-                });
-                tbody.innerHTML = h;
-            }
 
-            function esc(s) { const d = document.createElement('div');
-                d.textContent = s; return d.innerHTML; }
-
-            window.delEntry = function(id) {
-                entries = entries.filter(e => e.id !== id);
-                renderTable();
-                updateSummary();
-                showToast('🗑️ បានលុប', 'error');
-            };
-
-            function updateSummary() {
-                let tc = 0,
-                    ad = 0,
-                    sh = 0,
-                    ef = 0,
-                    ok = 0,
-                    nk = 0,
-                    rv = 0,
-                    pl = 0;
-                entries.forEach(e => {
-                    tc += e.totalOriginalCostUSD;
-                    ad += e.priceAfterDiscountUSD;
-                    sh += e.shippingCostUSD;
-                    ef += e.effectiveTotalUSD;
-                    ok += e.originalKg;
-                    nk += e.netKg;
-                    if (e.mode === 'sell') { rv += e.totalRevenueUSD;
-                        pl += e.profitLossUSD; }
-                });
-                dom.sumCost.textContent = fmtMoney(tc);
-                dom.sumAfterDisc.textContent = fmtMoney(ad);
-                dom.sumShip.textContent = fmtMoney(sh);
-                dom.sumEff.textContent = fmtMoney(ef);
-                dom.sumOrigKg.textContent = fmt(ok, false) + ' kg';
-                dom.sumNetKg.textContent = fmt(nk, false) + ' kg';
-                dom.sumRev.textContent = fmtMoney(rv);
-                const sign = pl >= 0 ? '+' : '';
-                dom.sumPL.textContent = sign + fmtMoney(Math.abs(pl));
-                dom.sumPlItem.classList.remove('hl-profit', 'hl-loss');
-                dom.sumPlItem.classList.add(pl >= 0 ? 'hl-profit' : 'hl-loss');
-            }
-
-            function clearForm() {
-                dom.itemName.value = '';
-                dom.quantity.value = '';
-                dom.unitPrice.value = '';
-                dom.discountPercent.value = '';
-                dom.shippingCost.value = '';
-                dom.originalKg.value = '';
-                dom.cutKg.value = '';
-                dom.sellPrice.value = '';
-                hideResult();
-            }
-
-            window.clearAllData = function() {
-                if (entries.length === 0) { showToast('មិនមានទិន្នន័យ', 'error'); return; }
-                if (confirm('លុបទិន្នន័យទាំងអស់?')) {
-                    entries = [];
-                    counter = 0;
-                    lastCalc = null;
-                    hideResult();
-                    renderTable();
-                    updateSummary();
-                    showToast('បានលុបទាំងអស់', 'error');
+                if (finalPnl > 0) {
+                    profitBox.className = "p-4 rounded-2xl text-center bg-emerald-50/70 border border-emerald-100";
+                    profitValue.className = "text-xl font-black mt-1 text-emerald-600";
+                    profitValue.innerText = "+ " + formatNumber(finalPnl, currency);
+                    profitDesc.innerText = "ចំណេញ (Profit) ពីប្រតិបត្តិការនេះ";
+                    profitDesc.className = "text-[10px] text-emerald-600 font-bold mt-1";
+                } else if (finalPnl < 0) {
+                    profitBox.className = "p-4 rounded-2xl text-center bg-red-50/70 border border-red-100";
+                    profitValue.className = "text-xl font-black mt-1 text-red-600";
+                    profitValue.innerText = formatNumber(finalPnl, currency);
+                    profitDesc.innerText = "ខាត (Loss) ពីប្រតិបត្តិការនេះ";
+                    profitDesc.className = "text-[10px] text-red-600 font-bold mt-1";
+                } else {
+                    profitBox.className = "p-4 rounded-2xl text-center bg-slate-50 border border-slate-200";
+                    profitValue.className = "text-xl font-black mt-1 text-slate-700";
+                    profitValue.innerText = formatNumber(0, currency);
+                    profitDesc.innerText = "ស្មើដើម (Break-Even)";
+                    profitDesc.className = "text-[10px] text-slate-500 font-bold mt-1";
                 }
-            };
-
-            // Save image
-            window.saveAsImage = function() {
-                if (entries.length === 0) { showToast('គ្មានទិន្នន័យ', 'error'); return; }
-                const now = new Date();
-                const ds = now.toLocaleDateString('km-KH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit',
-                    minute: '2-digit' });
-                dom.captureDate.textContent = 'កាលបរិច្ឆេទ៖ ' + ds + ' | រូបិយប័ណ្ណ៖ ' + (currency === 'KHR' ? 'រៀល' :
-                    'ដុល្លារ') + ' | ១$ = ' + rate + '៛';
-                let th = '<table style="width:100%;border-collapse:collapse;font-size:10px;margin-top:6px;"><thead><tr style="background:#f5f8f6;">';
-                ['ល.រ', 'ប្រភេទ', 'ឈ្មោះ', 'ចំនួន', 'តម្លៃដើម', 'បញ្ចុះ%', 'ក្រោយបញ្ចុះ', 'ឈ្នួលដឹក', 'តម្លៃសរុប', 'គីឡូដើម', 'កាត់គីឡូ', 'គីឡូសុទ្ធ', 'តម្លៃ/គីឡូ', 'ខាត/ចំណេញ']
-                .forEach(h => th += '<th style="padding:5px 3px;border:1px solid #dde4e0;">' + h + '</th>');
-                th += '</tr></thead><tbody>';
-                entries.forEach((e, i) => {
-                    const ps = e.profitLossUSD >= 0 ? '+' : '';
-                    const pd = e.mode === 'sell' ? (ps + fmtMoney(Math.abs(e.profitLossUSD))) : '-';
-                    th += `<tr style="border-left:3px solid ${e.mode==='buy'?'#0a6e4a':'#c0392b'};">
-                        <td style="padding:4px 3px;border:1px solid #eef3ef;">${i+1}</td>
-                        <td>${e.mode==='buy'?'ទិញចូល':'លក់ចេញ'}</td><td>${esc(e.itemName)}</td>
-                        <td>${fmt(e.quantity,false)}</td><td>${fmtMoney(e.totalOriginalCostUSD)}</td>
-                        <td>${fmt(e.discountPercent,false)}%</td><td>${fmtMoney(e.priceAfterDiscountUSD)}</td>
-                        <td>${fmtMoney(e.shippingCostUSD)}</td><td>${fmtMoney(e.effectiveTotalUSD)}</td>
-                        <td>${fmt(e.originalKg,false)} kg</td><td>${fmt(e.cutKg,false)} kg</td>
-                        <td>${fmt(e.netKg,false)} kg</td><td>${fmtMoney(e.pricePerNetKgUSD)}</td><td>${pd}</td></tr>`;
-                });
-                th += '</tbody></table>';
-                let stc = 0,
-                    sad = 0,
-                    ssh = 0,
-                    sef = 0,
-                    snk = 0,
-                    spl = 0;
-                entries.forEach(e => { stc += e.totalOriginalCostUSD;
-                    sad += e.priceAfterDiscountUSD;
-                    ssh += e.shippingCostUSD;
-                    sef += e.effectiveTotalUSD;
-                    snk += e.netKg; if (e.mode === 'sell') spl += e.profitLossUSD; });
-                const pss = spl >= 0 ? '+' : '';
-                const summ = `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-top:8px;font-size:10px;">
-                    <div style="background:#f9fbfa;padding:6px;border-radius:5px;text-align:center;border:1px solid #eef3ef;"><strong>សរុបតម្លៃដើម</strong><br>${fmtMoney(stc)}</div>
-                    <div style="background:#f9fbfa;padding:6px;border-radius:5px;text-align:center;border:1px solid #eef3ef;"><strong>សរុបក្រោយបញ្ចុះ</strong><br>${fmtMoney(sad)}</div>
-                    <div style="background:#f9fbfa;padding:6px;border-radius:5px;text-align:center;border:1px solid #eef3ef;"><strong>សរុបឈ្នួលដឹក</strong><br>${fmtMoney(ssh)}</div>
-                    <div style="background:#f9fbfa;padding:6px;border-radius:5px;text-align:center;border:1px solid #eef3ef;"><strong>សរុបចំណាយពិត</strong><br>${fmtMoney(sef)}</div>
-                    <div style="background:#f9fbfa;padding:6px;border-radius:5px;text-align:center;border:1px solid #eef3ef;"><strong>សរុបគីឡូសុទ្ធ</strong><br>${fmt(snk,false)} kg</div>
-                    <div style="background:#f9fbfa;padding:6px;border-radius:5px;text-align:center;border:1px solid #eef3ef;"><strong>សរុបខាត/ចំណេញ</strong><br>${pss}${fmtMoney(Math.abs(spl))}</div></div>`;
-                dom.captureTableWrap.innerHTML = th;
-                dom.captureSummaryWrap.innerHTML = summ;
-
-                const cap = $('captureArea');
-                cap.style.position = 'fixed';
-                cap.style.left = '5px';
-                cap.style.top = '5px';
-                cap.style.zIndex = '99999';
-                cap.style.width = '860px';
-                cap.style.background = '#fff';
-                cap.style.maxHeight = '95vh';
-                cap.style.overflow = 'auto';
-                html2canvas(cap, { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false }).then(canvas => {
-                    cap.style.position = 'fixed';
-                    cap.style.left = '-9999px';
-                    cap.style.top = '0';
-                    cap.style.zIndex = '';
-                    cap.style.width = '880px';
-                    cap.style.maxHeight = '';
-                    const a = document.createElement('a');
-                    a.download = 'តារាងពេលវាលា_' + new Date().toISOString().slice(0, 10) + '.png';
-                    a.href = canvas.toDataURL('image/png');
-                    a.click();
-                    showToast('💾 រក្សាទុករូបភាពបានជោគជ័យ', 'success');
-                }).catch(() => {
-                    cap.style.position = 'fixed';
-                    cap.style.left = '-9999px';
-                    cap.style.top = '0';
-                    cap.style.zIndex = '';
-                    cap.style.width = '880px';
-                    cap.style.maxHeight = '';
-                    showToast('មានបញ្ហា សូមព្យាយាមម្តងទៀត', 'error');
-                });
-            };
-
-            function showToast(msg, type) {
-                const t = dom.toast;
-                t.textContent = msg;
-                t.className = 'toast ' + (type || 'success');
-                t.offsetHeight;
-                t.classList.add('show');
-                clearTimeout(t._t);
-                t._t = setTimeout(() => t.classList.remove('show'), 2200);
+            } else {
+                profitBox.className = "p-4 rounded-2xl text-center bg-slate-50 border border-slate-100";
+                profitValue.className = "text-xl font-black mt-1 text-slate-300";
+                profitValue.innerText = "--";
+                profitTitle.innerText = "លទ្ធផលប៉ាន់ស្មាន";
+                profitDesc.innerText = "សូមបញ្ចូលតម្លៃប៉ាន់ស្មាន ដើម្បីគណនាផលចំណេញ/ខាត";
+                profitDesc.className = "text-[10px] text-slate-400 mt-1";
             }
+        }
 
-            // Event listeners
-            dom.btnBuy.addEventListener('click', () => setMode('buy'));
-            dom.btnSell.addEventListener('click', () => setMode('sell'));
-            dom.btnUSD.addEventListener('click', () => setCurrency('USD'));
-            dom.btnKHR.addEventListener('click', () => setCurrency('KHR'));
-            $('calcBtn').addEventListener('click', calculate);
-            dom.addToTableBtn.addEventListener('click', addToTable);
-            window.onRateChange = onRateChange;
+        // Export Application State to JSON File (Includes Activities)
+        function exportData() {
+            const dataToSave = {
+                transactionType: transactionType,
+                visibleFields: visibleFields,
+                shopLogoData: shopLogoData,
+                activityImagesData: activityImagesData, // Saved Base64 Images
+                shopName: document.getElementById('shop-name-input').value,
+                shopPhone: document.getElementById('shop-phone-input').value,
+                shopNote: document.getElementById('shop-note-input').value,
+                prodName: document.getElementById('prod-name').value,
+                currency: document.getElementById('currency').value,
+                basePrice: document.getElementById('base-price').value,
+                baseWeight: document.getElementById('base-weight').value,
+                minusWeight: document.getElementById('minus-weight').value,
+                discount: document.getElementById('discount').value,
+                shipping: document.getElementById('shipping').value,
+                targetUnitPrice: document.getElementById('target-unit-price').value,
+                transactionId: document.getElementById('report-id').innerText
+            };
 
-            // Init
-            rate = parseFloat(dom.exchangeRate.value) || 4000;
-            setMode('buy');
-            setCurrency('USD');
-            renderTable();
-            updateSummary();
-            hideResult();
-        })();
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataToSave, null, 2));
+            const downloadAnchor = document.createElement('a');
+            const pName = dataToSave.prodName || 'ទំនិញ';
+            const date = new Date().toISOString().slice(0,10);
+            
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `ទិន្នន័យគណនា_${pName}_${date}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+
+            showToast("បានទាញយកឯកសារទិន្នន័យជោគជ័យ!");
+        }
+
+        // Import Application State from JSON File (Includes Activities)
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsedData = JSON.parse(e.target.result);
+
+                    // Restore Type
+                    if (parsedData.transactionType) {
+                        setType(parsedData.transactionType);
+                    }
+
+                    // Restore Visibility Options
+                    if (parsedData.visibleFields) {
+                        visibleFields = parsedData.visibleFields;
+                        // Loop and sync toggle buttons UI state
+                        for (const key in visibleFields) {
+                            const btn = document.getElementById(`tog-${key}`);
+                            if (btn) {
+                                const stateText = visibleFields[key] ? "បង្ហាញ" : "លាក់";
+                                if (visibleFields[key]) {
+                                    btn.innerHTML = `<i class="fa-solid fa-eye"></i> <span>${stateText}</span>`;
+                                    btn.className = "text-[11px] font-bold text-blue-600 flex items-center space-x-1";
+                                } else {
+                                    btn.innerHTML = `<i class="fa-solid fa-eye-slash"></i> <span class="line-through">${stateText}</span>`;
+                                    btn.className = "text-[11px] font-bold text-red-500 flex items-center space-x-1";
+                                }
+                            }
+                        }
+                    }
+
+                    // Restore Shop profile values
+                    if (parsedData.shopLogoData) {
+                        shopLogoData = parsedData.shopLogoData;
+                        document.getElementById('rep-shop-logo').src = shopLogoData;
+                    } else {
+                        shopLogoData = '';
+                        document.getElementById('rep-shop-logo').src = "https://placehold.co/100x100/3b82f6/ffffff?text=SHOP";
+                    }
+
+                    // Restore Activity images
+                    if (parsedData.activityImagesData) {
+                        activityImagesData = parsedData.activityImagesData;
+                    } else {
+                        activityImagesData = [];
+                    }
+                    renderActivityImages();
+                    updateReceiptVisibility();
+                    
+                    document.getElementById('shop-name-input').value = parsedData.shopName || '';
+                    document.getElementById('shop-phone-input').value = parsedData.shopPhone || '';
+                    document.getElementById('shop-note-input').value = parsedData.shopNote || '';
+                    
+                    // Sync Shop UI Preview
+                    updateShopInfo();
+
+                    // Restore Product inputs
+                    document.getElementById('prod-name').value = parsedData.prodName || '';
+                    document.getElementById('currency').value = parsedData.currency || 'KHR';
+                    document.getElementById('base-price').value = parsedData.basePrice || '';
+                    document.getElementById('base-weight').value = parsedData.baseWeight || '';
+                    document.getElementById('minus-weight').value = parsedData.minusWeight || '';
+                    document.getElementById('discount').value = parsedData.discount || '';
+                    document.getElementById('shipping').value = parsedData.shipping || '';
+                    document.getElementById('target-unit-price').value = parsedData.targetUnitPrice || '';
+                    
+                    if (parsedData.transactionId) {
+                        document.getElementById('report-id').innerText = parsedData.transactionId;
+                    }
+
+                    // Trigger Calculation live update
+                    calculate();
+                    showToast("បាននាំចូលឯកសារមកកែសម្រួលជោគជ័យ!");
+                    
+                } catch (error) {
+                    console.error("Error loading JSON:", error);
+                    showToast("ឯកសារពុំត្រឹមត្រូវ ឬមានកំហុសបច្គេកទេស!");
+                }
+                // Clear file input value
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        // Reset form (preserves Shop Profile Setup for user convenience)
+        function resetForm() {
+            document.getElementById('prod-name').value = '';
+            document.getElementById('base-price').value = '';
+            document.getElementById('base-weight').value = '';
+            document.getElementById('minus-weight').value = '';
+            document.getElementById('discount').value = '';
+            document.getElementById('shipping').value = '';
+            document.getElementById('target-unit-price').value = '';
+            // Clear activity images
+            activityImagesData = [];
+            renderActivityImages();
+            updateReceiptVisibility();
+            generateID();
+            calculate();
+            showToast("បានសម្អាតទិន្នន័យរួចរាល់!");
+        }
+
+        // Show Notification Toast
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            toast.className = "fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-slate-900/95 backdrop-blur-sm text-white px-5 py-3 rounded-2xl text-xs font-bold shadow-xl opacity-100 transition-all duration-300 z-50 flex items-center space-x-2.5 border border-slate-800";
+            setTimeout(() => {
+                toast.className = "fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-slate-900/95 backdrop-blur-sm text-white px-5 py-3 rounded-2xl text-xs font-bold shadow-xl opacity-0 pointer-events-none transition-all duration-300 z-50 flex items-center space-x-2.5 border border-slate-800";
+            }, 2500);
+        }
+
+        // Save Report as Image (Including Activity Photos stitched inside)
+        function saveAsImage() {
+            const report = document.getElementById('report-card');
+            const profitContainer = document.getElementById('rep-profit-container');
+            const togBarcodeBtn = document.getElementById('tog-barcode');
+            
+            // 1. Temporarily hide the profit container and eye toggle for barcode before saving
+            if (profitContainer) profitContainer.style.display = 'none';
+            if (togBarcodeBtn) togBarcodeBtn.style.display = 'none';
+
+            showToast("កំពុងរៀបចំទាញយករូបភាព...");
+
+            html2canvas(report, {
+                backgroundColor: "#ffffff",
+                scale: 3, // Premium Crisp Quality
+                useCORS: true,
+                logging: false,
+                borderRadius: 24
+            }).then(canvas => {
+                // 2. Restore elements visibility immediately after capture
+                if (profitContainer) profitContainer.style.display = 'block';
+                if (togBarcodeBtn) togBarcodeBtn.style.display = 'inline-block';
+
+                const image = canvas.toDataURL("image/png");
+                const link = document.createElement('a');
+                const pName = document.getElementById('prod-name').value || 'ទំនិញ';
+                const date = new Date().toISOString().slice(0,10);
+                link.download = `វិក្កយបត្រ_${pName}_${date}.png`;
+                link.href = image;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                showToast("រក្សាទុករូបភាពបានជោគជ័យ!");
+            }).catch(err => {
+                // Restore in case of error too
+                if (profitContainer) profitContainer.style.display = 'block';
+                if (togBarcodeBtn) togBarcodeBtn.style.display = 'inline-block';
+                console.error(err);
+                showToast("មានបញ្ហាក្នុងការរក្សាទុករូបភាព!");
+            });
+        }
+
+        // Initialize App
+        updateReceiptVisibility();
+        calculate();
     </script>
 </body>
 </html>
