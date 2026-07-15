@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subtitling & Dubbing Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        gray: {
+                            850: '#1f2937',
+                            900: '#111827',
+                            950: '#030712',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+
+        .resizable-container {
+            resize: both;
+            overflow: hidden;
+            min-width: 300px;
+            min-height: 200px;
+            max-width: 100%;
+            background: #000;
+            position: relative;
+        }
+
+        .overlay-layer {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .draggable-overlay {
+            position: absolute;
+            pointer-events: auto;
+            cursor: move;
+            user-select: none;
+            display: inline-block;
+        }
+        
+        .draggable-overlay .resize-handle {
+            position: absolute;
+            bottom: -5px; right: -5px;
+            width: 12px; height: 12px;
+            background: #3b82f6;
+            border-radius: 50%;
+            cursor: nwse-resize;
+            display: none;
+        }
+        
+        .draggable-overlay:hover .resize-handle { display: block; }
+
+        #video-subtitles {
+            position: absolute;
+            bottom: 10%;
+            width: 100%;
+            text-align: center;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        .sub-text {
+            display: inline-block;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 1.5rem;
+            font-weight: 600;
+            text-shadow: 1px 1px 2px black;
+        }
+
+        @keyframes anim-bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        @keyframes anim-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes anim-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        @keyframes anim-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes anim-float { 0%, 100% { transform: translateY(0px) rotate(0deg); } 50% { transform: translateY(-10px) rotate(2deg); } }
+
+        .anim-bounce { animation: anim-bounce 2s infinite ease-in-out; }
+        .anim-pulse { animation: anim-pulse 2s infinite ease-in-out; }
+        .anim-shake { animation: anim-shake 0.5s infinite ease-in-out; }
+        .anim-spin { animation: anim-spin 3s infinite linear; }
+        .anim-float { animation: anim-float 3s infinite ease-in-out; }
+    </style>
+    <style id="custom-fonts-style"></style>
+</head>
+<body class="bg-gray-950 text-gray-200 h-screen flex flex-col font-sans overflow-hidden selection:bg-blue-600 selection:text-white">
+
+    <!-- Top Navigation Bar -->
+    <header class="bg-gray-900 border-b border-gray-800 p-3 flex items-center justify-between shrink-0 shadow-md z-10">
+        <div class="flex items-center gap-3">
+            <svg class="w-6 h-6 text-blue-500" fill="currentColor" viewBox="0 0 256 256"><path d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A16,16,0,0,0,216,40Zm-96,32a12,12,0,1,1-12,12A12,12,0,0,1,120,72Zm36,104H100a8,8,0,0,1,0-16h56a8,8,0,0,1,0,16Zm44-48H56a8,8,0,0,1,0-16H200a8,8,0,0,1,0,16Z"></path></svg>
+            <h1 class="text-xl font-bold tracking-wide">DubStudio <span class="text-sm font-normal text-gray-400 border border-gray-700 px-2 rounded-full ml-1">Pro</span></h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <button onclick="saveProject()" class="px-4 py-1.5 bg-gray-800 hover:bg-gray-700 text-sm font-medium rounded border border-gray-700 transition-colors flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg> Save Project
+            </button>
+            <label class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded transition-colors cursor-pointer flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg> Load Project
+                <input type="file" id="load-project-input" accept=".json" class="hidden" onchange="loadProject(event)">
+            </label>
+            <button onclick="showSettingsModal()" class="p-1.5 text-gray-400 hover:text-white transition-colors" title="Settings">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Modal -->
+    <div id="modal-container" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div id="modal-content" class="bg-gray-850 border border-gray-700 rounded-xl shadow-2xl max-w-md w-full p-6">
+            <h3 id="modal-title" class="text-xl font-bold text-white mb-4">Message</h3>
+            <div id="modal-body" class="text-gray-300 mb-6 space-y-4"></div>
+            <div class="flex justify-end gap-3" id="modal-actions">
+                <button onclick="closeModal()" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm font-medium transition-colors">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <main class="flex-1 flex overflow-hidden">
+        
+        <!-- Left Panel: Video & Visuals -->
+        <section class="flex flex-col border-r border-gray-800 bg-black relative" style="width: 50%; min-width: 30%;">
+            <!-- Video Area -->
+            <div class="flex-1 flex items-center justify-center overflow-hidden p-4 relative group">
+                <div class="resizable-container rounded-lg border border-gray-700 shadow-2xl mx-auto flex items-center justify-center" id="video-wrapper">
+                    <!-- Zoom & Flip Container -->
+                    <div id="video-zoom-container" class="w-full h-full relative" style="transform: scale(1); transform-origin: center center;">
+                        <video id="main-video" class="w-full h-full object-contain" controls>
+                            Your browser does not support HTML5 video.
+                        </video>
+                        <div id="video-subtitles"><span class="sub-text hidden" id="current-sub-text"></span></div>
+                        <div id="overlay-layer" class="overlay-layer"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Zoom/Flip Toolbar -->
+            <div class="flex justify-center gap-2 p-2 bg-gray-900 border-t border-gray-800 shrink-0">
+                <button onclick="zoomIn()" class="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded text-xs">🔍 Zoom In</button>
+                <button onclick="zoomOut()" class="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded text-xs">🔍 Zoom Out</button>
+                <button onclick="toggleFlip()" class="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded text-xs">↔️ Flip</button>
+                <span id="zoom-level-display" class="text-xs text-gray-400 flex items-center">100%</span>
+            </div>
+
+            <!-- Visual Overlays Controls -->
+            <div class="h-64 bg-gray-900 border-t border-gray-800 p-4 overflow-y-auto shrink-0 flex flex-col gap-4">
+                <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">Visual Overlays</h3>
+                <div class="flex flex-wrap gap-2">
+                    <label class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded text-xs cursor-pointer border border-gray-700">
+                        + Add Image/GIF
+                        <input type="file" accept="image/*" class="hidden" onchange="addOverlayImage(event)">
+                    </label>
+                    <button onclick="addTextLayer()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded text-xs border border-gray-700">+ Add Text Layer</button>
+                    <label class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded text-xs cursor-pointer border border-gray-700">
+                        Upload Font
+                        <input type="file" accept=".ttf,.otf,.woff,.woff2" class="hidden" onchange="uploadFont(event)">
+                    </label>
+                </div>
+                <div id="layers-list" class="flex flex-col gap-2 mt-2">
+                    <p class="text-xs text-gray-500 italic">No overlays added yet.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Panel: Audio, SRT & Settings -->
+        <section class="flex-1 flex flex-col bg-gray-900 min-w-[30%]">
+            
+            <!-- Toolbar -->
+            <div class="p-3 border-b border-gray-800 flex flex-wrap gap-2 items-center justify-between bg-gray-850">
+                <div class="flex gap-2">
+                    <label class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded cursor-pointer transition-colors shadow-sm">
+                        Import Video
+                        <input type="file" accept="video/*" class="hidden" onchange="importVideo(event)">
+                    </label>
+                    <label class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded cursor-pointer transition-colors shadow-sm">
+                        Import SRT
+                        <input type="file" accept=".srt" class="hidden" onchange="importSRT(event)">
+                    </label>
+                    <label class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded cursor-pointer transition-colors shadow-sm">
+                        Bulk Audio
+                        <input type="file" webkitdirectory directory multiple class="hidden" onchange="importBulkAudio(event)">
+                    </label>
+                </div>
+                <div class="flex gap-3 items-center">
+                    <label class="flex items-center gap-1.5 text-xs text-gray-300 cursor-pointer">
+                        <input type="checkbox" id="hide-srt-toggle" class="form-checkbox bg-gray-800 border-gray-700 rounded rounded-sm" onchange="toggleHideSrt()">
+                        Hide SRT Text
+                    </label>
+                    <button onclick="toggleCollapseAll()" class="px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded text-xs border border-gray-700" id="btn-collapse-all">Collapse All</button>
+                </div>
+            </div>
+
+            <!-- Global SRT Settings (Ducking & Filters) -->
+            <div class="px-4 py-3 bg-gray-900 border-b border-gray-800 flex flex-wrap items-center gap-4 text-sm shrink-0">
+                <div class="flex items-center gap-2">
+                    <span class="text-gray-400 text-xs">Lines:</span>
+                    <input type="number" id="filter-start" class="w-16 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs" value="1" min="1" onchange="updateFilters()">
+                    <span class="text-gray-500 text-xs">to</span>
+                    <input type="number" id="filter-end" class="w-16 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs" value="9999" min="1" onchange="updateFilters()">
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-gray-400 text-xs">Ducking Vol:</span>
+                    <input type="range" id="ducking-range" min="0" max="1" step="0.05" value="0.2" class="w-24 accent-blue-500" oninput="updateDuckingValue(this.value)">
+                    <span id="ducking-val-display" class="text-xs text-gray-400 w-8">20%</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-gray-400 text-xs">Pre-Duck (s):</span>
+                    <input type="number" id="pre-duck-input" class="w-16 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs" value="0.5" step="0.1" min="0" onchange="updatePreDuck()">
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-gray-400 text-xs">Post-Duck (s):</span>
+                    <input type="number" id="post-duck-input" class="w-16 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs" value="0.2" step="0.1" min="0" onchange="updatePostDuck()">
+                </div>
+            </div>
+
+            <!-- SRT List -->
+            <div id="srt-list-container" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-950 pb-32">
+                <div class="flex flex-col items-center justify-center h-full text-gray-500 space-y-4" id="empty-srt-state">
+                    <svg class="w-16 h-16 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                    <p>Import an SRT file to start dubbing.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // ==================== APPLICATION STATE ====================
+        const AppState = {
+            videoFile: null,
+            videoUrl: "",
+            subtitles: [],
+            overlays: [],
+            fonts: [],
+            zoomLevel: 1.0,
+            isFlipped: false,
+            settings: {
+                duckingVolume: 0.2,
+                preDuckSeconds: 0.5,
+                postDuckSeconds: 0.2,
+                filterStart: 1,
+                filterEnd: 9999,
+                hideSrt: false,
+                ttsApiKey: "",
+                ttsVoice: "km-KH-Standard-B"
+            },
+            activeAudioNodes: {},
+            audioCtx: null,
+            videoSourceNode: null,
+            videoDuckingGain: null,
+            masterGain: null,
+            reverbBuffer: null
+        };
+
+        const DOM = {
+            video: document.getElementById('main-video'),
+            videoWrapper: document.getElementById('video-wrapper'),
+            subText: document.getElementById('current-sub-text'),
+            overlayLayer: document.getElementById('overlay-layer'),
+            srtList: document.getElementById('srt-list-container'),
+            emptyState: document.getElementById('empty-srt-state'),
+            modalContainer: document.getElementById('modal-container'),
+            modalTitle: document.getElementById('modal-title'),
+            modalBody: document.getElementById('modal-body'),
+            modalActions: document.getElementById('modal-actions'),
+            zoomContainer: document.getElementById('video-zoom-container'),
+            zoomDisplay: document.getElementById('zoom-level-display')
+        };
+
+        let isAudioInitialized = false;
+        let animationFrameId = null;
+
+        // ==================== UTILITY FUNCTIONS ====================
+        function showModal(title, html, actions = null) {
+            DOM.modalTitle.textContent = title;
+            DOM.modalBody.innerHTML = html;
+            if (actions) {
+                DOM.modalActions.innerHTML = actions + `<button onclick="closeModal()" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm font-medium">Close</button>`;
+            } else {
+                DOM.modalActions.innerHTML = `<button onclick="closeModal()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded text-sm font-medium text-white">OK</button>`;
+            }
+            DOM.modalContainer.classList.remove('hidden');
+        }
+
+        function closeModal() { DOM.modalContainer.classList.add('hidden'); }
+
+        function formatTime(sec) {
+            const h = Math.floor(sec / 3600);
+            const m = Math.floor((sec % 3600) / 60);
+            const s = Math.floor(sec % 60);
+            const ms = Math.floor((sec % 1) * 1000);
+            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')},${ms.toString().padStart(3, '0')}`;
+        }
+
+        function timeToSeconds(str) {
+            const parts = str.replace(',', '.').split(':');
+            return parts.length === 3 ? parseFloat(parts[0]) * 3600 + parseFloat(parts[1]) * 60 + parseFloat(parts[2]) : 0;
+        }
+
+        function generateId() { return Math.random().toString(36).substr(2, 9); }
+
+        function createImpulseResponse(ctx, duration = 2, decay = 2) {
+            const rate = ctx.sampleRate;
+            const length = rate * duration;
+            const impulse = ctx.createBuffer(2, length, rate);
+            for (let ch = 0; ch < 2; ch++) {
+                const channel = impulse.getChannelData(ch);
+                for (let i = 0; i < length; i++) {
+                    channel[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
+                }
+            }
+            return impulse;
+        }
+
+        // ==================== ZOOM & FLIP ====================
+        function applyVideoTransform() {
+            const { zoomLevel, isFlipped } = AppState;
+            const scaleX = isFlipped ? -1 : 1;
+            DOM.zoomContainer.style.transform = `scale(${zoomLevel}) scaleX(${scaleX})`;
+            DOM.zoomDisplay.textContent = Math.round(zoomLevel * 100) + '%';
+        }
+
+        function zoomIn() {
+            AppState.zoomLevel = Math.min(3.0, AppState.zoomLevel + 0.1);
+            applyVideoTransform();
+        }
+
+        function zoomOut() {
+            AppState.zoomLevel = Math.max(0.5, AppState.zoomLevel - 0.1);
+            applyVideoTransform();
+        }
+
+        function toggleFlip() {
+            AppState.isFlipped = !AppState.isFlipped;
+            applyVideoTransform();
+        }
+
+        // ==================== AUDIO ENGINE ====================
+        function initAudioEngine() {
+            if (isAudioInitialized) return;
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                AppState.audioCtx = new AudioContext();
+                
+                AppState.masterGain = AppState.audioCtx.createGain();
+                AppState.masterGain.connect(AppState.audioCtx.destination);
+
+                AppState.videoSourceNode = AppState.audioCtx.createMediaElementSource(DOM.video);
+                AppState.videoDuckingGain = AppState.audioCtx.createGain();
+                AppState.videoDuckingGain.gain.value = 1.0;
+                
+                AppState.videoSourceNode.connect(AppState.videoDuckingGain);
+                AppState.videoDuckingGain.connect(AppState.masterGain);
+
+                AppState.reverbBuffer = createImpulseResponse(AppState.audioCtx);
+                isAudioInitialized = true;
+                console.log("Audio engine initialized successfully.");
+            } catch (e) {
+                console.error("Audio engine initialization failed:", e);
+            }
+        }
+
+        document.body.addEventListener('click', () => {
+            if (!isAudioInitialized) initAudioEngine();
+            if (AppState.audioCtx && AppState.audioCtx.state === 'suspended') AppState.audioCtx.resume();
+        }, { once: true });
+
+        // ==================== MAIN SYNC LOOP (with ducking) ====================
+        function syncLoop() {
+            if (!AppState.videoUrl) {
+                animationFrameId = requestAnimationFrame(syncLoop);
+                return;
+            }
+
+            const ct = DOM.video.currentTime;
+            let activeText = "";
+            let needDuck = false;
+
+            const { filterStart, filterEnd, preDuckSeconds, postDuckSeconds } = AppState.settings;
+
+            for (const line of AppState.subtitles) {
+                if (line.index < filterStart || line.index > filterEnd) continue;
+
+                if (line.audioUrl && ct >= (line.start - preDuckSeconds) && ct <= (line.end + postDuckSeconds)) {
+                    needDuck = true;
+                }
+
+                const isActive = ct >= line.start && ct <= line.end;
+                if (isActive) {
+                    activeText = line.text;
+                    if (line.audioUrl) {
+                        handleLineAudioPlayback(line, ct);
+                    }
+                } else {
+                    if (AppState.activeAudioNodes[line.id]) {
+                        stopLineAudio(line.id);
+                    }
+                }
+            }
+
+            if (!AppState.settings.hideSrt && activeText) {
+                DOM.subText.textContent = activeText;
+                DOM.subText.classList.remove('hidden');
+            } else {
+                DOM.subText.classList.add('hidden');
+            }
+
+            if (isAudioInitialized && AppState.videoDuckingGain) {
+                const targetVol = needDuck ? AppState.settings.duckingVolume : 1.0;
+                AppState.videoDuckingGain.gain.setTargetAtTime(targetVol, AppState.audioCtx.currentTime, 0.03);
+            }
+
+            animationFrameId = requestAnimationFrame(syncLoop);
+        }
+        animationFrameId = requestAnimationFrame(syncLoop);
+
+        DOM.video.addEventListener('pause', () => {
+            Object.values(AppState.activeAudioNodes).forEach(n => n.el && n.el.pause());
+        });
+        DOM.video.addEventListener('play', () => {
+            if (!isAudioInitialized) initAudioEngine();
+            if (AppState.audioCtx?.state === 'suspended') AppState.audioCtx.resume();
+            const ct = DOM.video.currentTime;
+            Object.keys(AppState.activeAudioNodes).forEach(id => {
+                const line = AppState.subtitles.find(s => s.id == id);
+                if (line && ct >= line.start && ct <= line.end) startLineAudio(line, ct);
+                else stopLineAudio(id);
+            });
+        });
+        DOM.video.addEventListener('seeked', () => {
+            Object.keys(AppState.activeAudioNodes).forEach(stopLineAudio);
+        });
+
+        function handleLineAudioPlayback(line, videoTime) {
+            if (!DOM.video.paused && !AppState.activeAudioNodes[line.id]) {
+                startLineAudio(line, videoTime);
+            }
+        }
+
+        function startLineAudio(line, videoTime) {
+            if (AppState.activeAudioNodes[line.id]) stopLineAudio(line.id);
+            if (!line.audioUrl) return;
+
+            const audioEl = new Audio(line.audioUrl);
+            audioEl.preservesPitch = true;
+            
+            const subDuration = line.end - line.start;
+            const origDuration = line.duration || 1.0;
+            const autoRate = origDuration / subDuration;
+            const finalRate = autoRate * line.speedMultiplier;
+            audioEl.playbackRate = Math.max(0.1, finalRate);
+
+            let offsetInVideo = videoTime - line.start;
+            if (offsetInVideo < 0) offsetInVideo = 0;
+            const offsetInAudio = offsetInVideo * audioEl.playbackRate;
+            if (offsetInAudio >= origDuration) return;
+
+            audioEl.currentTime = offsetInAudio;
+
+            let sourceNode = null;
+            if (isAudioInitialized) {
+                sourceNode = AppState.audioCtx.createMediaElementSource(audioEl);
+                let currentNode = sourceNode;
+
+                // Echo
+                if (line.echo) {
+                    const delay = AppState.audioCtx.createDelay(1.0);
+                    delay.delayTime.value = 0.3;
+                    const feedback = AppState.audioCtx.createGain();
+                    feedback.gain.value = 0.4;
+                    const echoMix = AppState.audioCtx.createGain();
+                    echoMix.gain.value = 0.5;
+                    const dry = AppState.audioCtx.createGain();
+                    const output = AppState.audioCtx.createGain();
+
+                    currentNode.connect(dry);
+                    currentNode.connect(delay);
+                    delay.connect(feedback);
+                    feedback.connect(delay);
+                    delay.connect(echoMix);
+                    dry.connect(output);
+                    echoMix.connect(output);
+                    currentNode = output;
+                }
+
+                // Reverb
+                if (line.reverb && AppState.reverbBuffer) {
+                    const convolver = AppState.audioCtx.createConvolver();
+                    convolver.buffer = AppState.reverbBuffer;
+                    const reverbMix = AppState.audioCtx.createGain();
+                    reverbMix.gain.value = 0.6;
+                    const dry = AppState.audioCtx.createGain();
+                    const output = AppState.audioCtx.createGain();
+
+                    currentNode.connect(dry);
+                    currentNode.connect(convolver);
+                    convolver.connect(reverbMix);
+                    dry.connect(output);
+                    reverbMix.connect(output);
+                    currentNode = output;
+                }
+
+                currentNode.connect(AppState.masterGain);
+            }
+
+            audioEl.play().catch(e => console.log("Audio play:", e));
+            AppState.activeAudioNodes[line.id] = { el: audioEl, source: sourceNode };
+        }
+
+        function stopLineAudio(lineId) {
+            const node = AppState.activeAudioNodes[lineId];
+            if (!node) return;
+            if (node.el) {
+                node.el.pause();
+                node.el.removeAttribute('src');
+            }
+            if (node.source) node.source.disconnect();
+            delete AppState.activeAudioNodes[lineId];
+        }
+
+        // ==================== FILE IMPORT / EXPORT ====================
+        function importVideo(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (AppState.videoUrl?.startsWith('blob:')) URL.revokeObjectURL(AppState.videoUrl);
+            AppState.videoFile = file;
+            AppState.videoUrl = URL.createObjectURL(file);
+            DOM.video.src = AppState.videoUrl;
+            initAudioEngine();
+        }
+
+        function importSRT(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = ev => {
+                parseSRT(ev.target.result);
+                renderSRTList();
+            };
+            reader.readAsText(file);
+        }
+
+        function parseSRT(raw) {
+            AppState.subtitles = [];
+            const blocks = raw.trim().split(/\r?\n\r?\n/);
+            blocks.forEach(block => {
+                const lines = block.split(/\r?\n/);
+                if (lines.length >= 3) {
+                    const idx = parseInt(lines[0].trim());
+                    const times = lines[1].split(' --> ');
+                    if (times.length === 2) {
+                        AppState.subtitles.push({
+                            id: generateId(),
+                            index: idx,
+                            start: timeToSeconds(times[0]),
+                            end: timeToSeconds(times[1]),
+                            text: lines.slice(2).join('\n'),
+                            audioUrl: null,
+                            audioBase64: null,
+                            duration: 0,
+                            speedMultiplier: 1.0,
+                            reverb: false,
+                            echo: false,
+                            collapsed: false
+                        });
+                    }
+                }
+            });
+            if (AppState.subtitles.length) {
+                document.getElementById('filter-end').value = AppState.subtitles[AppState.subtitles.length-1].index;
+                AppState.settings.filterEnd = AppState.subtitles[AppState.subtitles.length-1].index;
+            }
+        }
+
+        async function importBulkAudio(e) {
+            const files = e.target.files;
+            if (!files?.length || !AppState.subtitles.length) {
+                showModal("Error", "Please import SRT first.");
+                return;
+            }
+            let count = 0;
+            for (const file of files) {
+                if (!file.type.startsWith('audio/')) continue;
+                const match = file.name.match(/^(\d+)\./);
+                if (match) {
+                    const idx = parseInt(match[1]);
+                    const subIdx = AppState.subtitles.findIndex(s => s.index === idx);
+                    if (subIdx !== -1) {
+                        await attachAudioToLine(file, subIdx);
+                        count++;
+                    }
+                }
+            }
+            renderSRTList();
+            showModal("Bulk Import", `Attached ${count} audio files.`);
+        }
+
+        async function attachAudioToLine(file, idx) {
+            return new Promise(resolve => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const base64 = e.target.result;
+                    const url = URL.createObjectURL(file);
+                    const temp = new Audio(url);
+                    temp.onloadedmetadata = () => {
+                        AppState.subtitles[idx].audioBase64 = base64;
+                        AppState.subtitles[idx].audioUrl = url;
+                        AppState.subtitles[idx].duration = temp.duration;
+                        resolve();
+                    };
+                    temp.onerror = () => resolve();
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function handleLineAudioUpload(e, id) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const idx = AppState.subtitles.findIndex(s => s.id === id);
+            if (idx !== -1) attachAudioToLine(file, idx).then(renderSRTList);
+        }
+
+        // ==================== TTS ====================
+        async function generateTTS(id) {
+            const line = AppState.subtitles.find(s => s.id === id);
+            if (!line) return;
+            if (!AppState.settings.ttsApiKey) { showSettingsModal(); return; }
+            const btn = document.getElementById(`tts-btn-${id}`);
+            const original = btn.innerHTML;
+            btn.innerHTML = `<svg class="animate-spin h-4 w-4 inline" ...>`;
+            btn.disabled = true;
+            try {
+                const res = await fetch(
+                    `https://texttospeech.googleapis.com/v1/text:synthesize?key=${AppState.settings.ttsApiKey}`,
+                    {
+                        method: 'POST',
+                        headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({
+                            input: { text: line.text },
+                            voice: { languageCode: "km-KH", name: AppState.settings.ttsVoice },
+                            audioConfig: { audioEncoding: "MP3" }
+                        })
+                    }
+                );
+                if (!res.ok) throw new Error((await res.json()).error.message);
+                const data = await res.json();
+                const blob = await fetch(`data:audio/mp3;base64,${data.audioContent}`).then(r => r.blob());
+                const file = new File([blob], `tts_${id}.mp3`, {type:'audio/mp3'});
+                const idx = AppState.subtitles.findIndex(s => s.id === id);
+                await attachAudioToLine(file, idx);
+                renderSRTList();
+            } catch (err) {
+                showModal("TTS Error", err.message);
+                btn.innerHTML = original;
+                btn.disabled = false;
+            }
+        }
+
+        // ==================== SRT LIST RENDERING ====================
+        function renderSRTList() {
+            if (!AppState.subtitles.length) {
+                DOM.emptyState.classList.remove('hidden');
+                DOM.srtList.innerHTML = '';
+                return;
+            }
+            DOM.emptyState.classList.add('hidden');
+            const frag = document.createDocumentFragment();
+
+            AppState.subtitles.forEach(line => {
+                if (line.index < AppState.settings.filterStart || line.index > AppState.settings.filterEnd) return;
+                const div = document.createElement('div');
+                div.className = "bg-gray-850 border border-gray-800 rounded-lg p-3 flex flex-col gap-2";
+                const hasAudio = !!line.audioUrl;
+
+                div.innerHTML = `
+                    <div class="flex justify-between items-center text-xs text-gray-400">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-gray-700 text-white px-1.5 py-0.5 rounded font-mono">#${line.index}</span>
+                            <span>${formatTime(line.start)} → ${formatTime(line.end)}</span>
+                        </div>
+                        <div class="flex gap-1">
+                            <button onclick="copyLineText('${line.id}')" class="p-1 hover:text-white" title="Copy"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg></button>
+                            <button onclick="toggleCollapse('${line.id}')" class="p-1 hover:text-white"><svg class="w-4 h-4 transform transition-transform ${line.collapsed ? '-rotate-90' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></button>
+                        </div>
+                    </div>
+                    ${!line.collapsed ? `
+                    <textarea class="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-sm text-gray-200 resize-none h-16" onchange="updateLineText('${line.id}', this.value)">${line.text}</textarea>
+                    <div class="flex flex-wrap items-center gap-2 mt-1">
+                        ${hasAudio ? `
+                        <div class="flex-1 flex items-center gap-2 bg-emerald-900/30 border border-emerald-800/50 rounded px-2 py-1 text-xs text-emerald-400 font-medium">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg> Audio (${line.duration.toFixed(2)}s)
+                            <button onclick="removeLineAudio('${line.id}')" class="ml-auto text-red-400 hover:text-red-300">Remove</button>
+                        </div>` : `
+                        <label class="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded text-xs cursor-pointer border border-gray-600 flex items-center gap-1">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg> Attach Audio
+                            <input type="file" accept="audio/*" class="hidden" onchange="handleLineAudioUpload(event, '${line.id}')">
+                        </label>
+                        <button id="tts-btn-${line.id}" onclick="generateTTS('${line.id}')" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded text-xs text-white">Generate TTS</button>`}
+                    </div>` : ''}
+                    ${hasAudio ? `
+                    <div class="mt-2 pt-2 border-t border-gray-800 flex flex-wrap gap-4 items-center">
+                        <div class="flex flex-col gap-1 w-32">
+                            <label class="text-[10px] text-gray-500 uppercase flex justify-between"><span>Speed</span><span>${line.speedMultiplier}x</span></label>
+                            <input type="range" min="0.5" max="2.0" step="0.05" value="${line.speedMultiplier}" class="w-full accent-blue-500" onchange="updateLineSpeed('${line.id}', this.value)">
+                            <span class="text-[10px] text-gray-400">Final: ${((line.duration/(line.end-line.start))*line.speedMultiplier).toFixed(2)}x</span>
+                        </div>
+                        <div class="flex items-center gap-3 ml-auto">
+                            <label class="flex items-center gap-1 text-xs text-gray-400 cursor-pointer hover:text-white">
+                                <input type="checkbox" ${line.reverb?'checked':''} onchange="updateLineFX('${line.id}','reverb',this.checked)" class="form-checkbox rounded-sm w-3 h-3"> Reverb
+                            </label>
+                            <label class="flex items-center gap-1 text-xs text-gray-400 cursor-pointer hover:text-white">
+                                <input type="checkbox" ${line.echo?'checked':''} onchange="updateLineFX('${line.id}','echo',this.checked)" class="form-checkbox rounded-sm w-3 h-3"> Echo
+                            </label>
+                        </div>
+                    </div>` : ''}
+                `;
+                frag.appendChild(div);
+            });
+            DOM.srtList.innerHTML = '';
+            DOM.srtList.appendChild(frag);
+        }
+
+        // SRT line actions (unchanged)
+        function copyLineText(id) {
+            const line = AppState.subtitles.find(s => s.id === id);
+            if (!line) return;
+            navigator.clipboard?.writeText(line.text) ?? showModal("Copied", "Text copied.");
+        }
+        function toggleCollapse(id) {
+            const line = AppState.subtitles.find(s => s.id === id);
+            if (line) line.collapsed = !line.collapsed;
+            renderSRTList();
+        }
+        function toggleCollapseAll() {
+            const btn = document.getElementById('btn-collapse-all');
+            const state = btn.innerText === "Collapse All";
+            AppState.subtitles.forEach(s => s.collapsed = state);
+            btn.innerText = state ? "Expand All" : "Collapse All";
+            renderSRTList();
+        }
+        function updateLineText(id, text) {
+            const line = AppState.subtitles.find(s => s.id === id);
+            if (line) line.text = text;
+        }
+        function removeLineAudio(id) {
+            const line = AppState.subtitles.find(s => s.id === id);
+            if (!line) return;
+            stopLineAudio(id);
+            line.audioUrl = null;
+            line.audioBase64 = null;
+            line.duration = 0;
+            renderSRTList();
+        }
+        function updateLineSpeed(id, val) {
+            const line = AppState.subtitles.find(s => s.id === id);
+            if (line) line.speedMultiplier = parseFloat(val);
+            renderSRTList();
+        }
+        function updateLineFX(id, type, val) {
+            const line = AppState.subtitles.find(s => s.id === id);
+            if (line) {
+                line[type] = val;
+                if (AppState.activeAudioNodes[id]) {
+                    startLineAudio(line, DOM.video.currentTime);
+                }
+            }
+        }
+
+        // Global settings
+        function updateFilters() {
+            AppState.settings.filterStart = parseInt(document.getElementById('filter-start').value) || 1;
+            AppState.settings.filterEnd = parseInt(document.getElementById('filter-end').value) || 9999;
+            renderSRTList();
+        }
+        function updateDuckingValue(val) {
+            AppState.settings.duckingVolume = parseFloat(val);
+            document.getElementById('ducking-val-display').innerText = Math.round(val*100)+'%';
+        }
+        function updatePreDuck() {
+            AppState.settings.preDuckSeconds = parseFloat(document.getElementById('pre-duck-input').value) || 0;
+        }
+        function updatePostDuck() {
+            AppState.settings.postDuckSeconds = parseFloat(document.getElementById('post-duck-input').value) || 0;
+        }
+        function toggleHideSrt() {
+            AppState.settings.hideSrt = document.getElementById('hide-srt-toggle').checked;
+        }
+
+        // ==================== OVERLAYS ====================
+        function addOverlayImage(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = ev => {
+                AppState.overlays.push({ id: generateId(), type:'image', src: ev.target.result, x:10, y:10, w:100, h:'auto' });
+                renderVisualOverlays();
+            };
+            reader.readAsDataURL(file);
+        }
+        function addTextLayer() {
+            AppState.overlays.push({ id: generateId(), type:'text', text:'New Text', font:'sans-serif', color:'#ffffff', outline:'#000000', size:32, anim:'', x:20, y:20, w:'auto', h:'auto' });
+            renderVisualOverlays();
+        }
+        function uploadFont(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const name = 'CustomFont_'+generateId();
+            const reader = new FileReader();
+            reader.onload = ev => {
+                document.getElementById('custom-fonts-style').innerHTML += `@font-face { font-family:'${name}'; src:url('${ev.target.result}'); }`;
+                AppState.fonts.push(name);
+                showModal("Font Loaded", "Font ready for text layers.");
+                renderVisualOverlays();
+            };
+            reader.readAsDataURL(file);
+        }
+        function removeOverlay(id) {
+            AppState.overlays = AppState.overlays.filter(o => o.id !== id);
+            renderVisualOverlays();
+        }
+        function renderVisualOverlays() {
+            DOM.overlayLayer.innerHTML = '';
+            const list = document.getElementById('layers-list');
+            list.innerHTML = '';
+            if (!AppState.overlays.length) {
+                list.innerHTML = '<p class="text-xs text-gray-500 italic">No overlays added yet.</p>';
+                return;
+            }
+            AppState.overlays.forEach(ov => {
+                const el = document.createElement('div');
+                el.className = `draggable-overlay ${ov.anim||''}`;
+                el.id = `ov-${ov.id}`;
+                el.style.left = ov.x+'%';
+                el.style.top = ov.y+'%';
+                if (ov.type === 'image') {
+                    el.innerHTML = `<img src="${ov.src}" style="width:${ov.w}px; pointer-events:none;"><div class="resize-handle"></div>`;
+                } else {
+                    el.innerHTML = `<div style="font-family:${ov.font};font-size:${ov.size}px;color:${ov.color};-webkit-text-stroke:1px ${ov.outline};font-weight:bold;">${ov.text}</div>`;
+                }
+                makeDraggable(el, ov);
+                DOM.overlayLayer.appendChild(el);
+
+                const ui = document.createElement('div');
+                ui.className = "bg-gray-800 border border-gray-700 rounded p-2 text-xs flex flex-col gap-2";
+                ui.innerHTML = `
+                    <div class="flex justify-between items-center text-gray-400 font-bold uppercase tracking-wider">
+                        <span>${ov.type} Layer</span>
+                        <button onclick="removeOverlay('${ov.id}')" class="text-red-400 hover:text-red-300">X</button>
+                    </div>
+                    ${ov.type==='text' ? `
+                    <input type="text" value="${ov.text}" onchange="updateOverlay('${ov.id}','text',this.value)" class="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-white">
+                    <div class="flex gap-2">
+                        <input type="color" value="${ov.color}" onchange="updateOverlay('${ov.id}','color',this.value)" class="w-8 h-8 rounded p-0 border-0 bg-transparent" title="Color">
+                        <input type="color" value="${ov.outline}" onchange="updateOverlay('${ov.id}','outline',this.value)" class="w-8 h-8 rounded p-0 border-0 bg-transparent" title="Outline">
+                        <input type="number" value="${ov.size}" onchange="updateOverlay('${ov.id}','size',this.value)" class="w-16 bg-gray-900 border border-gray-700 rounded px-2" title="Size">
+                    </div>
+                    <select onchange="updateOverlay('${ov.id}','font',this.value)" class="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1">
+                        <option value="sans-serif" ${ov.font==='sans-serif'?'selected':''}>Sans-Serif</option>
+                        <option value="serif" ${ov.font==='serif'?'selected':''}>Serif</option>
+                        ${AppState.fonts.map(f=>`<option value="${f}" ${ov.font===f?'selected':''}>${f}</option>`).join('')}
+                    </select>
+                    <select onchange="updateOverlay('${ov.id}','anim',this.value)" class="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-gray-400">
+                        <option value="">No Animation</option>
+                        <option value="anim-bounce" ${ov.anim==='anim-bounce'?'selected':''}>Bounce</option>
+                        <option value="anim-pulse" ${ov.anim==='anim-pulse'?'selected':''}>Pulse</option>
+                        <option value="anim-shake" ${ov.anim==='anim-shake'?'selected':''}>Shake</option>
+                        <option value="anim-spin" ${ov.anim==='anim-spin'?'selected':''}>Spin</option>
+                        <option value="anim-float" ${ov.anim==='anim-float'?'selected':''}>Float</option>
+                    </select>` : `<div class="flex items-center gap-2"><label>Width:</label><input type="number" value="${ov.w}" onchange="updateOverlay('${ov.id}','w',this.value)" class="w-20 bg-gray-900 border border-gray-700 rounded px-2 py-1"> px</div>`}
+                `;
+                list.appendChild(ui);
+            });
+        }
+        function updateOverlay(id, key, val) {
+            const ov = AppState.overlays.find(o => o.id === id);
+            if (ov) { ov[key] = val; renderVisualOverlays(); }
+        }
+        function makeDraggable(el, ov) {
+            let dragging = false, sx, sy, ix, iy;
+            el.addEventListener('mousedown', e => {
+                if (e.target.classList.contains('resize-handle')) return;
+                dragging = true;
+                sx = e.clientX; sy = e.clientY;
+                const rect = DOM.overlayLayer.getBoundingClientRect();
+                ix = (ov.x/100)*rect.width;
+                iy = (ov.y/100)*rect.height;
+                e.preventDefault();
+            });
+            document.addEventListener('mousemove', e => {
+                if (!dragging) return;
+                const rect = DOM.overlayLayer.getBoundingClientRect();
+                ov.x = ((ix + e.clientX - sx) / rect.width) * 100;
+                ov.y = ((iy + e.clientY - sy) / rect.height) * 100;
+                el.style.left = ov.x+'%';
+                el.style.top = ov.y+'%';
+            });
+            document.addEventListener('mouseup', () => { dragging = false; });
+        }
+
+        // ==================== PROJECT SAVE / LOAD ====================
+        function saveProject() {
+            const data = {
+                subtitles: AppState.subtitles.map(s => ({
+                    id: s.id, index: s.index, start: s.start, end: s.end,
+                    text: s.text, audioBase64: s.audioBase64,
+                    duration: s.duration, speedMultiplier: s.speedMultiplier,
+                    reverb: s.reverb, echo: s.echo, collapsed: s.collapsed
+                })),
+                overlays: AppState.overlays,
+                settings: AppState.settings,
+                fonts: []
+            };
+            const blob = new Blob([JSON.stringify(data)], {type:'application/json'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'dub_project.json';
+            a.click();
+        }
+        async function loadProject(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async ev => {
+                try {
+                    const data = JSON.parse(ev.target.result);
+                    Object.keys(AppState.activeAudioNodes).forEach(stopLineAudio);
+                    AppState.settings = data.settings || AppState.settings;
+                    AppState.overlays = data.overlays || [];
+                    
+                    document.getElementById('filter-start').value = AppState.settings.filterStart;
+                    document.getElementById('filter-end').value = AppState.settings.filterEnd;
+                    document.getElementById('hide-srt-toggle').checked = AppState.settings.hideSrt;
+                    document.getElementById('ducking-range').value = AppState.settings.duckingVolume;
+                    document.getElementById('pre-duck-input').value = AppState.settings.preDuckSeconds || 0.5;
+                    document.getElementById('post-duck-input').value = AppState.settings.postDuckSeconds || 0.2;
+                    updateDuckingValue(AppState.settings.duckingVolume);
+
+                    AppState.subtitles = [];
+                    for (const s of data.subtitles) {
+                        let aUrl = null;
+                        if (s.audioBase64) {
+                            try {
+                                const blob = await fetch(s.audioBase64).then(r => r.blob());
+                                aUrl = URL.createObjectURL(blob);
+                            } catch {}
+                        }
+                        AppState.subtitles.push({ ...s, audioUrl: aUrl });
+                    }
+                    renderSRTList();
+                    renderVisualOverlays();
+                    showModal("Loaded", "Project restored successfully.");
+                } catch (err) {
+                    showModal("Error", "Invalid project file.");
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        }
+
+        // Settings modal
+        function showSettingsModal() {
+            const html = `
+                <div class="space-y-4">
+                    <div><label class="block text-sm font-medium text-gray-400 mb-1">Google Cloud TTS API Key</label>
+                    <input type="password" id="input-api-key" value="${AppState.settings.ttsApiKey}" class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white"></div>
+                    <div><label class="block text-sm font-medium text-gray-400 mb-1">Default Voice</label>
+                    <select id="input-tts-voice" class="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm text-white">
+                        <option value="km-KH-Standard-B" ${AppState.settings.ttsVoice==='km-KH-Standard-B'?'selected':''}>Piseth (Male)</option>
+                        <option value="km-KH-Standard-A" ${AppState.settings.ttsVoice==='km-KH-Standard-A'?'selected':''}>Sreymom (Female)</option>
+                    </select></div>
+                </div>`;
+            showModal("Settings", html, `<button onclick="saveSettings()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded text-sm font-medium text-white">Save</button>`);
+        }
+        function saveSettings() {
+            AppState.settings.ttsApiKey = document.getElementById('input-api-key').value.trim();
+            AppState.settings.ttsVoice = document.getElementById('input-tts-voice').value;
+            closeModal();
+        }
+
+        // Initialize zoom display
+        applyVideoTransform();
+    </script>
+</body>
+</html>
