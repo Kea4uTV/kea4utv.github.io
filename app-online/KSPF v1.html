@@ -715,6 +715,20 @@
                     videoPlayPromise = vid.play().catch(e => {
                         if (e.name !== 'AbortError') console.error("Playback error:", e);
                     });
+
+                    
+            // ===== Space Key: Play/Pause (គ្រប់ទីកន្លែង លើកលែងតែក្នុងប្រអប់បញ្ចូល) =====
+document.addEventListener('keydown', function(e) {
+    const tag = e.target.tagName.toLowerCase();
+    if (e.code === 'Space' && tag !== 'input' && tag !== 'textarea' && tag !== 'select') {
+        e.preventDefault();
+        e.stopPropagation(); // ការពារកុំឲ្យ event ទៅដល់ធាតុផ្សេង
+        togglePlayPause();
+    }
+}, true); // ← ប្រើ capturing phase
+
+
+                    
                 }
             });
             
