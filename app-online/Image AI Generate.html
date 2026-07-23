@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="km" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Image Studio - ប្រព័ន្ធបង្កើត និងកែច្នៃរូបភាព AI</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f6ff',
+                            100: '#e0edff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#0f172a'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Kanten', 'Inter', 'Battambang', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts for Khmer & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kantumruuy+Pro:ital,wght@0,300..700;1,300..700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Kantumruuy Pro', 'Inter', sans-serif;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-blue-500 selection:text-white">
+
+    <!-- Navigation Header -->
+    <header class="border-b border-slate-800 bg-slate-900/80 sticky top-0 z-40 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                    <i class="fa-solid font-bold fa-wand-magic-sparkles text-white text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold bg-gradient-to-r from-blue-400 to-indigo-300 bg-clip-text text-transparent">AI Image Studio Pro</h1>
+                    <p class="text-xs text-slate-400">ប្រព័ន្ធបង្កើត និងកែច្នៃរូបភាព AI កម្រិតខ្ពស់</p>
+                </div>
+            </div>
+
+            <!-- Main Tabs -->
+            <nav class="hidden md:flex gap-1 bg-slate-800/60 p-1 rounded-xl border border-slate-700/50">
+                <button onclick="switchTab('generate')" id="nav-generate" class="tab-btn active text-xs font-medium px-4 py-2 rounded-lg transition-all flex items-center gap-2 bg-blue-600 text-white shadow-md">
+                    <i class="fa-solid fa-paintbrush"></i> Generate Image
+                </button>
+                <button onclick="switchTab('vision')" id="nav-vision" class="tab-btn text-xs font-medium px-4 py-2 rounded-lg transition-all text-slate-300 hover:text-white hover:bg-slate-700/50 flex items-center gap-2">
+                    <i class="fa-solid fa-image"></i> Image to Prompt
+                </button>
+                <button onclick="switchTab('bg-remover')" id="nav-bg-remover" class="tab-btn text-xs font-medium px-4 py-2 rounded-lg transition-all text-slate-300 hover:text-white hover:bg-slate-700/50 flex items-center gap-2">
+                    <i class="fa-solid fa-scissors"></i> Remove BG
+                </button>
+                <button onclick="switchTab('adjust')" id="nav-adjust" class="tab-btn text-xs font-medium px-4 py-2 rounded-lg transition-all text-slate-300 hover:text-white hover:bg-slate-700/50 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders"></i> Studio Adjustments
+                </button>
+            </nav>
+
+            <div class="flex items-center gap-2">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span> Gemini 3.1 Ready
+                </span>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation -->
+        <div class="flex md:hidden border-t border-slate-800 overflow-x-auto px-2 py-1.5 gap-1 bg-slate-900/90">
+            <button onclick="switchTab('generate')" id="mob-nav-generate" class="text-xs px-3 py-1.5 rounded-lg whitespace-nowrap bg-blue-600 text-white">
+                <i class="fa-solid fa-paintbrush mr-1"></i> Generate
+            </button>
+            <button onclick="switchTab('vision')" id="mob-nav-vision" class="text-xs px-3 py-1.5 rounded-lg whitespace-nowrap text-slate-300">
+                <i class="fa-solid fa-image mr-1"></i> Img2Prompt
+            </button>
+            <button onclick="switchTab('bg-remover')" id="mob-nav-bg-remover" class="text-xs px-3 py-1.5 rounded-lg whitespace-nowrap text-slate-300">
+                <i class="fa-solid fa-scissors mr-1"></i> Remove BG
+            </button>
+            <button onclick="switchTab('adjust')" id="mob-nav-adjust" class="text-xs px-3 py-1.5 rounded-lg whitespace-nowrap text-slate-300">
+                <i class="fa-solid fa-sliders mr-1"></i> Studio Adjust
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+        
+        <!-- Toast Notification Box -->
+        <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-800 text-white px-4 py-3 rounded-xl shadow-2xl border border-slate-700 flex items-center gap-3">
+            <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400"></i>
+            <span id="toast-message" class="text-xs sm:text-sm font-medium">សារជូនដំណឹង</span>
+        </div>
+
+        <!-- TAB 1: GENERATE IMAGE -->
+        <section id="tab-generate" class="tab-content grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Left Control Panel -->
+            <div class="lg:col-span-5 space-y-6">
+                <!-- Prompt Input Box -->
+                <div class="glass-panel p-5 rounded-2xl space-y-4">
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm font-semibold flex items-center gap-2 text-slate-200">
+                            <i class="fa-solid fa-pen-nib text-blue-400"></i> Prompt បរិយាយរូបភាព
+                        </label>
+                        <button onclick="randomPrompt()" class="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 transition">
+                            <i class="fa-solid fa-shuffle text-[10px]"></i> សាកល្បង Prompt
+                        </button>
+                    </div>
+                    <div class="relative">
+                        <textarea id="prompt-input" rows="4" class="w-full bg-slate-950/80 border border-slate-800 rounded-xl p-3.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition resize-none" placeholder="សរសេរការពិពណ៌នារូបភាពដែលអ្នកចង់បានទីនេះ (ជាភាសាអង់គ្លេស ទទួលបានផលល្អបំផុត)..."></textarea>
+                        <button onclick="clearPrompt()" class="absolute bottom-3 right-3 text-slate-500 hover:text-slate-300 text-xs px-2 py-1 bg-slate-800/80 rounded border border-slate-700">
+                            លុប
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Aspect Ratio & Resolution Selector -->
+                <div class="glass-panel p-5 rounded-2xl space-y-4">
+                    <label class="text-sm font-semibold flex items-center gap-2 text-slate-200">
+                        <i class="fa-solid fa-expand text-indigo-400"></i> ជ្រើសរើស ទំហំ និង Resolution
+                    </label>
+
+                    <div class="grid grid-cols-3 gap-2 p-1 bg-slate-900/80 rounded-xl border border-slate-800">
+                        <button onclick="selectRatioCategory('landscape')" id="btn-cat-landscape" class="ratio-cat-btn active py-2 text-xs font-medium rounded-lg bg-blue-600 text-white flex flex-col items-center gap-1 transition">
+                            <i class="fa-solid fa-desktop"></i>
+                            Landscape (16:9)
+                        </button>
+                        <button onclick="selectRatioCategory('portrait')" id="btn-cat-portrait" class="ratio-cat-btn py-2 text-xs font-medium rounded-lg text-slate-400 hover:text-slate-200 flex flex-col items-center gap-1 transition">
+                            <i class="fa-solid fa-mobile-screen"></i>
+                            Portrait (9:16)
+                        </button>
+                        <button onclick="selectRatioCategory('square')" id="btn-cat-square" class="ratio-cat-btn py-2 text-xs font-medium rounded-lg text-slate-400 hover:text-slate-200 flex flex-col items-center gap-1 transition">
+                            <i class="fa-regular fa-square"></i>
+                            Square (1:1)
+                        </button>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="text-xs text-slate-400">កម្រិតច្បាស់ (Resolution Level)</label>
+                        <select id="resolution-select" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500"></select>
+                    </div>
+                </div>
+
+                <!-- Art Style Selector -->
+                <div class="glass-panel p-5 rounded-2xl space-y-4">
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm font-semibold flex items-center gap-2 text-slate-200">
+                            <i class="fa-solid fa-palette text-pink-400"></i> 🎨 Art Style
+                        </label>
+                        <span id="selected-style-label" class="text-xs font-medium text-blue-400 bg-blue-500/10 px-2.5 py-0.5 rounded-full border border-blue-500/20">No style</span>
+                    </div>
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-500 text-xs"></i>
+                        <input type="text" id="style-search" oninput="filterStyles()" placeholder="ស្វែងរក Art Style..." class="w-full bg-slate-950/80 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div id="style-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-56 overflow-y-auto pr-1"></div>
+                </div>
+
+                <button onclick="generateAIImage()" id="btn-generate-action" class="w-full py-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-semibold rounded-2xl shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transition duration-200 active:scale-[0.99]">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> បង្កើតរូបភាព (Generate Image)
+                </button>
+            </div>
+
+            <!-- Right Preview Panel -->
+            <div class="lg:col-span-7 flex flex-col">
+                <div class="glass-panel p-5 rounded-2xl flex-1 flex flex-col min-h-[480px]">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-semibold flex items-center gap-2 text-slate-200">
+                            <i class="fa-regular fa-image text-emerald-400"></i> លទ្ធផលរូបភាព (Preview)
+                        </h3>
+                        <div class="flex gap-2" id="action-buttons-group" style="display: none;">
+                            <button onclick="sendToStudio()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg text-slate-200 border border-slate-700 transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-sliders text-blue-400"></i> កែក្នុង Studio
+                            </button>
+                            <button onclick="sendToBgRemover()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg text-slate-200 border border-slate-700 transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-scissors text-emerald-400"></i> លុប BG
+                            </button>
+                            <a id="download-gen-link" download="ai-generated-image.png" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-xs rounded-lg text-white font-medium transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-download"></i> ទាញយក
+                            </a>
+                        </div>
+                    </div>
+                    <div class="flex-1 bg-slate-950/60 rounded-xl border border-slate-800/80 flex items-center justify-center p-4 relative overflow-hidden group min-h-[380px]">
+                        <div id="gen-placeholder" class="text-center p-6 max-w-sm">
+                            <div class="w-16 h-16 rounded-2xl bg-slate-800/80 border border-slate-700 flex items-center justify-center mx-auto mb-4 text-slate-500">
+                                <i class="fa-solid fa-photo-film text-2xl"></i>
+                            </div>
+                            <p class="text-slate-300 font-medium text-sm mb-1">មិនទាន់មានរូបភាព</p>
+                            <p class="text-slate-500 text-xs">ជ្រើសរើសទំហំ, Art Style រួចចុច "បង្កើតរូបភាព" ដើម្បីចាប់ផ្តើម</p>
+                        </div>
+                        <div id="gen-loader" class="hidden text-center p-6">
+                            <div class="relative w-16 h-16 mx-auto mb-4">
+                                <div class="absolute inset-0 rounded-full border-4 border-blue-500/20 animate-ping"></div>
+                                <div class="w-16 h-16 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
+                            </div>
+                            <p class="text-slate-200 font-semibold text-sm mb-1">កំពុងបង្កើតរូបភាពដោយ AI...</p>
+                            <p class="text-slate-400 text-xs">សូមរង់ចាំបន្តិច ប្រព័ន្ធកំពុងដំណើការ</p>
+                        </div>
+                        <img id="gen-result-img" class="hidden max-h-[550px] w-auto max-w-full object-contain rounded-lg shadow-2xl transition duration-300" alt="Generated Result">
+                    </div>
+                    <div id="gen-info-card" class="hidden mt-4 p-3 bg-slate-900/80 rounded-xl border border-slate-800 text-xs text-slate-400 flex items-start justify-between gap-3">
+                        <div>
+                            <span class="text-slate-300 font-medium">Prompt:</span>
+                            <p id="info-used-prompt" class="italic line-clamp-2 mt-0.5 text-slate-400"></p>
+                        </div>
+                        <span id="info-used-res" class="shrink-0 font-mono bg-slate-800 px-2 py-1 rounded text-[11px] text-blue-400">1080p (HD)</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: IMAGE TO PROMPT (VISION) -->
+        <section id="tab-vision" class="tab-content hidden max-w-4xl mx-auto space-y-6">
+            <div class="glass-panel p-6 rounded-2xl space-y-6">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+                        <i class="fa-solid fa-eye text-blue-400"></i> បង្កើត Prompt ពីរូបភាព (Image to Prompt)
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">
+                        បើអ្នកមិនចង់សរសេរ Prompt ដោយខ្លួនឯង សូម Upload រូបភាពទីនេះ ដើម្បីឱ្យ AI វិភាគបង្កើតជា Prompt យ៉ាងលម្អិត។
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-3">
+                        <label class="text-xs font-semibold text-slate-300">Upload រូបភាពដើម</label>
+                        <div id="vision-dropzone" onclick="document.getElementById('vision-file-input').click()" class="border-2 border-dashed border-slate-700 hover:border-blue-500/50 bg-slate-950/60 rounded-2xl p-6 text-center cursor-pointer transition min-h-[220px] flex flex-col items-center justify-center relative overflow-hidden">
+                            <input type="file" id="vision-file-input" accept="image/*" class="hidden" onchange="handleVisionImageUpload(event)">
+                            <div id="vision-upload-prompt">
+                                <i class="fa-solid fa-cloud-arrow-up text-3xl text-slate-500 mb-2"></i>
+                                <p class="text-xs font-medium text-slate-300 mb-1">ចុច ឬ ទម្លាក់រូបភាពទីនេះ</p>
+                                <p class="text-[11px] text-slate-500">PNG, JPG, WEBP (អតិបរមា 10MB)</p>
+                            </div>
+                            <img id="vision-preview-img" class="hidden max-h-[200px] w-auto object-contain rounded-lg shadow-lg" alt="Uploaded Preview">
+                        </div>
+                    </div>
+
+                    <div class="space-y-3 flex flex-col">
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs font-semibold text-slate-300">Prompt ដែល AI បង្កើតបាន</label>
+                            <button onclick="copyVisionPrompt()" id="btn-copy-vision" class="text-xs text-blue-400 hover:text-blue-300 hidden items-center gap-1">
+                                <i class="fa-regular fa-copy"></i> ចម្លង Prompt
+                            </button>
+                        </div>
+                        <div class="flex-1 bg-slate-950/80 border border-slate-800 rounded-2xl p-4 relative min-h-[220px] flex flex-col">
+                            <div id="vision-loader" class="hidden absolute inset-0 bg-slate-950/90 rounded-2xl flex flex-col items-center justify-center z-10">
+                                <div class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+                                <span class="text-xs text-slate-300 font-medium">AI កំពុងវិភាគរូបភាព...</span>
+                            </div>
+                            <textarea id="vision-result-prompt" readonly class="w-full h-full flex-1 bg-transparent border-none text-xs text-slate-200 placeholder-slate-600 focus:outline-none resize-none" placeholder="Prompt ដែលបង្កើតរួច នឹងបង្ហាញនៅទីនេះ..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-end gap-3 pt-4 border-t border-slate-800">
+                    <button onclick="analyzeImageToPrompt()" id="btn-analyze-img" disabled class="px-5 py-2.5 bg-slate-800 text-slate-500 font-medium text-xs rounded-xl transition flex items-center gap-2 cursor-not-allowed">
+                        <i class="fa-solid fa-brain"></i> វិភាគបង្កើត Prompt
+                    </button>
+                    <button onclick="useVisionPromptAndGenerate()" id="btn-use-gen" disabled class="px-5 py-2.5 bg-blue-600/50 text-slate-400 font-medium text-xs rounded-xl transition flex items-center gap-2 cursor-not-allowed">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> បញ្ជូនទៅ Generate រូបភាព
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: REMOVE BACKGROUND -->
+        <section id="tab-bg-remover" class="tab-content hidden max-w-5xl mx-auto space-y-6">
+            <div class="glass-panel p-6 rounded-2xl space-y-6">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+                        <i class="fa-solid fa-scissors text-emerald-400"></i> លុបផ្ទៃខាងក្រោយ (Remove Background)
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">
+                        ដកផ្ទៃខាងក្រោយចេញ និងទាញយករូបភាពប្រភេទ Transparent PNG បានយ៉ាងងាយស្រួល។
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div class="lg:col-span-4 space-y-5">
+                        <div class="space-y-2">
+                            <label class="text-xs font-semibold text-slate-300">ជ្រើសរើសរូបភាព</label>
+                            <input type="file" id="bg-file-input" accept="image/*" class="hidden" onchange="handleBgImageUpload(event)">
+                            <button onclick="document.getElementById('bg-file-input').click()" class="w-full py-3 bg-slate-900 border border-slate-700 hover:border-blue-500 rounded-xl text-xs text-slate-200 flex items-center justify-center gap-2 transition">
+                                <i class="fa-solid fa-folder-open text-blue-400"></i> Upload រូបភាពថ្មី
+                            </button>
+                            <!-- Import from Generated Image button -->
+                            <div id="gen-import-bg-section" class="mt-2 hidden">
+                                <button onclick="importGeneratedToBgRemover()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs text-slate-200 flex items-center justify-center gap-2 transition">
+                                    <i class="fa-solid fa-arrow-right-from-bracket text-emerald-400"></i> ប្រើរូបភាពដែលបាន Generate
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-4">
+                            <h4 class="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+                                <i class="fa-solid fa-sliders text-xs text-blue-400"></i> ជម្រើសលុប Background
+                            </h4>
+
+                            <div>
+                                <label class="text-[11px] text-slate-400 block mb-1">ជ្រើសរើសព័ណ៌ផ្ទៃខាងក្រោយដែលត្រូវលុប:</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="color" id="bg-target-color" value="#ffffff" class="w-8 h-8 rounded border-none bg-transparent cursor-pointer">
+                                    <span class="text-xs font-mono text-slate-300" id="bg-color-hex">#FFFFFF</span>
+                                    <button onclick="pickColorFromCanvas()" class="ml-auto text-xs px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded border border-slate-700 text-slate-300">
+                                        <i class="fa-solid fa-eye-dropper"></i> Pick
+                                    </button>
+                                </div>
+                                <button onclick="autoDetectBackgroundColor()" class="w-full mt-2 text-xs px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 rounded-lg flex items-center justify-center gap-1.5 transition">
+                                    <i class="fa-solid fa-robot"></i> ស្វែងរកពណ៌ដោយស្វ័យប្រវត្តិ (AI Analyze)
+                                </button>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+                                    <span>កម្រិតភាពអត់ឱន (Tolerance):</span>
+                                    <span id="tolerance-val" class="text-blue-400 font-mono">30</span>
+                                </div>
+                                <input type="range" id="bg-tolerance" min="1" max="100" value="30" oninput="updateBgTolerance(this.value)" class="w-full range-slider accent-blue-500">
+                            </div>
+
+                            <button onclick="applyAutoBgRemoval()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs rounded-xl transition shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> ដំណើរការលុប Background
+                            </button>
+                        </div>
+
+                        <button onclick="downloadBgRemovedImage()" id="btn-download-nobg" disabled class="w-full py-3 bg-blue-600/50 text-slate-400 cursor-not-allowed font-medium text-xs rounded-xl transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-download"></i> ទាញយក PNG Transparent
+                        </button>
+                    </div>
+
+                    <div class="lg:col-span-8 bg-slate-950/80 rounded-2xl border border-slate-800 p-4 min-h-[360px] flex items-center justify-center relative overflow-hidden">
+                        <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 16px 16px;"></div>
+                        <canvas id="bg-canvas" class="max-w-full max-h-[480px] object-contain rounded shadow-lg relative z-10 hidden"></canvas>
+                        <div id="bg-placeholder" class="text-center text-slate-500 z-10">
+                            <i class="fa-solid fa-image text-3xl mb-2 text-slate-600"></i>
+                            <p class="text-xs">Upload រូបភាព ឬផ្ញើចេញពីរូបភាពដែលបាន Generate</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: STUDIO ADJUSTMENTS & HSL -->
+        <section id="tab-adjust" class="tab-content hidden max-w-6xl mx-auto space-y-6">
+            <div class="glass-panel p-6 rounded-2xl space-y-6">
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+                            <i class="fa-solid fa-sliders text-indigo-400"></i> Studio Photo Adjustments & HSL
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1">
+                            កែតម្រូវពន្លឺ, ពណ៌, Temp, Saturation, HSL Channel និង Effects ផ្សេងៗលើរូបភាព
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="resetAllAdjustments()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg text-slate-300 border border-slate-700 transition">
+                            <i class="fa-solid fa-rotate-left mr-1"></i> កំណត់ឡើងវិញ (Reset)
+                        </button>
+                        <button onclick="downloadStudioImage()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs rounded-lg shadow-md transition">
+                            <i class="fa-solid fa-download mr-1"></i> រក្សារទុក (Save)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div class="lg:col-span-7 bg-slate-950/90 rounded-2xl border border-slate-800 p-4 min-h-[420px] flex items-center justify-center relative">
+                        <canvas id="studio-canvas" class="max-w-full max-h-[500px] object-contain rounded-lg shadow-2xl hidden"></canvas>
+                        <div id="studio-placeholder" class="text-center text-slate-500">
+                            <i class="fa-solid fa-sliders text-4xl mb-2 text-slate-600"></i>
+                            <p class="text-xs">សូម Upload រូបភាព ឬបញ្ជូនរូបពីរូបភាព Generated ដើម្បីកែច្នៃ</p>
+                            <button onclick="document.getElementById('studio-file-input').click()" class="mt-3 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs rounded-xl border border-slate-700">
+                                Upload រូបភាព
+                            </button>
+                            <div id="gen-import-studio-section" class="mt-2 hidden">
+                                <button onclick="importGeneratedToStudio()" class="px-4 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 text-xs rounded-xl border border-emerald-500/30 flex items-center gap-1.5 mx-auto">
+                                    <i class="fa-solid fa-arrow-right-from-bracket"></i> ប្រើរូបភាពដែលបាន Generate
+                                </button>
+                            </div>
+                            <input type="file" id="studio-file-input" accept="image/*" class="hidden" onchange="handleStudioImageUpload(event)">
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-5 space-y-4 max-h-[520px] overflow-y-auto pr-2">
+                        <div class="flex border-b border-slate-800 text-xs">
+                            <button onclick="switchStudioSubTab('basic')" id="subtab-basic" class="subtab-btn active px-4 py-2 border-b-2 border-blue-500 font-semibold text-blue-400">Basic & Temp</button>
+                            <button onclick="switchStudioSubTab('effects')" id="subtab-effects" class="subtab-btn px-4 py-2 border-b-2 border-transparent font-medium text-slate-400 hover:text-slate-200">Effects & Particles</button>
+                            <button onclick="switchStudioSubTab('hsl')" id="subtab-hsl" class="subtab-btn px-4 py-2 border-b-2 border-transparent font-medium text-slate-400 hover:text-slate-200">HSL Studio</button>
+                        </div>
+
+                        <div id="st-subtab-basic" class="space-y-3.5 pt-1">
+                            <div>
+                                <div class="flex justify-between text-xs text-slate-300 mb-1">
+                                    <span>Brightness (ពន្លឺ):</span>
+                                    <span id="val-brightness" class="font-mono text-blue-400">0</span>
+                                </div>
+                                <input type="range" id="adj-brightness" min="-100" max="100" value="0" oninput="updateStudioParam('brightness', this.value)" class="w-full range-slider accent-blue-500">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs text-slate-300 mb-1">
+                                    <span>Contrast (ភាពផ្ទុយគ្នា):</span>
+                                    <span id="val-contrast" class="font-mono text-blue-400">0</span>
+                                </div>
+                                <input type="range" id="adj-contrast" min="-100" max="100" value="0" oninput="updateStudioParam('contrast', this.value)" class="w-full range-slider accent-blue-500">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs text-slate-300 mb-1">
+                                    <span>Temp (សីតុណ្ហភាពពណ៌):</span>
+                                    <span id="val-temp" class="font-mono text-blue-400">0</span>
+                                </div>
+                                <input type="range" id="adj-temp" min="-100" max="100" value="0" oninput="updateStudioParam('temp', this.value)" class="w-full range-slider accent-blue-500">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs text-slate-300 mb-1">
+                                    <span>Hue (កម្រិតពណ៌):</span>
+                                    <span id="val-hue" class="font-mono text-blue-400">0°</span>
+                                </div>
+                                <input type="range" id="adj-hue" min="-180" max="180" value="0" oninput="updateStudioParam('hue', this.value)" class="w-full range-slider accent-blue-500">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs text-slate-300 mb-1">
+                                    <span>Saturation (ភាពឆ្អែតពណ៌):</span>
+                                    <span id="val-saturation" class="font-mono text-blue-400">0</span>
+                                </div>
+                                <input type="range" id="adj-saturation" min="-100" max="100" value="0" oninput="updateStudioParam('saturation', this.value)" class="w-full range-slider accent-blue-500">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs text-slate-300 mb-1">
+                                    <span>Lightness:</span>
+                                    <span id="val-lightness" class="font-mono text-blue-400">0</span>
+                                </div>
+                                <input type="range" id="adj-lightness" min="-100" max="100" value="0" oninput="updateStudioParam('lightness', this.value)" class="w-full range-slider accent-blue-500">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs text-slate-300 mb-1">
+                                    <span>Highlights (ចំណុចភ្លឺ):</span>
+                                    <span id="val-highlights" class="font-mono text-blue-400">0</span>
+                                </div>
+                                <input type="range" id="adj-highlights" min="-100" max="100" value="0" oninput="updateStudioParam('highlights', this.value)" class="w-full range-slider accent-blue-500">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs text-slate-300 mb-1">
+                                    <span>Shadows (ស្រមោល):</span>
+                                    <span id="val-shadows" class="font-mono text-blue-400">0</span>
+                                </div>
+                                <input type="range" id="adj-shadows" min="-100" max="100" value="0" oninput="updateStudioParam('shadows', this.value)" class="w-full range-slider accent-blue-500">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs text-slate-300 mb-1">
+                                    <span>Illumination (ការបញ្ចាំងពន្លឺ):</span>
+                                    <span id="val-illumination" class="font-mono text-blue-400">0</span>
+                                </div>
+                                <input type="range" id="adj-illumination" min="-100" max="100" value="0" oninput="updateStudioParam('illumination', this.value)" class="w-full range-slider accent-blue-500">
+                            </div>
+                        </div>
+
+                        <div id="st-subtab-effects" class="space-y-3.5 pt-1 hidden">
+                            <div>
+                                <div class="flex justify-between text-xs text-slate-300 mb-1">
+                                    <span>Sharpen (ភាពច្បាស់បន្តឹង):</span>
+                                    <span id="val-sharpen" class="font-mono text-blue-400">0</span>
+                                </div>
+                                <input type="range" id="adj-sharpen" min="0" max="100" value="0" oninput="updateStudioParam('sharpen', this.value)" class="w-full range-slider accent-blue-500">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs text-slate-300 mb-1">
+                                    <span>Particles / Grain (គ្រាប់តូចៗ):</span>
+                                    <span id="val-particles" class="font-mono text-blue-400">0</span>
+                                </div>
+                                <input type="range" id="adj-particles" min="0" max="100" value="0" oninput="updateStudioParam('particles', this.value)" class="w-full range-slider accent-blue-500">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs text-slate-300 mb-1">
+                                    <span>Fade (ភាពស្រពិចស្រពិល):</span>
+                                    <span id="val-fade" class="font-mono text-blue-400">0</span>
+                                </div>
+                                <input type="range" id="adj-fade" min="0" max="100" value="0" oninput="updateStudioParam('fade', this.value)" class="w-full range-slider accent-blue-500">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs text-slate-300 mb-1">
+                                    <span>Vignette (ភាពខ្មៅជុំវិញគែម):</span>
+                                    <span id="val-vignette" class="font-mono text-blue-400">0</span>
+                                </div>
+                                <input type="range" id="adj-vignette" min="0" max="100" value="0" oninput="updateStudioParam('vignette', this.value)" class="w-full range-slider accent-blue-500">
+                            </div>
+                        </div>
+
+                        <div id="st-subtab-hsl" class="space-y-3.5 pt-1 hidden">
+                            <p class="text-[11px] text-slate-400 mb-2">កែសម្រួល HSL (Hue, Saturation, Brightness) តាម Channel ពណ៌:</p>
+                            <div class="grid grid-cols-4 gap-1.5 p-1 bg-slate-900 rounded-lg border border-slate-800 mb-3">
+                                <button onclick="selectHslChannel('red')" id="hsl-ch-red" class="hsl-ch-btn active py-1 text-[11px] rounded bg-red-600/80 text-white">Reds</button>
+                                <button onclick="selectHslChannel('green')" id="hsl-ch-green" class="hsl-ch-btn py-1 text-[11px] rounded text-slate-400 hover:text-slate-200">Greens</button>
+                                <button onclick="selectHslChannel('blue')" id="hsl-ch-blue" class="hsl-ch-btn py-1 text-[11px] rounded text-slate-400 hover:text-slate-200">Blues</button>
+                                <button onclick="selectHslChannel('yellow')" id="hsl-ch-yellow" class="hsl-ch-btn py-1 text-[11px] rounded text-slate-400 hover:text-slate-200">Yellows</button>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs text-slate-300 mb-1">
+                                    <span>Channel Hue:</span>
+                                    <span id="val-hsl-hue" class="font-mono text-blue-400">0°</span>
+                                </div>
+                                <input type="range" id="adj-hsl-hue" min="-100" max="100" value="0" oninput="updateHslParam('hue', this.value)" class="w-full range-slider accent-blue-500">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs text-slate-300 mb-1">
+                                    <span>Channel Saturation:</span>
+                                    <span id="val-hsl-sat" class="font-mono text-blue-400">0</span>
+                                </div>
+                                <input type="range" id="adj-hsl-sat" min="-100" max="100" value="0" oninput="updateHslParam('sat', this.value)" class="w-full range-slider accent-blue-500">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs text-slate-300 mb-1">
+                                    <span>Channel Brightness:</span>
+                                    <span id="val-hsl-bright" class="font-mono text-blue-400">0</span>
+                                </div>
+                                <input type="range" id="adj-hsl-bright" min="-100" max="100" value="0" oninput="updateHslParam('bright', this.value)" class="w-full range-slider accent-blue-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        /* Global State */
+        const apiKey = ""; // API key will be populated automatically by canvas environment
+        let currentTab = 'generate';
+        let selectedRatioCategory = 'landscape';
+        let selectedResolution = '1080p (HD)';
+        let selectedAspectRatioString = '16:9';
+        let selectedStyle = 'No style';
+        let currentGeneratedImageData = null;
+        let visionBase64Image = null;
+        let visionMimeType = null;
+        let visionGeneratedPrompt = '';
+
+        const artStyles = [
+            "No style", "Painted Anime", "Casual Photo", "Cinematic", "Digital Painting", 
+            "Concept Art", "3D Disney Character", "2D Disney Character", "Disney Sketch", 
+            "Concept Sketch", "Painterly", "Oil Painting", "Oil Painting - Realism", 
+            "Oil Painting - Old", "Oil Painting - 70s Pulp", "Professional Photo", "Anime", 
+            "Drawn Anime", "Anime Screencap", "Cute Anime", "Soft Anime", "Fantasy Painting", 
+            "Fantasy Landscape", "Fantasy Portrait", "Studio Ghibli", "50s Enamel Sign", 
+            "Vintage Comic", "Franco-Belgian Comic", "Tintin Comic", "Medieval", "Pixel Art", 
+            "Furry - Oil", "Furry - Cinematic", "Furry - Painted", "Furry - Drawn", "Cute Figurine", 
+            "3D Emoji", "Illustration", "Cute Illustration", "Flat Illustration", "Watercolor", 
+            "1990s Photo", "1980s Photo", "1970s Photo", "1960s Photo", "1950s Photo", 
+            "1940s Photo", "1930s Photo", "1920s Photo", "Vintage Pulp Art", "50s Infomercial Anime", 
+            "3D Pokemon", "Painted Pokemon", "2D Pokemon", "Vintage Anime", "Neon Vintage Anime", 
+            "Manga", "Fantasy World Map", "Fantasy City Map", "Old World Map", "3D Isometric Icon", 
+            "Flat Style Icon", "Flat Style Logo", "Game Art Icon", "Digital Painting Icon", 
+            "Concept Art Icon", "Cute 3D Icon", "Cute 3D Icon Set", "Crayon Drawing", "Pencil", 
+            "Tattoo Design", "Waifu", "YuGiOh Art", "Traditional Japanese", "Nihonga Painting", 
+            "Claymation", "Cartoon", "Cursed Photo", "MTG Card"
+        ];
+
+        const resolutionData = {
+            landscape: [
+                { label: "1080p (HD)", val: "1080p (HD)", ratio: "16:9" },
+                { label: "4320p (8K)", val: "4320p (8K)", ratio: "16:9" },
+                { label: "2160p (4K)", val: "2160p (4K)", ratio: "16:9" },
+                { label: "1440p (2K)", val: "1440p (2K)", ratio: "16:9" },
+                { label: "720p (HD)", val: "720p (HD)", ratio: "16:9" },
+                { label: "480p (SD)", val: "480p (SD)", ratio: "16:9" },
+                { label: "360p (SD)", val: "360p (SD)", ratio: "16:9" },
+                { label: "240p (SD)", val: "240p (SD)", ratio: "16:9" }
+            ],
+            portrait: [
+                { label: "1080p (HD)", val: "1080p (HD)", ratio: "9:16" },
+                { label: "2160p (4K)", val: "2160p (4K)", ratio: "9:16" },
+                { label: "720p (HD)", val: "720p (HD)", ratio: "9:16" },
+                { label: "480p (SD)", val: "480p (SD)", ratio: "9:16" }
+            ],
+            square: [
+                { label: "1080x1080", val: "1080x1080", ratio: "1:1" },
+                { label: "2160x2160", val: "2160x2160", ratio: "1:1" },
+                { label: "720x720", val: "720x720", ratio: "1:1" },
+                { label: "480x480", val: "480x480", ratio: "1:1" }
+            ]
+        };
+
+        const samplePrompts = [
+            "A serene ancient temple in Cambodia surrounded by massive tree roots and golden morning sunlight, atmospheric mist",
+            "A futuristic cyberpunk city skyline with floating glowing neon signs and rain reflecting on wet streets",
+            "A cute fantasy dragon sleeping on a pile of glowing crystals inside a mystical cave, warm magical lighting",
+            "A cozy cafe interior in Paris during autumn with rain drops on window and warm lighting inside",
+            "An astronaut floating near a glowing cosmic nebula in deep space, hyperdetailed digital painting"
+        ];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderStyleGrid(artStyles);
+            populateResolutions('landscape');
+            updateGenImportButtons();
+        });
+
+        function switchTab(tabId) {
+            currentTab = tabId;
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
+                btn.classList.add('text-slate-300');
+            });
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            if (activeNav) {
+                activeNav.classList.add('bg-blue-600', 'text-white', 'shadow-md');
+                activeNav.classList.remove('text-slate-300');
+            }
+
+            document.querySelectorAll('[id^="mob-nav-"]').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('text-slate-300');
+            });
+            const activeMob = document.getElementById(`mob-nav-${tabId}`);
+            if (activeMob) {
+                activeMob.classList.add('bg-blue-600', 'text-white');
+                activeMob.classList.remove('text-slate-300');
+            }
+
+            updateGenImportButtons();
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toast-icon');
+            const msg = document.getElementById('toast-message');
+            msg.textContent = message;
+            icon.className = type === 'error' ? 'fa-solid fa-circle-exclamation text-rose-400' : 'fa-solid fa-circle-check text-emerald-400';
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3500);
+        }
+
+        function selectRatioCategory(cat) {
+            selectedRatioCategory = cat;
+            document.querySelectorAll('.ratio-cat-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('text-slate-400');
+            });
+            document.getElementById(`btn-cat-${cat}`).classList.add('bg-blue-600', 'text-white');
+            populateResolutions(cat);
+        }
+
+        function populateResolutions(cat) {
+            const select = document.getElementById('resolution-select');
+            select.innerHTML = '';
+            const options = resolutionData[cat];
+            options.forEach((opt, idx) => {
+                const optionEl = document.createElement('option');
+                optionEl.value = opt.val;
+                optionEl.textContent = opt.label;
+                if (idx === 0) optionEl.selected = true;
+                select.appendChild(optionEl);
+            });
+            selectedResolution = options[0].val;
+            selectedAspectRatioString = options[0].ratio;
+            select.onchange = (e) => {
+                selectedResolution = e.target.value;
+                const found = options.find(o => o.val === e.target.value);
+                if (found) selectedAspectRatioString = found.ratio;
+            };
+        }
+
+        function renderStyleGrid(styles) {
+            const grid = document.getElementById('style-grid');
+            grid.innerHTML = '';
+            styles.forEach(styleName => {
+                const btn = document.createElement('button');
+                const isSelected = styleName === selectedStyle;
+                btn.className = `p-2 rounded-xl text-xs text-left border transition truncate ${
+                    isSelected ? 'bg-blue-600/20 border-blue-500 text-blue-300 font-semibold' : 'bg-slate-900/80 border-slate-800 text-slate-300 hover:border-slate-700'
+                }`;
+                btn.innerHTML = `<i class="fa-solid fa-paintbrush text-[10px] mr-1.5 opacity-60"></i>${styleName}`;
+                btn.onclick = () => selectStyle(styleName);
+                grid.appendChild(btn);
+            });
+        }
+
+        function filterStyles() {
+            const query = document.getElementById('style-search').value.toLowerCase();
+            renderStyleGrid(artStyles.filter(s => s.toLowerCase().includes(query)));
+        }
+
+        function selectStyle(styleName) {
+            selectedStyle = styleName;
+            document.getElementById('selected-style-label').textContent = styleName;
+            filterStyles();
+        }
+
+        function randomPrompt() {
+            document.getElementById('prompt-input').value = samplePrompts[Math.floor(Math.random() * samplePrompts.length)];
+        }
+
+        function clearPrompt() {
+            document.getElementById('prompt-input').value = '';
+        }
+
+        function updateGenImportButtons() {
+            const hasImage = currentGeneratedImageData !== null;
+            document.getElementById('gen-import-bg-section').classList.toggle('hidden', !hasImage);
+            document.getElementById('gen-import-studio-section').classList.toggle('hidden', !hasImage);
+        }
+
+        function importGeneratedToBgRemover() {
+            if (!currentGeneratedImageData) return showToast('មិនទាន់មានរូបភាពដែលបាន Generate នៅឡើយ!', 'error');
+            loadImageToBgCanvas(currentGeneratedImageData);
+        }
+
+        function importGeneratedToStudio() {
+            if (!currentGeneratedImageData) return showToast('មិនទាន់មានរូបភាពដែលបាន Generate នៅឡើយ!', 'error');
+            loadStudioImage(currentGeneratedImageData);
+        }
+
+        /* ========== GENERATE IMAGE ========== */
+        async function generateAIImage() {
+            const rawPrompt = document.getElementById('prompt-input').value.trim();
+            if (!rawPrompt) return showToast('សូមបញ្ចូល Prompt ជាមុនសិន!', 'error');
+
+            document.getElementById('gen-placeholder').classList.add('hidden');
+            document.getElementById('gen-loader').classList.remove('hidden');
+            document.getElementById('gen-result-img').classList.add('hidden');
+            document.getElementById('action-buttons-group').style.display = 'none';
+            document.getElementById('gen-info-card').classList.add('hidden');
+
+            let fullPrompt = rawPrompt;
+            if (selectedStyle && selectedStyle !== 'No style') fullPrompt += `, ${selectedStyle} style`;
+            fullPrompt += `, highly detailed, high quality, ${selectedResolution} resolution`;
+
+            const payload = {
+                contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],
+                generationConfig: {
+                    responseModalities: ['IMAGE'],
+                    imageConfig: { aspectRatio: selectedAspectRatioString }
+                }
+            };
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent?key=${apiKey}`;
+
+            try {
+                let response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) {
+                    await new Promise(r => setTimeout(r, 1500));
+                    response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                }
+                const result = await response.json();
+                const part = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+                if (part?.inlineData) {
+                    const mime = part.inlineData.mimeType || 'image/png';
+                    const base64 = part.inlineData.data;
+                    currentGeneratedImageData = `data:${mime};base64,${base64}`;
+                    const imgEl = document.getElementById('gen-result-img');
+                    imgEl.src = currentGeneratedImageData;
+                    imgEl.classList.remove('hidden');
+                    document.getElementById('download-gen-link').href = currentGeneratedImageData;
+                    document.getElementById('info-used-prompt').textContent = fullPrompt;
+                    document.getElementById('info-used-res').textContent = `${selectedResolution} (${selectedAspectRatioString})`;
+                    document.getElementById('gen-info-card').classList.remove('hidden');
+                    document.getElementById('action-buttons-group').style.display = 'flex';
+                    updateGenImportButtons();
+                    showToast('រូបភាពត្រូវបានបង្កើតដោយជោគជ័យ!');
+                } else {
+                    throw new Error('No image data');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('មានបញ្ហាក្នុងការបង្កើតរូបភាព!', 'error');
+                document.getElementById('gen-placeholder').classList.remove('hidden');
+            } finally {
+                document.getElementById('gen-loader').classList.add('hidden');
+            }
+        }
+
+        /* ========== IMAGE TO PROMPT (VISION) ========== */
+        function handleVisionImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            visionMimeType = file.type || 'image/png';
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imgUrl = e.target.result;
+                visionBase64Image = imgUrl.split(',')[1];
+                const imgPreview = document.getElementById('vision-preview-img');
+                imgPreview.src = imgUrl;
+                imgPreview.classList.remove('hidden');
+                document.getElementById('vision-upload-prompt').classList.add('hidden');
+                const btnAnalyze = document.getElementById('btn-analyze-img');
+                btnAnalyze.disabled = false;
+                btnAnalyze.className = 'px-5 py-2.5 bg-blue-600 text-white font-medium text-xs rounded-xl transition flex items-center gap-2 hover:bg-blue-500';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function analyzeImageToPrompt() {
+            if (!visionBase64Image) return;
+            document.getElementById('vision-loader').classList.remove('hidden');
+            const systemPrompt = "Describe this image in extreme, vivid detail to generate an accurate text-to-image prompt. Include subject details, background environment, camera style, colors, mood, lighting, and art medium. Return ONLY the English prompt text directly without quotes or introductory phrases.";
+            const payload = {
+                contents: [{
+                    role: "user",
+                    parts: [
+                        { text: systemPrompt },
+                        { inlineData: { mimeType: visionMimeType, data: visionBase64Image } }
+                    ]
+                }]
+            };
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (text) {
+                    visionGeneratedPrompt = text.trim();
+                    document.getElementById('vision-result-prompt').value = visionGeneratedPrompt;
+                    document.getElementById('btn-copy-vision').style.display = 'inline-flex';
+                    const btnUseGen = document.getElementById('btn-use-gen');
+                    btnUseGen.disabled = false;
+                    btnUseGen.className = 'px-5 py-2.5 bg-blue-600 text-white font-medium text-xs rounded-xl transition flex items-center gap-2 hover:bg-blue-500';
+                    showToast('បានបង្កើត Prompt រួចរាល់!');
+                } else {
+                    throw new Error('No text generated');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('ការវិភាគរូបភាពមានបញ្ហា!', 'error');
+            } finally {
+                document.getElementById('vision-loader').classList.add('hidden');
+            }
+        }
+
+        function copyVisionPrompt() {
+            const text = document.getElementById('vision-result-prompt').value;
+            if (!text) return;
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            showToast('បានចម្លង Prompt ទៅកាន់ Clipboard!');
+        }
+
+        function useVisionPromptAndGenerate() {
+            const promptText = document.getElementById('vision-result-prompt').value;
+            if (!promptText) return;
+            document.getElementById('prompt-input').value = promptText;
+            switchTab('generate');
+            generateAIImage();
+        }
+
+        /* ========== BACKGROUND REMOVER ========== */
+        let bgCanvas = document.getElementById('bg-canvas');
+        let bgCtx = bgCanvas.getContext('2d');
+        let loadedBgImage = null;
+
+        function sendToBgRemover() {
+            if (!currentGeneratedImageData) return;
+            switchTab('bg-remover');
+            loadImageToBgCanvas(currentGeneratedImageData);
+        }
+
+        function handleBgImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => loadImageToBgCanvas(event.target.result);
+            reader.readAsDataURL(file);
+        }
+
+        function loadImageToBgCanvas(src) {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+                loadedBgImage = img;
+                bgCanvas.width = img.naturalWidth;
+                bgCanvas.height = img.naturalHeight;
+                bgCtx.drawImage(img, 0, 0);
+                bgCanvas.classList.remove('hidden');
+                document.getElementById('bg-placeholder').classList.add('hidden');
+                const btnDl = document.getElementById('btn-download-nobg');
+                btnDl.disabled = false;
+                btnDl.className = 'w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs rounded-xl transition flex items-center justify-center gap-2';
+                showToast('បានបញ្ចូលរូបភាពទៅក្នុង Background Remover');
+            };
+            img.src = src;
+        }
+
+        function updateBgTolerance(val) {
+            document.getElementById('tolerance-val').textContent = val;
+        }
+
+        function applyAutoBgRemoval() {
+            if (!loadedBgImage) return;
+            bgCtx.drawImage(loadedBgImage, 0, 0);
+            const imgData = bgCtx.getImageData(0, 0, bgCanvas.width, bgCanvas.height);
+            const data = imgData.data;
+            const hexColor = document.getElementById('bg-target-color').value;
+            const rTarget = parseInt(hexColor.substr(1,2),16);
+            const gTarget = parseInt(hexColor.substr(3,2),16);
+            const bTarget = parseInt(hexColor.substr(5,2),16);
+            const tolerance = parseInt(document.getElementById('bg-tolerance').value) * 2.55;
+            for (let i = 0; i < data.length; i += 4) {
+                const diff = Math.sqrt((data[i]-rTarget)**2 + (data[i+1]-gTarget)**2 + (data[i+2]-bTarget)**2);
+                if (diff <= tolerance) data[i+3] = 0;
+            }
+            bgCtx.putImageData(imgData, 0, 0);
+            showToast('បានលុប Background ដោយស្វ័យប្រវត្តិ!');
+        }
+
+        function pickColorFromCanvas() {
+            showToast('ចុចលើរូបភាពដើម្បីជ្រើសរើសព័ណ៌ផ្ទៃខាងក្រោយ!');
+            const pickHandler = (e) => {
+                const rect = bgCanvas.getBoundingClientRect();
+                const x = (e.clientX - rect.left) * (bgCanvas.width / rect.width);
+                const y = (e.clientY - rect.top) * (bgCanvas.height / rect.height);
+                const pixel = bgCtx.getImageData(x, y, 1, 1).data;
+                const hex = '#' + ((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2]).toString(16).slice(1);
+                document.getElementById('bg-target-color').value = hex;
+                document.getElementById('bg-color-hex').textContent = hex.toUpperCase();
+                bgCanvas.removeEventListener('click', pickHandler);
+            };
+            bgCanvas.addEventListener('click', pickHandler);
+        }
+
+        function autoDetectBackgroundColor() {
+            if (!loadedBgImage) return showToast('សូមបញ្ចូលរូបភាពជាមុនសិន!', 'error');
+            const w = bgCanvas.width, h = bgCanvas.height;
+            const samples = [
+                bgCtx.getImageData(0, 0, 1, 1).data,
+                bgCtx.getImageData(w-1, 0, 1, 1).data,
+                bgCtx.getImageData(0, h-1, 1, 1).data,
+                bgCtx.getImageData(w-1, h-1, 1, 1).data
+            ];
+            let avgR = 0, avgG = 0, avgB = 0;
+            samples.forEach(p => { avgR += p[0]; avgG += p[1]; avgB += p[2]; });
+            avgR = Math.round(avgR/4); avgG = Math.round(avgG/4); avgB = Math.round(avgB/4);
+            const hex = '#' + ((1 << 24) + (avgR << 16) + (avgG << 8) + avgB).toString(16).slice(1);
+            document.getElementById('bg-target-color').value = hex;
+            document.getElementById('bg-color-hex').textContent = hex.toUpperCase();
+            showToast(`រកឃើញពណ៌ផ្ទៃខាងក្រោយ៖ ${hex.toUpperCase()}`);
+        }
+
+        function downloadBgRemovedImage() {
+            if (!loadedBgImage) return;
+            const link = document.createElement('a');
+            link.download = 'bg-removed-image.png';
+            link.href = bgCanvas.toDataURL('image/png');
+            link.click();
+        }
+
+        /* ========== STUDIO ADJUSTMENTS ========== */
+        let studioCanvas = document.getElementById('studio-canvas');
+        let studioCtx = studioCanvas.getContext('2d');
+        let loadedStudioImg = null;
+        let studioParams = {
+            brightness: 0, contrast: 0, temp: 0, hue: 0, saturation: 0,
+            lightness: 0, highlights: 0, shadows: 0, illumination: 0,
+            sharpen: 0, particles: 0, fade: 0, vignette: 0
+        };
+        let currentHslChannel = 'red';
+        let hslParams = {
+            red: { hue: 0, sat: 0, bright: 0 },
+            green: { hue: 0, sat: 0, bright: 0 },
+            blue: { hue: 0, sat: 0, bright: 0 },
+            yellow: { hue: 0, sat: 0, bright: 0 }
+        };
+
+        function sendToStudio() {
+            if (!currentGeneratedImageData) return;
+            switchTab('adjust');
+            loadStudioImage(currentGeneratedImageData);
+        }
+
+        function handleStudioImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => loadStudioImage(event.target.result);
+            reader.readAsDataURL(file);
+        }
+
+        function loadStudioImage(src) {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+                loadedStudioImg = img;
+                studioCanvas.width = img.naturalWidth;
+                studioCanvas.height = img.naturalHeight;
+                studioCanvas.classList.remove('hidden');
+                document.getElementById('studio-placeholder').classList.add('hidden');
+                renderStudioCanvas();
+                showToast('បានបញ្ចូលរូបភាពទៅក្នុង Studio Adjustments');
+            };
+            img.src = src;
+        }
+
+        function updateStudioParam(key, val) {
+            studioParams[key] = parseFloat(val);
+            document.getElementById(`val-${key}`).textContent = key === 'hue' ? `${val}°` : val;
+            renderStudioCanvas();
+        }
+
+        function switchStudioSubTab(subId) {
+            document.querySelectorAll('.subtab-btn').forEach(btn => {
+                btn.classList.remove('border-blue-500', 'text-blue-400', 'font-semibold');
+                btn.classList.add('border-transparent', 'text-slate-400');
+            });
+            document.getElementById(`subtab-${subId}`).classList.add('border-blue-500', 'text-blue-400', 'font-semibold');
+            document.querySelectorAll('[id^="st-subtab-"]').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`st-subtab-${subId}`).classList.remove('hidden');
+        }
+
+        function selectHslChannel(channel) {
+            currentHslChannel = channel;
+            document.querySelectorAll('.hsl-ch-btn').forEach(btn => btn.className = 'hsl-ch-btn py-1 text-[11px] rounded text-slate-400 hover:text-slate-200');
+            const btn = document.getElementById(`hsl-ch-${channel}`);
+            btn.className = 'hsl-ch-btn active py-1 text-[11px] rounded bg-blue-600 text-white font-semibold';
+            const chData = hslParams[channel];
+            document.getElementById('adj-hsl-hue').value = chData.hue;
+            document.getElementById('adj-hsl-sat').value = chData.sat;
+            document.getElementById('adj-hsl-bright').value = chData.bright;
+            document.getElementById('val-hsl-hue').textContent = `${chData.hue}°`;
+            document.getElementById('val-hsl-sat').textContent = chData.sat;
+            document.getElementById('val-hsl-bright').textContent = chData.bright;
+        }
+
+        function updateHslParam(type, val) {
+            hslParams[currentHslChannel][type] = parseFloat(val);
+            document.getElementById(`val-hsl-${type}`).textContent = type === 'hue' ? `${val}°` : val;
+            renderStudioCanvas();
+        }
+
+        function resetAllAdjustments() {
+            Object.keys(studioParams).forEach(k => studioParams[k] = 0);
+            Object.keys(studioParams).forEach(k => {
+                const slider = document.getElementById(`adj-${k}`);
+                if (slider) slider.value = 0;
+                const valLbl = document.getElementById(`val-${k}`);
+                if (valLbl) valLbl.textContent = k === 'hue' ? '0°' : '0';
+            });
+            renderStudioCanvas();
+            showToast('បាន Reset ការកំណត់ទាំងអស់!');
+        }
+
+        function renderStudioCanvas() {
+            if (!loadedStudioImg) return;
+            const w = studioCanvas.width, h = studioCanvas.height;
+            studioCtx.clearRect(0, 0, w, h);
+            studioCtx.save();
+            const bCss = 100 + studioParams.brightness;
+            const cCss = 100 + studioParams.contrast;
+            const sCss = 100 + studioParams.saturation;
+            const hCss = studioParams.hue;
+            studioCtx.filter = `brightness(${bCss}%) contrast(${cCss}%) saturate(${sCss}%) hue-rotate(${hCss}deg)`;
+            studioCtx.drawImage(loadedStudioImg, 0, 0, w, h);
+            studioCtx.restore();
+
+            let imgData = studioCtx.getImageData(0, 0, w, h);
+            let data = imgData.data;
+            const tempShift = studioParams.temp * 0.5;
+            const hlShift = studioParams.highlights * 0.4;
+            const shShift = studioParams.shadows * 0.4;
+            const fadeShift = studioParams.fade * 0.3;
+            const illumShift = studioParams.illumination * 0.5;
+
+            for (let i = 0; i < data.length; i += 4) {
+                let r = data[i], g = data[i+1], b = data[i+2];
+                if (tempShift !== 0) {
+                    r = Math.min(255, Math.max(0, r + tempShift));
+                    b = Math.min(255, Math.max(0, b - tempShift));
+                }
+                if (illumShift !== 0) {
+                    r = Math.min(255, Math.max(0, r + illumShift));
+                    g = Math.min(255, Math.max(0, g + illumShift));
+                    b = Math.min(255, Math.max(0, b + illumShift));
+                }
+                let lum = 0.299*r + 0.587*g + 0.114*b;
+                if (lum > 128 && hlShift !== 0) {
+                    r = Math.min(255, Math.max(0, r + hlShift));
+                    g = Math.min(255, Math.max(0, g + hlShift));
+                    b = Math.min(255, Math.max(0, b + hlShift));
+                } else if (lum <= 128 && shShift !== 0) {
+                    r = Math.min(255, Math.max(0, r + shShift));
+                    g = Math.min(255, Math.max(0, g + shShift));
+                    b = Math.min(255, Math.max(0, b + shShift));
+                }
+                if (fadeShift > 0) {
+                    r = r + (128 - r) * (fadeShift / 100);
+                    g = g + (128 - g) * (fadeShift / 100);
+                    b = b + (128 - b) * (fadeShift / 100);
+                }
+                data[i] = r; data[i+1] = g; data[i+2] = b;
+            }
+            studioCtx.putImageData(imgData, 0, 0);
+
+            if (studioParams.vignette > 0) {
+                studioCtx.save();
+                const radius = Math.max(w, h) * 0.75;
+                const grad = studioCtx.createRadialGradient(w/2, h/2, radius*0.3, w/2, h/2, radius);
+                grad.addColorStop(0, 'rgba(0,0,0,0)');
+                grad.addColorStop(1, `rgba(0,0,0,${studioParams.vignette/100})`);
+                studioCtx.fillStyle = grad;
+                studioCtx.fillRect(0, 0, w, h);
+                studioCtx.restore();
+            }
+
+            if (studioParams.particles > 0) {
+                studioCtx.save();
+                const particleCount = (w * h * (studioParams.particles / 100)) * 0.005;
+                studioCtx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+                for (let p = 0; p < particleCount; p++) {
+                    const px = Math.random() * w;
+                    const py = Math.random() * h;
+                    const size = Math.random() * 1.8 + 0.5;
+                    studioCtx.fillRect(px, py, size, size);
+                }
+                studioCtx.restore();
+            }
+        }
+
+        function downloadStudioImage() {
+            if (!loadedStudioImg) return;
+            const link = document.createElement('a');
+            link.download = 'studio-edited-image.png';
+            link.href = studioCanvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html>
