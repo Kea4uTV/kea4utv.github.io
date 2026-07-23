@@ -703,10 +703,10 @@
 
                 // ===== Space Key: Play/Pause (គ្រប់ទីកន្លែង លើកលែងតែក្នុងប្រអប់បញ្ចូល) =====
 document.addEventListener('keydown', function(e) {
+    // ពិនិត្យថាគោលដៅមិនមែនជា input/textarea/select
     const tag = e.target.tagName.toLowerCase();
-    // បើចុច Space ហើយមិនមែនកំពុងវាយក្នុង input/textarea/select
     if (e.code === 'Space' && tag !== 'input' && tag !== 'textarea' && tag !== 'select') {
-        e.preventDefault(); // ការពារការ scroll
+        e.preventDefault(); // ការពារការ scroll ទំព័រ
         togglePlayPause();
     }
             });
