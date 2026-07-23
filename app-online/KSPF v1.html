@@ -700,8 +700,10 @@
                 height: 100,
                 barWidth: 2,
                 normalize: true
+    }
+            });
 
-                // ===== Space Key: Play/Pause (គ្រប់ទីកន្លែង លើកលែងតែក្នុងប្រអប់បញ្ចូល) =====
+// ===== Space Key: Play/Pause (គ្រប់ទីកន្លែង លើកលែងតែក្នុងប្រអប់បញ្ចូល) =====
 document.addEventListener('keydown', function(e) {
     // ពិនិត្យថាគោលដៅមិនមែនជា input/textarea/select
     const tag = e.target.tagName.toLowerCase();
@@ -709,7 +711,10 @@ document.addEventListener('keydown', function(e) {
         e.preventDefault(); // ការពារការ scroll ទំព័រ
         togglePlayPause();
     }
-            });
+});
+
+
+            
 
             wavesurfer.on('audioprocess', updateUI);
             
