@@ -1290,13 +1290,20 @@
         }
 
         function syncSyllable(idx) {
-            const line = allLines.find(l => l.id === editingLineId);
-            if (line) {
-                line.syllables[idx].time = wavesurfer.getCurrentTime();
-                renderTable();
-                updateUI();
-            }
-        }
+    const line = allLines.find(l => l.id === editingLineId);
+    if (!line) return;
+    const s = line.syllables[idx];
+    if (s.isSpace) return; // មិនអនុញ្ញាតឲ្យកំណត់ពេលសម្រាប់ដកឃ្លា
+    
+    // បើមាន Time រួច → Reset (លុបចេញ)
+    if (s.time !== null && s.time !== undefined) {
+        s.time = null;
+    } else {
+        s.time = wavesurfer.getCurrentTime();
+    }
+    renderTable();   // បង្ហាញតារាងឡើងវិញ
+    updateUI();      // បង្ហាញ Canvas ឡើងវិញ
+}
 
         function updateSyllableStyle(idx, type, value) {
             const line = allLines.find(l => l.id === editingLineId);
