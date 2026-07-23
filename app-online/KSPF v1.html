@@ -1265,17 +1265,25 @@
                     fontOptions += `<option value="${f}" ${s.font === f ? 'selected' : ''}>${f.substring(0, 10)}</option>`;
                 });
                 row.innerHTML = `
-                    <td class="p-1"><div class="font-bold text-white cursor-pointer" onclick="syncSyllable(${idx})">${s.text}</div></td>
-                    <td class="p-1">
-                        <div class="flex flex-col gap-1">
-                            <select class="sync-input-font bg-slate-900 border border-slate-700 text-white rounded" onchange="updateSyllableStyle(${idx}, 'font', this.value)">${fontOptions}</select>
-                            <button class="upload-font-btn" onclick="triggerSyllableFontUpload(${idx})">UPLOAD</button>
-                        </div>
-                    </td>
-                    <td class="p-1"><input type="color" class="sync-input-color" value="${s.color || document.getElementById('primaryColor').value}" oninput="updateSyllableStyle(${idx}, 'color', this.value)"></td>
-                    <td class="p-1"><input type="number" class="sync-input-size text-white bg-slate-900 border border-slate-700 rounded" value="${s.fontSize || document.getElementById('fontSize').value}" oninput="updateSyllableStyle(${idx}, 'size', this.value)"></td>
-                    <td class="p-1 text-right font-mono text-blue-400 cursor-pointer" onclick="syncSyllable(${idx})">${s.time ? s.time.toFixed(2) : '--'}</td>
-                `;
+    <td class="p-1">
+        <div class="font-bold cursor-pointer ${s.time ? 'text-green-400' : 'text-white'}" onclick="syncSyllable(${idx})">${s.text}</div>
+    </td>
+    <td class="p-1">
+        <div class="flex flex-col gap-1">
+            <select class="sync-input-font bg-slate-900 border border-slate-700 text-white rounded" onchange="updateSyllableStyle(${idx}, 'font', this.value)">${fontOptions}</select>
+            <button class="upload-font-btn" onclick="triggerSyllableFontUpload(${idx})">UPLOAD</button>
+        </div>
+    </td>
+    <td class="p-1">
+        <input type="color" class="sync-input-color" value="${s.color || document.getElementById('primaryColor').value}" oninput="updateSyllableStyle(${idx}, 'color', this.value)">
+    </td>
+    <td class="p-1">
+        <input type="number" class="sync-input-size text-white bg-slate-900 border border-slate-700 rounded" value="${s.fontSize || document.getElementById('fontSize').value}" oninput="updateSyllableStyle(${idx}, 'size', this.value)">
+    </td>
+    <td class="p-1 text-right font-mono cursor-pointer ${s.time ? 'text-yellow-400' : 'text-blue-400'}" onclick="syncSyllable(${idx})">
+        ${s.time ? s.time.toFixed(2) : '--'}
+    </td>
+`;
                 body.appendChild(row);
             });
         }
@@ -1290,13 +1298,20 @@
         }
 
         function syncSyllable(idx) {
-            const line = allLines.find(l => l.id === editingLineId);
-            if (line) {
-                line.syllables[idx].time = wavesurfer.getCurrentTime();
-                renderTable();
-                updateUI();
-            }
+    const line = allLines.find(l => l.id === editingLineId);
+    if (line) {
+        const s = line.syllables[idx];
+        if (s.isSpace) return; // មិនអនុញ្ញាតឲ្យកំណត់ពេលសម្រាប់ដកឃ្លា
+        // បើមាន Time រួច → Reset (លុបចេញ)
+        if (s.time !== null && s.time !== undefined) {
+            s.time = null;
+        } else {
+            s.time = wavesurfer.getCurrentTime();
         }
+        renderTable();   // បង្ហាញតារាងឡើងវិញ
+        updateUI();      // បង្ហាញ Canvas ឡើងវិញ
+    }
+}
 
         function updateSyllableStyle(idx, type, value) {
             const line = allLines.find(l => l.id === editingLineId);
