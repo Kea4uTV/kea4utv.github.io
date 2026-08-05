@@ -1,0 +1,3418 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Animator Pro V11.5 - Ultra Voice Clone Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Battambang:wght@400;700&family=Koulen&family=Moul&family=Freehand&family=Dangrek&family=Odor+Mean+Chey&family=Fascinate&family=Siemreap&family=Nokora:wght@400;700&display=swap');
+
+        :root {
+            --primary: #3b82f6;
+            --primary-rgb: 59, 130, 246;
+        }
+
+        body {
+            font-family: 'Battambang', sans-serif;
+            background-color: #0b0f19;
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+
+        .control-section {
+            background: #131c2e;
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid #223049;
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .control-section:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 15px 35px -5px rgba(59, 130, 246, 0.15);
+        }
+
+        .label-sm {
+            font-size: 11px;
+            font-weight: 800;
+            color: #94a3b8;
+            margin-bottom: 6px;
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .input-ui {
+            width: 100%;
+            border: 1px solid #223049;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            outline: none;
+            transition: all 0.2s;
+            background: #080c14;
+            color: #f8fafc;
+        }
+
+        .input-ui:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+        }
+
+        #canvasWrapper {
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+            position: relative;
+            background-color: #000;
+            overflow: hidden;
+            border-radius: 2.5rem;
+            margin: auto;
+            border: 6px solid #1e293b;
+        }
+
+        .canvas-area {
+            position: relative;
+            display: flex;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            padding: 24px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            scrollbar-width: none;
+        }
+
+        .canvas-area::-webkit-scrollbar {
+            display: none;
+        }
+
+        #bgLayer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            transition: all 0.5s;
+        }
+
+        #bgLayer video,
+        #bgLayer img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        #overlayLayer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .overlay-item {
+            position: absolute;
+            transition: opacity 0.3s ease;
+            pointer-events: auto;
+            cursor: grab;
+            user-select: none;
+        }
+
+        .overlay-item.dragging {
+            opacity: 0.6;
+            cursor: grabbing;
+        }
+
+        @keyframes bg-zoom {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        @keyframes bg-zoom-slow {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+        @keyframes bg-pan {
+            0%, 100% { background-position: left center; }
+            50% { background-position: right center; }
+        }
+        @keyframes bg-pan-vertical {
+            0%, 100% { background-position: center top; }
+            50% { background-position: center bottom; }
+        }
+        @keyframes bg-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        @keyframes bg-ken-burns {
+            0%, 100% { transform: scale(1) translate(0, 0); }
+            50% { transform: scale(1.15) translate(2%, 2%); }
+        }
+        @keyframes bg-slide-left {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(-5%); }
+        }
+        @keyframes bg-slide-right {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(5%); }
+        }
+        @keyframes bg-rotate {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(2deg) scale(1.05); }
+        }
+
+        .anim-zoom { animation: bg-zoom 10s infinite ease-in-out; }
+        .anim-zoom-slow { animation: bg-zoom-slow 15s infinite ease-in-out; }
+        .anim-pan { animation: bg-pan 15s infinite ease-in-out; }
+        .anim-pan-vertical { animation: bg-pan-vertical 15s infinite ease-in-out; }
+        .anim-pulse { animation: bg-pulse 5s infinite ease-in-out; }
+        .anim-ken-burns { animation: bg-ken-burns 20s infinite ease-in-out; }
+        .anim-slide-left { animation: bg-slide-left 12s infinite ease-in-out; }
+        .anim-slide-right { animation: bg-slide-right 12s infinite ease-in-out; }
+        .anim-rotate { animation: bg-rotate 18s infinite ease-in-out; }
+
+        @keyframes shake {
+            0%, 100% { transform: translate(0, 0); }
+            10%, 30%, 50%, 70%, 90% { transform: translate(-4px, -2px); }
+            20%, 40%, 60%, 80% { transform: translate(4px, 2px); }
+        }
+        .shake-fx { animation: shake 0.4s cubic-bezier(.36, .07, .19, .97) both; }
+
+        /* Message animations */
+        @keyframes slide-in-bottom { from { opacity: 0; transform: translateY(50px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slide-in-left { from { opacity: 0; transform: translateX(-50px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes slide-in-right { from { opacity: 0; transform: translateX(50px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes zoom-in { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes bounce-in {
+            0% { opacity: 0; transform: scale(0.3); }
+            50% { opacity: 1; transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes flip-in { from { opacity: 0; transform: perspective(400px) rotateX(90deg); } to { opacity: 1; transform: perspective(400px) rotateX(0deg); } }
+        @keyframes slide-in-top { from { opacity: 0; transform: translateY(-50px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slide-in-bottom-right { from { opacity: 0; transform: translate(50px, 50px); } to { opacity: 1; transform: translate(0, 0); } }
+        @keyframes rotate-in { from { opacity: 0; transform: rotate(-30deg) scale(0.7); } to { opacity: 1; transform: rotate(0deg) scale(1); } }
+        @keyframes elastic-in {
+            0% { opacity: 0; transform: scale(0.3); }
+            60% { opacity: 1; transform: scale(1.1); }
+            80% { transform: scale(0.95); }
+            100% { transform: scale(1); }
+        }
+
+        .msg-entry-bottom { animation: slide-in-bottom 0.5s ease-out forwards; }
+        .msg-entry-left { animation: slide-in-left 0.5s ease-out forwards; }
+        .msg-entry-right { animation: slide-in-right 0.5s ease-out forwards; }
+        .msg-entry-zoom { animation: zoom-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .msg-entry-fade { animation: fade-in 0.5s ease-out forwards; }
+        .msg-entry-bounce { animation: bounce-in 0.6s ease-out forwards; }
+        .msg-entry-flip { animation: flip-in 0.6s ease-out forwards; }
+        .msg-entry-top { animation: slide-in-top 0.5s ease-out forwards; }
+        .msg-entry-bottom-right { animation: slide-in-bottom-right 0.5s ease-out forwards; }
+        .msg-entry-rotate { animation: rotate-in 0.6s ease-out forwards; }
+        .msg-entry-elastic { animation: elastic-in 0.7s ease-out forwards; }
+
+        @keyframes fade-out { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.9); } }
+        @keyframes slide-out-top { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-50px); } }
+        @keyframes slide-out-left { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(-50px); } }
+        @keyframes slide-out-right { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(50px); } }
+        @keyframes zoom-out { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.5); } }
+        @keyframes rotate-out { from { opacity: 1; transform: rotate(0deg); } to { opacity: 0; transform: rotate(15deg) scale(0.8); } }
+
+        .msg-exit-fade { animation: fade-out 0.5s ease-in forwards; }
+        .msg-exit-top { animation: slide-out-top 0.5s ease-in forwards; }
+        .msg-exit-left { animation: slide-out-left 0.5s ease-in forwards; }
+        .msg-exit-right { animation: slide-out-right 0.5s ease-in forwards; }
+        .msg-exit-zoom { animation: zoom-out 0.5s ease-in forwards; }
+        .msg-exit-rotate { animation: rotate-out 0.5s ease-in forwards; }
+
+        .active-msg { z-index: 100; transform: scale(1.02); transition: transform 0.3s; }
+        .inactive-msg { opacity: 0.35; filter: blur(0.5px); transition: all 0.5s; }
+
+        #aiLoading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(8, 12, 20, 0.9);
+            backdrop-filter: blur(12px);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #131c2e;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #3b82f6;
+            border-radius: 10px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+        .file-input-wrapper input[type=file] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .file-btn {
+            background: #1e293b;
+            border: 1px dashed #475569;
+            padding: 8px;
+            border-radius: 8px;
+            text-align: center;
+            width: 100%;
+            display: block;
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #3b82f6;
+            color: #fff;
+            text-align: center;
+            border-radius: 12px;
+            padding: 14px 24px;
+            position: fixed;
+            z-index: 10001;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 13px;
+            font-weight: bold;
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.4);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s;
+        }
+        #toast.show {
+            visibility: visible;
+            animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        }
+        @keyframes fadein { from { bottom: 0; opacity: 0; } to { bottom: 30px; opacity: 1; } }
+        @keyframes fadeout { from { bottom: 30px; opacity: 1; } to { bottom: 0; opacity: 0; } }
+
+        .file-overlay-btn {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+        .file-overlay-btn input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .drag-handle {
+            cursor: grab;
+            user-select: none;
+        }
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+        .msg-card.dragging {
+            opacity: 0.5;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            transform: scale(1.02);
+        }
+        .msg-card.drop-target {
+            border: 2px dashed #3b82f6;
+            background-color: #1e293b;
+        }
+
+        /* Toggle switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 36px;
+            height: 20px;
+        }
+        .switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #475569;
+            transition: .3s;
+            border-radius: 20px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #10b981;
+        }
+        input:checked + .slider:before {
+            transform: translateX(16px);
+        }
+
+        /* Waveform simulation style */
+        .wave-bar {
+            transform-origin: bottom;
+            animation: bounce-wave 1s ease-in-out infinite alternate;
+        }
+        @keyframes bounce-wave {
+            from { transform: scaleY(0.2); }
+            to { transform: scaleY(1); }
+        }
+    </style>
+</head>
+<body class="p-4 lg:p-8">
+
+    <div id="aiLoading">
+        <div class="text-center bg-slate-900 p-8 rounded-2xl border border-slate-700 shadow-2xl max-w-sm mx-4">
+            <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500 mx-auto mb-4"></div>
+            <p id="aiLoadingText" class="font-bold text-slate-200 text-lg">កំពុងវិភាគតួនាទី និងបង្កើតស្គ្រីប...</p>
+        </div>
+    </div>
+
+    <div id="toast">បានចម្លងអត្ថបទរួចរាល់!</div>
+
+    <!-- MAIN GRID CONTAINER -->
+    <div class="max-w-[1700px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+        <!-- LEFT CONTROL PANEL (8 Cols) -->
+        <div class="lg:col-span-8 space-y-6 h-[90vh] overflow-y-auto pr-2 custom-scroll">
+
+            <!-- Title & Global Controls -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between sticky top-0 bg-[#0b0f19] z-50 py-3 gap-4 border-b border-slate-850">
+                <div>
+                    <h1 class="text-3xl font-black text-slate-100 leading-none tracking-tight">CHAT <span class="text-blue-500">ANIMATOR</span></h1>
+                    <p class="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">V11.5 ULTRA STUDIO - REAL-SAMPLE VOICE CLONING</p>
+                </div>
+
+                <div class="flex gap-2">
+                    <button onclick="exportProject()" class="bg-slate-800 border border-slate-700 text-slate-200 px-4 py-2.5 rounded-xl text-xs font-black hover:bg-slate-700 flex items-center gap-2 transition">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg> រក្សាទុក Project
+                    </button>
+                    <div class="relative">
+                        <button class="bg-slate-800 border border-slate-700 text-slate-200 px-4 py-2.5 rounded-xl text-xs font-black hover:bg-slate-700 flex items-center gap-2 transition">
+                            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l4-4m0 0l4 4m-4-4v12"/></svg> បើក Project
+                        </button>
+                        <input type="file" accept=".json" onchange="importProject(event)" class="absolute inset-0 opacity-0 cursor-pointer">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 1. AI Script Engine with Genders and Narrator insertion -->
+            <div class="control-section border-l-4 border-blue-500 bg-blue-950/20">
+                <h3 class="font-black text-blue-400 mb-4 flex items-center gap-2">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                    Smart Story Script Generator (ស្វ័យប្រវត្ត & អ្នកពោល)
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                    <div class="md:col-span-8">
+                        <label class="label-sm">ប្រធានបទសន្ទនា / គ្រោងរឿង</label>
+                        <input type="text" id="aiTopic" placeholder="ឧ៖ មេបញ្ជាការប្រុសបញ្ជាកូនចៅស្រីអោយបំពេញបេសកកម្ម..." class="input-ui">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="label-sm">ចំនួនសារសរុប</label>
+                        <input type="number" id="aiMsgCount" value="6" class="input-ui">
+                    </div>
+                    <div class="md:col-span-2 self-end">
+                        <button onclick="generateAIScript()" class="w-full bg-blue-600 text-white h-11 rounded-xl font-bold text-xs hover:bg-blue-700 transition">GENERATE</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Production Settings -->
+            <div class="control-section border-l-4 border-amber-500 bg-amber-950/10">
+                <h3 class="font-black text-amber-500 mb-4 flex items-center gap-2">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                    Production Controls
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="enableTypewriter" checked class="w-4 h-4 cursor-pointer">
+                        <label for="enableTypewriter" class="label-sm mb-0 cursor-pointer">Typewriter Typing</label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="enableShake" checked class="w-4 h-4 cursor-pointer">
+                        <label for="enableShake" class="label-sm mb-0 cursor-pointer">Screen Vibrations (Shake)</label>
+                    </div>
+                    <div>
+                        <label class="label-sm">ល្បឿនអក្សររត់ (ms/char)</label>
+                        <input type="number" id="typeSpeed" value="40" class="input-ui">
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- 2. Background and Canvas Art Setup -->
+                <div class="control-section">
+                    <h3 class="font-black text-indigo-400 mb-4 pb-2 border-b border-slate-700 uppercase text-xs tracking-widest">២. ផ្ទៃក្រោយ & ចលនា</h3>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="label-sm">រូបភាពផ្ទៃក្រោយ</label>
+                                <div class="file-input-wrapper">
+                                    <button class="file-btn">Upload File</button>
+                                    <input type="file" accept="image/*,video/*,image/gif" onchange="handleBgMedia(event)">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="label-sm">ពណ៌ផ្ទៃក្រោយ</label>
+                                <input type="color" id="bgColor" value="#0b0f19" oninput="updateCanvasStyles()" class="w-full h-9 rounded-lg cursor-pointer bg-transparent border border-slate-700">
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <label class="label-sm mb-0">Video Loop</label>
+                            <input type="checkbox" id="videoLoop" checked onchange="updateCanvasStyles()" class="w-4 h-4 cursor-pointer">
+                            <span id="mediaTypeLabel" class="text-xs font-bold text-slate-400">(គ្មានឯកសារ)</span>
+                        </div>
+
+                        <!-- AI Background Generation -->
+                        <div class="p-3 bg-purple-950/30 border border-purple-850 rounded-xl space-y-2">
+                            <h4 class="text-xs font-bold text-purple-400 flex items-center gap-1">🤖 AI បង្កើតរូបភាពផ្ទៃក្រោយ</h4>
+                            <div class="grid grid-cols-1 gap-2">
+                                <div>
+                                    <label class="label-sm text-[9px] text-purple-300">🎨 Art Style / រចនាប័ទ្មសិល្បៈ</label>
+                                    <select id="aiBgStyle" class="input-ui text-xs bg-[#080c14] border-purple-850 text-slate-200">
+                                        <option value="">𝗡𝗼 𝘀𝘁𝘆𝗹𝗲</option>
+                                        <option value="Painted Anime">Painted Anime</option>
+                                        <option value="Casual Photo">Casual Photo</option>
+                                        <option value="Cinematic">Cinematic</option>
+                                        <option value="Digital Painting">Digital Painting</option>
+                                        <option value="Concept Art">Concept Art</option>
+                                        <option value="3D Disney Character">3D Disney Character</option>
+                                        <option value="2D Disney Character">2D Disney Character</option>
+                                        <option value="Disney Sketch">Disney Sketch</option>
+                                        <option value="Concept Sketch">Concept Sketch</option>
+                                        <option value="Painterly">Painterly</option>
+                                        <option value="Oil Painting">Oil Painting</option>
+                                        <option value="Oil Painting - Realism">Oil Painting - Realism</option>
+                                        <option value="Oil Painting - Old">Oil Painting - Old</option>
+                                        <option value="Oil Painting - 70s Pulp">Oil Painting - 70s Pulp</option>
+                                        <option value="Professional Photo">Professional Photo</option>
+                                        <option value="Anime">Anime</option>
+                                        <option value="Drawn Anime">Drawn Anime</option>
+                                        <option value="Anime Screencap">Anime Screencap</option>
+                                        <option value="Cute Anime">Cute Anime</option>
+                                        <option value="Soft Anime">Soft Anime</option>
+                                        <option value="Fantasy Painting">Fantasy Painting</option>
+                                        <option value="Fantasy Landscape">Fantasy Landscape</option>
+                                        <option value="Fantasy Portrait">Fantasy Portrait</option>
+                                        <option value="Studio Ghibli">Studio Ghibli</option>
+                                        <option value="50s Enamel Sign">50s Enamel Sign</option>
+                                        <option value="Vintage Comic">Vintage Comic</option>
+                                        <option value="Franco-Belgian Comic">Franco-Belgian Comic</option>
+                                        <option value="Tintin Comic">Tintin Comic</option>
+                                        <option value="Medieval">Medieval</option>
+                                        <option value="Pixel Art">Pixel Art</option>
+                                        <option value="Furry - Oil">Furry - Oil</option>
+                                        <option value="Furry - Cinematic">Furry - Cinematic</option>
+                                        <option value="Furry - Painted">Furry - Painted</option>
+                                        <option value="Furry - Drawn">Furry - Drawn</option>
+                                        <option value="Cute Figurine">Cute Figurine</option>
+                                        <option value="3D Emoji">3D Emoji</option>
+                                        <option value="Illustration">Illustration</option>
+                                        <option value="Cute Illustration">Cute Illustration</option>
+                                        <option value="Flat Illustration">Flat Illustration</option>
+                                        <option value="Watercolor">Watercolor</option>
+                                        <option value="1990s Photo">1990s Photo</option>
+                                        <option value="1980s Photo">1980s Photo</option>
+                                        <option value="1970s Photo">1970s Photo</option>
+                                        <option value="1960s Photo">1960s Photo</option>
+                                        <option value="1950s Photo">1950s Photo</option>
+                                        <option value="1940s Photo">1940s Photo</option>
+                                        <option value="1930s Photo">1930s Photo</option>
+                                        <option value="1920s Photo">1920s Photo</option>
+                                        <option value="Vintage Pulp Art">Vintage Pulp Art</option>
+                                        <option value="50s Infomercial Anime">50s Infomercial Anime</option>
+                                        <option value="3D Pokemon">3D Pokemon</option>
+                                        <option value="Painted Pokemon">Painted Pokemon</option>
+                                        <option value="2D Pokemon">2D Pokemon</option>
+                                        <option value="Vintage Anime">Vintage Anime</option>
+                                        <option value="Neon Vintage Anime">Neon Vintage Anime</option>
+                                        <option value="Manga">Manga</option>
+                                        <option value="Fantasy World Map">Fantasy World Map</option>
+                                        <option value="Fantasy City Map">Fantasy City Map</option>
+                                        <option value="Old World Map">Old World Map</option>
+                                        <option value="3D Isometric Icon">3D Isometric Icon</option>
+                                        <option value="Flat Style Icon">Flat Style Icon</option>
+                                        <option value="Flat Style Logo">Flat Style Logo</option>
+                                        <option value="Game Art Icon">Game Art Icon</option>
+                                        <option value="Digital Painting Icon">Digital Painting Icon</option>
+                                        <option value="Concept Art Icon">Concept Art Icon</option>
+                                        <option value="Cute 3D Icon">Cute 3D Icon</option>
+                                        <option value="Cute 3D Icon Set">Cute 3D Icon Set</option>
+                                        <option value="Crayon Drawing">Crayon Drawing</option>
+                                        <option value="Pencil">Pencil</option>
+                                        <option value="Tattoo Design">Tattoo Design</option>
+                                        <option value="Waifu">Waifu</option>
+                                        <option value="YuGiOh Art">YuGiOh Art</option>
+                                        <option value="Traditional Japanese">Traditional Japanese</option>
+                                        <option value="Nihonga Painting">Nihonga Painting</option>
+                                        <option value="Claymation">Claymation</option>
+                                        <option value="Cartoon">Cartoon</option>
+                                        <option value="Cursed Photo">Cursed Photo</option>
+                                        <option value="MTG Card">MTG Card</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="p-2 bg-slate-900/60 rounded-xl border border-purple-850/40 space-y-2">
+                                    <label class="label-sm text-[9px] text-purple-300">📸 រូបភាពគំរូសម្រាប់ AI ចម្លង (Image Reference - Option)</label>
+                                    <div class="flex items-center gap-3">
+                                        <div class="file-overlay-btn bg-purple-900/40 hover:bg-purple-850 border border-purple-700 text-purple-200 px-3 py-1.5 rounded-lg text-[10px] font-bold text-center cursor-pointer transition">
+                                            📤 ជ្រើសរើសរូបភាពគំរូ
+                                            <input type="file" accept="image/*" onchange="handleBgRefImage(event)">
+                                        </div>
+                                        <div id="refImgPreviewContainer" class="hidden flex items-center gap-1.5 bg-slate-950 p-1 rounded-lg border border-slate-800">
+                                            <img id="refImgPreview" class="w-8 h-8 object-cover rounded-md" src="" alt="preview">
+                                            <button onclick="clearBgRefImage()" class="text-rose-400 hover:text-rose-500 font-bold px-1.5 text-xs">✕</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="flex gap-2">
+                                    <input type="text" id="aiBgPrompt" placeholder="Scifi futuristic glowing base, cyberpunk style" class="input-ui text-xs flex-1">
+                                    <button onclick="generateAIBackground(event)" class="bg-purple-600 text-white px-3 py-1 rounded-lg text-xs font-bold hover:bg-purple-700 whitespace-nowrap">🎨 បង្កើត</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="label-sm">របៀបបង្ហាញរូប</label>
+                                <select id="bgSize" onchange="updateCanvasStyles()" class="input-ui">
+                                    <option value="cover">ពេញ (Cover)</option>
+                                    <option value="contain">ល្មម (Contain)</option>
+                                    <option value="auto">ដើម (Original)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="label-sm">ចលនាផ្ទៃក្រោយ</label>
+                                <select id="bgAnim" onchange="updateCanvasStyles()" class="input-ui">
+                                    <option value="none">គ្មាន</option>
+                                    <option value="anim-zoom">Zoom In/Out</option>
+                                    <option value="anim-zoom-slow">Zoom Slow</option>
+                                    <option value="anim-pan">Pan Left/Right</option>
+                                    <option value="anim-pan-vertical">Pan Up/Down</option>
+                                    <option value="anim-pulse">Pulse Fade</option>
+                                    <option value="anim-ken-burns">Ken Burns</option>
+                                    <option value="anim-slide-left">Slide Left</option>
+                                    <option value="anim-slide-right">Slide Right</option>
+                                    <option value="anim-rotate">Rotate</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Dynamic Styles and Typography Panel -->
+                <div class="control-section">
+                    <h3 class="font-black text-emerald-400 mb-4 pb-2 border-b border-slate-700 uppercase text-xs tracking-widest">៣. ស្ទាយអក្សរ & Fonts</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" id="enableTextStyles" checked class="w-4 h-4 cursor-pointer" onchange="toggleTextStyles()">
+                            <label for="enableTextStyles" class="label-sm mb-0 cursor-pointer">បើកការកំណត់អក្សរកម្រិតខ្ពស់</label>
+                        </div>
+
+                        <div>
+                            <label class="label-sm">បញ្ចូល Font ផ្ទាល់ខ្លួន (.ttf, .woff2)</label>
+                            <div class="file-input-wrapper"><button class="file-btn" id="fontFileLabel">បញ្ចូលឯកសារ Font</button><input type="file" accept=".ttf,.otf,.woff,.woff2" onchange="handleLocalFont(event)"></div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="label-sm">ពុម្ពអក្សរចម្បង</label>
+                                <select id="fontFamily" onchange="updateCanvasStyles()" class="input-ui">
+                                    <option value="font-battambang">Battambang</option>
+                                    <option value="font-koulen">Koulen</option>
+                                    <option value="font-moul">Moul</option>
+                                    <option value="font-dangrek">Dangrek</option>
+                                    <option value="font-siemreap">Siemreap</option>
+                                    <option value="font-nokora">Nokora</option>
+                                    <option id="optCustomFont" value="custom" style="display:none;">Font ផ្ទាល់ខ្លួន</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="label-sm">ទំហំអក្សរទូទៅ (px)</label>
+                                <input type="number" id="fontSize" value="16" oninput="updateCanvasStyles()" class="input-ui">
+                            </div>
+                        </div>
+
+                        <!-- Speech Bubble Customization -->
+                        <div class="border-t border-slate-700 pt-3">
+                            <label class="label-sm text-purple-400">កោងពពុះ (border-radius)</label>
+                            <input type="range" id="bubbleRadius" min="0" max="50" value="20" oninput="updateCanvasStyles()" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+                            
+                            <div class="grid grid-cols-3 gap-2 mt-2">
+                                <div>
+                                    <label class="label-sm text-[9px]">ពណ៌ Bubble</label>
+                                    <input type="color" id="bubbleBgColor" value="#ffffff" onchange="updateBubbleStyle()" class="w-full h-8 rounded bg-transparent border border-slate-700 cursor-pointer">
+                                </div>
+                                <div>
+                                    <label class="label-sm text-[9px]">ភាពថ្លា (Opacity)</label>
+                                    <input type="range" id="bubbleOpacity" min="0" max="1" step="0.05" value="1" oninput="updateBubbleStyle()" class="w-full">
+                                </div>
+                                <div>
+                                    <label class="label-sm text-[9px]">ពណ៌អក្សរ</label>
+                                    <input type="color" id="bubbleTextColor" value="#000000" onchange="updateBubbleStyle()" class="w-full h-8 rounded bg-transparent border border-slate-700 cursor-pointer">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Overlay Elements (Watermarks, Stickers, Custom Texts) -->
+            <div class="control-section border-t-4 border-purple-500">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="font-black text-purple-400 text-lg uppercase tracking-widest">៤. Overlay Assets (Sticker/Logo/Text)</h3>
+                    <div class="flex gap-2">
+                        <button onclick="addOverlay()" class="bg-purple-600 text-white px-4 py-2.5 rounded-xl text-xs font-black shadow-lg hover:bg-purple-700 transition">+ Sticker / Logo</button>
+                        <button onclick="addTextOverlay()" class="bg-indigo-600 text-white px-4 py-2.5 rounded-xl text-xs font-black shadow-lg hover:bg-indigo-700 transition">+ ផុសអក្សរ Overlay</button>
+                    </div>
+                </div>
+                <div id="overlaysContainer" class="space-y-4"></div>
+            </div>
+
+            <!-- 5. Advanced Canvas Layout Controls -->
+            <div class="control-section">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-black text-slate-300 uppercase text-xs tracking-widest">៥. ប្លង់ & View Mode</h3>
+                    <div class="flex gap-2">
+                        <button onclick="saveLayoutPreset()" class="bg-slate-800 border border-slate-700 text-slate-300 px-3 py-1 rounded text-[10px] font-black hover:bg-slate-700">💾 Save Preset</button>
+                        <button onclick="loadLayoutPreset()" class="bg-slate-800 border border-slate-700 text-slate-300 px-3 py-1 rounded text-[10px] font-black hover:bg-slate-700">📂 Load Preset</button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="label-sm">របៀបបង្ហាញ</label>
+                        <select id="viewMode" onchange="updateCanvasStyles()" class="input-ui">
+                            <option value="flow">Flow (ពីក្រោមឡើង)</option>
+                            <option value="flow-down">Flow Down (ពីលើចុះ)</option>
+                            <option value="single">Single (ម្តងមួយ)</option>
+                            <option value="single-fade">Single + Fade</option>
+                            <option value="highlight">Highlight សារថ្មី</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="label-sm">បង្ហាញយូរ (s)</label>
+                        <input type="number" id="stayTime" value="2.5" step="0.5" class="input-ui">
+                    </div>
+                    <div>
+                        <label class="label-sm">ទំហំ Canvas (W x H)</label>
+                        <div class="flex gap-1">
+                            <input type="number" id="canvasW" value="360" oninput="updateCanvasStyles()" class="input-ui px-1 text-center">
+                            <input type="number" id="canvasH" value="640" oninput="updateCanvasStyles()" class="input-ui px-1 text-center">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="label-sm">តម្រឹមបណ្តោយ</label>
+                        <select id="vAlign" onchange="updateCanvasStyles()" class="input-ui">
+                            <option value="flex-end">Bottom (ពីក្រោម)</option>
+                            <option value="flex-start">Top (ពីលើ)</option>
+                            <option value="center">Center (កណ្តាល)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-4 grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="label-sm">ចន្លោះរវាងពពុះ (Gap px)</label>
+                        <input type="range" id="bubbleGap" min="4" max="40" value="16" oninput="updateCanvasStyles()" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                    <div>
+                        <label class="label-sm">ចលនាចូលរបស់សារ (Entry)</label>
+                        <select id="entryAnim" onchange="updateCanvasStyles()" class="input-ui border-blue-900">
+                            <option value="msg-entry-bottom">Slide Up</option>
+                            <option value="msg-entry-left">Slide In Left</option>
+                            <option value="msg-entry-right">Slide In Right</option>
+                            <option value="msg-entry-zoom">Zoom Pop</option>
+                            <option value="msg-entry-fade">Fade In</option>
+                            <option value="msg-entry-bounce">Bounce In</option>
+                            <option value="msg-entry-flip">Flip In</option>
+                            <option value="msg-entry-elastic">Elastic In</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. Characters, Default Genders, Narrators & Voice Cloning Config -->
+            <div class="control-section border-t-4 border-rose-500">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
+                    <div>
+                        <h3 class="font-black text-rose-400 text-lg uppercase">៦. តួអង្គ & ភេទ & ម៉ាស៊ីន Clone សំឡេងមនុស្សពិត 🎙️</h3>
+                        <p class="text-[10px] text-slate-400">គ្រប់គ្រងតួអង្គទូទៅ និងអ្នកពោល (Narrators) រួមជាមួយការថត/បញ្ចូលសំឡេងមនុស្សពិតគំរូក្រោម ១៥វិនាទី ដើម្បី Clone</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="addProfile('character')" class="bg-rose-600 text-white px-3 py-2 rounded-xl text-xs font-black shadow-lg hover:bg-rose-700 transition">+ បន្ថែមតួអង្គថ្មី</button>
+                        <button onclick="addProfile('narrator')" class="bg-emerald-600 text-white px-3 py-2 rounded-xl text-xs font-black shadow-lg hover:bg-emerald-700 transition">+ បន្ថែមអ្នកពោល/អ្នកនិទាន</button>
+                    </div>
+                </div>
+
+                <!-- NARRATOR GLOBAL CONTROLLER PANEL -->
+                <div class="bg-slate-900/80 border-2 border-emerald-500/40 p-4 rounded-xl mb-6 space-y-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-700 pb-3 gap-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-emerald-400 font-bold text-sm">🎙️ បើក/បិទ ការកំណត់លក្ខខណ្ឌអ្នកពោល (NARRATOR LIMITS)</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="narratorEnabled" onchange="toggleNarratorEnabled(this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div id="narratorOptions" class="grid grid-cols-1 md:grid-cols-2 gap-4 opacity-50 pointer-events-none transition-all duration-300">
+                        <div class="space-y-3 col-span-2">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="label-sm text-yellow-400">លេចឡើងរាល់ (រៀងរាល់ X សារ)</label>
+                                    <input type="number" id="narratorFreq" value="3" min="1" max="10" oninput="updateNarratorSetting('frequency', parseInt(this.value))" class="input-ui h-8 text-xs text-center">
+                                </div>
+                                <div>
+                                    <label class="label-sm text-emerald-400">ចំនួនសារអ្នកពោលសរុប (Max Messages)</label>
+                                    <input type="number" id="narratorMaxCount" value="3" min="1" max="20" oninput="updateNarratorSetting('maxCount', parseInt(this.value))" class="input-ui h-8 text-xs text-center">
+                                </div>
+                                <div class="self-center pt-3">
+                                    <span class="text-[9px] text-slate-400 font-bold block">កំណត់ការលេចឡើងរបស់អ្នកពោលបែបដាច់ខាត</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-emerald-950/20 border border-emerald-800/40 rounded-xl">
+                        <span class="text-xs text-emerald-300 block leading-relaxed font-semibold">
+                            💡 <strong>លក្ខខណ្ឌស្វ័យប្រវត្ត (Auto Random)៖</strong> ប្រសិនបើអ្នកមិនបានបើកកំណត់លក្ខខណ្ឌខាងលើទេ ប៉ុន្តែមានតួអង្គអ្នកពោលនៅក្នុងបញ្ជីខាងក្រោម ប្រព័ន្ធ AI នឹងសម្រេចចិត្តបញ្ចូល និងរៀបចំអត្ថបទអ្នកពោលដោយស្វ័យប្រវត្តិតាមការគួរ (Auto Decide & Random) ក្នុងកន្លែងដែលសមស្របបំផុត!
+                        </span>
+                    </div>
+                </div>
+
+                <!-- SUBSECTION: DIALOGUE CHARACTERS -->
+                <div class="mb-6">
+                    <h4 class="text-xs font-black text-rose-400 uppercase tracking-widest mb-3 border-b border-slate-700 pb-1">តួអង្គសន្ទនា (Dialogue Characters)</h4>
+                    <div id="profilesContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                </div>
+
+                <!-- SUBSECTION: NARRATORS -->
+                <div>
+                    <h4 class="text-xs font-black text-emerald-400 uppercase tracking-widest mb-3 border-b border-slate-700 pb-1">អ្នកពោល / អ្នកនិទាន (Narrators & Explanations)</h4>
+                    <div id="narratorsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                </div>
+            </div>
+
+            <!-- 7. Timeline, TTS AI Audio & Custom FX per Message -->
+            <div class="control-section border-t-4 border-emerald-500">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
+                    <div>
+                        <h3 class="font-black text-emerald-400 text-lg uppercase">៧. បញ្ជីសារ & សំឡេង (AUDIO FX & TTS AI)</h3>
+                        <p class="text-[10px] text-slate-400 mt-0.5">ប្រព័ន្ធផ្ទៀងផ្ទាត់ និងបង្កើតសំឡេងស្រីប្រុសស្វ័យប្រវត្ត រួមទាំងការកែសម្រួល AUDIO FX (Echo & Reverb) ចំពោះសារនីមួយៗ</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="addMessage()" class="bg-emerald-600 text-white px-3 py-2 rounded-xl text-[11px] font-black shadow-lg hover:bg-emerald-700 transition">+ បន្ថែមសារថ្មី</button>
+                        <button onclick="generateAllPendingTTS()" class="bg-blue-600 text-white px-3 py-2 rounded-xl text-[11px] font-black shadow-lg hover:bg-blue-700 transition flex items-center gap-1">🎙️ បង្កើតសំឡេង AI ទាំងអស់</button>
+                    </div>
+                </div>
+                <div id="messagesContainer" class="space-y-4"></div>
+            </div>
+
+            <!-- 8. Master Sound & Sound Ducking Panel -->
+            <div class="control-section">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-black text-slate-300 uppercase text-xs tracking-widest">៨. សំឡេងរួម & AUDIO DUCKING</h3>
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="useDucking" checked class="w-4 h-4 cursor-pointer">
+                        <label for="useDucking" class="text-[10px] font-black text-blue-400 uppercase cursor-pointer">Auto Ducking BGM</label>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="label-sm">តន្ត្រីផ្ទៃក្រោយ (BGM)</label>
+                        <div class="file-overlay-btn bg-slate-800 border border-slate-700 px-3 py-2.5 rounded text-xs font-black hover:bg-slate-700 w-full text-center cursor-pointer text-slate-300">
+                            ជ្រើសរើស BGM
+                            <input type="file" accept="audio/*" onchange="handleGlobalAudioFile('bgMusicPlayer', event)">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="label-sm">Global Transition SFX</label>
+                        <div class="file-overlay-btn bg-slate-800 border border-slate-700 px-3 py-2.5 rounded text-xs font-black hover:bg-slate-700 w-full text-center cursor-pointer text-slate-300">
+                            ជ្រើសរើស SFX
+                            <input type="file" accept="audio/*" onchange="handleGlobalAudioFile('globalSfxPlayer', event)">
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="flex justify-between"><label class="label-sm">កម្រិត BGM ធម្មតា</label><span id="bgVolLabel" class="text-[10px] font-bold text-slate-400">30%</span></div>
+                        <input type="range" id="bgVol" min="0" max="1" step="0.05" value="0.3" oninput="updateBgmVolumeUI()" class="w-full">
+                        <div class="flex justify-between pt-2"><label class="label-sm text-blue-400">កម្រិត BGM ពេលនិយាយ (Ducked)</label><span id="duckVolLabel" class="text-[10px] font-bold text-blue-400">5%</span></div>
+                        <input type="range" id="duckVol" min="0" max="0.5" step="0.05" value="0.05" oninput="updateBgmVolumeUI()" class="w-full">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT CANVAS PREVIEW PANEL (4 Cols) -->
+        <div class="lg:col-span-4 flex flex-col items-center">
+            <div class="sticky top-10 w-full flex flex-col items-center">
+                <div id="canvasWrapper">
+                    <div id="bgLayer"></div>
+                    <div id="overlayLayer"></div>
+                    <div id="mainCanvas" class="canvas-area">
+                        <div id="messageFlow" class="flex flex-col w-full"></div>
+                    </div>
+                </div>
+
+                <div class="mt-6 w-full max-w-[360px] space-y-4">
+                    <div class="grid grid-cols-2 gap-2">
+                        <button id="playBtn" onclick="togglePlayback()" class="w-full bg-blue-600 hover:bg-blue-700 text-white h-14 rounded-2xl font-black shadow-xl transition transform active:scale-95 flex items-center justify-center gap-3 text-sm">
+                            <svg id="playIcon" width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg> <span id="playText">PREVIEW</span>
+                        </button>
+                        <button id="recordBtn" onclick="toggleRecording()" class="w-full bg-rose-600 hover:bg-rose-700 text-white h-14 rounded-2xl font-black shadow-xl transition transform active:scale-95 flex items-center justify-center gap-3 text-sm">
+                            <svg id="recordIcon" width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg> <span id="recordText">RECORD</span>
+                        </button>
+                    </div>
+                    <div class="bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-800">
+                        <!-- REAL-TIME WAVEFORM DISPLAY -->
+                        <div class="mb-4">
+                            <div class="flex justify-between items-center mb-1"><span class="text-[9px] font-black text-blue-400 uppercase tracking-wider">AUDIO VISUALIZER (WAVE)</span></div>
+                            <svg id="waveformSvg" class="w-full h-8 bg-slate-950/80 rounded-lg p-1" viewBox="0 0 100 20" preserveAspectRatio="none">
+                                <g id="waveBarsContainer" class="flex justify-around fill-blue-500 opacity-60">
+                                    <rect class="wave-bar" x="2" y="0" width="4" height="20" rx="1"/>
+                                    <rect class="wave-bar" x="10" y="0" width="4" height="20" rx="1" style="animation-delay: 0.1s"/>
+                                    <rect class="wave-bar" x="18" y="0" width="4" height="20" rx="1" style="animation-delay: 0.2s"/>
+                                    <rect class="wave-bar" x="26" y="0" width="4" height="20" rx="1" style="animation-delay: 0.3s"/>
+                                    <rect class="wave-bar" x="34" y="0" width="4" height="20" rx="1" style="animation-delay: 0.15s"/>
+                                    <rect class="wave-bar" x="42" y="0" width="4" height="20" rx="1" style="animation-delay: 0.4s"/>
+                                    <rect class="wave-bar" x="50" y="0" width="4" height="20" rx="1" style="animation-delay: 0.25s"/>
+                                    <rect class="wave-bar" x="58" y="0" width="4" height="20" rx="1" style="animation-delay: 0.35s"/>
+                                    <rect class="wave-bar" x="66" y="0" width="4" height="20" rx="1" style="animation-delay: 0.05s"/>
+                                    <rect class="wave-bar" x="74" y="0" width="4" height="20" rx="1" style="animation-delay: 0.45s"/>
+                                    <rect class="wave-bar" x="82" y="0" width="4" height="20" rx="1" style="animation-delay: 0.1s"/>
+                                    <rect class="wave-bar" x="90" y="0" width="4" height="20" rx="1" style="animation-delay: 0.3s"/>
+                                </g>
+                            </svg>
+                        </div>
+                        <div class="flex justify-between items-center mb-2"><span class="text-[10px] font-black text-slate-400 uppercase">Production Engine Status</span><span id="recordingStatus" class="text-[9px] font-bold text-slate-400">READY</span></div>
+                        <div class="flex justify-between items-center mb-2"><span class="text-[10px] font-black text-slate-400">AUDIO PROGRESS</span><span id="audioTimer" class="text-[10px] font-mono font-bold text-blue-400">00:00 / 00:00</span></div>
+                        <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden"><div id="musicProgress" class="bg-blue-500 h-full w-0 transition-all duration-300"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden audio controllers -->
+    <audio id="bgMusicPlayer" loop></audio>
+    <audio id="globalSfxPlayer"></audio>
+
+    <script>
+        const GEMINI_VOICES = {
+            female: [
+                { name: "Zephyr", style: "Bright / ភ្លឺស្វាង" },
+                { name: "Leda", style: "Youthful / ក្មេងខ្ចី" },
+                { name: "Aoede", style: "Breezy / ស្រទន់" },
+                { name: "Callirrhoe", style: "Easy-going / ស្រួលបួល" },
+                { name: "Autonoe", style: "Bright / ស្រស់ស្រាយ" },
+                { name: "Despina", style: "Smooth / រលូនស្រទន់" },
+                { name: "Erinome", style: "Clear / ថ្លាច្បាស់" },
+                { name: "Laomedeia", style: "Upbeat / រស់រវើក" },
+                { name: "Achernar", style: "Soft / ស្រាលស្រទន់" },
+                { name: "Pulcherrima", style: "Forward / បោះជំហាន" },
+                { name: "Vindemiatrix", style: "Gentle / សុភាពរាបសារ" },
+                { name: "Sulafat", style: "Warm / កក់ក្តៅ" },
+                { name: "Kore", style: "Firm / ម៉ឺងម៉ាត់" },
+                { name: "Gacrux", style: "Mature / ចាស់ទុំ" }
+            ],
+            male: [
+                { name: "Charon", style: "Informative / សំបូរបែប" },
+                { name: "Puck", style: "Upbeat / រស់រវើក" },
+                { name: "Fenrir", style: "Excitable / ឆាប់រំភើប" },
+                { name: "Orus", style: "Firm / រឹងមាំ" },
+                { name: "Enceladus", style: "Breathy / ខ្សឹបខ្សួល" },
+                { name: "Iapetus", style: "Clear / ថ្លាឈ្វេង" },
+                { name: "Umbriel", style: "Easy-going / សាមញ្ញ" },
+                { name: "Algieba", style: "Smooth / ទន់ភ្លន់" },
+                { name: "Algenib", style: "Gravelly / ស្អកតិចៗ" },
+                { name: "Rasalgethi", style: "Informative / ផ្តល់ចំណេះដឹង" },
+                { name: "Alnilam", style: "Firm / ហ្មត់ចត់" },
+                { name: "Schedar", style: "Even / ស្មើស្ទើរ" },
+                { name: "Achird", style: "Friendly / រាក់ទាក់" },
+                { name: "Zubenelgenubi", style: "Casual / ធម្មតា" },
+                { name: "Sadaltager", style: "Knowledgeable / ចេះដឹង" },
+                { name: "Sadachbia", style: "Lively / រីករាយ" }
+            ]
+        };
+
+        const apiKey = ""; // Will be injected automatically at runtime
+        let audioCtx;
+        let reverbImpulseResponse = null;
+        let mediaRecorderInstance = null;
+        let recordedChunks = [];
+        let currentlyRecordingIndex = null;
+
+        // State trackers for Voice Cloning Records
+        let cloneRecorderInstance = null;
+        let cloneChunks = [];
+        let cloneInterval = null;
+        let activeCloneRecordId = null;
+
+        // Reference Image State for AI Background Generation
+        let aiBgRefImageBase64 = '';
+        let aiBgRefImageMimeType = '';
+
+        let state = {
+            isPlaying: false,
+            isRecording: false,
+            narrator: {
+                enabled: false,
+                frequency: 3,
+                maxCount: 3
+            },
+            canvas: {
+                width: 360,
+                height: 640,
+                bgImage: '',
+                bgType: 'image',
+                bgVideoLoop: true,
+                bgSize: 'cover',
+                bgAnim: 'none',
+                bgColor: '#0b0f19',
+                fontFamily: 'font-battambang',
+                customFontName: 'LocalCustomFont',
+                fontSize: 16,
+                bubbleRadius: 20,
+                viewMode: 'flow',
+                vAlign: 'flex-end',
+                stayTime: 2.5,
+                entryAnim: 'msg-entry-bottom',
+                exitAnim: 'none',
+                bubbleGap: 16,
+                enableTextStyles: true,
+                bubbleBgColor: '#ffffff',
+                bubbleOpacity: 1,
+                bubbleTextColor: '#000000'
+            },
+            production: { enableTypewriter: true, enableShake: true, typeSpeed: 40 },
+            overlays: [],
+            profiles: [
+                { 
+                    id: 'p1', 
+                    type: 'character',
+                    name: 'មេបញ្ជាការ', 
+                    role: 'Leader', 
+                    gender: 'male',
+                    voiceName: 'Charon', 
+                    color: '#1e293b', 
+                    align: 'right',
+                    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix', 
+                    scale: 1,
+                    pitch: 0.90,
+                    enableFX: false,
+                    echo: 0,
+                    reverb: 0,
+                    cloneAudio: '',      // Local URL for playback representation
+                    cloneAudioWavBase64: '', // Compliant base64 24kHz WAV data for replicatedVoiceConfig
+                    voiceprint: ''       
+                },
+                { 
+                    id: 'p2', 
+                    type: 'character',
+                    name: 'សុខា', 
+                    role: 'Soldier', 
+                    gender: 'female',
+                    voiceName: 'Zephyr',
+                    color: '#059669', 
+                    align: 'left',
+                    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jack', 
+                    scale: 1,
+                    pitch: 1.05,
+                    enableFX: false,
+                    echo: 0,
+                    reverb: 0,
+                    cloneAudio: '',
+                    cloneAudioWavBase64: '',
+                    voiceprint: ''
+                },
+                {
+                    id: 'p_narrator_default',
+                    type: 'narrator',
+                    name: 'អ្នករៀបរាប់ទី១',
+                    role: 'អ្នកពោល',
+                    gender: 'female',
+                    voiceName: 'Zephyr',
+                    color: '#475569',
+                    align: 'center',
+                    avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=narrator1',
+                    scale: 1.0,
+                    pitch: 1.0,
+                    enableFX: true,
+                    echo: 0.3,
+                    reverb: 0.4,
+                    cloneAudio: '',
+                    cloneAudioWavBase64: '',
+                    voiceprint: ''
+                }
+            ],
+            messages: [
+                { 
+                    id: 'm1', 
+                    profileId: 'p1', 
+                    text: 'តើការងារបេសកកម្មរបស់យើង សម្រេចបានលទ្ធផលដល់ណាហើយ សុខា?', 
+                    delay: 1, 
+                    sfx: '', 
+                    voice: '', 
+                    ttsEmotion: 'ម៉ឺងម៉ាត់',
+                    fx: { echo: 0.4, reverb: 0.4, eq: 1, shake: true, enableEcho: false, enableReverb: false }, 
+                    audioHandles: {}
+                },
+                { 
+                    id: 'm2', 
+                    profileId: 'p2', 
+                    text: 'រាយការណ៍មេបញ្ជាការ! ការងារបានរួចរាល់ហើយទាន កំពុងរៀបចំបញ្ជូនទិន្នន័យ។', 
+                    delay: 1.5, 
+                    sfx: '', 
+                    voice: '', 
+                    ttsEmotion: 'សប្បាយរីករាយ',
+                    fx: { echo: 0, reverb: 0, eq: 1, shake: false, enableEcho: false, enableReverb: false }, 
+                    audioHandles: {}
+                }
+            ]
+        };
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new(window.AudioContext || window.webkitAudioContext)();
+                reverbImpulseResponse = createReverbImpulse(audioCtx, 2.5, 2.0);
+            }
+        }
+
+        // Web Audio Synthesizer to generate customized sound FX dynamically
+        function playSyntheticSFX(type) {
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'pop') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.12);
+                gain.gain.setValueAtTime(0.4, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+                osc.start(now);
+                osc.stop(now + 0.13);
+            } else if (type === 'cyber') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(80, now);
+                osc.frequency.linearRampToValueAtTime(1200, now + 0.4);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+                osc.start(now);
+                osc.stop(now + 0.41);
+            } else if (type === 'click') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(1000, now);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                osc.start(now);
+                osc.stop(now + 0.06);
+            }
+        }
+
+        // Animated audio wave simulation activation
+        function setWaveformAnimated(active) {
+            const bars = document.querySelectorAll('.wave-bar');
+            bars.forEach(bar => {
+                if (active) {
+                    bar.style.animationPlayState = 'running';
+                } else {
+                    bar.style.animationPlayState = 'paused';
+                }
+            });
+        }
+
+        function createReverbImpulse(context, duration, decay) {
+            const sampleRate = context.sampleRate;
+            const length = sampleRate * duration;
+            const impulse = context.createBuffer(2, length, sampleRate);
+            const left = impulse.getChannelData(0);
+            const right = impulse.getChannelData(1);
+            for (let i = 0; i < length; i++) {
+                const percent = i / length;
+                const noise = (Math.random() * 2 - 1) * Math.pow(1 - percent, decay);
+                left[i] = noise;
+                right[i] = noise;
+            }
+            return impulse;
+        }
+
+        function sanitizeStateGenders() {
+            const maleNames = GEMINI_VOICES.male.map(v => v.name);
+            const femaleNames = GEMINI_VOICES.female.map(v => v.name);
+
+            state.profiles.forEach(p => {
+                if (!p.type) {
+                    if (p.id.includes('narrator') || p.id === 'p_narrator') p.type = 'narrator';
+                    else p.type = 'character';
+                }
+                if (p.cloneAudio === undefined) p.cloneAudio = '';
+                if (p.cloneAudioWavBase64 === undefined) p.cloneAudioWavBase64 = '';
+                if (p.voiceprint === undefined) p.voiceprint = '';
+            });
+
+            state.profiles.forEach(p => {
+                if (!p.gender || (p.gender !== 'male' && p.gender !== 'female')) {
+                    p.gender = 'male'; 
+                }
+                if (p.pitch === undefined) {
+                    p.pitch = p.gender === 'male' ? 0.90 : 1.05;
+                }
+                if (p.enableFX === undefined) p.enableFX = false;
+                if (p.echo === undefined) p.echo = 0;
+                if (p.reverb === undefined) p.reverb = 0;
+
+                if (p.gender === 'male') {
+                    if (!maleNames.includes(p.voiceName)) p.voiceName = 'Charon';
+                } else {
+                    if (!femaleNames.includes(p.voiceName)) p.voiceName = 'Zephyr';
+                }
+            });
+
+            const narrators = state.profiles.filter(p => p.type === 'narrator');
+            if (narrators.length === 0) {
+                state.profiles.push({
+                    id: 'p_narrator_' + Date.now(),
+                    type: 'narrator',
+                    name: 'អ្នករៀបរាប់',
+                    role: 'អ្នកពោល',
+                    gender: 'female',
+                    voiceName: 'Zephyr',
+                    color: '#475569',
+                    align: 'center',
+                    avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=narrator_default',
+                    scale: 1.0,
+                    pitch: 1.0,
+                    enableFX: true,
+                    echo: 0.3,
+                    reverb: 0.3,
+                    cloneAudio: '',
+                    cloneAudioWavBase64: '',
+                    voiceprint: ''
+                });
+            }
+        }
+
+        function saveToLocal() { localStorage.setItem('chat_anim_v115_fx_state', JSON.stringify(state)); }
+
+        function loadFromLocal() {
+            const saved = localStorage.getItem('chat_anim_v115_fx_state');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    state = parsed;
+                    state.isPlaying = false;
+                    state.isRecording = false;
+                    
+                    sanitizeStateGenders();
+
+                    state.messages.forEach(m => {
+                        if (!m.ttsEmotion) m.ttsEmotion = 'ធម្មតា';
+                        if (!m.fx) m.fx = { echo: 0, reverb: 0, eq: 1, shake: false, enableEcho: false, enableReverb: false };
+                        if (m.fx.enableEcho === undefined) m.fx.enableEcho = false;
+                        if (m.fx.enableReverb === undefined) m.fx.enableReverb = false;
+                    });
+
+                    syncUIFromState();
+                } catch (e) { console.warn('Load state error', e); }
+            }
+        }
+
+        function syncUIFromState() {
+            document.getElementById('canvasW').value = state.canvas.width;
+            document.getElementById('canvasH').value = state.canvas.height;
+            document.getElementById('bgColor').value = state.canvas.bgColor;
+            document.getElementById('bgSize').value = state.canvas.bgSize;
+            document.getElementById('bgAnim').value = state.canvas.bgAnim;
+            document.getElementById('fontFamily').value = state.canvas.fontFamily;
+            document.getElementById('fontSize').value = state.canvas.fontSize;
+            document.getElementById('bubbleRadius').value = state.canvas.bubbleRadius;
+            document.getElementById('viewMode').value = state.canvas.viewMode;
+            document.getElementById('stayTime').value = state.canvas.stayTime;
+            document.getElementById('vAlign').value = state.canvas.vAlign;
+            document.getElementById('entryAnim').value = state.canvas.entryAnim || 'msg-entry-bottom';
+            document.getElementById('bubbleGap').value = state.canvas.bubbleGap || 16;
+            document.getElementById('enableTypewriter').checked = state.production.enableTypewriter;
+            document.getElementById('enableShake').checked = state.production.enableShake;
+            document.getElementById('typeSpeed').value = state.production.typeSpeed;
+            document.getElementById('videoLoop').checked = state.canvas.bgVideoLoop !== false;
+            document.getElementById('enableTextStyles').checked = state.canvas.enableTextStyles !== false;
+            
+            document.getElementById('bubbleBgColor').value = state.canvas.bubbleBgColor || '#ffffff';
+            document.getElementById('bubbleOpacity').value = state.canvas.bubbleOpacity || 1;
+            document.getElementById('bubbleTextColor').value = state.canvas.bubbleTextColor || '#000000';
+
+            document.getElementById('narratorEnabled').checked = state.narrator.enabled;
+            document.getElementById('narratorFreq').value = state.narrator.frequency || 3;
+            document.getElementById('narratorMaxCount').value = state.narrator.maxCount || 3;
+
+            toggleNarratorEnabled(state.narrator.enabled);
+        }
+
+        function handleBgMedia(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const url = URL.createObjectURL(file);
+            const type = file.type;
+            state.canvas.bgType = 'image';
+            if (type.startsWith('video/')) state.canvas.bgType = 'video';
+            else if (type === 'image/gif') state.canvas.bgType = 'gif';
+
+            state.canvas.bgImage = url;
+            document.getElementById('mediaTypeLabel').textContent = '(' + state.canvas.bgType.toUpperCase() + ' loaded)';
+            updateCanvasStyles();
+            saveToLocal();
+        }
+
+        function toggleTextStyles() {
+            const enabled = document.getElementById('enableTextStyles').checked;
+            state.canvas.enableTextStyles = enabled;
+            saveToLocal();
+        }
+
+        function updateBubbleStyle() {
+            state.canvas.bubbleBgColor = document.getElementById('bubbleBgColor').value;
+            state.canvas.bubbleOpacity = parseFloat(document.getElementById('bubbleOpacity').value);
+            state.canvas.bubbleTextColor = document.getElementById('bubbleTextColor').value;
+            updateCanvasStyles();
+            saveToLocal();
+        }
+
+        function updateCanvasStyles() {
+            const w = parseInt(document.getElementById('canvasW').value) || 360;
+            const h = parseInt(document.getElementById('canvasH').value) || 640;
+            state.canvas.width = w;
+            state.canvas.height = h;
+            state.canvas.fontFamily = document.getElementById('fontFamily').value;
+            state.canvas.fontSize = parseInt(document.getElementById('fontSize').value) || 16;
+            state.canvas.bubbleRadius = parseInt(document.getElementById('bubbleRadius').value) || 20;
+            state.canvas.viewMode = document.getElementById('viewMode').value;
+            state.canvas.vAlign = document.getElementById('vAlign').value;
+            state.canvas.stayTime = parseFloat(document.getElementById('stayTime').value) || 2.5;
+            state.canvas.bgColor = document.getElementById('bgColor').value;
+            state.canvas.bgSize = document.getElementById('bgSize').value;
+            state.canvas.bgAnim = document.getElementById('bgAnim').value;
+            state.canvas.entryAnim = document.getElementById('entryAnim').value;
+            state.canvas.bubbleGap = parseInt(document.getElementById('bubbleGap').value) || 16;
+            state.canvas.bgVideoLoop = document.getElementById('videoLoop').checked;
+            state.production.enableTypewriter = document.getElementById('enableTypewriter').checked;
+            state.production.enableShake = document.getElementById('enableShake').checked;
+            state.production.typeSpeed = parseInt(document.getElementById('typeSpeed').value) || 40;
+
+            const wrapper = document.getElementById('canvasWrapper');
+            wrapper.style.width = w + 'px';
+            wrapper.style.height = h + 'px';
+            wrapper.style.backgroundColor = state.canvas.bgColor;
+
+            const bgLayer = document.getElementById('bgLayer');
+            bgLayer.innerHTML = '';
+            bgLayer.style.backgroundImage = 'none';
+            bgLayer.className = '';
+
+            if (state.canvas.bgImage) {
+                const type = state.canvas.bgType || 'image';
+                if (type === 'video') {
+                    const video = document.createElement('video');
+                    video.src = state.canvas.bgImage;
+                    video.loop = state.canvas.bgVideoLoop;
+                    video.autoplay = true;
+                    video.muted = true;
+                    video.style.width = '100%';
+                    video.style.height = '100%';
+                    video.style.objectFit = state.canvas.bgSize === 'cover' ? 'cover' : 'contain';
+                    video.style.pointerEvents = 'none';
+                    bgLayer.appendChild(video);
+                    video.play().catch(() => {});
+                } else {
+                    const img = document.createElement('img');
+                    img.src = state.canvas.bgImage;
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.objectFit = state.canvas.bgSize === 'cover' ? 'cover' : 'contain';
+                    img.style.pointerEvents = 'none';
+                    bgLayer.appendChild(img);
+                }
+            } else {
+                bgLayer.style.backgroundColor = state.canvas.bgColor;
+            }
+
+            if (state.canvas.bgAnim !== 'none') {
+                bgLayer.classList.add(state.canvas.bgAnim);
+            }
+
+            const flow = document.getElementById('messageFlow');
+            flow.style.justifyContent = state.canvas.vAlign;
+            flow.style.gap = state.canvas.bubbleGap + 'px';
+
+            saveToLocal();
+            if (!state.isPlaying) refreshStatic();
+        }
+
+        function refreshStatic() {
+            const flow = document.getElementById('messageFlow');
+            flow.innerHTML = '';
+            state.messages.forEach(m => renderBubble(m, false));
+            refreshOverlaysOnCanvas();
+        }
+
+        function renderBubble(msg, animate) {
+            const flow = document.getElementById('messageFlow');
+            
+            let p = state.profiles.find(x => x.id === msg.profileId) || state.profiles[0];
+
+            const isCenter = p.type === 'narrator' || p.align === 'center';
+            const isRight = !isCenter && p.align === 'right';
+            const entryAnim = state.canvas.entryAnim || 'msg-entry-bottom';
+            const wrap = document.createElement('div');
+
+            let flexClass = 'flex w-full ';
+            if (isCenter) flexClass += 'justify-center';
+            else if (isRight) flexClass += 'flex-row-reverse';
+            else flexClass += 'flex-row';
+
+            wrap.className = `bubble-wrap ${flexClass} ${animate ? entryAnim : ''}`;
+
+            const avatarSize = 40 * (p.scale || 1);
+            const displayId = 'text_' + Math.random().toString(36).substr(2, 9);
+            const initialText = (animate && state.production.enableTypewriter) ? "" : msg.text;
+
+            const bubbleBg = state.canvas.bubbleBgColor || '#ffffff';
+            const bubbleTextColor = state.canvas.bubbleTextColor || '#000000';
+            const bubbleRadius = state.canvas.bubbleRadius || 20;
+
+            let bubbleBgFinal = bubbleBg;
+            let bubbleTextFinal = bubbleTextColor;
+
+            if (isCenter) {
+                bubbleBgFinal = '#131c38';
+                bubbleTextFinal = '#f1f5f9';
+            } else if (isRight) {
+                bubbleBgFinal = p.color;
+                bubbleTextFinal = '#ffffff';
+            }
+
+            const genderEmoji = p.gender === 'female' ? '👩' : '👨';
+            const roleTypeLabel = p.type === 'narrator' ? 'អ្នកនិទាន' : p.role;
+
+            wrap.innerHTML = `
+                ${!isCenter ? `
+                <div style="width: ${avatarSize}px; height: ${avatarSize}px;" class="shrink-0 mx-2 self-end">
+                    <img src="${p.avatar}" class="w-full h-full rounded-full border border-slate-700 shadow-md object-cover">
+                </div>` : ''}
+                <div class="flex flex-col ${isCenter ? 'items-center max-w-[90%]' : (isRight ? 'items-end' : 'items-start')} max-w-[75%]">
+                    <span class="text-[10px] font-extrabold text-slate-300 px-1 mb-1">
+                        ${genderEmoji} ${p.name} <span class="opacity-60">• ${roleTypeLabel}</span>
+                    </span>
+                    <div id="${displayId}" 
+                         class="py-2.5 px-4 shadow-xl" 
+                         style="background-color: ${bubbleBgFinal}; 
+                                color: ${bubbleTextFinal}; 
+                                border-radius: ${bubbleRadius}px; 
+                                ${isCenter ? '' : (isRight ? 'border-bottom-right-radius: 4px;' : 'border-bottom-left-radius: 4px;')} 
+                                font-size: ${state.canvas.fontSize}px; 
+                                line-height: 1.4; 
+                                transition: all 0.2s;
+                                border: 1px solid ${isCenter ? '#06b6d4' : 'transparent'};">
+                        ${initialText}
+                    </div>
+                </div>
+            `;
+            flow.appendChild(wrap);
+            const area = document.getElementById('mainCanvas');
+            area.scrollTo({ top: area.scrollHeight, behavior: 'smooth' });
+
+            return { wrap, textElement: document.getElementById(displayId) };
+        }
+
+        function toggleNarratorEnabled(enabled) {
+            state.narrator.enabled = enabled;
+            const container = document.getElementById('narratorOptions');
+            if (enabled) {
+                container.classList.remove('opacity-50', 'pointer-events-none');
+            } else {
+                container.classList.add('opacity-50', 'pointer-events-none');
+            }
+            saveToLocal();
+            renderProfiles();
+            renderMessages();
+            refreshStatic();
+        }
+
+        function updateNarratorSetting(key, val) {
+            state.narrator[key] = val;
+            saveToLocal();
+        }
+
+        async function processCloneAudio(profileId, arrayBuffer) {
+            initAudio();
+            try {
+                // Decode arrayBuffer into AudioBuffer
+                const decodedAudioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+                
+                // Resample to 24000Hz mono using OfflineAudioContext (Perfect for Gemini Voice Cloning!)
+                const targetSampleRate = 24000;
+                const offlineCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(
+                    1, 
+                    targetSampleRate * decodedAudioBuffer.duration, 
+                    targetSampleRate
+                );
+                
+                const bufferSourceNode = offlineCtx.createBufferSource();
+                bufferSourceNode.buffer = decodedAudioBuffer;
+                bufferSourceNode.connect(offlineCtx.destination);
+                bufferSourceNode.start(0);
+                
+                const renderedBuffer = await offlineCtx.startRendering();
+                const channelData = renderedBuffer.getChannelData(0);
+                
+                // Convert Float32 samples to 16-bit signed PCM
+                const pcm16 = new Int16Array(renderedBuffer.length);
+                for (let i = 0; i < renderedBuffer.length; i++) {
+                    const sample = Math.max(-1, Math.min(1, channelData[i]));
+                    pcm16[i] = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+                }
+                
+                // Pack PCM data into a standard wav container Blob
+                const wavBlob = pcmToWav(pcm16, targetSampleRate);
+                
+                // Read processed wav Blob as base64 data for replicatedVoiceConfig payload
+                const reader = new FileReader();
+                reader.onloadend = function() {
+                    const base64DataURL = reader.result;
+                    const rawBase64 = base64DataURL.split(',')[1];
+                    
+                    const p = state.profiles.find(x => x.id === profileId);
+                    if (p) {
+                        p.cloneAudioWavBase64 = rawBase64;
+                        p.cloneAudio = base64DataURL; // Save local dataURL for review playbacks
+                        p.voiceprint = "បានបម្លែងជា 24kHz mono WAV រួចរាល់សម្រាប់ការ Clone ពិតប្រាកដ!";
+                        saveToLocal();
+                        renderProfiles();
+                        showToastMsg(`បាន Clone សំឡេងរបស់តួអង្គ "${p.name}" ជោគជ័យ!`);
+                    }
+                };
+                reader.readAsDataURL(wavBlob);
+                
+            } catch (err) {
+                console.error("Audio Processing error", err);
+                showToastMsg("ការកែច្នៃសំឡេងគំរូមានបញ្ហា! សូមព្យាយាមថតឡើងវិញ។");
+            }
+        }
+
+        async function startRecordingClone(profileId) {
+            initAudio();
+            if (activeCloneRecordId !== null) {
+                showToastMsg("សូមបញ្ឈប់ការថតសំឡេងបច្ចុប្បន្នសិន!");
+                return;
+            }
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                cloneRecorderInstance = new MediaRecorder(stream);
+                cloneChunks = [];
+                activeCloneRecordId = profileId;
+
+                cloneRecorderInstance.ondataavailable = function(e) {
+                    if (e.data.size > 0) cloneChunks.push(e.data);
+                };
+
+                cloneRecorderInstance.onstop = async function() {
+                    const blob = new Blob(cloneChunks, { type: 'audio/webm' });
+                    const arrayBuffer = await blob.arrayBuffer();
+                    await processCloneAudio(profileId, arrayBuffer);
+                    
+                    activeCloneRecordId = null;
+                    if (cloneInterval) {
+                        clearInterval(cloneInterval);
+                        cloneInterval = null;
+                    }
+                };
+
+                cloneRecorderInstance.start();
+                renderProfiles(); // refresh UI to show countdown
+                
+                let timeLeft = 15;
+                const timerEl = document.getElementById(`cloneTimer_${profileId}`);
+                if (timerEl) timerEl.innerText = `${timeLeft}s`;
+
+                cloneInterval = setInterval(() => {
+                    timeLeft--;
+                    if (timerEl) timerEl.innerText = `${timeLeft}s`;
+                    if (timeLeft <= 0) {
+                        stopRecordingClone(profileId);
+                    }
+                }, 1000);
+
+            } catch (err) {
+                showToastMsg("មិនអាចបើក Microphone បានឡើយ!");
+                console.error(err);
+            }
+        }
+
+        function stopRecordingClone(profileId) {
+            if (cloneRecorderInstance && cloneRecorderInstance.state !== "inactive") {
+                cloneRecorderInstance.stop();
+                cloneRecorderInstance.stream.getTracks().forEach(track => track.stop());
+            }
+        }
+
+        function handleCloneUpload(e, profileId) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(ev) {
+                const arrayBuffer = ev.target.result;
+                await processCloneAudio(profileId, arrayBuffer);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function playCloneSample(profileId) {
+            const p = state.profiles.find(x => x.id === profileId);
+            if (!p || !p.cloneAudio) return;
+            const audio = new Audio(p.cloneAudio);
+            audio.play().catch(err => {
+                showToastMsg("មិនអាចចាក់សំឡេងគំរូបានឡើយ!");
+            });
+        }
+
+        function deleteCloneSample(profileId) {
+            const p = state.profiles.find(x => x.id === profileId);
+            if (p) {
+                p.cloneAudio = '';
+                p.cloneAudioWavBase64 = '';
+                p.voiceprint = '';
+                saveToLocal();
+                renderProfiles();
+                showToastMsg("បានលុបសំឡេងគំរូ Clone រួចរាល់!");
+            }
+        }
+
+        function renderProfiles() {
+            const container = document.getElementById('profilesContainer');
+            const narratorsContainer = document.getElementById('narratorsContainer');
+            
+            container.innerHTML = '';
+            narratorsContainer.innerHTML = '';
+            
+            sanitizeStateGenders();
+
+            state.profiles.forEach((p, idx) => {
+                const div = document.createElement('div');
+                div.className = 'p-4 bg-[#111a2e] rounded-2xl border border-slate-800 shadow-sm flex flex-col gap-3';
+                
+                let voiceOptionsHtml = '';
+                if (p.gender === 'male') {
+                    voiceOptionsHtml = GEMINI_VOICES.male.map(v => 
+                        `<option value="${v.name}" ${p.voiceName === v.name ? 'selected' : ''}>👨 ${v.name} (${v.style})</option>`
+                    ).join('');
+                } else {
+                    voiceOptionsHtml = GEMINI_VOICES.female.map(v => 
+                        `<option value="${v.name}" ${p.voiceName === v.name ? 'selected' : ''}>👩 ${v.name} (${v.style})</option>`
+                    ).join('');
+                }
+
+                const isRecordingClone = activeCloneRecordId === p.id;
+                const clonedStatusMarkup = p.cloneAudioWavBase64 ? `
+                    <div class="bg-blue-950/40 p-2.5 border border-blue-900/50 rounded-xl space-y-1.5">
+                        <div class="flex justify-between items-center text-[10px]">
+                            <span class="text-emerald-400 font-bold flex items-center gap-1">🌀 សំឡេង Clone រួចរាល់ (24kHz Mono)</span>
+                            <div class="flex gap-1.5">
+                                <button onclick="playCloneSample('${p.id}')" class="text-blue-400 hover:text-blue-300 font-bold">Play ▶</button>
+                                <button onclick="deleteCloneSample('${p.id}')" class="text-rose-400 hover:text-rose-300 font-bold">✕ លុប</button>
+                            </div>
+                        </div>
+                        ${p.voiceprint ? `
+                            <p class="text-[10px] text-slate-300 leading-normal italic bg-slate-900/60 p-2 rounded-lg border border-slate-800/80">
+                                <strong>លក្ខណៈសំឡេង៖</strong> ${p.voiceprint}
+                            </p>
+                        ` : ''}
+                    </div>
+                ` : `
+                    <div class="bg-slate-900/50 p-2.5 border border-slate-800 rounded-xl space-y-2">
+                        <div class="flex justify-between items-center text-[10px]">
+                            <span class="text-slate-400 font-bold">🎙️ Voice Clone Sample (ក្រោម ១៥វិនាទី)</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            ${isRecordingClone ? `
+                                <button onclick="stopRecordingClone('${p.id}')" class="col-span-2 bg-rose-600 animate-pulse text-white font-bold text-[10px] py-1.5 rounded-lg">
+                                    🛑 កំពុងថត... <span id="cloneTimer_${p.id}">15s</span> (ចុចដើម្បីបញ្ឈប់)
+                                </button>
+                            ` : `
+                                <button onclick="startRecordingClone('${p.id}')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-[10px] py-1.5 rounded-lg flex items-center justify-center gap-1">
+                                    🎙️ ថតសំឡេងគំរូ
+                                </button>
+                                <div class="file-overlay-btn text-center">
+                                    <button class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-[10px] py-1.5 rounded-lg flex items-center justify-center gap-1">
+                                        📤 បញ្ចូលសំឡេង
+                                    </button>
+                                    <input type="file" accept="audio/*" onchange="handleCloneUpload(event, '${p.id}')">
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                `;
+
+                div.innerHTML = `
+                    <div class="flex items-center gap-3 border-b border-slate-800 pb-2">
+                        <div class="relative w-11 h-11 shrink-0">
+                            <img src="${p.avatar}" class="w-full h-full rounded-full border border-slate-600 shadow-inner object-cover">
+                            <input type="file" accept="image/*" onchange="handleAvatar(event, '${p.id}')" class="absolute inset-0 opacity-0 cursor-pointer">
+                        </div>
+                        <div class="flex-1 grid grid-cols-2 gap-2">
+                            <input type="text" data-id="${p.id}" data-key="name" value="${p.name}" class="profile-input input-ui h-8 text-[11px] font-bold" placeholder="ឈ្មោះ">
+                            <input type="text" data-id="${p.id}" data-key="role" value="${p.role}" class="profile-input input-ui h-8 text-[11px] bg-slate-900" placeholder="តួនាទី">
+                        </div>
+                        <button onclick="removeProfile('${p.id}')" class="text-rose-400 hover:text-rose-500 font-bold">✕</button>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 items-center">
+                        <div>
+                            <label class="label-sm">ភេទតួអង្គ (Gender)</label>
+                            <select onchange="changeProfileGender('${p.id}', this.value)" class="input-ui h-8 text-xs font-bold">
+                                <option value="male" ${p.gender === 'male' ? 'selected' : ''}>👨 ប្រុស (Male)</option>
+                                <option value="female" ${p.gender === 'female' ? 'selected' : ''}>👩 ស្រី (Female)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="label-sm">ពណ៌ពពុះស្តាំ (Bubble BG)</label>
+                            <input type="color" value="${p.color}" oninput="updateProfileQuiet('${p.id}', 'color', this.value)" class="w-full h-8 rounded-lg cursor-pointer bg-transparent border border-slate-700">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="label-sm text-blue-400">សំឡេង AI ធម្មតា (ពេលគ្មាន Clone)</label>
+                        <select onchange="updateProfileQuiet('${p.id}', 'voiceName', this.value)" class="input-ui h-8 text-xs">
+                            ${voiceOptionsHtml}
+                        </select>
+                    </div>
+
+                    <!-- Voice Cloning widget insertion -->
+                    ${clonedStatusMarkup}
+
+                    <!-- Pitch Control Slider -->
+                    <div class="space-y-1 bg-slate-900/40 p-2 rounded-lg border border-slate-800/50">
+                        <div class="flex justify-between text-[9px] font-black">
+                            <span class="text-slate-400">តុងសំឡេង (Pitch Control)</span>
+                            <span class="text-blue-400" id="pitchVal_${p.id}">${(p.pitch || 1.0).toFixed(2)}x</span>
+                        </div>
+                        <input type="range" min="0.75" max="1.25" step="0.05" value="${p.pitch || 1.0}" 
+                               oninput="updateProfilePitch('${p.id}', parseFloat(this.value))" 
+                               class="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                    </div>
+
+                    <!-- Character-Level Global Audio FX Card -->
+                    <div class="bg-slate-950/40 p-3 rounded-lg border border-slate-800 space-y-2">
+                        <div class="flex justify-between items-center border-b border-slate-800 pb-1.5">
+                            <span class="text-[10px] font-black text-rose-400">AUDIO FX របស់តួអង្គនេះ (Global)</span>
+                            <label class="switch scale-75">
+                                <input type="checkbox" ${p.enableFX ? 'checked' : ''} onchange="updateProfileFXChecked('${p.id}', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <div class="flex justify-between text-[8px] text-slate-400 font-bold">
+                                    <span>Echo Feedback</span>
+                                    <span id="echoVal_${p.id}">${Math.round((p.echo || 0) * 100)}%</span>
+                                </div>
+                                <input type="range" min="0" max="1" step="0.05" value="${p.echo || 0}" oninput="updateProfileFXVal('${p.id}', 'echo', parseFloat(this.value))" class="w-full h-1 bg-slate-800 rounded">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-[8px] text-slate-400 font-bold">
+                                    <span>Reverb Depth</span>
+                                    <span id="reverbVal_${p.id}">${Math.round((p.reverb || 0) * 100)}%</span>
+                                </div>
+                                <input type="range" min="0" max="1" step="0.05" value="${p.reverb || 0}" oninput="updateProfileFXVal('${p.id}', 'reverb', parseFloat(this.value))" class="w-full h-1 bg-slate-800 rounded">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <span class="text-[9px] font-black text-slate-400">ទំហំតួ (Avatar Scale)</span>
+                        <input type="range" min="0.7" max="1.5" step="0.1" value="${p.scale || 1}" oninput="updateProfileQuiet('${p.id}', 'scale', parseFloat(this.value))" class="flex-1 h-1 bg-slate-700 rounded-lg">
+                    </div>
+                `;
+
+                if (p.type === 'narrator') {
+                    narratorsContainer.appendChild(div);
+                } else {
+                    container.appendChild(div);
+                }
+            });
+
+            document.querySelectorAll('.profile-input').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const profile = state.profiles.find(x => x.id === e.target.dataset.id);
+                    if (profile) profile[e.target.dataset.key] = e.target.value;
+                    saveToLocal();
+                    if (e.target.dataset.key === 'name' || e.target.dataset.key === 'role') {
+                        renderMessages();
+                        refreshStatic();
+                    }
+                });
+            });
+        }
+
+        function changeProfileGender(pid, genderValue) {
+            const p = state.profiles.find(x => x.id === pid);
+            if (p) {
+                p.gender = genderValue;
+                p.voiceName = genderValue === 'male' ? 'Charon' : 'Zephyr';
+                p.pitch = genderValue === 'male' ? 0.90 : 1.05;
+                sanitizeStateGenders();
+                saveToLocal();
+                renderProfiles();
+                renderMessages();
+                refreshStatic();
+            }
+        }
+
+        function updateProfilePitch(id, pitchVal) {
+            const p = state.profiles.find(x => x.id === id);
+            if (p) {
+                p.pitch = pitchVal;
+                const el = document.getElementById(`pitchVal_${id}`);
+                if (el) el.innerText = pitchVal.toFixed(2) + 'x';
+                saveToLocal();
+            }
+        }
+
+        function updateProfileQuiet(id, k, v) {
+            const p = state.profiles.find(x => x.id === id);
+            if (p) p[k] = v;
+            sanitizeStateGenders();
+            saveToLocal();
+            refreshStatic();
+        }
+
+        function updateProfileFXChecked(id, checked) {
+            const p = state.profiles.find(x => x.id === id);
+            if (p) {
+                p.enableFX = checked;
+                saveToLocal();
+            }
+        }
+
+        function updateProfileFXVal(id, key, val) {
+            const p = state.profiles.find(x => x.id === id);
+            if (p) {
+                p[key] = val;
+                const el = document.getElementById(`${key}Val_${id}`);
+                if (el) el.innerText = Math.round(val * 100) + '%';
+                saveToLocal();
+            }
+        }
+
+        function addProfile(type = 'character') {
+            const id = 'p' + Date.now();
+            const isNarrator = type === 'narrator';
+            
+            state.profiles.push({
+                id,
+                type: type,
+                name: isNarrator ? 'អ្នកពោលថ្មី' : 'តួអង្គថ្មី',
+                role: isNarrator ? 'អ្នកនិទាន' : 'សមាជិក',
+                gender: isNarrator ? 'female' : 'male',
+                voiceName: isNarrator ? 'Zephyr' : 'Charon',
+                color: isNarrator ? '#475569' : '#2563eb',
+                align: isNarrator ? 'center' : 'left',
+                avatar: isNarrator ? 'https://api.dicebear.com/7.x/bottts/svg?seed=' + id : 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + id,
+                scale: 1,
+                pitch: isNarrator ? 1.0 : 0.95,
+                enableFX: isNarrator ? true : false,
+                echo: isNarrator ? 0.3 : 0,
+                reverb: isNarrator ? 0.3 : 0,
+                cloneAudio: '',
+                cloneAudioWavBase64: '',
+                voiceprint: ''
+            });
+            sanitizeStateGenders();
+            renderProfiles();
+            renderMessages();
+            saveToLocal();
+        }
+
+        function removeProfile(id) {
+            state.profiles = state.profiles.filter(p => p.id !== id);
+            sanitizeStateGenders();
+            renderProfiles();
+            renderMessages();
+            saveToLocal();
+        }
+
+        function handleAvatar(e, id) {
+            const f = e.target.files[0];
+            if (f) {
+                const rd = new FileReader();
+                rd.onload = ev => {
+                    const p = state.profiles.find(x => x.id === id);
+                    if (p) p.avatar = ev.target.result;
+                    renderProfiles();
+                    refreshStatic();
+                    saveToLocal();
+                };
+                rd.readAsDataURL(f);
+            }
+        }
+
+        async function toggleMicRecording(msgIndex) {
+            initAudio();
+            const btn = document.getElementById(`micBtn_${msgIndex}`);
+            
+            if (currentlyRecordingIndex !== null && currentlyRecordingIndex !== msgIndex) {
+                showToastMsg("សូមបញ្ឈប់ការថតសំឡេងផ្សេងសិន!");
+                return;
+            }
+
+            if (currentlyRecordingIndex === null) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorderInstance = new MediaRecorder(stream);
+                    recordedChunks = [];
+                    currentlyRecordingIndex = msgIndex;
+
+                    mediaRecorderInstance.ondataavailable = function(e) {
+                        if (e.data.size > 0) recordedChunks.push(e.data);
+                    };
+
+                    mediaRecorderInstance.onstop = function() {
+                        const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+                        const audioUrl = URL.createObjectURL(blob);
+                        state.messages[msgIndex].voice = audioUrl;
+                        saveToLocal();
+                        renderMessages();
+                        showToastMsg("រក្សាទុកសំឡេងថតបានជោគជ័យ!");
+                        currentlyRecordingIndex = null;
+                    };
+
+                    mediaRecorderInstance.start();
+                    btn.classList.add('bg-red-600', 'animate-pulse');
+                    btn.innerHTML = '🛑 ថត...';
+                    showToastMsg("កំពុងថតសំឡេងនិយាយរបស់អ្នក...");
+                } catch (err) {
+                    showToastMsg("មិនអាចបើក Microphone បានឡើយ!");
+                    console.error(err);
+                }
+            } else {
+                mediaRecorderInstance.stop();
+                mediaRecorderInstance.stream.getTracks().forEach(track => track.stop());
+                btn.classList.remove('bg-red-600', 'animate-pulse');
+                btn.innerHTML = '🎙️ ថត';
+            }
+        }
+
+        function renderMessages() {
+            const container = document.getElementById('messagesContainer');
+            container.innerHTML = '';
+            
+            sanitizeStateGenders();
+
+            state.messages.forEach((m, i) => {
+                let p = state.profiles.find(x => x.id === m.profileId);
+                if (!p) {
+                    p = state.profiles[0];
+                    m.profileId = p.id;
+                }
+
+                const genderColor = p.gender === 'female' ? 'text-rose-400 bg-rose-950/40 border-rose-800' : 'text-blue-400 bg-blue-950/40 border-blue-800';
+                const genderLabel = p.gender === 'female' ? 'សំឡេងស្រី 👩' : 'សំឡេងប្រុស 👨';
+                const sfxLoaded = m.sfx ? '✅' : 'Up';
+                const voiceLoaded = m.voice ? '✅' : 'Mic';
+                const pitchText = p.pitch ? ` (${p.pitch.toFixed(2)}x)` : '';
+                const cloneStatusText = p.cloneAudioWavBase64 ? '🌀 CLONED' : 'STANDARD';
+
+                const div = document.createElement('div');
+                div.className = 'msg-card bg-[#111a2e] p-4 rounded-2xl border border-slate-800 shadow-lg space-y-3 relative';
+                div.setAttribute('draggable', 'true');
+                div.setAttribute('data-index', i);
+                
+                div.addEventListener('dragstart', handleDragStart);
+                div.addEventListener('dragover', handleDragOver);
+                div.addEventListener('dragleave', handleDragLeave);
+                div.addEventListener('drop', handleDrop);
+                div.addEventListener('dragend', handleDragEnd);
+
+                let profileOptions = state.profiles.map(prof => {
+                    const icon = prof.type === 'narrator' ? '📢' : (prof.gender === 'female' ? '👩' : '👨');
+                    const labelPrefix = prof.type === 'narrator' ? '[អ្នកពោល] ' : '';
+                    return `<option value="${prof.id}" ${m.profileId === prof.id ? 'selected' : ''}>${icon} ${labelPrefix}${prof.name} (${prof.voiceName})</option>`;
+                }).join('');
+
+                div.innerHTML = `
+                    <div class="drag-handle flex items-center justify-between bg-slate-900 -mx-4 -mt-4 px-3 py-2 rounded-t-2xl border-b border-slate-800">
+                        <div class="flex items-center gap-2">
+                            <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24" class="text-slate-500"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+                            <span class="text-[10px] font-black text-slate-400 uppercase">សារលំដាប់ទី #${i+1}</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[8px] bg-indigo-950 text-indigo-300 font-extrabold border border-indigo-800 px-1.5 py-0.5 rounded-md">${cloneStatusText}</span>
+                            <span class="text-[9px] border px-2 py-0.5 rounded-full font-bold flex items-center gap-1 ${genderColor}">
+                                ${genderLabel} • ${p.name} (${p.voiceName}${pitchText})
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <select onchange="updateMessage(${i}, 'profileId', this.value)" class="input-ui w-32 h-9 text-[10px] font-black">
+                            ${profileOptions}
+                        </select>
+                        <div class="flex-1 flex gap-2 items-center">
+                            <input type="text" id="text_input_${i}" value="${m.text}" oninput="updateMessage(${i}, 'text', this.value)" class="input-ui h-9 flex-1 text-xs">
+                            <button onclick="copyText(state.messages[${i}].text)" class="shrink-0 p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300"><svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg></button>
+                        </div>
+                        <button onclick="removeMessage(${i})" class="text-slate-400 hover:text-rose-500 font-bold px-2">✕</button>
+                    </div>
+
+                    <!-- TTS GENERATION MODULE PANEL -->
+                    <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-[10px] font-black px-1.5 py-0.5 rounded ${p.gender === 'female' ? 'bg-rose-950/60 text-rose-300' : 'bg-blue-950/60 text-blue-300'}">
+                                    LOCKED: ${p.gender === 'female' ? '👩' : '👨'} ${p.voiceName}
+                                </span>
+                                <span class="text-[10px] font-bold text-emerald-400">🎙️ AI TTS & RECORDER</span>
+                            </div>
+                            <div class="flex gap-1.5">
+                                <button onclick="generateSingleTTS(${i})" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-[9px] px-2.5 py-1.5 rounded-lg transition flex items-center gap-1">
+                                    <span>${p.cloneAudioWavBase64 ? '🌀 Clone & បង្កើតសំឡេង' : 'បង្កើតសំឡេង AI'}</span>
+                                </button>
+                                <button id="micBtn_${i}" onclick="toggleMicRecording(${i})" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[9px] px-2.5 py-1.5 rounded-lg transition">
+                                    🎙️ ថត
+                                </button>
+                                ${m.voice ? `<button onclick="playTargetVoice('${m.voice}', '${m.profileId}', ${i})" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[9px] px-2.5 py-1.5 rounded-lg transition">Play ▶</button>` : ''}
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="label-sm text-[8px]">អារម្មណ៍សំឡេង (Tone/Emotion Control)</label>
+                                <select onchange="updateMessage(${i}, 'ttsEmotion', this.value)" class="input-ui !p-1 text-[10px] h-7 bg-slate-950">
+                                    <option value="ធម្មតា" ${m.ttsEmotion==='ធម្មតា'?'selected':''}>ធម្មតា (Normal)</option>
+                                    <option value="ម៉ឺងម៉ាត់" ${m.ttsEmotion==='ម៉ឺងម៉ាត់'?'selected':''}>ម៉ឺងម៉ាត់ (Firm / Serious)</option>
+                                    <option value="សប្បាយរីករាយ" ${m.ttsEmotion==='សប្បាយរីករាយ'?'selected':''}>សប្បាយរីករាយ (Cheerful / Excited)</option>
+                                    <option value="ខឹងសម្បារ" ${m.ttsEmotion==='ខឹងសម្បារ'?'selected':''}>ខឹងសម្បារ (Angry)</option>
+                                    <option value="ខ្សឹបខ្សួល" ${m.ttsEmotion==='ខ្សឹបខ្សួល'?'selected':''}>ខ្សឹបខ្សួល (Soft Whisper)</option>
+                                    <option value="សោកសៅ" ${m.ttsEmotion==='សោកសៅ'?'selected':''}>សោកសៅ (Sad / Emotional)</option>
+                                </select>
+                            </div>
+                            <div class="flex gap-2">
+                                <div class="flex-1">
+                                    <label class="label-sm text-[8px]">បញ្ចូល SFX</label>
+                                    <div class="file-overlay-btn bg-slate-850 text-[10px] font-bold py-1 px-2 border border-slate-700 rounded-lg cursor-pointer text-slate-300 w-full text-center">
+                                        ${sfxLoaded} SFX
+                                        <input type="file" accept="audio/*" onchange="handleMsgAudioFile(${i}, 'sfx', event)">
+                                    </div>
+                                </div>
+                                <div class="flex-1">
+                                    <label class="label-sm text-[8px]">បញ្ចូលសំឡេង</label>
+                                    <div class="file-overlay-btn bg-slate-850 text-[10px] font-bold py-1 px-2 border border-slate-700 rounded-lg cursor-pointer text-slate-300 w-full text-center">
+                                        ${voiceLoaded} Voice
+                                        <input type="file" accept="audio/*" onchange="handleMsgAudioFile(${i}, 'voice', event)">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Message-Level Custom Audio FX overrides -->
+                        <div class="bg-slate-950/40 p-2.5 rounded-lg border border-slate-800 space-y-2 mt-2">
+                            <span class="text-[9px] font-extrabold text-slate-400 block border-b border-slate-900 pb-1">កែសម្រួល AUDIO FX សម្រាប់សារនេះ (Custom Overrides)</span>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <div class="flex justify-between items-center text-[8px] font-bold text-slate-400 mb-1">
+                                        <span>Echo Feedback</span>
+                                        <label class="switch scale-50">
+                                            <input type="checkbox" ${m.fx?.enableEcho ? 'checked' : ''} onchange="updateMessageFXVal(${i}, 'enableEcho', this.checked)">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                    <input type="range" min="0" max="1" step="0.05" value="${m.fx?.echo || 0}" oninput="updateMessageFXVal(${i}, 'echo', parseFloat(this.value))" class="w-full h-1 bg-slate-800 rounded">
+                                    <span class="text-[8px] text-blue-400 block text-right">${Math.round((m.fx?.echo || 0) * 100)}%</span>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between items-center text-[8px] font-bold text-slate-400 mb-1">
+                                        <span>Reverb Space</span>
+                                        <label class="switch scale-50">
+                                            <input type="checkbox" ${m.fx?.enableReverb ? 'checked' : ''} onchange="updateMessageFXVal(${i}, 'enableReverb', this.checked)">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                    <input type="range" min="0" max="1" step="0.05" value="${m.fx?.reverb || 0}" oninput="updateMessageFXVal(${i}, 'reverb', parseFloat(this.value))" class="w-full h-1 bg-slate-800 rounded">
+                                    <span class="text-[8px] text-blue-400 block text-right">${Math.round((m.fx?.reverb || 0) * 100)}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center text-[10px] text-slate-400">
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="checkbox" ${m.fx?.shake ? 'checked' : ''} onchange="updateMessageFXVal(${i}, 'shake', this.checked)" class="w-3.5 h-3.5">
+                            <span>ញ័រអេក្រង់ (Shake)</span>
+                        </label>
+                        <div class="flex items-center gap-2">
+                            <span>បង្ហាញយូរ (Seconds Delay):</span>
+                            <input type="number" value="${m.delay}" step="0.5" oninput="updateMessage(${i}, 'delay', parseFloat(this.value))" class="w-12 h-6 border border-slate-700 rounded-lg bg-slate-900 text-center text-xs text-white">
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+            if (!state.isPlaying) refreshStatic();
+        }
+
+        async function playTargetVoice(voiceUrl, profileId, msgIndex) {
+            let p = state.profiles.find(x => x.id === profileId);
+            if (!p) return;
+
+            const msg = state.messages[msgIndex];
+            const pitch = p.pitch || 1.0;
+            const buf = await fetchAudioBuffer(voiceUrl);
+            
+            const echoLevel = msg.fx?.enableEcho ? (msg.fx.echo || 0) : (p.enableFX ? (p.echo || 0) : 0);
+            const reverbLevel = msg.fx?.enableReverb ? (msg.fx.reverb || 0) : (p.enableFX ? (p.reverb || 0) : 0);
+
+            if (buf) {
+                setWaveformAnimated(true);
+                playAudioWithFX(buf, { 
+                    echo: echoLevel, 
+                    reverb: reverbLevel, 
+                    eq: msg.fx?.eq || 1, 
+                    pitch: pitch 
+                }).then(() => {
+                    setWaveformAnimated(false);
+                });
+            }
+        }
+
+        let dragSrcIndex = null;
+        function handleDragStart(e) {
+            const card = e.target.closest('.msg-card');
+            if (!card) return;
+            dragSrcIndex = parseInt(card.getAttribute('data-index'));
+            card.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', dragSrcIndex);
+        }
+
+        function handleDragOver(e) { 
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move'; 
+            const card = e.target.closest('.msg-card'); 
+            if (card) card.classList.add('drop-target'); 
+        }
+
+        function handleDragLeave(e) { 
+            const card = e.target.closest('.msg-card'); 
+            if (card) card.classList.remove('drop-target'); 
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const card = e.target.closest('.msg-card');
+            if (!card || dragSrcIndex === null) return;
+            const destIndex = parseInt(card.getAttribute('data-index'));
+            if (destIndex !== dragSrcIndex) {
+                const [moved] = state.messages.splice(dragSrcIndex, 1);
+                state.messages.splice(destIndex, 0, moved);
+                saveToLocal();
+                renderMessages();
+            }
+        }
+
+        function handleDragEnd(e) { 
+            const card = e.target.closest('.msg-card'); 
+            if (card) card.classList.remove('dragging');
+            document.querySelectorAll('.msg-card.drop-target').forEach(c => c.classList.remove('drop-target'));
+            dragSrcIndex = null; 
+        }
+
+        function updateMessage(i, k, v) { 
+            state.messages[i][k] = v;
+            saveToLocal(); 
+            if (k === 'profileId') {
+                renderMessages();
+            }
+            if (!state.isPlaying) refreshStatic(); 
+        }
+
+        function addMessage() {
+            const defaultProfile = state.profiles.find(p => p.type === 'character') || state.profiles[0];
+            state.messages.push({
+                id: 'm' + Date.now(),
+                profileId: defaultProfile.id,
+                text: 'សួស្តី!',
+                delay: 1.5,
+                sfx: '',
+                voice: '',
+                ttsEmotion: 'ធម្មតា',
+                fx: { echo: 0, reverb: 0, eq: 1, shake: false, enableEcho: false, enableReverb: false },
+                audioHandles: {}
+            });
+            renderMessages();
+            saveToLocal();
+        }
+
+        function removeMessage(i) { 
+            state.messages.splice(i, 1);
+            renderMessages();
+            saveToLocal(); 
+        }
+
+        function handleBgRefImage(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            aiBgRefImageMimeType = file.type;
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                const base64DataURL = ev.target.result;
+                aiBgRefImageBase64 = base64DataURL.split(',')[1];
+                
+                document.getElementById('refImgPreview').src = base64DataURL;
+                document.getElementById('refImgPreviewContainer').classList.remove('hidden');
+                showToastMsg("បានបញ្ចូលរូបភាពគំរូជោគជ័យ!");
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearBgRefImage() {
+            aiBgRefImageBase64 = '';
+            aiBgRefImageMimeType = '';
+            document.getElementById('refImgPreview').src = '';
+            document.getElementById('refImgPreviewContainer').classList.add('hidden');
+            showToastMsg("បានលុបរូបភាពគំរូចេញ!");
+        }
+
+        function updateMessageFXVal(i, key, val) {
+            const msg = state.messages[i];
+            if (!msg.fx) msg.fx = { echo: 0, reverb: 0, eq: 1, shake: false, enableEcho: false, enableReverb: false };
+            msg.fx[key] = val;
+            saveToLocal();
+            if (key === 'enableEcho' || key === 'enableReverb' || key === 'echo' || key === 'reverb') {
+                // Silently updated
+            } else {
+                renderMessages();
+            }
+        }
+
+        async function handleMsgAudioFile(index, key, event) {
+            const f = event.target.files[0];
+            if (!f) return;
+            const rd = new FileReader();
+            rd.onload = async ev => {
+                state.messages[index][key] = ev.target.result;
+                saveToLocal();
+                renderMessages();
+            };
+            rd.readAsDataURL(f);
+        }
+
+        function base64ToArrayBuffer(base64) {
+            const binaryString = atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        function pcmToWav(pcm16, sampleRate) {
+            const buffer = new ArrayBuffer(44 + pcm16.length * 2);
+            const view = new DataView(buffer);
+
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 36 + pcm16.length * 2, true);
+            writeString(view, 8, 'WAVE');
+
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true); // mono
+            view.setUint16(22, 1, true); // mono
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true); // block align
+            view.setUint16(34, 16, true); // 16-bit
+
+            writeString(view, 36, 'data');
+            view.setUint32(40, pcm16.length * 2, true);
+
+            for (let i = 0; i < pcm16.length; i++) {
+                view.setInt16(44 + i * 2, pcm16[i], true);
+            }
+
+            return new Blob([view], { type: 'audio/wav' });
+        }
+
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        }
+
+        async function generateSpeechBabble(text, profile, emotion) {
+            const sampleRate = 22050;
+            const charCount = text.length;
+            const durPerChar = 0.075; 
+            const duration = Math.max(0.6, Math.min(6.5, charCount * durPerChar));
+            
+            const offlineCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, sampleRate * duration, sampleRate);
+            
+            const basePitch = profile.gender === 'male' ? 115 : 230;
+            const pitchFactor = profile.pitch || 1.0;
+            const pitch = basePitch * pitchFactor;
+
+            const osc = offlineCtx.createOscillator();
+            osc.type = 'triangle'; 
+            
+            const formantFilter = offlineCtx.createBiquadFilter();
+            formantFilter.type = 'bandpass';
+            formantFilter.Q.setValueAtTime(4.2, 0);
+            
+            const gainNode = offlineCtx.createGain();
+            gainNode.gain.setValueAtTime(0, 0);
+
+            const syllableLen = 0.11;
+            const syllableGap = 0.035;
+            let t = 0.05;
+            while (t < duration - 0.1) {
+                const babbleDur = syllableLen * (0.8 + Math.random() * 0.4);
+                
+                gainNode.gain.setValueAtTime(0, t);
+                gainNode.gain.linearRampToValueAtTime(0.45, t + babbleDur * 0.25);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, t + babbleDur);
+                
+                const toneShift = (Math.sin(t * 12) * 16) + (Math.random() * 12 - 6);
+                let currentPitch = pitch + toneShift;
+                
+                if (emotion === 'សប្បាយរីករាយ') currentPitch += 28;
+                if (emotion === 'ខឹងសម្បារ') currentPitch += 45;
+                if (emotion === 'សោកសៅ') currentPitch -= 22;
+                
+                osc.frequency.setValueAtTime(currentPitch, t);
+                
+                const formants = [500, 850, 1100, 1300];
+                const chosenFormant = formants[Math.floor(Math.random() * formants.length)];
+                formantFilter.frequency.setValueAtTime(chosenFormant, t);
+                
+                t += babbleDur + syllableGap;
+            }
+
+            osc.connect(formantFilter);
+            formantFilter.connect(gainNode);
+            gainNode.connect(offlineCtx.destination);
+            
+            osc.start(0);
+            osc.stop(duration);
+
+            const renderedBuffer = await offlineCtx.startRendering();
+            
+            const pcm16 = new Int16Array(renderedBuffer.length);
+            const channelData = renderedBuffer.getChannelData(0);
+            for (let i = 0; i < renderedBuffer.length; i++) {
+                const val = Math.max(-1, Math.min(1, channelData[i]));
+                pcm16[i] = val < 0 ? val * 0x8000 : val * 0x7FFF;
+            }
+            
+            const wavBlob = pcmToWav(pcm16, sampleRate);
+            return URL.createObjectURL(wavBlob);
+        }
+
+        async function generateSingleTTS(msgIndex) {
+            initAudio();
+            sanitizeStateGenders();
+
+            const msg = state.messages[msgIndex];
+            let p = state.profiles.find(x => x.id === msg.profileId) || state.profiles[0];
+            
+            const voiceName = p.voiceName;
+            const isMale = p.gender === 'male';
+
+            const genderLabelText = isMale ? "ប្រុស 👨" : "ស្រី 👩";
+            const fontColorClass = isMale ? "text-blue-400" : "text-rose-400";
+
+            let loadingLabel = `កំពុងបង្កើតសំឡេង AI <span class="${fontColorClass} font-black">${genderLabelText}</span> (${voiceName})<br>`;
+            if (p.cloneAudioWavBase64) {
+                loadingLabel = `🧬 <strong>កំពុង Clone សំឡេងមនុស្សពិតផ្ទាល់របស់ "${p.name}"</strong>...<br>`;
+            }
+            document.getElementById('aiLoadingText').innerHTML = loadingLabel + `តុងសំឡេង៖ <span class="text-indigo-400">${(p.pitch || 1.0).toFixed(2)}x</span> សម្រាប់សារទី #${msgIndex + 1}...`;
+            document.getElementById('aiLoading').style.display = 'flex';
+
+            // Construct payload with replicatedVoiceConfig if we have a custom voice sample
+            let payload = {
+                contents: [{
+                    parts: [{ text: `សូមអានអត្ថបទនេះជាភាសាខ្មែរឲ្យបានច្បាស់លាស់ និងពីរោះ៖ ${msg.text}` }]
+                }],
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speechConfig: {}
+                }
+            };
+
+            if (p.cloneAudioWavBase64) {
+                payload.generationConfig.speechConfig = {
+                    voiceConfig: {
+                        replicatedVoiceConfig: {
+                            voiceSample: p.cloneAudioWavBase64,
+                            mimeType: "audio/wav"
+                        }
+                    }
+                };
+            } else {
+                payload.generationConfig.speechConfig = {
+                    voiceConfig: {
+                        prebuiltVoiceConfig: { voiceName: voiceName }
+                    }
+                };
+            }
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+
+            try {
+                let response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                // Fallback: If replicatedVoiceConfig throws an error (e.g. Unsupported parameter), fall back gracefully to prebuilt with descriptor guidance
+                if (!response.ok && p.cloneAudioWavBase64) {
+                    console.warn("replicatedVoiceConfig failed, falling back to prebuilt voice with prompt replication...");
+                    payload.generationConfig.speechConfig = {
+                        voiceConfig: {
+                            prebuiltVoiceConfig: { voiceName: voiceName }
+                        }
+                    };
+                    payload.contents[0].parts[0].text = `
+                        Read this text clearly in Khmer. Adopt a voice matching this character description: "${p.voiceprint || 'natural human voice'}".
+                        Please read clearly with a ${msg.ttsEmotion || 'normal'} emotion:
+                        ${msg.text}
+                    `;
+                    response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                }
+
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                const part = result?.candidates?.[0]?.content?.parts?.[0];
+                const audioData = part?.inlineData?.data;
+                const mimeType = part?.inlineData?.mimeType;
+
+                if (audioData && mimeType && mimeType.startsWith("audio/")) {
+                    const sampleRate = parseInt(mimeType.match(/rate=(\d+)/)?.[1] || "24000", 10);
+                    const pcmData = base64ToArrayBuffer(audioData);
+                    const pcm16 = new Int16Array(pcmData);
+                    const wavBlob = pcmToWav(pcm16, sampleRate);
+                    const audioUrl = URL.createObjectURL(wavBlob);
+
+                    msg.voice = audioUrl;
+                    saveToLocal();
+                    renderMessages();
+                    showToastMsg(p.cloneAudioWavBase64 ? `បាន Clone & បង្កើតសំឡេងរបស់ "${p.name}" រួចរាល់!` : `បានបង្កើតសំឡេង AI ${genderLabelText} ដោយជោគជ័យ!`);
+                } else {
+                    throw new Error("Invalid format returned from model API.");
+                }
+            } catch (err) {
+                console.warn("Gemini TTS Engine failed, falling back to local simulation:", err);
+                try {
+                    const fallbackUrl = await generateSpeechBabble(msg.text, p, msg.ttsEmotion);
+                    msg.voice = fallbackUrl;
+                    saveToLocal();
+                    renderMessages();
+                    showToastMsg(`បានបង្កើតសំឡេង (Local System) ដោយជោគជ័យ!`);
+                } catch (fallbackErr) {
+                    console.error("Fallback TTS failed as well:", fallbackErr);
+                    showToastMsg("ការបង្កើតសំឡេងជួបបញ្ហាបច្ចេកទេស!");
+                }
+            } finally {
+                document.getElementById('aiLoading').style.display = 'none';
+            }
+        }
+
+        async function generateAllPendingTTS() {
+            initAudio();
+            const pendingIndices = [];
+            state.messages.forEach((m, idx) => {
+                if (!m.voice) pendingIndices.push(idx);
+            });
+
+            if (pendingIndices.length === 0) {
+                showToastMsg("គ្រប់សារទាំងអស់មានសំឡេង AI រួចរាល់ហើយ!");
+                return;
+            }
+
+            let successCount = 0;
+            for (let i = 0; i < pendingIndices.length; i++) {
+                const targetIdx = pendingIndices[i];
+                try {
+                    await generateSingleTTS(targetIdx);
+                    successCount++;
+                    await new Promise(r => setTimeout(r, 200));
+                } catch (e) {
+                    console.error("Batch generate failed for index: " + targetIdx, e);
+                }
+            }
+
+            showToastMsg(`បានបង្កើតសំឡេងរួចរាល់ចំនួន ${successCount} សារ!`);
+            renderMessages();
+        }
+
+        function addOverlay() {
+            state.overlays.push({
+                id: 'ov_' + Date.now(),
+                type: 'image',
+                src: '',
+                x: 50,
+                y: 50,
+                scale: 1,
+                opacity: 1,
+                rotate: 0,
+                zIndex: 5
+            });
+            renderOverlaysUI();
+            refreshOverlaysOnCanvas();
+            saveToLocal();
+        }
+
+        function addTextOverlay() {
+            state.overlays.push({
+                id: 'ovt_' + Date.now(),
+                type: 'text',
+                src: '',
+                x: 50,
+                y: 50,
+                scale: 1,
+                opacity: 1,
+                rotate: 0,
+                zIndex: 5,
+                text: 'អក្សរព័ត៌មាន',
+                fontFamily: 'Battambang',
+                fontSize: 24,
+                color: '#ffffff'
+            });
+            renderOverlaysUI();
+            refreshOverlaysOnCanvas();
+            saveToLocal();
+        }
+
+        function removeOverlay(id) {
+            state.overlays = state.overlays.filter(o => o.id !== id);
+            renderOverlaysUI();
+            refreshOverlaysOnCanvas();
+            saveToLocal();
+        }
+
+        function updateOverlay(id, key, val) {
+            const ov = state.overlays.find(o => o.id === id);
+            if (ov) { 
+                ov[key] = val;
+                refreshOverlaysOnCanvas();
+                saveToLocal(); 
+            }
+        }
+
+        function handleOverlayImage(e, id) {
+            const f = e.target.files[0];
+            if (f) {
+                const rd = new FileReader();
+                rd.onload = ev => {
+                    const ov = state.overlays.find(o => o.id === id);
+                    if (ov) { 
+                        ov.src = ev.target.result;
+                        ov.type = 'image';
+                        refreshOverlaysOnCanvas();
+                        renderOverlaysUI();
+                        saveToLocal(); 
+                    }
+                };
+                rd.readAsDataURL(f);
+            }
+        }
+
+        function renderOverlaysUI() {
+            const container = document.getElementById('overlaysContainer');
+            container.innerHTML = '';
+            state.overlays.forEach(ov => {
+                const div = document.createElement('div');
+                div.className = 'p-4 bg-[#111a2e] rounded-2xl border border-slate-800 shadow-sm flex flex-col gap-3';
+                const isText = ov.type === 'text';
+                div.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-slate-900 rounded-lg border border-slate-700 flex items-center justify-center relative overflow-hidden">
+                            ${isText ? `<span class="text-[9px] font-bold text-slate-400">TEXT</span>` : (ov.src ? `<img src="${ov.src}" class="max-w-full max-h-full object-contain">` : `<span class="text-[9px] text-slate-500">PNG</span>`)}
+                            ${!isText ? `<input type="file" accept="image/*" onchange="handleOverlayImage(event, '${ov.id}')" class="absolute inset-0 opacity-0 cursor-pointer">` : ''}
+                        </div>
+                        <div class="flex-1 grid grid-cols-2 md:grid-cols-4 gap-2">
+                            <div><label class="label-sm !mb-1 !text-[9px]">X (%)</label><input type="number" value="${ov.x}" oninput="updateOverlay('${ov.id}', 'x', parseFloat(this.value))" class="input-ui !p-1 text-center"></div>
+                            <div><label class="label-sm !mb-1 !text-[9px]">Y (%)</label><input type="number" value="${ov.y}" oninput="updateOverlay('${ov.id}', 'y', parseFloat(this.value))" class="input-ui !p-1 text-center"></div>
+                            <div><label class="label-sm !mb-1 !text-[9px]">Size</label><input type="number" step="0.1" value="${ov.scale}" oninput="updateOverlay('${ov.id}', 'scale', parseFloat(this.value))" class="input-ui !p-1 text-center"></div>
+                            <div><label class="label-sm !mb-1 !text-[9px]">Opacity</label><input type="number" step="0.1" min="0" max="1" value="${ov.opacity}" oninput="updateOverlay('${ov.id}', 'opacity', parseFloat(this.value))" class="input-ui !p-1 text-center"></div>
+                        </div>
+                        <button onclick="removeOverlay('${ov.id}')" class="text-rose-400 hover:text-rose-500">✕</button>
+                    </div>
+                    ${isText ? `
+                    <div class="p-2 bg-slate-900 rounded border border-slate-700 space-y-2">
+                        <div class="grid grid-cols-3 gap-2">
+                            <div><label class="label-sm !text-[9px]">អត្ថបទ</label><input type="text" value="${ov.text}" oninput="updateOverlay('${ov.id}','text',this.value)" class="input-ui !p-1 text-xs"></div>
+                            <div><label class="label-sm !text-[9px]">ពណ៌អក្សរ</label><input type="color" value="${ov.color}" oninput="updateOverlay('${ov.id}','color',this.value)" class="w-full h-8 rounded cursor-pointer bg-transparent border-none"></div>
+                            <div><label class="label-sm !text-[9px]">ទំហំអក្សរ</label><input type="number" value="${ov.fontSize || 24}" oninput="updateOverlay('${ov.id}','fontSize',parseFloat(this.value))" class="input-ui !p-1 text-center"></div>
+                        </div>
+                    </div>` : ''}
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function refreshOverlaysOnCanvas() {
+            const layer = document.getElementById('overlayLayer');
+            layer.innerHTML = '';
+            state.overlays.forEach(ov => {
+                const el = document.createElement('div');
+                el.className = 'overlay-item';
+                el.style.left = ov.x + '%';
+                el.style.top = ov.y + '%';
+                el.style.transform = `translate(-50%, -50%) scale(${ov.scale}) rotate(${ov.rotate || 0}deg)`;
+                el.style.opacity = ov.opacity;
+                el.style.zIndex = ov.zIndex || 5;
+                el.style.pointerEvents = 'auto';
+                el.style.cursor = 'grab';
+
+                if (ov.type === 'text') {
+                    el.textContent = ov.text || '';
+                    el.style.fontFamily = ov.fontFamily || 'Battambang';
+                    el.style.fontSize = (ov.fontSize || 24) + 'px';
+                    el.style.color = ov.color || '#ffffff';
+                    el.style.fontWeight = 'bold';
+                } else {
+                    if (ov.src) {
+                        const img = document.createElement('img');
+                        img.src = ov.src;
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        img.style.objectFit = 'contain';
+                        el.appendChild(img);
+                    }
+                }
+
+                // Drag Logic for Desktop (Mouse)
+                el.addEventListener('mousedown', function(e) {
+                    const rect = this.parentElement.getBoundingClientRect();
+                    const startX = e.clientX, startY = e.clientY;
+                    const startLeft = parseFloat(this.style.left) || ov.x;
+                    const startTop = parseFloat(this.style.top) || ov.y;
+                    
+                    const onMove = (ev) => {
+                        const dx = (ev.clientX - startX) / rect.width * 100;
+                        const dy = (ev.clientY - startY) / rect.height * 100;
+                        const newX = Math.min(100, Math.max(0, startLeft + dx));
+                        const newY = Math.min(100, Math.max(0, startTop + dy));
+                        this.style.left = newX + '%';
+                        this.style.top = newY + '%';
+                        ov.x = newX;
+                        ov.y = newY;
+                        saveToLocal();
+                    };
+                    const onUp = () => {
+                        document.removeEventListener('mousemove', onMove);
+                        document.removeEventListener('mouseup', onUp);
+                    };
+                    document.addEventListener('mousemove', onMove);
+                    document.addEventListener('mouseup', onUp);
+                });
+
+                // Drag Logic for Mobile (Touch Screen Integration)
+                el.addEventListener('touchstart', function(e) {
+                    const touch = e.touches[0];
+                    const rect = this.parentElement.getBoundingClientRect();
+                    const startX = touch.clientX, startY = touch.clientY;
+                    const startLeft = parseFloat(this.style.left) || ov.x;
+                    const startTop = parseFloat(this.style.top) || ov.y;
+                    
+                    const onTouchMove = (ev) => {
+                        const t = ev.touches[0];
+                        const dx = (t.clientX - startX) / rect.width * 100;
+                        const dy = (t.clientY - startY) / rect.height * 100;
+                        const newX = Math.min(100, Math.max(0, startLeft + dx));
+                        const newY = Math.min(100, Math.max(0, startTop + dy));
+                        this.style.left = newX + '%';
+                        this.style.top = newY + '%';
+                        ov.x = newX;
+                        ov.y = newY;
+                        saveToLocal();
+                    };
+                    const onTouchEnd = () => {
+                        document.removeEventListener('touchmove', onTouchMove);
+                        document.removeEventListener('touchend', onTouchEnd);
+                    };
+                    document.addEventListener('touchmove', onTouchMove, { passive: false });
+                    document.addEventListener('touchend', onTouchEnd);
+                });
+
+                layer.appendChild(el);
+            });
+        }
+
+        function handleGlobalAudioFile(playerId, event) {
+            const f = event.target.files[0];
+            if (!f) return;
+            const rd = new FileReader();
+            rd.onload = ev => { 
+                document.getElementById(playerId).src = ev.target.result;
+                saveToLocal(); 
+            };
+            rd.readAsDataURL(f);
+        }
+
+        function updateBgmVolumeUI() {
+            const vol = document.getElementById('bgVol').value;
+            const duck = document.getElementById('duckVol').value;
+            document.getElementById('bgVolLabel').innerText = Math.round(vol * 100) + '%';
+            document.getElementById('duckVolLabel').innerText = Math.round(duck * 100) + '%';
+            const bgMusic = document.getElementById('bgMusicPlayer');
+            if (bgMusic && !state.duckingActive) bgMusic.volume = vol;
+        }
+
+        async function fadeBgm(targetVol) {
+            const useDucking = document.getElementById('useDucking').checked;
+            if (!useDucking) return;
+            const bgMusic = document.getElementById('bgMusicPlayer');
+            if (!bgMusic.src) return;
+            const duration = 500;
+            const startVol = bgMusic.volume;
+            const startTime = performance.now();
+            return new Promise(resolve => {
+                function step(now) {
+                    const elapsed = now - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    bgMusic.volume = startVol + (targetVol - startVol) * progress;
+                    if (progress < 1) requestAnimationFrame(step);
+                    else resolve();
+                }
+                requestAnimationFrame(step);
+            });
+        }
+
+        function exportProject() {
+            const exportState = JSON.parse(JSON.stringify(state));
+            exportState.messages.forEach(m => {
+                m.sfx = '';
+                m.voice = '';
+            });
+            const blob = new Blob([JSON.stringify(exportState)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'chat_animator_pro_v115_cloning.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        async function importProject(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async ev => {
+                try {
+                    const data = JSON.parse(ev.target.result);
+                    state = data;
+                    state.isPlaying = false;
+                    
+                    sanitizeStateGenders();
+
+                    syncUIFromState();
+                    updateCanvasStyles();
+                    renderProfiles();
+                    renderMessages();
+                    renderOverlaysUI();
+                    refreshOverlaysOnCanvas();
+                } catch (err) { 
+                    showToastMsg("ការនាំចូលគម្រោងមានកំហុស!"); 
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        async function playAudioWithFX(buffer, fxSettings) {
+            initAudio();
+            if (audioCtx.state === 'suspended') {
+                await audioCtx.resume();
+            }
+
+            const source = audioCtx.createBufferSource();
+            source.buffer = buffer;
+            
+            if (fxSettings.pitch) {
+                source.playbackRate.setValueAtTime(fxSettings.pitch, audioCtx.currentTime);
+            }
+            
+            const masterGain = audioCtx.createGain();
+            masterGain.gain.setValueAtTime(1.0, audioCtx.currentTime);
+            source.connect(masterGain);
+
+            let lastOutputNode = masterGain;
+
+            if (fxSettings.reverb > 0 && reverbImpulseResponse) {
+                const convolver = audioCtx.createConvolver();
+                convolver.buffer = reverbImpulseResponse;
+
+                const reverbGain = audioCtx.createGain();
+                reverbGain.gain.setValueAtTime(fxSettings.reverb * 0.9, audioCtx.currentTime);
+
+                lastOutputNode.connect(convolver);
+                convolver.connect(reverbGain);
+                reverbGain.connect(audioCtx.destination);
+            }
+
+            if (fxSettings.echo > 0) {
+                const delayNode = audioCtx.createDelay(1.5);
+                delayNode.delayTime.setValueAtTime(0.35, audioCtx.currentTime);
+
+                const echoFeedback = audioCtx.createGain();
+                echoFeedback.gain.setValueAtTime(fxSettings.echo * 0.55, audioCtx.currentTime);
+
+                const echoWetGain = audioCtx.createGain();
+                echoWetGain.gain.setValueAtTime(fxSettings.echo * 0.75, audioCtx.currentTime);
+
+                delayNode.connect(echoFeedback);
+                echoFeedback.connect(delayNode);
+
+                lastOutputNode.connect(delayNode);
+                delayNode.connect(echoWetGain);
+                echoWetGain.connect(audioCtx.destination);
+            }
+            
+            const filterNode = audioCtx.createBiquadFilter();
+            filterNode.type = "peaking";
+            filterNode.frequency.setValueAtTime(1000, audioCtx.currentTime);
+            filterNode.gain.setValueAtTime((fxSettings.eq - 1) * 20, audioCtx.currentTime);
+            
+            lastOutputNode.connect(filterNode);
+            filterNode.connect(audioCtx.destination);
+
+            source.start(0);
+
+            return new Promise(resolve => {
+                source.onended = () => {
+                    source.disconnect();
+                    filterNode.disconnect();
+                    resolve();
+                };
+            });
+        }
+
+        async function fetchAudioBuffer(url) {
+            if (!url) return null;
+            const resp = await fetch(url);
+            const arrayBuf = await resp.arrayBuffer();
+            return await audioCtx.decodeAudioData(arrayBuf);
+        }
+
+        async function typeText(element, text, speed) {
+            element.innerHTML = "";
+            for (let i = 0; i < text.length; i++) {
+                if (!state.isPlaying) break;
+                element.innerHTML += text.charAt(i);
+                if (speed > 0) await new Promise(r => setTimeout(r, speed));
+            }
+        }
+
+        async function playPreview() {
+            if (state.isPlaying) return;
+            initAudio();
+            state.isPlaying = true;
+            updatePlayButton();
+            setWaveformAnimated(true);
+            
+            const flow = document.getElementById('messageFlow');
+            flow.innerHTML = '';
+            
+            const normalVol = parseFloat(document.getElementById('bgVol').value);
+            const duckVol = parseFloat(document.getElementById('duckVol').value);
+            const typeSpeed = parseInt(document.getElementById('typeSpeed').value);
+
+            const bgMusic = document.getElementById('bgMusicPlayer');
+            if (bgMusic.src) { 
+                bgMusic.volume = normalVol;
+                bgMusic.currentTime = 0;
+                bgMusic.play().catch(()=>{}); 
+            }
+
+            for (let i = 0; i < state.messages.length; i++) {
+                const m = state.messages[i];
+                if (!state.isPlaying) break;
+                
+                await new Promise(r => setTimeout(r, m.delay * 1000));
+                
+                if (state.canvas.viewMode === 'single' || state.canvas.viewMode === 'single-fade') flow.innerHTML = '';
+                if (state.canvas.viewMode === 'highlight') {
+                    flow.querySelectorAll('.bubble-wrap').forEach(el => el.classList.add('inactive-msg'));
+                }
+
+                // Cyber POP Synth sound on entrance
+                playSyntheticSFX('pop');
+
+                const bubbleObj = renderBubble(m, true);
+                const bubbleElement = bubbleObj.wrap;
+                const textTarget = bubbleObj.textElement;
+                bubbleElement.classList.add('active-msg');
+
+                if (state.production.enableShake && m.fx?.shake) {
+                    document.getElementById('canvasWrapper').classList.add('shake-fx');
+                    setTimeout(() => document.getElementById('canvasWrapper').classList.remove('shake-fx'), 400);
+                }
+
+                const globalSfx = document.getElementById('globalSfxPlayer');
+                if (globalSfx.src) { 
+                    globalSfx.currentTime = 0;
+                    globalSfx.play().catch(()=>{}); 
+                }
+
+                if (m.sfx) { 
+                    const sfxBuf = await fetchAudioBuffer(m.sfx); 
+                    if (sfxBuf) playAudioWithFX(sfxBuf, { echo: 0, reverb: 0, eq: 1 }); 
+                }
+
+                const typePromise = state.production.enableTypewriter ? typeText(textTarget, m.text, typeSpeed) : Promise.resolve();
+                
+                if (m.voice) {
+                    let p = state.profiles.find(x => x.id === m.profileId);
+                    if (!p) p = state.profiles[0];
+
+                    const echoLevel = m.fx?.enableEcho ? (m.fx.echo || 0) : (p.enableFX ? (p.echo || 0) : 0);
+                    const reverbLevel = m.fx?.enableReverb ? (m.fx.reverb || 0) : (p.enableFX ? (p.reverb || 0) : 0);
+
+                    let voiceFX = {
+                        echo: echoLevel,
+                        reverb: reverbLevel,
+                        eq: m.fx?.eq || 1,
+                        pitch: p.pitch || 1.0
+                    };
+
+                    const voiceBuf = await fetchAudioBuffer(m.voice);
+                    if (voiceBuf) { 
+                        state.duckingActive = true;
+                        await fadeBgm(duckVol);
+                        await Promise.all([typePromise, playAudioWithFX(voiceBuf, voiceFX)]);
+                        await fadeBgm(normalVol);
+                        state.duckingActive = false; 
+                    }
+                } else { 
+                    await typePromise;
+                    await new Promise(r => setTimeout(r, state.canvas.stayTime * 1000)); 
+                }
+            }
+            state.isPlaying = false;
+            updatePlayButton();
+            setWaveformAnimated(false);
+            if (state.isRecording) stopRecording();
+        }
+
+        function togglePlayback() {
+            if (state.isPlaying) {
+                state.isPlaying = false;
+                if (state.isRecording) stopRecording();
+                updatePlayButton();
+                setWaveformAnimated(false);
+                document.getElementById('bgMusicPlayer').pause();
+                document.getElementById('globalSfxPlayer').pause();
+            } else { 
+                playPreview(); 
+            }
+        }
+
+        function updatePlayButton() {
+            const btn = document.getElementById('playBtn');
+            const icon = document.getElementById('playIcon');
+            const text = document.getElementById('playText');
+            if (state.isPlaying) {
+                btn.classList.add('bg-red-600', 'hover:bg-red-700');
+                btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                icon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+                text.innerText = 'STOP';
+            } else {
+                btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                btn.classList.remove('bg-red-600', 'hover:bg-red-700');
+                icon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+                text.innerText = 'PREVIEW';
+            }
+        }
+
+        function toggleRecording() {
+            if (!state.isRecording) {
+                state.isRecording = true;
+                document.getElementById('recordBtn').classList.add('animate-pulse');
+                document.getElementById('recordText').innerText = "STOP RECORD";
+                document.getElementById('recordingStatus').innerText = "RECORDING...";
+                if (!state.isPlaying) togglePlayback();
+            } else { 
+                stopRecording(); 
+            }
+        }
+
+        function stopRecording() {
+            state.isRecording = false;
+            document.getElementById('recordBtn').classList.remove('animate-pulse');
+            document.getElementById('recordText').innerText = "RECORD";
+            document.getElementById('recordingStatus').innerText = "READY";
+            if (state.isPlaying) { 
+                state.isPlaying = false;
+                updatePlayButton(); 
+            }
+        }
+
+        function generateSmartFallbackScript(topic, count) {
+            const charactersList = state.profiles.filter(p => p.type === 'character');
+            const narratorsList = state.profiles.filter(p => p.type === 'narrator');
+            
+            if (charactersList.length === 0) return [];
+            
+            const charA = charactersList[0];
+            const charB = charactersList[1] || charactersList[0];
+            const narrator = narratorsList[0] || { name: 'អ្នករៀបរាប់' };
+
+            const leaderOpeners = [
+                `ចំពោះកិច្ចការងាររៀបចំ "${topic}" នេះ តើយើងមានការវិវត្តដល់ណាហើយ?`,
+                `ខ្ញុំចង់បញ្ជាក់អំពីផែនការសកម្មភាពពាក់ព័ន្ធនឹង "${topic}" ជាមួយអ្នកទាំងអស់គ្នា។`,
+                `កិច្ចការស្ដីពី "${topic}" គឺជាគោលដៅយុទ្ធសាស្ត្រដ៏សំខាន់របស់យើងនៅពេលនេះ។`,
+                `តើយើងបានរៀបចំការវិភាគហានិភ័យ និងផែនការត្រៀមបម្រុងសម្រាប់ "${topic}" រួចរាល់ហើយឬនៅ?`
+            ];
+
+            const subordinateResponses = [
+                `រាយការណ៍! ទាក់ទងនឹង "${topic}" ខ្ញុំបានរៀបចំឯកសារវិភាគ និងសេចក្តីលម្អិតរួចរាល់ហើយទាន។`,
+                `បាទ/ចាស! ក្រុមការងារយើងកំពុងខិតខំប្រឹងប្រែងយ៉ាងសកម្មបំផុតលើកិច្ចការ "${topic}" នេះ។`,
+                `ពិតប្រាកដណាស់! របាយការណ៍បឋមស្ដីពី "${topic}" ត្រូវបានពិនិត្យ និងវាយតម្លៃរួចរាល់ហើយ។`,
+                `ទាក់ទងនឹង "${topic}" នេះ ខ្ញុំបានត្រៀមខ្លួនរួចជាស្រេចដើម្បីអនុវត្តតាមការណែនាំជានិច្ច។`
+            ];
+
+            const leaderFollowups = [
+                `ល្អណាស់! ចូរធានាថាគ្រប់ព័ត៌មានលម្អិតនៃ "${topic}" ត្រូវបានត្រួតពិនិត្យយ៉ាងហ្មត់ចត់។`,
+                `អស្ចារ្យ! ខ្ញុំសង្ឃឹមថាការខិតខំប្រឹងប្រែងលើ "${topic}" នេះនឹងនាំមកនូវលទ្ធផលល្អឥតខ្ចោះ។`,
+                `សូមកុំភ្លេចផ្ដោតលើគុណភាពការងារ និងសុវត្ថិភាពជាចម្បងក្នុងការអនុវត្ត "${topic}"。`,
+                `យើងត្រូវធ្វើការរួមគ្នាជាធ្លុងមួយ ដើម្បីសម្រេចឱ្យបានជោគជ័យលើគម្រោង "${topic}" នេះ។`
+            ];
+
+            const subordinateCommitments = [
+                `ខ្ញុំនឹងយកចិត្តទុកដាក់ខ្ពស់បំផុត និងសហការជាមួយក្រុមការងារលើគម្រោង "${topic}" នេះ។`,
+                `បាទ/ចាស! ខ្ញុំនឹងធ្វើបច្ចុប្បន្នភាពព័ត៌មានបន្ថែមទៀតជូនលោកភ្លាមៗ។`,
+                `រាល់ការណែនាំទាំងអស់នឹងត្រូវបានអនុវត្តយ៉ាងហ្មត់ចត់សម្រាប់ការងារ "${topic}" នេះទាន។`,
+                `ខ្ញុំជឿជាក់ថាពួកយើងនឹងសម្រេចបាននូវលទ្ធផលដ៏ល្អបំផុតសម្រាប់គម្រោង "${topic}" នេះ។`
+            ];
+
+            const narratorSceneries = [
+                `បរិយាកាសនៃការពិភាក្សាអំពី "${topic}" ពោរពេញទៅដោយភាពម៉ឺងម៉ាត់ និងយកចិត្តទុកដាក់ខ្ពស់។`,
+                `ខ្យល់អាកាសស្ងប់ស្ងាត់ ខណៈពេលដែលពួកគេទាំងពីរកំពុងផ្តោតអារម្មណ៍យ៉ាងខ្លាំងលើកិច្ចការ "${topic}"។`,
+                `កិច្ចសន្ទនាដ៏មានសារៈសំខាន់នេះ កំពុងតែបើកផ្លូវឆ្ពោះទៅរកដំណោះស្រាយថ្មីនៃ "${topic}"។`,
+                `ស្នាមញញឹមនៃក្តីសង្ឃឹមបានលេចឡើង ខណៈដែលគម្រោង "${topic}" កំពុងខិតជិតសម្រេចបានជោគជ័យ។`
+            ];
+
+            let scriptLines = [];
+            let narratorCount = 0;
+            const limitsEnabled = state.narrator.enabled;
+            const maxNarrators = limitsEnabled ? (state.narrator.maxCount || 3) : 999;
+            const narratorFreq = limitsEnabled ? (state.narrator.frequency || 3) : 3;
+
+            for (let i = 0; i < count; i++) {
+                let isNarratorTurn = false;
+
+                if (narratorsList.length > 0) {
+                    if (limitsEnabled) {
+                        if (narratorCount < maxNarrators) {
+                            if (i > 0 && i % narratorFreq === 0) {
+                                isNarratorTurn = true;
+                            }
+                        }
+                    } else {
+                        if (i === 0 || i === Math.floor(count / 2) || i === count - 1) {
+                            if (Math.random() > 0.3) {
+                                isNarratorTurn = true;
+                            }
+                        }
+                    }
+                }
+
+                if (isNarratorTurn) {
+                    narratorCount++;
+                    const chosenNarrator = narratorsList[Math.floor(Math.random() * narratorsList.length)];
+                    const text = narratorSceneries[i % narratorSceneries.length];
+                    scriptLines.push({ name: chosenNarrator.name, text: text });
+                } else {
+                    let name = "";
+                    let text = "";
+                    const turnIndex = i - narratorCount;
+
+                    if (turnIndex % 4 === 0) {
+                        name = charA.name;
+                        text = leaderOpeners[Math.floor(turnIndex / 4) % leaderOpeners.length];
+                    } else if (turnIndex % 4 === 1) {
+                        name = charB.name;
+                        text = subordinateResponses[Math.floor(turnIndex / 4) % subordinateResponses.length];
+                    } else if (turnIndex % 4 === 2) {
+                        name = charA.name;
+                        text = leaderFollowups[Math.floor(turnIndex / 4) % leaderFollowups.length];
+                    } else {
+                        name = charB.name;
+                        text = subordinateCommitments[Math.floor(turnIndex / 4) % subordinateCommitments.length];
+                    }
+                    scriptLines.push({ name: name, text: text });
+                }
+            }
+            return scriptLines;
+        }
+
+        async function generateAIScript() {
+            const topic = document.getElementById('aiTopic').value.trim();
+            const count = parseInt(document.getElementById('aiMsgCount').value) || 6;
+            if (!topic) {
+                showToastMsg("សូមបំពេញប្រធានបទសន្ទនាមុននឹងបង្កើត!");
+                return;
+            }
+
+            document.getElementById('aiLoadingText').innerText = "កំពុងគិត និងរៀបចំស្គ្រីបពី AI យ៉ាងហ្មត់ចត់...";
+            document.getElementById('aiLoading').style.display = 'flex';
+
+            const charactersList = state.profiles.filter(p => p.type === 'character');
+            const narratorsList = state.profiles.filter(p => p.type === 'narrator');
+
+            let context = charactersList.map(p => `Name: "${p.name}", Role/Duty: "${p.role}", Gender: "${p.gender}"`).join(' | ');
+            
+            let narratorInstruction = "";
+            if (narratorsList.length > 0) {
+                const nNames = narratorsList.map(n => `"${n.name}"`).join(', ');
+                context += ` | Narrators Available: [${nNames}]`;
+                
+                if (state.narrator.enabled) {
+                    narratorInstruction = `
+                        CONSTRAINT: You must insert exactly one narrator line after every ${state.narrator.frequency || 3} standard dialogue cards.
+                        Choose from the available narrator profiles: [${nNames}].
+                        The narrator count must not exceed ${state.narrator.maxCount || 3} cards.
+                        Narrators should only describe background atmospheric sceneries, body language, or emotional transitions, and must NEVER speak direct speech.
+                    `;
+                } else {
+                    narratorInstruction = `
+                        AUTO-RANDOM MODE: Since there is at least one narrator profile available ([${nNames}]), you should dynamically, randomly, and creatively insert scene descriptions, atmospheric remarks, background feelings, or introductions *at natural transition points* where you think it fits the narrative best (such as at the beginning, middle, transition phases, or ending).
+                        Do not over-use, but place them where it makes the storytelling artistic and interesting. Narrators must NOT have direct speech.
+                    `;
+                }
+            } else {
+                narratorInstruction = "Do not include any narrator/narrative voices, because none are available in the profile list.";
+            }
+
+            const prompt = `
+                You are an elite Cambodian screenwriter and dialogue director.
+                Generate a highly captivating, natural, and logical story script in Khmer language about: "${topic}".
+                Use ONLY the following exact character profiles: [${context}].
+                
+                ${narratorInstruction}
+                
+                Strict Screenwriting Rules:
+                1. DIVERSITY & LOGIC: Do not repeat greetings, questions, or statements. The conversation must advance logically with natural progressions (action, reaction, development).
+                2. ROLE MATCHING: Ensure characters speak in accordance with their assigned "Role/Duty" and "Gender". A leader must sound commanding yet caring; a subordinate must sound respectful and detailed.
+                3. NARRATOR USE: Narrators should purely describe atmosphere, setting changes, or character emotions. Do not write dialogue for narrators.
+                4. EXACT TOTAL: Generate exactly ${count} story cards in total.
+                
+                Return ONLY a valid JSON array format matching this exact schema:
+                [
+                  {
+                    "name": "Exact Character Name or Narrator Name",
+                    "text": "Detailed, highly realistic Khmer dialogue or scenery description"
+                  }
+                ]
+            `;
+
+            try {
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: { responseMimeType: "application/json" } 
+                    })
+                });
+
+                if (!response.ok) throw new Error("API Limit or Request Error");
+
+                const data = await response.json();
+                const rawText = data.candidates[0].content.parts[0].text;
+                
+                let cleanText = rawText.trim();
+                if (cleanText.startsWith("```")) {
+                    cleanText = cleanText.replace(/^```json\s*/i, "").replace(/```$/, "").trim();
+                }
+                
+                const script = JSON.parse(cleanText);
+                
+                state.messages = script.map((s, idx) => {
+                    const matchedProfile = state.profiles.find(p => p.name === s.name) || state.profiles[idx % state.profiles.length];
+                    
+                    return {
+                        id: 'm' + Date.now() + idx,
+                        profileId: matchedProfile.id,
+                        text: s.text,
+                        delay: 1.5,
+                        sfx: '',
+                        voice: '',
+                        ttsEmotion: 'ធម្មតា',
+                        fx: { echo: 0, reverb: 0, eq: 1, shake: idx === script.length - 1, enableEcho: false, enableReverb: false },
+                        audioHandles: {}
+                    };
+                });
+                
+                sanitizeStateGenders();
+                renderMessages();
+                saveToLocal();
+                showToastMsg("បានបង្កើតស្គ្រីបថ្មីពី AI រួចរាល់!");
+            } catch (e) { 
+                console.warn("Gemini API script generation failed, falling back to local rich generator:", e); 
+                try {
+                    const script = generateSmartFallbackScript(topic, count);
+                    state.messages = script.map((s, idx) => {
+                        const matchedProfile = state.profiles.find(p => p.name === s.name) || state.profiles[idx % state.profiles.length];
+                        
+                        return {
+                            id: 'm' + Date.now() + idx,
+                            profileId: matchedProfile.id,
+                            text: s.text,
+                            delay: 1.5,
+                            sfx: '',
+                            voice: '',
+                            ttsEmotion: 'ធម្មតា',
+                            fx: { echo: 0, reverb: 0, eq: 1, shake: idx === script.length - 1, enableEcho: false, enableReverb: false },
+                            audioHandles: {}
+                        };
+                    });
+                    sanitizeStateGenders();
+                    renderMessages();
+                    saveToLocal();
+                    showToastMsg("បានបង្កើតស្គ្រីបដោយជោគជ័យ (ប្រព័ន្ធទិន្នន័យស្រាប់)!");
+                } catch (fallbackError) {
+                    console.error("Local script generator failed:", fallbackError);
+                    showToastMsg("ការបង្កើតស្គ្រីបជួបបញ្ហាបច្ចេកទេស!");
+                }
+            } finally { 
+                document.getElementById('aiLoading').style.display = 'none'; 
+            }
+        }
+
+        async function generateAIBackground(e) {
+            const promptInput = document.getElementById('aiBgPrompt').value.trim();
+            const styleSelect = document.getElementById('aiBgStyle').value;
+            if (!promptInput) return;
+            const btn = e.target;
+            btn.disabled = true;
+            btn.textContent = '⏳ កំពុងបង្កើត...';
+            try {
+                const width = state.canvas.width || 1080;
+                const height = state.canvas.height || 1920;
+                
+                let finalPrompt = promptInput;
+                if (styleSelect) {
+                    finalPrompt = `${promptInput}, in ${styleSelect} style`;
+                }
+
+                if (aiBgRefImageBase64) {
+                    // Call the Gemini 3.1 Flash Image model with reference image payload
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent?key=${apiKey}`;
+                    const payload = {
+                        contents: [{
+                            role: 'user',
+                            parts: [
+                                { text: `Create a matching high quality background following this reference image style and prompt layout: ${finalPrompt}` },
+                                {
+                                    inlineData: {
+                                        mimeType: aiBgRefImageMimeType || 'image/png',
+                                        data: aiBgRefImageBase64
+                                    }
+                                }
+                            ]
+                        }],
+                        generationConfig: {
+                            responseModalities: ['IMAGE']
+                        }
+                    };
+                    
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    if (!response.ok) throw new Error("Gemini Image-to-Image Generation Failed");
+                    
+                    const result = await response.json();
+                    const part = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+                    if (part) {
+                        const imageUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+                        state.canvas.bgImage = imageUrl;
+                        state.canvas.bgType = 'image';
+                        document.getElementById('mediaTypeLabel').textContent = '(AI reference image generated)';
+                        updateCanvasStyles();
+                        saveToLocal();
+                        showToastMsg("បានចម្លង និងបង្កើតរូបភាពតាមទម្រង់គំរូរួចរាល់!");
+                    } else {
+                        throw new Error("No image data returned from model");
+                    }
+                } else {
+                    // Fallback to text-only generation via Pollinations
+                    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(finalPrompt)}?width=${width}&height=${height}&nologo=true&seed=${Math.floor(Math.random()*10000)}`;
+                    
+                    const img = new Image();
+                    img.crossOrigin = "Anonymous";
+                    img.src = imageUrl;
+                    await new Promise((resolve, reject) => { 
+                        img.onload = resolve;
+                        img.onerror = reject; 
+                    });
+                    state.canvas.bgImage = imageUrl;
+                    state.canvas.bgType = 'image';
+                    document.getElementById('mediaTypeLabel').textContent = '(AI image loaded)';
+                    updateCanvasStyles();
+                    saveToLocal();
+                }
+            } catch (e) { 
+                console.error(e);
+                showToastMsg("មិនអាចបង្កើតរូបភាពបានទេ។"); 
+            } finally { 
+                btn.disabled = false;
+                btn.textContent = '🎨 បង្កើត'; 
+            }
+        }
+
+        function handleLocalFont(e) {
+            const f = e.target.files[0];
+            if (f) {
+                const rd = new FileReader();
+                rd.onload = ev => {
+                    const newFont = new FontFace(state.canvas.customFontName, `url(${ev.target.result})`);
+                    newFont.load().then(loaded => {
+                        document.fonts.add(loaded);
+                        document.getElementById('optCustomFont').style.display = 'block';
+                        document.getElementById('fontFamily').value = 'custom';
+                        state.canvas.fontFamily = 'custom';
+                        updateCanvasStyles();
+                        saveToLocal();
+                    });
+                };
+                rd.readAsDataURL(f);
+            }
+        }
+
+        // Presets loaders
+        function saveLayoutPreset() {
+            const preset = {
+                viewMode: document.getElementById('viewMode').value,
+                stayTime: document.getElementById('stayTime').value,
+                vAlign: document.getElementById('vAlign').value,
+                entryAnim: document.getElementById('entryAnim').value,
+                bubbleGap: document.getElementById('bubbleGap').value
+            };
+            localStorage.setItem('chat_anim_preset_v115', JSON.stringify(preset));
+            showToastMsg('បានរក្សាទុក Preset!');
+        }
+
+        function loadLayoutPreset() {
+            const saved = localStorage.getItem('chat_anim_preset_v115');
+            if (saved) {
+                const preset = JSON.parse(saved);
+                document.getElementById('viewMode').value = preset.viewMode;
+                document.getElementById('stayTime').value = preset.stayTime;
+                document.getElementById('vAlign').value = preset.vAlign;
+                document.getElementById('entryAnim').value = preset.entryAnim;
+                document.getElementById('bubbleGap').value = preset.bubbleGap;
+                updateCanvasStyles();
+            } else { 
+                showToastMsg('មិនមាន Preset ទេ!'); 
+            }
+        }
+
+        function copyText(text) {
+            const textarea = document.createElement("textarea");
+            textarea.value = text;
+            textarea.style.position = "fixed";
+            textarea.style.left = "-9999px";
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            try { 
+                if (document.execCommand('copy')) showToastMsg("បានចម្លងអត្ថបទរួចរាល់!"); 
+            } catch (e) {}
+            document.body.removeChild(textarea);
+        }
+
+        function showToastMsg(msg) {
+            const toast = document.getElementById("toast");
+            toast.innerText = msg;
+            toast.className = "show";
+            setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+        }
+
+        window.onload = () => {
+            loadFromLocal();
+            updateBgmVolumeUI();
+            updateCanvasStyles();
+            renderProfiles();
+            renderMessages();
+            renderOverlaysUI();
+            refreshOverlaysOnCanvas();
+            updatePlayButton();
+            setWaveformAnimated(false);
+            
+            document.getElementById('bgMusicPlayer').ontimeupdate = function() {
+                const progress = (this.currentTime / this.duration) * 100 || 0;
+                document.getElementById('musicProgress').style.width = progress + '%';
+                const fmt = s => Math.floor(s / 60).toString().padStart(2, '0') + ':' + Math.floor(s % 60).toString().padStart(2, '0');
+                document.getElementById('audioTimer').innerText = `${fmt(this.currentTime)} / ${fmt(this.duration || 0)}`;
+            };
+        };
+    </script>
+</body>
+</html>
