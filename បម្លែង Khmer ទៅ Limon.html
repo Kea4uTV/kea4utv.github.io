@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>បម្លែង Khmer ទៅ Limon</title>
+
+  <!-- ===== រក្សាធនធានចាស់ទាំងអស់ ===== -->
+  <link rel="canonical" href="" />
+  <meta name="description" content="">
+  <meta property="og:url" content="/" />
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="" />
+  <meta property="og:description" content="" />
+  <meta property="og:image" content="" />
+  <meta name="twitter:card" content="">
+  <meta property="twitter:domain" content="">
+  <meta property="twitter:url" content="">
+  <meta name="twitter:title" content="Khmer Unicode to Limon">
+  <meta name="twitter:description" content="Write Khmer in CapCut by Khmer Limon fonts">
+  <meta name="twitter:image" content="image.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="https://kea4utv.github.io/khmer-old%20to%20khmer-new/anim.json" as="fetch">
+  <link rel="prefetch" href="/lmnf1.ttf" as="font">
+  <link rel="prefetch" href="/lmnf2.ttf" as="font">
+  <link rel="prefetch" href="/lmnf3.ttf" as="font">
+  <link rel="prefetch" href="/lmnf4.ttf" as="font">
+  <link rel="prefetch" href="/lmnf5.ttf" as="font">
+  <link rel="prefetch" href="/lmnf6.ttf" as="font">
+  <link rel="prefetch" href="/lmnf7.ttf" as="font">
+  <link rel="prefetch" href="/lmnr1.ttf" as="font">
+  <link rel="prefetch" href="/lmnr2.ttf" as="font">
+  <link rel="prefetch" href="/lmnr3.ttf" as="font">
+  <link rel="prefetch" href="/lmnr4.ttf" as="font">
+  <link rel="prefetch" href="/lmnr5.ttf" as="font">
+  <link rel="prefetch" href="/lmns1.ttf" as="font">
+  <link rel="prefetch" href="/lmns2.ttf" as="font">
+  <link rel="prefetch" href="/lmns3.ttf" as="font">
+  <link rel="prefetch" href="/lmns4.ttf" as="font">
+  <link rel="prefetch" href="/lmns5.ttf" as="font">
+  <link rel="prefetch" href="/lmns6.ttf" as="font">
+  <link rel="prefetch" href="/lmns7.ttf" as="font">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Serif+Khmer:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="icon" href="https://kea4utv.github.io/khmer-old%20to%20khmer-new/favicon.svg" type="image/svg+xml">
+
+  <!-- ===== ស្គ្រីប និង CSS ចាស់ (ចាំបាច់សម្រាប់មុខងារ) ===== -->
+  <script type="module" crossorigin src="https://kea4utv.github.io/khmer-old%20to%20khmer-new/assets/index-mXGAEz9k.js"></script>
+  <link rel="stylesheet" crossorigin href="https://kea4utv.github.io/khmer-old%20to%20khmer-new/assets/index-DKKCozSX.css">
+
+  <!-- ===== CSS តុបតែងថ្មី (Override) ===== -->
+  <style>
+    /* --- Reset និង Base --- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(145deg, #f6f9fc 0%, #e6f0f5 100%);
+      font-family: 'Inter', 'Noto Serif Khmer', sans-serif;
+      padding: 1.5rem;
+      margin: 0;
+    }
+
+    /* --- Card Container --- */
+    .container {
+      max-width: 560px;
+      width: 100%;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 40px;
+      padding: 2.2rem 2rem 2.5rem;
+      box-shadow: 0 20px 60px rgba(0, 20, 40, 0.12), 0 8px 24px rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      transition: all 0.3s ease;
+    }
+
+    /* --- Layout ខាងក្នុង (default: column) --- */
+    .flex-col {
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+    }
+
+    .gap {
+      gap: 0.9rem;
+    }
+
+    /* --- Lottie --- */
+    #lottie-container {
+      width: 90px !important;
+      align-self: center !important;
+      min-height: 90px !important;
+      margin-bottom: 0.2rem;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.06));
+    }
+
+    /* --- ចំណងជើង --- */
+    h3 {
+      font-size: 1.8rem !important;
+      font-weight: 700 !important;
+      color: #0b2b3d !important;
+      letter-spacing: -0.01em;
+      margin: 0 !important;
+      text-align: center;
+    }
+
+    h3 small {
+      font-weight: 400;
+      font-size: 1rem;
+      color: #4a6a7a;
+      display: block;
+      margin-top: 0.1rem;
+    }
+
+    /* --- ស្លាក (Label) --- */
+    .text-center:not(h3):not(p#download-trigger) {
+      font-size: 0.9rem;
+      color: #4a6a7a;
+      font-weight: 500;
+      text-align: center;
+      margin-bottom: 0.2rem;
+    }
+
+    /* --- Inputs / Textareas --- */
+    input[type="text"], 
+    textarea {
+      width: 100%;
+      padding: 1rem 1.2rem;
+      background: #ffffff;
+      border: 2px solid #e2edf3;
+      border-radius: 20px;
+      font-size: 1.2rem;
+      font-family: 'Noto Serif Khmer', 'Inter', sans-serif;
+      color: #1a2e3b;
+      transition: all 0.25s ease;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+      outline: none;
+      text-align: left !important;
+      direction: ltr;
+      line-height: 1.7;
+      resize: vertical;
+      min-height: 70px;
+    }
+
+    /* Preview */
+    #preview {
+      min-height: 60px;
+      resize: none;
+      background: #f2f8fc;
+      border-style: dashed;
+      border-color: #b6d2e3;
+      font-size: 1.4rem;
+      letter-spacing: 0.02em;
+      text-align: center !important;
+      font-weight: 500;
+    }
+
+    #preview::placeholder {
+      color: #a0bccf;
+      font-weight: 300;
+      font-size: 1rem;
+    }
+
+    input[type="text"]:focus,
+    textarea:focus {
+      border-color: #3b8cbf;
+      box-shadow: 0 0 0 4px rgba(59, 140, 191, 0.15), inset 0 2px 4px rgba(0,0,0,0.02);
+      background: #ffffff;
+    }
+
+    /* --- ប៊ូតុងចម្លង --- */
+    #button-copy {
+      width: 100%;
+      padding: 1rem 1.5rem;
+      background: linear-gradient(135deg, #1d4e6b 0%, #2c7aa0 100%);
+      border: none;
+      border-radius: 60px;
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: white;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      box-shadow: 0 6px 18px rgba(44, 122, 160, 0.30);
+      letter-spacing: 0.02em;
+      font-family: 'Noto Serif Khmer', 'Inter', sans-serif;
+      margin-top: 0.2rem;
+    }
+
+    #button-copy:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(44, 122, 160, 0.40);
+      background: linear-gradient(135deg, #1a4058 0%, #256f94 100%);
+    }
+
+    #button-copy:active {
+      transform: translateY(1px);
+      box-shadow: 0 4px 12px rgba(44, 122, 160, 0.30);
+    }
+
+    /* --- តំណទាញយក Fonts --- */
+    #download-trigger {
+      align-self: center !important;
+      margin-top: 0.8rem !important;
+      padding: 0.5rem 1.2rem;
+      background: rgba(0,0,0,0.03);
+      border-radius: 40px;
+      font-size: 0.95rem !important;
+      font-weight: 500;
+      color: #1d4e6b !important;
+      text-decoration: underline !important;
+      text-underline-offset: 4px;
+      text-decoration-thickness: 2px;
+      text-decoration-color: #b6d2e3;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+      border: 1px solid transparent;
+    }
+
+    #download-trigger:hover {
+      background: rgba(44, 122, 160, 0.08);
+      text-decoration-color: #2c7aa0 !important;
+      border-color: #d6e8f2;
+    }
+
+    /* --- Modal --- */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(10, 30, 45, 0.6);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      padding: 1.5rem;
+    }
+
+    .modal.hidden {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .modal:not(.hidden) {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal-card {
+      max-width: 460px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+      background: white;
+      border-radius: 32px;
+      padding: 0.5rem 0 1rem 0;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25);
+      animation: modalFadeIn 0.3s ease;
+    }
+
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.96) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .modal-card h4 {
+      position: sticky;
+      top: 0;
+      background: white;
+      padding: 1.2rem 1.5rem 0.9rem;
+      margin: 0 0 0.2rem 0;
+      border-bottom: 1px solid #eef4f8;
+      font-size: 1.4rem;
+      color: #0b2b3d;
+      text-align: center;
+      font-weight: 700;
+      z-index: 10;
+      border-radius: 32px 32px 0 0;
+    }
+
+    .modal-card .flex {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.8rem 1.5rem;
+      border-bottom: 1px solid #f0f5f9;
+      transition: background 0.15s ease;
+      gap: 1rem;
+    }
+
+    .modal-card .flex:hover {
+      background: #f7fafc;
+    }
+
+    .modal-card .flex p {
+      flex: 1;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .modal-card .flex p small {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #4a6a7a;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .modal-card .flex p span {
+      font-size: 1.1rem;
+      color: #1a2e3b;
+      line-height: 1.4;
+    }
+
+    .modal-card .flex a {
+      background: #ecf3f8;
+      padding: 0.4rem 1.2rem;
+      border-radius: 30px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #1d4e6b;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      border: 1px solid transparent;
+    }
+
+    .modal-card .flex a:hover {
+      background: #1d4e6b;
+      color: white;
+      box-shadow: 0 4px 12px rgba(29, 78, 107, 0.25);
+      border-color: #1d4e6b;
+    }
+
+    .modal-card::-webkit-scrollbar {
+      width: 4px;
+    }
+    .modal-card::-webkit-scrollbar-track {
+      background: #f1f5f8;
+      border-radius: 10px;
+    }
+    .modal-card::-webkit-scrollbar-thumb {
+      background: #c1d8e6;
+      border-radius: 10px;
+    }
+
+    /* ================================================================ */
+    /* === ទម្រង់សម្រាប់កុំព្យូទ័រ (ទទឹង ≥ 768px) === */
+    /* ================================================================ */
+    @media (min-width: 768px) {
+      .container {
+        max-width: 760px;          /* ធំជាងមុន */
+        padding: 2.8rem 2.8rem 3rem;
+        border-radius: 48px;
+      }
+
+      /* ប្តូរ Layout ទៅជា Grid / Wrap */
+      .flex-col {
+        flex-direction: row;       /* បង្វែរទិស */
+        flex-wrap: wrap;          /* អនុញ្ញាតឱ្យរុំ */
+        align-items: stretch;     /* កម្ពស់ស្មើគ្នា */
+        gap: 1.2rem;             /* គម្លាតធំជាង */
+      }
+
+      /* ធាតុដែលត្រូវយកពេញទទឹង */
+      #lottie-container,
+      h3,
+      .text-center:not(#text-input):not(#text-output):not(#preview),
+      #preview,
+      #button-copy,
+      #download-trigger {
+        width: 100% !important;
+        flex: 0 0 100% !important;
+      }
+
+      /* ប្រអប់បញ្ចូល និងលទ្ធផល នៅជាប់គ្នា ៥០% ដកពាក់កណ្តាល gap */
+      #text-input,
+      #text-output {
+        width: calc(50% - 0.6rem) !important;  /* gap 1.2rem ÷ 2 */
+        flex: 0 0 calc(50% - 0.6rem) !important;
+        min-height: 120px;                    /* កម្ពស់ធំជាងសម្រាប់ desktop */
+      }
+
+      /* កែសម្រួលទំហំអក្សរ និង padding */
+      h3 {
+        font-size: 2.2rem !important;
+      }
+
+      h3 small {
+        font-size: 1.1rem;
+      }
+
+      input[type="text"], 
+      textarea {
+        font-size: 1.3rem;
+        padding: 1.2rem 1.5rem;
+        border-radius: 24px;
+      }
+
+      #preview {
+        font-size: 1.6rem;
+        min-height: 80px;
+      }
+
+      #button-copy {
+        font-size: 1.3rem;
+        padding: 1.2rem 2rem;
+        border-radius: 60px;
+      }
+
+      #download-trigger {
+        font-size: 1rem !important;
+        padding: 0.6rem 1.6rem;
+      }
+
+      /* Modal ក៏អាចធំជាងនៅលើ desktop */
+      .modal-card {
+        max-width: 540px;
+        border-radius: 36px;
+      }
+      .modal-card .flex {
+        padding: 0.9rem 1.8rem;
+      }
+    }
+
+    /* --- Responsive សម្រាប់ទូរស័ព្ទ (ដូចដើម) --- */
+    @media (max-width: 480px) {
+      .container {
+        padding: 1.5rem 1.2rem 2rem;
+        border-radius: 28px;
+      }
+      h3 {
+        font-size: 1.5rem !important;
+      }
+      input[type="text"], 
+      textarea {
+        font-size: 1rem;
+        padding: 0.9rem 1rem;
+        min-height: 60px;
+      }
+      #button-copy {
+        font-size: 1rem;
+        padding: 0.9rem;
+      }
+      .modal-card {
+        max-height: 85vh;
+        border-radius: 24px;
+      }
+      .modal-card .flex {
+        padding: 0.6rem 1rem;
+        flex-wrap: wrap;
+      }
+      .modal-card .flex a {
+        padding: 0.3rem 0.9rem;
+        font-size: 0.7rem;
+      }
+    }
+  </style>
+
+</head>
+<body>
+
+  <!-- ===== រចនាសម្ព័ន្ធ HTML (រក្សា ID/Class ដើម) ===== -->
+  <div class="container">
+    <div class="flex-col gap">
+
+      <!-- Lottie -->
+      <div id="lottie-container" style="width: 100px; align-self: center; min-height: 110px;"></div>
+
+      <!-- ចំណងជើង -->
+      <h3>
+        បម្លែង Khmer → Limon
+        <small>សរសេរអក្សរខ្មែរ បានជា Limon (អាចចុះបន្ទាត់បាន)</small>
+      </h3>
+
+      <!-- ប្រអប់បញ្ចូល -->
+      <textarea id="text-input" class="text-center" placeholder="វាយបញ្ចូលអក្សរខ្មែរ (Khmer Unicode)&#10;ឧ. ខ្ញុំទៅផ្ទះ&#10;នឹងរួចហើយទៅផ្សារ" rows="3"></textarea>
+
+      <!-- ប្រអប់លទ្ធផល -->
+      <textarea id="text-output" class="text-center" placeholder="លទ្ធផល (Limon)" rows="3" readonly></textarea>
+
+      <!-- ប្រអប់ Preview Limon -->
+      <textarea id="preview" class="text-center font-limon" placeholder="ការបង្ហាញមុខអក្សរ Limon" rows="2" readonly></textarea>
+
+      <!-- ប៊ូតុងចម្លង -->
+      <button data-clipboard-target="#text-output" id="button-copy">
+        <span style="margin-right: 6px;">📋</span> ចម្លងលទ្ធផល
+      </button>
+
+      <!-- ប៊ូតុងបើក Modal -->
+      <p id="download-trigger" style="user-select: none; align-self: center; text-decoration: underline; color: black; cursor: pointer;">
+        <small>⬇️ ទាញយកពុម្ពអក្សរ Limon (Fonts)</small>
+      </p>
+
+    </div>
+  </div>
+
+  <!-- ===== Modal (ដូចដើម) ===== -->
+  <div id="font-download" class="modal hidden">
+    <div class="modal-card gap-sm flex-col" style="position: relative;">
+
+      <h4 class="text-center" style="position: sticky; top: 0; background-color: white; padding-top: .6rem; border-bottom: 1px solid rgba(0,0,0,.1); padding-bottom: .6rem;">
+        📥 ទាញយក Fonts
+      </h4>
+
+      <!-- Limon F1 – F8, R1–R5, S1–S7 (ដូចដើម) -->
+      <div class="flex" style="padding: .4rem 1rem; border-bottom: 1px solid rgba(0,0,0,.1);">
+        <p style="flex: 1;"><small>Limon F1</small><br><span class="lmnf1">PasaExµr</span></p>
+        <a href="/lmnf1.ttf" download="lmnf1.ttf"><small>ទាញយក</small></a>
+      </div>
+      <div class="flex" style="padding: .4rem 1rem; border-bottom: 1px solid rgba(0,0,0,.1);">
+        <p style="flex: 1;"><small>Limon F2</small><br><span class="lmnf2">PasaExµr</span></p>
+        <a href="/lmnf2.ttf" download="lmnf2.ttf"><small>ទាញយក</small></a>
+      </div>
+      <div class="flex" style="padding: .4rem 1rem; border-bottom: 1px solid rgba(0,0,0,.1);">
+        <p style="flex: 1;"><small>Limon F3</small><br><span class="lmnf3">PasaExµr</span></p>
+        <a href="/lmnf3.ttf" download="lmnf3.ttf"><small>ទាញយក</small></a>
+      </div>
+      <div class="flex" style="padding: .4rem 1rem; border-bottom: 1px solid rgba(0,0,0,.1);">
+        <p style="flex: 1;"><small>Limon F4</small><br><span class="lmnf4">PasaExµr</span></p>
+        <a href="/lmnf4.ttf" download="lmnf4.ttf"><small>ទាញយក</small></a>
+      </div>
+      <div class="flex" style="padding: .4rem 1rem; border-bottom: 1px solid rgba(0,0,0,.1);">
+        <p style="flex: 1;"><small>Limon F5</small><br><span class="lmnf5">PasaExµr</span></p>
+        <a href="/lmnf5.ttf" download="lmnf5.ttf"><small>ទាញយក</small></a>
+      </div>
+      <div class="flex" style="padding: .4rem 1rem; border-bottom: 1px solid rgba(0,0,0,.1);">
+        <p style="flex: 1;"><small>Limon F6</small><br><span class="lmnf6">PasaExµr</span></p>
+        <a href="/lmnf6.ttf" download="lmnf6.ttf"><small>ទាញយក</small></a>
+      </div>
+      <div class="flex" style="padding: .4rem 1rem; border-bottom: 1px solid rgba(0,0,0,.1);">
+        <p style="flex: 1;"><small>Limon F7</small><br><span class="lmnf7">PasaExµr</span></p>
+        <a href="/lmnf7.ttf" download="lmnf7.ttf"><small>ទាញយក</small></a>
+      </div>
+      <div class="flex" style="padding: .4rem 1rem; border-bottom: 1px solid rgba(0,0,0,.1);">
+        <p style="flex: 1;"><small>Limon F8</small><br><span class="lmnf8">PasaExµr</span></p>
+        <a href="/lmnf8.ttf" download="lmnf8.ttf"><small>ទាញយក</small></a>
+      </div>
+      <div class="flex" style="padding: .4rem 1rem; border-bottom: 1px solid rgba(0,0,0,.1);">
+        <p style="flex: 1;"><small>Limon R1</small><br><span class="lmnr1">PasaExµr</span></p>
+        <a href="/lmnr1.ttf" download="lmnr1.ttf"><small>ទាញយក</small></a>
+      </div>
+      <div class="flex" style="padding: .4rem 1rem; border-bottom: 1px solid rgba(0,0,0,.1);">
+        <p style="flex: 1;"><small>Limon R2</small><br><span class="lmnr2">PasaExµr</span></p>
+        <a href="/lmnr2.ttf" download="lmnr2.ttf"><small>ទាញយក</small></a>
+      </div>
+      <div class="flex" style="padding: .4rem 1rem; border-bottom: 1px solid rgba(0,0,0,.1);">
+        <p style="flex: 1;"><small>Limon R3</small><br><span class="lmnr3">PasaExµr</span></p>
+        <a href="/lmnr3.ttf" download="lmnr3.ttf"><small>ទាញយក</small></a>
+      </div>
+      <div class="flex" style="padding: .4rem 1rem; border-bottom: 1px solid rgba(0,0,0,.1);">
+        <p style="flex: 1;"><small>Limon R4</small><br><span class="lmnr4">PasaExµr</span></p>
+        <a href="/lmnr4.ttf" download="lmnr4.ttf"><small>ទាញយក</small></a>
+      </div>
+      <div class="flex" style="padding: .4rem 1rem; border-bottom: 1px solid rgba(0,0,0,.1);">
+        <p style="flex: 1;"><small>Limon R5</small><br><span class="lmnr5">PasaExµr</span></p>
+        <a href="/lmnr5.ttf" download="lmnr5.ttf"><small>ទាញយក</small></a>
+      </div>
+      <div class="flex" style="padding: .4rem 1rem; border-bottom: 1px solid rgba(0,0,0,.1);">
+        <p style="flex: 1;"><small>Limon S1</small><br><span class="lmns1">PasaExµr</span></p>
+        <a href="/lmns1.ttf" download="lmns1.ttf"><small>ទាញយក</small></a>
+      </div>
+      <div class="flex" style="padding: .4rem 1rem; border-bottom: 1px solid rgba(0,0,0,.1);">
+        <p style="flex: 1;"><small>Limon S2</small><br><span class="lmns2">PasaExµr</span></p>
+        <a href="/lmns2.ttf" download="lmns2.ttf"><small>ទាញយក</small></a>
+      </div>
+      <div class="flex" style="padding: .4rem 1rem; border-bottom: 1px solid rgba(0,0,0,.1);">
+        <p style="flex: 1;"><small>Limon S3</small><br><span class="lmns3">PasaExµr</span></p>
+        <a href="/lmns3.ttf" download="lmns3.ttf"><small>ទាញយក</small></a>
+      </div>
+      <div class="flex" style="padding: .4rem 1rem; border-bottom: 1px solid rgba(0,0,0,.1);">
+        <p style="flex: 1;"><small>Limon S4</small><br><span class="lmns4">PasaExµr</span></p>
+        <a href="/lmns4.ttf" download="lmns4.ttf"><small>ទាញយក</small></a>
+      </div>
+      <div class="flex" style="padding: .4rem 1rem; border-bottom: 1px solid rgba(0,0,0,.1);">
+        <p style="flex: 1;"><small>Limon S5</small><br><span class="lmns5">PasaExµr</span></p>
+        <a href="/lmns5.ttf" download="lmns5.ttf"><small>ទាញយក</small></a>
+      </div>
+      <div class="flex" style="padding: .4rem 1rem; border-bottom: 1px solid rgba(0,0,0,.1);">
+        <p style="flex: 1;"><small>Limon S6</small><br><span class="lmns6">PasaExµr</span></p>
+        <a href="/lmns6.ttf" download="lmns6.ttf"><small>ទាញយក</small></a>
+      </div>
+      <div class="flex" style="padding: .4rem 1rem; border-bottom: 1px solid rgba(0,0,0,.1);">
+        <p style="flex: 1;"><small>Limon S7</small><br><span class="lmns7">PasaExµr</span></p>
+        <a href="/lmns7.ttf" download="lmns7.ttf"><small>ទាញយក</small></a>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>
