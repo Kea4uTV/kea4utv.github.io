@@ -437,7 +437,6 @@
             z-index: 5;
             pointer-events: none;
         }
-        /* FIX: Apply Zoom Transition & Object Fit to Stop Motion Images */
         #stopMotionDisplay img {
             width: 100%;
             height: 100%;
@@ -536,7 +535,6 @@
                                 <img id="bgImageElement" src="">
                                 <video id="bgVideoElement" loop muted playsinline></video>
                             </div>
-                            <!-- Stop Motion Display Container -->
                             <div id="stopMotionDisplay" class="absolute inset-0 pointer-events-none z-[5]"></div>
                             <div id="dynamicOverlaysContainer" class="absolute inset-0 pointer-events-none"></div>
                             <div id="logoContainer" class="absolute inset-0 pointer-events-none"></div>
@@ -557,12 +555,10 @@
                 
                 <div class="flex items-center justify-between mt-3">
                     <div class="flex items-center gap-2">
-                        <!-- Rewind buttons -->
                         <button onclick="rewindDown()" class="rewind-btn" title="Rewind 5s (A)">⏪</button>
                         <button onclick="togglePlayPause()" id="playBtn" class="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg transform active:scale-95">▶</button>
                         <button onclick="rewindUp()" class="rewind-btn" title="Forward 5s (D)">⏩</button>
                         
-                        <!-- Speed buttons -->
                         <div class="speed-group">
                             <button onclick="setPlaySpeed(0.25)" id="speed025" class="speed-btn slow" title="0.25x">0.25x</button>
                             <button onclick="setPlaySpeed(0.5)" id="speed05" class="speed-btn slow" title="0.5x">0.5x</button>
@@ -573,7 +569,6 @@
                             <button onclick="setPlaySpeed(2.0)" id="speed2" class="speed-btn fast" title="2.0x">2.0x</button>
                         </div>
                         
-                        <!-- Custom speed input -->
                         <div class="speed-input-group">
                             <input type="number" id="customSpeedInput" min="0.1" max="4.0" step="0.05" value="1.0" onchange="applyCustomSpeed()" onkeydown="if(event.key==='Enter') applyCustomSpeed()">
                             <span class="speed-label">x</span>
@@ -829,15 +824,20 @@
                 </div>
             </div>
 
-            <!-- STOP MOTION TAB -->
+            <!-- STOP MOTION TAB (UPDATED) -->
             <div id="tab-stopmotion" class="control-tab">
                 <div class="input-group">
                     <div class="flex justify-between items-center mb-2">
                         <label class="inspector-label m-0">Image Stop Motion</label>
-                        <button onclick="addStopMotionFrame(wavesurfer.getCurrentTime())" class="bg-blue-600 px-2 py-1 rounded text-[7px] font-bold text-white">+ ADD FRAME</button>
+                        <div class="flex gap-1">
+                            <button onclick="addStopMotionFrame(wavesurfer.getCurrentTime())" class="bg-blue-600 px-2 py-1 rounded text-[7px] font-bold text-white">+ ADD FRAME</button>
+                            <button onclick="document.getElementById('stopMotionFolderInput').click()" class="bg-green-600 px-2 py-1 rounded text-[7px] font-bold text-white">UPLOAD FOLDER</button>
+                        </div>
                     </div>
+                    <input type="file" id="stopMotionFolderInput" accept="image/*" multiple style="display:none" onchange="handleStopMotionFolderUpload(this)" />
                     <p class="text-[7px] text-slate-500 italic mb-2">
-                        ចុច Key <kbd>C</kbd> ពេល Play ដើម្បី Set In ។ បញ្ចូលរូបភាពតាមនីមួយៗ (OUT = IN បន្ទាប់)
+                        ចុច Key <kbd>C</kbd> ពេល Play ដើម្បី Set In ។ បញ្ចូលរូបភាពតាមនីមួយៗ (OUT = IN បន្ទាប់)<br>
+                        <span class="text-blue-400">UPLOAD FOLDER:</span> ជ្រើសរូបភាពច្រើនក្នុងពេលតែម្តង វានឹងចាត់ចែងដាក់ចូល Layer ដោយស្វ័យប្រវត្តិ (បើរូបភាពតិចជាង Layer វានឹង Loop)។
                     </p>
                     <div id="stopMotionContainer" class="max-h-64 overflow-y-auto space-y-2"></div>
                 </div>
@@ -1340,6 +1340,75 @@
             updateUI();
         }
 
+        // NEW: Handle multiple images upload (Folder)
+        function handleStopMotionFolderUpload(input) {
+            const files = Array.from(input.files);
+            if (files.length === 0) return;
+            
+            // Sort files by name to maintain order
+            files.sort((a, b) => a.name.localeCompare(b.name));
+            
+            // Get current frames (layers)
+            let frames = stopMotionFrames;
+            const totalFrames = frames.length;
+            const totalImages = files.length;
+            
+            // If no frames, create empty frames? Actually we need to assign images to existing frames.
+            // If no frames, we should create frames for each image.
+            if (totalFrames === 0) {
+                // Create frames for each image
+                for (let i = 0; i < totalImages; i++) {
+                    const id = 'stp-' + Date.now() + Math.random().toString(36).substr(2, 5);
+                    const startTime = i * 0.5; // default 0.5s gap
+                    frames.push({ id, startTime, imageUrl: null, fileName: null });
+                }
+                // Re-sort
+                frames.sort((a, b) => a.startTime - b.startTime);
+            }
+            
+            // Now we have frames. Assign images to frames.
+            const frameCount = frames.length;
+            let imageIndex = 0;
+            for (let i = 0; i < frameCount; i++) {
+                const frame = frames[i];
+                const file = files[imageIndex % totalImages];
+                const url = URL.createObjectURL(file);
+                frame.imageUrl = url;
+                frame.fileName = file.name;
+                imageIndex++;
+            }
+            
+            // If there are more images than frames, create additional frames
+            if (totalImages > frameCount) {
+                const extraImages = totalImages - frameCount;
+                // Get last frame's start time
+                const lastFrame = frames[frames.length - 1];
+                let lastStart = lastFrame.startTime || 0;
+                for (let i = 0; i < extraImages; i++) {
+                    const id = 'stp-' + Date.now() + Math.random().toString(36).substr(2, 5);
+                    const startTime = lastStart + 0.5;
+                    const file = files[frameCount + i];
+                    const url = URL.createObjectURL(file);
+                    frames.push({ 
+                        id, 
+                        startTime: startTime, 
+                        imageUrl: url, 
+                        fileName: file.name 
+                    });
+                    lastStart = startTime;
+                }
+                // Re-sort
+                frames.sort((a, b) => a.startTime - b.startTime);
+            }
+            
+            // Update the global array
+            stopMotionFrames = frames;
+            
+            renderStopMotionList();
+            updateUI();
+            input.value = ''; // Reset input
+        }
+
         function renderStopMotionList() {
             const container = document.getElementById('stopMotionContainer');
             if (!container) return;
@@ -1388,7 +1457,6 @@
                     break;
                 }
             }
-            // Get or create the single img element
             let img = container.querySelector('img');
             if (!img) {
                 img = document.createElement('img');
@@ -1496,7 +1564,7 @@
             
             updateActiveBackground();
             updateActiveLogos();
-            updateActiveStopMotion(); // now uses single img element, zoom works while playing
+            updateActiveStopMotion();
             
             renderBgList();
             renderStopMotionList();
