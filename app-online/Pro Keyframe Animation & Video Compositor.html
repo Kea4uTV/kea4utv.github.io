@@ -1,0 +1,2716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Keyframe Animation & Video Compositor</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com">
+    </script>
+    <!-- FontAwesome CDN for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Gifler Library for Animated GIFs -->
+    <script src="https://cdn.jsdelivr.net/npm/gifler@0.1.1/dist/gifler.min.js">
+    </script>
+    <!-- Google Fonts API (including Khmer) -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer:wght@100;300;400;700;900&family=Moul&family=Moulpali&family=Kantumruy+Pro:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            overflow: hidden;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+        .checkerboard {
+            background-image: linear-gradient(45deg, #1e293b 25%, transparent 25%),
+                linear-gradient(-45deg, #1e293b 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #1e293b 75%),
+                linear-gradient(-45deg, transparent 75%, #1e293b 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            background-color: #0f172a;
+        }
+        .timeline-track {
+            background: linear-gradient(to right, #1e293b 0%, #1e293b 100%);
+        }
+        .property-input:disabled,
+        .property-range:disabled,
+        .property-select:disabled,
+        .property-color:disabled,
+        .property-checkbox:disabled,
+        .property-textarea:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            filter: grayscale(0.6);
+        }
+        .property-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        .layer-item {
+            transition: background 0.15s ease;
+        }
+        .layer-item:hover {
+            background: rgba(51, 65, 85, 0.5);
+        }
+        .layer-item.selected {
+            background: rgba(99, 102, 241, 0.25);
+            border-color: #6366f1;
+        }
+        .timeline-clip {
+            transition: background 0.15s ease;
+        }
+        .timeline-clip:hover {
+            filter: brightness(1.15);
+        }
+        .keyframe-dot {
+            transition: transform 0.1s ease;
+        }
+        .keyframe-dot:hover {
+            transform: scale(1.5);
+        }
+        .tab-btn {
+            transition: all 0.2s ease;
+        }
+        .text-prop-group {
+            background: rgba(30, 41, 59, 0.6);
+            border-radius: 8px;
+            border: 1px solid rgba(71, 85, 105, 0.6);
+            padding: 10px 12px;
+            margin-bottom: 8px;
+        }
+        .text-prop-group .group-title {
+            font-weight: 600;
+            color: #94a3b8;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .text-prop-group .group-title i {
+            color: #6366f1;
+        }
+        .text-prop-group .prop-row {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 4px;
+        }
+        .text-prop-group .prop-row label {
+            color: #94a3b8;
+            font-size: 10px;
+            min-width: 50px;
+        }
+        .text-prop-group .prop-row input,
+        .text-prop-group .prop-row select {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 4px;
+            padding: 2px 6px;
+            color: #e2e8f0;
+            font-size: 11px;
+            outline: none;
+            flex: 1;
+            min-width: 40px;
+        }
+        .text-prop-group .prop-row input[type="color"] {
+            width: 30px;
+            height: 28px;
+            padding: 0;
+            flex: 0 0 auto;
+            cursor: pointer;
+        }
+        .text-prop-group .prop-row input[type="number"] {
+            width: 60px;
+            flex: 0 0 auto;
+        }
+        .text-prop-group .prop-row input[type="range"] {
+            flex: 2;
+            accent-color: #6366f1;
+            height: 4px;
+            cursor: pointer;
+        }
+        .text-prop-group .prop-row input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #6366f1;
+            cursor: pointer;
+        }
+        .text-prop-group .prop-row .value-display {
+            color: #a5b4fc;
+            font-size: 10px;
+            font-family: monospace;
+            min-width: 30px;
+            text-align: right;
+        }
+        .font-upload-btn {
+            background: #1e293b;
+            border: 1px dashed #6366f1;
+            border-radius: 4px;
+            padding: 4px 10px;
+            color: #a5b4fc;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .font-upload-btn:hover {
+            background: #2d3748;
+            border-color: #818cf8;
+        }
+        .font-upload-btn input {
+            display: none;
+        }
+        .font-family-select {
+            max-width: 160px;
+        }
+        /* Resize handle on canvas */
+        .resize-handle {
+            cursor: nw-resize;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col justify-between">
+
+    <!-- TOP TOOLBAR -->
+    <header class="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 z-20 shrink-0">
+        <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-2">
+                <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center font-bold text-lg shadow-lg">K</div>
+                <span class="font-bold tracking-wide text-indigo-400">KeyframeStudio</span>
+            </div>
+            <div class="h-6 w-px bg-slate-700"></div>
+            <!-- Resolution Presets -->
+            <div class="flex items-center space-x-2 text-xs">
+                <span class="text-slate-400 font-medium">Resolution:</span>
+                <select id="resolutionPreset" class="bg-slate-800 border border-slate-700 text-slate-200 rounded px-2 py-1 outline-none focus:border-indigo-500">
+                    <option value="1920x1080">Landscape 1080p (1920x1080)</option>
+                    <option value="1280x720">Landscape 720p (1280x720)</option>
+                    <option value="3840x2160">Landscape 4K (3840x2160)</option>
+                    <option value="1080x1920">Portrait 1080p (1080x1920)</option>
+                    <option value="1080x1080">Square 1080 (1080x1080)</option>
+                    <option value="854x480">Landscape 480p (854x480)</option>
+                </select>
+            </div>
+            <div class="h-6 w-px bg-slate-700"></div>
+            <!-- Background Controls -->
+            <div class="flex items-center space-x-2 text-xs">
+                <span class="text-slate-400 font-medium">BG:</span>
+                <input type="color" id="bgColorPicker" value="#0f172a" class="w-6 h-6 rounded border-0 cursor-pointer bg-transparent" title="Solid Background Color">
+                <label class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded cursor-pointer transition flex items-center space-x-1 border border-slate-700">
+                    <i class="fa-solid fa-image"></i><span>Img/Vid</span>
+                    <input type="file" id="bgMediaUpload" accept="image/*,video/mp4,video/webm" class="hidden">
+                </label>
+                <span id="bgMediaName" class="text-slate-400 max-w-[100px] truncate">None</span>
+            </div>
+        </div>
+        <div class="flex items-center space-x-3">
+            <!-- Audio Upload -->
+            <div class="flex items-center space-x-2 text-xs bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
+                <i class="fa-solid fa-music text-indigo-400"></i>
+                <label class="cursor-pointer hover:text-indigo-300 transition">
+                    <span id="audioFileName">Upload Audio</span>
+                    <input type="file" id="audioUpload" accept="audio/*" class="hidden">
+                </label>
+                <button id="removeAudioBtn" class="text-red-400 hover:text-red-300 hidden"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="h-6 w-px bg-slate-700"></div>
+            <!-- Add Layer -->
+            <div class="flex items-center space-x-1.5">
+                <button id="addPlaceholderBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1.5 rounded text-xs font-medium transition border border-slate-700 flex items-center space-x-1" title="Add Color Placeholder">
+                    <i class="fa-solid fa-square text-blue-400"></i><span>+ Shape</span>
+                </button>
+                <button id="addTextBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1.5 rounded text-xs font-medium transition border border-slate-700 flex items-center space-x-1" title="Add Text Layer">
+                    <i class="fa-solid fa-font text-emerald-400"></i><span>+ Text</span>
+                </button>
+                <label class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1.5 rounded text-xs font-medium transition border border-slate-700 cursor-pointer flex items-center space-x-1" title="Upload Image/GIF/Video">
+                    <i class="fa-solid fa-photo-film text-purple-400"></i><span>+ Media</span>
+                    <input type="file" id="layerMediaUpload" accept="image/*,video/*,image/gif" class="hidden">
+                </label>
+            </div>
+            <div class="h-6 w-px bg-slate-700"></div>
+            <!-- Export -->
+            <button id="exportFrameBtn" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded text-xs font-semibold transition shadow-md flex items-center space-x-1">
+                <i class="fa-solid fa-camera"></i><span>Export Frame</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN WORKSPACE -->
+    <div class="flex-1 flex overflow-hidden">
+        <!-- PREVIEW CANVAS -->
+        <main class="flex-1 checkerboard relative flex items-center justify-center p-4 overflow-hidden" id="canvasContainer">
+            <div class="relative shadow-2xl border border-slate-700 flex items-center justify-center bg-black" id="canvasWrapper">
+                <canvas id="previewCanvas" class="block"></canvas>
+            </div>
+            <div class="absolute bottom-6 left-6 bg-slate-900/80 backdrop-blur border border-slate-700/80 text-xs px-3 py-1.5 rounded-lg text-slate-300 pointer-events-none flex items-center space-x-3 shadow-lg">
+                <span id="canvasZoomInfo">Zoom: 100%</span>
+                <span>•</span>
+                <span id="canvasResInfo">1920x1080</span>
+                <span>•</span>
+                <span id="fpsCounter" class="text-emerald-400">60 FPS</span>
+            </div>
+        </main>
+
+        <!-- RIGHT SIDEBAR -->
+        <aside class="w-80 bg-slate-900 border-l border-slate-800 flex flex-col z-10 shrink-0">
+            <div class="flex border-b border-slate-800">
+                <button id="tabProps" class="tab-btn flex-1 py-3 text-xs font-semibold text-indigo-400 border-b-2 border-indigo-500 bg-slate-800/50 transition">Properties & Keyframes</button>
+                <button id="tabLayers" class="tab-btn flex-1 py-3 text-xs font-semibold text-slate-400 hover:text-slate-200 transition">Layers Stack</button>
+            </div>
+            <!-- Panel Properties -->
+            <div id="panelProps" class="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
+                <div id="noLayerSelected" class="text-center py-12 text-slate-500">
+                    <i class="fa-solid fa-layer-group text-3xl mb-2 opacity-50"></i>
+                    <p>Select a layer on canvas or layers list to edit properties and keyframes.</p>
+                </div>
+                <div id="layerPropsContent" class="space-y-4 hidden">
+                    <!-- General Layer Info -->
+                    <div class="bg-slate-800/60 p-3 rounded-lg border border-slate-700/60 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-slate-200 text-sm" id="propLayerName">Layer 1</span>
+                            <span class="bg-indigo-950 text-indigo-300 px-2 py-0.5 rounded text-[10px] uppercase font-mono" id="propLayerType">Image</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 pt-1 text-slate-400">
+                            <div>In: <span class="text-slate-200 font-mono" id="propInTime">0.00s</span></div>
+                            <div>Out: <span class="text-slate-200 font-mono" id="propOutTime">5.00s</span></div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-1 pt-2">
+                            <button id="setInPointBtn" class="property-btn bg-slate-700 hover:bg-slate-600 text-slate-200 py-1 rounded font-medium transition text-[11px]">⏺ In</button>
+                            <button id="setOutPointBtn" class="property-btn bg-slate-700 hover:bg-slate-600 text-slate-200 py-1 rounded font-medium transition text-[11px]">⏹ Out</button>
+                            <button id="addKeyframeBtn" class="property-btn bg-indigo-600 hover:bg-indigo-500 text-white py-1 rounded font-medium transition text-[11px] shadow">⏺ KF</button>
+                        </div>
+                        <div class="flex items-center justify-between pt-1">
+                            <button id="prevKfBtn" class="property-btn bg-slate-700 hover:bg-slate-600 text-slate-300 px-2 py-0.5 rounded text-[10px] transition"><i class="fa-solid fa-chevron-left"></i> Prev KF</button>
+                            <span class="text-slate-500 text-[10px]" id="kfNavInfo">0 / 0</span>
+                            <button id="nextKfBtn" class="property-btn bg-slate-700 hover:bg-slate-600 text-slate-300 px-2 py-0.5 rounded text-[10px] transition">Next KF <i class="fa-solid fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- Transform Properties -->
+                    <div class="bg-slate-800/60 p-3 rounded-lg border border-slate-700/60 space-y-3">
+                        <div class="font-semibold text-slate-200 flex items-center justify-between">
+                            <span>Transform</span>
+                            <i class="fa-solid fa-arrows-up-down-left-right text-slate-400"></i>
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-slate-400"><span>Position X</span><input type="number" id="inputX" class="property-input w-16 bg-slate-900 border border-slate-700 rounded px-1 text-right text-slate-200 font-mono" value="0"></div>
+                            <input type="range" id="rangeX" min="-1000" max="2000" step="1" value="0" class="property-range w-full accent-indigo-500 cursor-pointer h-2">
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-slate-400"><span>Position Y</span><input type="number" id="inputY" class="property-input w-16 bg-slate-900 border border-slate-700 rounded px-1 text-right text-slate-200 font-mono" value="0"></div>
+                            <input type="range" id="rangeY" min="-1000" max="2000" step="1" value="0" class="property-range w-full accent-indigo-500 cursor-pointer h-2">
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-slate-400"><span>Scale</span><input type="number" id="inputScale" min="0.05" max="5" step="0.01" class="property-input w-16 bg-slate-900 border border-slate-700 rounded px-1 text-right text-slate-200 font-mono" value="1"></div>
+                            <input type="range" id="rangeScale" min="0.05" max="3" step="0.01" value="1" class="property-range w-full accent-indigo-500 cursor-pointer h-2">
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-slate-400"><span>Rotation (°)</span><input type="number" id="inputRot" min="-360" max="360" step="1" class="property-input w-16 bg-slate-900 border border-slate-700 rounded px-1 text-right text-slate-200 font-mono" value="0"></div>
+                            <input type="range" id="rangeRot" min="-180" max="180" step="1" value="0" class="property-range w-full accent-indigo-500 cursor-pointer h-2">
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-slate-400"><span>Opacity</span><input type="number" id="inputOp" min="0" max="1" step="0.01" class="property-input w-16 bg-slate-900 border border-slate-700 rounded px-1 text-right text-slate-200 font-mono" value="1"></div>
+                            <input type="range" id="rangeOp" min="0" max="1" step="0.01" value="1" class="property-range w-full accent-indigo-500 cursor-pointer h-2">
+                        </div>
+                        <div class="space-y-1 pt-1">
+                            <div class="flex justify-between text-slate-400">
+                                <span>Interpolation</span>
+                                <select id="interpType" class="property-select bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-slate-200 text-[11px] outline-none focus:border-indigo-500">
+                                    <option value="linear">Linear</option>
+                                    <option value="easeIn">Ease In</option>
+                                    <option value="easeOut">Ease Out</option>
+                                    <option value="easeInOut" selected>Ease In-Out</option>
+                                    <option value="bounce">Bounce</option>
+                                    <option value="elastic">Elastic</option>
+                                </select>
+                            </div>
+                        </div>
+                        <!-- Flip controls for Image/BG layers -->
+                        <div id="flipControls" class="hidden pt-2 border-t border-slate-700/60">
+                            <div class="font-semibold text-slate-200 text-[11px] mb-1">Flip</div>
+                            <div class="flex gap-4">
+                                <label class="flex items-center gap-1 text-slate-300"><input type="checkbox" id="flipX" class="property-checkbox w-3.5 h-3.5 accent-indigo-500"> Horizontal</label>
+                                <label class="flex items-center gap-1 text-slate-300"><input type="checkbox" id="flipY" class="property-checkbox w-3.5 h-3.5 accent-indigo-500"> Vertical</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ============================================================ -->
+                    <!-- TEXT STYLING - FULL FEATURE SET -->
+                    <!-- ============================================================ -->
+                    <div id="textPropsSection" class="space-y-2 hidden">
+                        <!-- 1. FONT & SIZE & STYLES -->
+                        <div class="text-prop-group">
+                            <div class="group-title"><i class="fa-solid fa-font"></i> Font & Style</div>
+                            <div class="prop-row">
+                                <label>Font</label>
+                                <select id="textFontFamily" class="font-family-select property-select bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-slate-200 text-[11px]">
+                                    <optgroup label="System">
+                                        <option value="Arial">Arial</option>
+                                        <option value="Times New Roman">Times New Roman</option>
+                                        <option value="Courier New">Courier New</option>
+                                        <option value="Georgia">Georgia</option>
+                                        <option value="Impact">Impact</option>
+                                        <option value="Verdana">Verdana</option>
+                                    </optgroup>
+                                    <optgroup label="Khmer (Google)">
+                                        <option value="'Noto Sans Khmer'">Noto Sans Khmer</option>
+                                        <option value="'Moul'">Moul</option>
+                                        <option value="'Moulpali'">Moulpali</option>
+                                        <option value="'Kantumruy Pro'">Kantumruy Pro</option>
+                                    </optgroup>
+                                    <optgroup label="Custom Fonts" id="customFontGroup">
+                                        <!-- populated via upload -->
+                                    </optgroup>
+                                </select>
+                                <label class="font-upload-btn"><i class="fa-solid fa-upload"></i> Upload
+                                    <input type="file" id="fontUploadInput" accept=".ttf,.otf,.woff,.woff2">
+                                </label>
+                            </div>
+                            <div class="prop-row">
+                                <label>Size</label>
+                                <input type="number" id="textFontSize" min="6" max="400" value="48" class="property-input w-16 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-slate-200 text-[11px]">
+                                <input type="range" id="textFontSizeRange" min="6" max="200" value="48" class="property-range flex-1 accent-indigo-500 h-1.5 cursor-pointer">
+                            </div>
+                            <div class="prop-row gap-3">
+                                <label><input type="checkbox" id="textBold" class="property-checkbox"> Bold</label>
+                                <label><input type="checkbox" id="textItalic" class="property-checkbox"> Italic</label>
+                                <label><input type="checkbox" id="textUnderline" class="property-checkbox"> Underline</label>
+                                <label><input type="checkbox" id="textStrikeout" class="property-checkbox"> Strikeout</label>
+                            </div>
+                        </div>
+
+                        <!-- 2. COLORS: Primary, Secondary, Outline, Shadow -->
+                        <div class="text-prop-group">
+                            <div class="group-title"><i class="fa-solid fa-palette"></i> Colors</div>
+                            <div class="prop-row">
+                                <label>Primary</label><input type="color" id="textFillColor" value="#ffffff" class="property-color">
+                                <label>Secondary</label><input type="color" id="textSecondaryColor" value="#facc15" class="property-color">
+                                <label>Outline</label><input type="color" id="textOutlineColor" value="#000000" class="property-color">
+                                <label>Shadow</label><input type="color" id="textShadowColor" value="#000000" class="property-color">
+                            </div>
+                        </div>
+
+                        <!-- 3. STROKE (Outline) -->
+                        <div class="text-prop-group">
+                            <div class="group-title"><i class="fa-regular fa-circle"></i> Stroke (Outline)</div>
+                            <div class="prop-row">
+                                <label>Thickness</label>
+                                <input type="number" id="textStrokeWidth" min="0" max="20" value="0" class="property-input w-14 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-slate-200 text-[11px]">
+                                <input type="range" id="textStrokeWidthRange" min="0" max="20" value="0" class="property-range flex-1 accent-indigo-500 h-1.5 cursor-pointer">
+                            </div>
+                            <div class="prop-row">
+                                <label>Position</label>
+                                <select id="textStrokePosition" class="property-select bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-slate-200 text-[11px]">
+                                    <option value="outside">Outside</option>
+                                    <option value="inside">Inside</option>
+                                    <option value="center" selected>Center</option>
+                                </select>
+                                <label>Color</label>
+                                <input type="color" id="textStrokeColor" value="#000000" class="property-color">
+                            </div>
+                        </div>
+
+                        <!-- 4. SHADOW -->
+                        <div class="text-prop-group">
+                            <div class="group-title"><i class="fa-solid fa-shadow"></i> Shadow</div>
+                            <div class="prop-row">
+                                <label>Color</label><input type="color" id="textShadowColor2" value="#000000" class="property-color">
+                                <label>Opacity</label>
+                                <input type="number" id="textShadowOpacity" min="0" max="1" step="0.05" value="0.5" class="property-input w-14 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-slate-200 text-[11px]">
+                                <input type="range" id="textShadowOpacityRange" min="0" max="1" step="0.05" value="0.5" class="property-range flex-1 accent-indigo-500 h-1.5 cursor-pointer">
+                            </div>
+                            <div class="prop-row">
+                                <label>Blur</label>
+                                <input type="number" id="textShadowBlur" min="0" max="50" value="4" class="property-input w-14 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-slate-200 text-[11px]">
+                                <input type="range" id="textShadowBlurRange" min="0" max="50" value="4" class="property-range flex-1 accent-indigo-500 h-1.5 cursor-pointer">
+                            </div>
+                            <div class="prop-row">
+                                <label>Distance</label>
+                                <input type="number" id="textShadowDistance" min="-50" max="50" value="4" class="property-input w-14 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-slate-200 text-[11px]">
+                                <input type="range" id="textShadowDistanceRange" min="-50" max="50" value="4" class="property-range flex-1 accent-indigo-500 h-1.5 cursor-pointer">
+                                <label>Angle</label>
+                                <input type="number" id="textShadowAngle" min="-360" max="360" value="45" class="property-input w-14 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-slate-200 text-[11px]">
+                            </div>
+                        </div>
+
+                        <!-- 5. BACKGROUND (Opaque box) -->
+                        <div class="text-prop-group">
+                            <div class="group-title"><i class="fa-regular fa-square"></i> Background Box</div>
+                            <div class="prop-row">
+                                <label>Enable</label><input type="checkbox" id="textBgEnable" class="property-checkbox">
+                                <label>Color</label><input type="color" id="textBgColor" value="#1e293b" class="property-color">
+                                <label>Opacity</label>
+                                <input type="number" id="textBgOpacity" min="0" max="1" step="0.05" value="0.8" class="property-input w-14 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-slate-200 text-[11px]">
+                                <input type="range" id="textBgOpacityRange" min="0" max="1" step="0.05" value="0.8" class="property-range flex-1 accent-indigo-500 h-1.5 cursor-pointer">
+                            </div>
+                            <div class="prop-row">
+                                <label>Rounded</label>
+                                <input type="number" id="textBgRadius" min="0" max="50" value="8" class="property-input w-14 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-slate-200 text-[11px]">
+                                <input type="range" id="textBgRadiusRange" min="0" max="50" value="8" class="property-range flex-1 accent-indigo-500 h-1.5 cursor-pointer">
+                            </div>
+                            <div class="prop-row">
+                                <label>Width</label><input type="number" id="textBgWidth" value="0" class="property-input w-14 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-slate-200 text-[11px]">
+                                <label>Height</label><input type="number" id="textBgHeight" value="0" class="property-input w-14 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-slate-200 text-[11px]">
+                            </div>
+                            <div class="prop-row">
+                                <label>X-offset</label><input type="number" id="textBgXoffset" value="0" class="property-input w-14 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-slate-200 text-[11px]">
+                                <label>Y-offset</label><input type="number" id="textBgYoffset" value="0" class="property-input w-14 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-slate-200 text-[11px]">
+                            </div>
+                        </div>
+
+                        <!-- 6. ALIGNMENT & MARGINS & SPACING -->
+                        <div class="text-prop-group">
+                            <div class="group-title"><i class="fa-solid fa-align-left"></i> Alignment & Spacing</div>
+                            <div class="prop-row">
+                                <label>Align</label>
+                                <select id="textAlign" class="property-select bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-slate-200 text-[11px]">
+                                    <option value="left">Left</option>
+                                    <option value="center" selected>Center</option>
+                                    <option value="right">Right</option>
+                                </select>
+                                <label>Vertical</label>
+                                <select id="textVAlign" class="property-select bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-slate-200 text-[11px]">
+                                    <option value="top">Top</option>
+                                    <option value="middle" selected>Middle</option>
+                                    <option value="bottom">Bottom</option>
+                                </select>
+                            </div>
+                            <div class="prop-row">
+                                <label>Char Spacing</label>
+                                <input type="number" id="textCharSpacing" min="-10" max="20" step="0.5" value="0" class="property-input w-14 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-slate-200 text-[11px]">
+                                <input type="range" id="textCharSpacingRange" min="-10" max="20" step="0.5" value="0" class="property-range flex-1 accent-indigo-500 h-1.5 cursor-pointer">
+                                <label>Line Spacing</label>
+                                <input type="number" id="textLineSpacing" min="-20" max="40" step="0.5" value="0" class="property-input w-14 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-slate-200 text-[11px]">
+                                <input type="range" id="textLineSpacingRange" min="-20" max="40" step="0.5" value="0" class="property-range flex-1 accent-indigo-500 h-1.5 cursor-pointer">
+                            </div>
+                            <div class="prop-row">
+                                <label>Margin L</label><input type="number" id="textMarginL" value="0" class="property-input w-12 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-slate-200 text-[11px]">
+                                <label>R</label><input type="number" id="textMarginR" value="0" class="property-input w-12 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-slate-200 text-[11px]">
+                                <label>T</label><input type="number" id="textMarginT" value="0" class="property-input w-12 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-slate-200 text-[11px]">
+                                <label>B</label><input type="number" id="textMarginB" value="0" class="property-input w-12 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-slate-200 text-[11px]">
+                            </div>
+                        </div>
+
+                        <!-- 7. SCALE X-Y & ROTATION & POSITION X-Y (already have global transform, but add misc) -->
+                        <div class="text-prop-group">
+                            <div class="group-title"><i class="fa-solid fa-arrows-up-down-left-right"></i> Misc</div>
+                            <div class="prop-row">
+                                <label>Scale X</label><input type="number" id="textScaleX" step="0.01" value="1" class="property-input w-14 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-slate-200 text-[11px]">
+                                <input type="range" id="textScaleXRange" min="0.1" max="5" step="0.01" value="1" class="property-range flex-1 accent-indigo-500 h-1.5 cursor-pointer">
+                                <label>Scale Y</label><input type="number" id="textScaleY" step="0.01" value="1" class="property-input w-14 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-slate-200 text-[11px]">
+                                <input type="range" id="textScaleYRange" min="0.1" max="5" step="0.01" value="1" class="property-range flex-1 accent-indigo-500 h-1.5 cursor-pointer">
+                            </div>
+                            <div class="prop-row">
+                                <label>Rotation Z</label><input type="number" id="textRotZ" step="0.5" value="0" class="property-input w-14 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-slate-200 text-[11px]">
+                                <input type="range" id="textRotZRange" min="-180" max="180" step="0.5" value="0" class="property-range flex-1 accent-indigo-500 h-1.5 cursor-pointer">
+                            </div>
+                            <div class="prop-row">
+                                <label>Pos X</label><input type="number" id="textPosX" step="1" value="0" class="property-input w-14 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-slate-200 text-[11px]">
+                                <label>Pos Y</label><input type="number" id="textPosY" step="1" value="0" class="property-input w-14 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-slate-200 text-[11px]">
+                            </div>
+                        </div>
+
+                        <!-- 8. BLEND MODE (global opacity already) -->
+                        <div class="text-prop-group">
+                            <div class="group-title"><i class="fa-solid fa-blender"></i> Blend</div>
+                            <div class="prop-row">
+                                <label>Mode</label>
+                                <select id="textBlendMode" class="property-select bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-slate-200 text-[11px]">
+                                    <option value="source-over">Normal</option>
+                                    <option value="multiply">Multiply</option>
+                                    <option value="screen">Screen</option>
+                                    <option value="overlay">Overlay</option>
+                                    <option value="darken">Darken</option>
+                                    <option value="lighten">Lighten</option>
+                                    <option value="color-dodge">Color Dodge</option>
+                                    <option value="color-burn">Color Burn</option>
+                                    <option value="hard-light">Hard Light</option>
+                                    <option value="soft-light">Soft Light</option>
+                                    <option value="difference">Difference</option>
+                                    <option value="exclusion">Exclusion</option>
+                                    <option value="hue">Hue</option>
+                                    <option value="saturation">Saturation</option>
+                                    <option value="color">Color</option>
+                                    <option value="luminosity">Luminosity</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Text content (always last) -->
+                        <div class="text-prop-group">
+                            <div class="group-title"><i class="fa-regular fa-pen-to-square"></i> Content</div>
+                            <textarea id="textContent" rows="3" class="property-textarea w-full bg-slate-900 border border-slate-700 rounded p-1.5 text-slate-200 focus:border-indigo-500 outline-none resize-none text-xs"></textarea>
+                        </div>
+                    </div>
+                    <!-- END TEXT STYLING -->
+
+                    <!-- Media Props for GIF/Video -->
+                    <div id="mediaPropsSection" class="bg-slate-800/60 p-3 rounded-lg border border-slate-700/60 space-y-3 hidden">
+                        <div class="font-semibold text-slate-200 flex items-center justify-between">
+                            <span>Media Properties</span>
+                            <i class="fa-solid fa-film text-slate-400"></i>
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-slate-400">
+                                <span>Playback Speed</span>
+                                <input type="number" id="inputMediaSpeed" min="0.1" max="5" step="0.1" class="property-input w-16 bg-slate-900 border border-slate-700 rounded px-1 text-right text-slate-200 font-mono" value="1">
+                            </div>
+                            <input type="range" id="rangeMediaSpeed" min="0.1" max="3" step="0.1" value="1" class="property-range w-full accent-indigo-500 cursor-pointer h-2">
+                        </div>
+                        <div class="flex items-center justify-between pt-1">
+                            <span class="text-slate-400">Loop Animation</span>
+                            <input type="checkbox" id="checkMediaLoop" checked class="property-checkbox w-4 h-4 accent-indigo-600 rounded cursor-pointer">
+                        </div>
+                        <div class="flex items-center justify-between pt-1">
+                            <span class="text-slate-400">Mute Audio</span>
+                            <input type="checkbox" id="checkMediaMute" checked class="property-checkbox w-4 h-4 accent-indigo-600 rounded cursor-pointer">
+                        </div>
+                    </div>
+
+                    <!-- Keyframes List -->
+                    <div class="bg-slate-800/60 p-3 rounded-lg border border-slate-700/60 space-y-2">
+                        <div class="font-semibold text-slate-200 flex items-center justify-between">
+                            <span>Keyframes</span>
+                            <span class="text-[10px] text-indigo-400 font-mono" id="kfCountBadge">0 Keyframes</span>
+                        </div>
+                        <div id="keyframeListContainer" class="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                            <p class="text-slate-500 italic text-center py-2">No keyframes added yet.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Panel Layers -->
+            <div id="panelLayers" class="flex-1 overflow-y-auto p-4 space-y-2 text-xs hidden">
+                <div class="font-semibold text-slate-400 mb-2 flex justify-between items-center">
+                    <span>Z-Order Stack (Bottom to Top)</span>
+                    <span class="text-[10px]">Drag or reorder</span>
+                </div>
+                <div id="layerListContainer" class="space-y-1.5"></div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- BOTTOM TIMELINE -->
+    <footer class="h-56 bg-slate-900 border-t border-slate-800 flex flex-col z-20 shrink-0">
+        <div class="h-10 border-b border-slate-800 px-4 flex items-center justify-between bg-slate-950/40">
+            <div class="flex items-center space-x-3">
+                <button id="playPauseBtn" class="w-7 h-7 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full flex items-center justify-center transition shadow">
+                    <i class="fa-solid fa-play text-xs" id="playIcon"></i>
+                </button>
+                <button id="resetPlayheadBtn" class="text-slate-400 hover:text-slate-200 transition p-1"><i class="fa-solid fa-backward-step"></i></button>
+                <div class="h-4 w-px bg-slate-700"></div>
+                <div class="font-mono text-xs text-indigo-300 font-medium">
+                    <span id="currentTimeDisplay">00:00.00</span> / <span id="totalDurationDisplay">00:05.00</span>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4 text-xs">
+                <div class="flex items-center space-x-2">
+                    <span class="text-slate-400">Duration:</span>
+                    <input type="number" id="projectDurationInput" min="1" max="60" value="10" class="w-14 bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 text-right font-mono text-slate-200">
+                    <span class="text-slate-400">s</span>
+                </div>
+                <div class="h-4 w-px bg-slate-700"></div>
+                <div class="flex items-center space-x-2">
+                    <span class="text-slate-400">Zoom:</span>
+                    <input type="range" id="timelineZoom" min="30" max="400" value="100" class="w-24 accent-indigo-500 h-1.5 cursor-pointer">
+                </div>
+            </div>
+        </div>
+        <div class="flex-1 flex overflow-hidden relative">
+            <div class="w-48 bg-slate-950/80 border-r border-slate-800 flex flex-col shrink-0 z-10 select-none" id="timelineLabelsCol">
+                <div class="h-7 border-b border-slate-800 px-3 flex items-center text-[11px] font-semibold text-slate-400 bg-slate-900">Layers Timeline</div>
+                <div id="timelineLabelsList" class="flex-1 overflow-y-hidden space-y-1 p-1"></div>
+            </div>
+            <div class="flex-1 overflow-x-auto overflow-y-auto relative timeline-track" id="timelineScrollArea">
+                <div id="timelineRuler" class="h-7 border-b border-slate-800 relative bg-slate-900/90 cursor-pointer select-none" style="width: 2000px;"></div>
+                <div id="timelineTracksContainer" class="relative p-1 space-y-1" style="width: 2000px; min-height: 120px;">
+                    <div id="timelinePlayhead" class="absolute top-0 bottom-0 w-0.5 bg-red-500 z-30 pointer-events-none" style="left: 0px;">
+                        <div class="w-3 h-3 bg-red-500 rounded-full -ml-[5px] -mt-1 shadow flex items-center justify-center">
+                            <div class="w-1 h-1 bg-white rounded-full"></div>
+                        </div>
+                    </div>
+                    <canvas id="audioWaveformCanvas" class="absolute inset-0 pointer-events-none opacity-20 h-full w-full"></canvas>
+                    <div id="timelineLayerBlocks" class="relative z-10 space-y-1"></div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // ======================================================================
+        // STATE
+        // ======================================================================
+        const state = {
+            isPlaying: false,
+            currentTime: 0,
+            duration: 10,
+            zoom: 100,
+            resolution: { width: 1920, height: 1080 },
+            bgColor: '#0f172a',
+            audio: { file: null, element: new Audio(), name: null, duration: 0, waveform: null },
+            layers: [],
+            selectedLayerId: null,
+            interpolationCache: new Map(),
+            isDraggingCanvas: false,
+            dragStartX: 0,
+            dragStartY: 0,
+            canvasDragLayerInitialX: 0,
+            canvasDragLayerInitialY: 0,
+            fpsFrames: 0,
+            fpsTime: 0,
+            currentFps: 60,
+            customFonts: [],
+            // Resize handle state
+            isResizing: false,
+            resizeLayerId: null,
+            resizeStartX: 0,
+            resizeStartY: 0,
+            resizeInitialScale: 1,
+            resizeInitialX: 0,
+            resizeInitialY: 0,
+            resizeInitialW: 0,
+            resizeInitialH: 0
+        };
+
+        // ======================================================================
+        // DOM REFS
+        // ======================================================================
+        const previewCanvas = document.getElementById('previewCanvas');
+        const ctx = previewCanvas.getContext('2d');
+        const canvasContainer = document.getElementById('canvasContainer');
+        const canvasWrapper = document.getElementById('canvasWrapper');
+
+        const resolutionPresetSelect = document.getElementById('resolutionPreset');
+        const bgColorPicker = document.getElementById('bgColorPicker');
+        const bgMediaUpload = document.getElementById('bgMediaUpload');
+        const bgMediaName = document.getElementById('bgMediaName');
+
+        const audioUpload = document.getElementById('audioUpload');
+        const audioFileName = document.getElementById('audioFileName');
+        const removeAudioBtn = document.getElementById('removeAudioBtn');
+
+        const addPlaceholderBtn = document.getElementById('addPlaceholderBtn');
+        const addTextBtn = document.getElementById('addTextBtn');
+        const layerMediaUpload = document.getElementById('layerMediaUpload');
+        const exportFrameBtn = document.getElementById('exportFrameBtn');
+
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const playIcon = document.getElementById('playIcon');
+        const resetPlayheadBtn = document.getElementById('resetPlayheadBtn');
+        const currentTimeDisplay = document.getElementById('currentTimeDisplay');
+        const totalDurationDisplay = document.getElementById('totalDurationDisplay');
+        const projectDurationInput = document.getElementById('projectDurationInput');
+        const timelineZoom = document.getElementById('timelineZoom');
+
+        const timelineRuler = document.getElementById('timelineRuler');
+        const timelineScrollArea = document.getElementById('timelineScrollArea');
+        const timelinePlayhead = document.getElementById('timelinePlayhead');
+        const timelineTracksContainer = document.getElementById('timelineTracksContainer');
+        const timelineLayerBlocks = document.getElementById('timelineLayerBlocks');
+        const timelineLabelsList = document.getElementById('timelineLabelsList');
+
+        const tabProps = document.getElementById('tabProps');
+        const tabLayers = document.getElementById('tabLayers');
+        const panelProps = document.getElementById('panelProps');
+        const panelLayers = document.getElementById('panelLayers');
+
+        const noLayerSelected = document.getElementById('noLayerSelected');
+        const layerPropsContent = document.getElementById('layerPropsContent');
+        const propLayerName = document.getElementById('propLayerName');
+        const propLayerType = document.getElementById('propLayerType');
+        const propInTime = document.getElementById('propInTime');
+        const propOutTime = document.getElementById('propOutTime');
+
+        const setInPointBtn = document.getElementById('setInPointBtn');
+        const setOutPointBtn = document.getElementById('setOutPointBtn');
+        const addKeyframeBtn = document.getElementById('addKeyframeBtn');
+        const prevKfBtn = document.getElementById('prevKfBtn');
+        const nextKfBtn = document.getElementById('nextKfBtn');
+        const kfNavInfo = document.getElementById('kfNavInfo');
+        const kfCountBadge = document.getElementById('kfCountBadge');
+        const keyframeListContainer = document.getElementById('keyframeListContainer');
+        const layerListContainer = document.getElementById('layerListContainer');
+
+        const inputX = document.getElementById('inputX');
+        const rangeX = document.getElementById('rangeX');
+        const inputY = document.getElementById('inputY');
+        const rangeY = document.getElementById('rangeY');
+        const inputScale = document.getElementById('inputScale');
+        const rangeScale = document.getElementById('rangeScale');
+        const inputRot = document.getElementById('inputRot');
+        const rangeRot = document.getElementById('rangeRot');
+        const inputOp = document.getElementById('inputOp');
+        const rangeOp = document.getElementById('rangeOp');
+        const interpType = document.getElementById('interpType');
+        const flipX = document.getElementById('flipX');
+        const flipY = document.getElementById('flipY');
+        const flipControls = document.getElementById('flipControls');
+
+        const textPropsSection = document.getElementById('textPropsSection');
+        const textContent = document.getElementById('textContent');
+        const textFontFamily = document.getElementById('textFontFamily');
+        const textFontSize = document.getElementById('textFontSize');
+        const textFontSizeRange = document.getElementById('textFontSizeRange');
+        const textFillColor = document.getElementById('textFillColor');
+        const textSecondaryColor = document.getElementById('textSecondaryColor');
+        const textOutlineColor = document.getElementById('textOutlineColor');
+        const textShadowColor = document.getElementById('textShadowColor');
+        const textStrokeColor = document.getElementById('textStrokeColor');
+        const textStrokeWidth = document.getElementById('textStrokeWidth');
+        const textStrokeWidthRange = document.getElementById('textStrokeWidthRange');
+        const textStrokePosition = document.getElementById('textStrokePosition');
+        const textShadowColor2 = document.getElementById('textShadowColor2');
+        const textShadowOpacity = document.getElementById('textShadowOpacity');
+        const textShadowOpacityRange = document.getElementById('textShadowOpacityRange');
+        const textShadowBlur = document.getElementById('textShadowBlur');
+        const textShadowBlurRange = document.getElementById('textShadowBlurRange');
+        const textShadowDistance = document.getElementById('textShadowDistance');
+        const textShadowDistanceRange = document.getElementById('textShadowDistanceRange');
+        const textShadowAngle = document.getElementById('textShadowAngle');
+        const textBgEnable = document.getElementById('textBgEnable');
+        const textBgColor = document.getElementById('textBgColor');
+        const textBgOpacity = document.getElementById('textBgOpacity');
+        const textBgOpacityRange = document.getElementById('textBgOpacityRange');
+        const textBgRadius = document.getElementById('textBgRadius');
+        const textBgRadiusRange = document.getElementById('textBgRadiusRange');
+        const textBgWidth = document.getElementById('textBgWidth');
+        const textBgHeight = document.getElementById('textBgHeight');
+        const textBgXoffset = document.getElementById('textBgXoffset');
+        const textBgYoffset = document.getElementById('textBgYoffset');
+        const textAlign = document.getElementById('textAlign');
+        const textVAlign = document.getElementById('textVAlign');
+        const textCharSpacing = document.getElementById('textCharSpacing');
+        const textCharSpacingRange = document.getElementById('textCharSpacingRange');
+        const textLineSpacing = document.getElementById('textLineSpacing');
+        const textLineSpacingRange = document.getElementById('textLineSpacingRange');
+        const textMarginL = document.getElementById('textMarginL');
+        const textMarginR = document.getElementById('textMarginR');
+        const textMarginT = document.getElementById('textMarginT');
+        const textMarginB = document.getElementById('textMarginB');
+        const textScaleX = document.getElementById('textScaleX');
+        const textScaleXRange = document.getElementById('textScaleXRange');
+        const textScaleY = document.getElementById('textScaleY');
+        const textScaleYRange = document.getElementById('textScaleYRange');
+        const textRotZ = document.getElementById('textRotZ');
+        const textRotZRange = document.getElementById('textRotZRange');
+        const textPosX = document.getElementById('textPosX');
+        const textPosY = document.getElementById('textPosY');
+        const textBlendMode = document.getElementById('textBlendMode');
+        const textBold = document.getElementById('textBold');
+        const textItalic = document.getElementById('textItalic');
+        const textUnderline = document.getElementById('textUnderline');
+        const textStrikeout = document.getElementById('textStrikeout');
+
+        const fontUploadInput = document.getElementById('fontUploadInput');
+        const customFontGroup = document.getElementById('customFontGroup');
+
+        const mediaPropsSection = document.getElementById('mediaPropsSection');
+        const inputMediaSpeed = document.getElementById('inputMediaSpeed');
+        const rangeMediaSpeed = document.getElementById('rangeMediaSpeed');
+        const checkMediaLoop = document.getElementById('checkMediaLoop');
+        const checkMediaMute = document.getElementById('checkMediaMute');
+
+        const fpsCounter = document.getElementById('fpsCounter');
+
+        // ======================================================================
+        // INIT
+        // ======================================================================
+        window.onload = function() {
+            init();
+        };
+
+        function init() {
+            setupEventListeners();
+            updateResolution();
+            buildTimelineRuler();
+            renderTimelineTracks();
+            requestAnimationFrame(mainRenderLoop);
+            // Add demo layers with rich text styling
+            setTimeout(() => {
+                addDemoLayers();
+            }, 100);
+        }
+
+        function addDemoLayers() {
+            const w = 500,
+                h = 200;
+            const layer1 = {
+                id: 'layer_demo_1',
+                name: 'Khmer Text',
+                type: 'text',
+                inTime: 0,
+                outTime: state.duration,
+                locked: false,
+                visible: true,
+                x: state.resolution.width / 2 - w / 2,
+                y: state.resolution.height / 2 - h / 2 - 40,
+                scale: 1,
+                rot: 0,
+                op: 1,
+                interpolation: 'easeInOut',
+                flipX: false,
+                flipY: false,
+                textProps: {
+                    content: 'សួស្ដី\nKeyframe Studio',
+                    fontFamily: "'Noto Sans Khmer', sans-serif",
+                    fontSize: 52,
+                    fillColor: '#ffffff',
+                    secondaryColor: '#facc15',
+                    outlineColor: '#000000',
+                    shadowColor: '#000000',
+                    strokeColor: '#4f46e5',
+                    strokeWidth: 3,
+                    strokePosition: 'center',
+                    shadowColor2: '#000000',
+                    shadowOpacity: 0.6,
+                    shadowBlur: 8,
+                    shadowDistance: 6,
+                    shadowAngle: 45,
+                    bgEnable: true,
+                    bgColor: 'rgba(30,41,59,0.75)',
+                    bgOpacity: 0.75,
+                    bgRadius: 12,
+                    bgWidth: 0,
+                    bgHeight: 0,
+                    bgXoffset: 0,
+                    bgYoffset: 0,
+                    align: 'center',
+                    vAlign: 'middle',
+                    charSpacing: 0,
+                    lineSpacing: 8,
+                    marginL: 20,
+                    marginR: 20,
+                    marginT: 20,
+                    marginB: 20,
+                    scaleX: 1,
+                    scaleY: 1,
+                    rotZ: 0,
+                    posX: 0,
+                    posY: 0,
+                    blendMode: 'source-over',
+                    bold: false,
+                    italic: false,
+                    underline: false,
+                    strikeout: false
+                },
+                keyframes: [
+                    { time: 0, x: state.resolution.width / 2 - w / 2, y: state.resolution.height / 2 - h / 2 - 40,
+                        scale: 0.8, rot: -5, op: 0.7 },
+                    { time: 2, x: state.resolution.width / 2 - w / 2 + 40, y: state.resolution.height / 2 - h / 2 -
+                            40, scale: 1.2, rot: 3, op: 1 },
+                    { time: 4, x: state.resolution.width / 2 - w / 2 - 40, y: state.resolution.height / 2 - h / 2 -
+                            40, scale: 0.9, rot: -2, op: 0.9 },
+                    { time: state.duration, x: state.resolution.width / 2 - w / 2, y: state.resolution.height / 2 - h /
+                            2 - 40, scale: 1, rot: 0, op: 1 }
+                ]
+            };
+            state.layers.push(layer1);
+            selectLayer(layer1.id);
+            renderTimelineTracks();
+            renderLayerList();
+            updateKeyframeNavInfo();
+            totalDurationDisplay.textContent = formatTime(state.duration);
+        }
+
+        // ======================================================================
+        // RESOLUTION
+        // ======================================================================
+        function updateResolution() {
+            const val = resolutionPresetSelect.value.split('x');
+            state.resolution.width = parseInt(val[0]);
+            state.resolution.height = parseInt(val[1]);
+            previewCanvas.width = state.resolution.width;
+            previewCanvas.height = state.resolution.height;
+            document.getElementById('canvasResInfo').textContent = `${state.resolution.width}x${state.resolution.height}`;
+            resizePreviewContainer();
+        }
+
+        function resizePreviewContainer() {
+            const containerW = canvasContainer.clientWidth - 40;
+            const containerH = canvasContainer.clientHeight - 40;
+            const aspect = state.resolution.width / state.resolution.height;
+            let w = containerW;
+            let h = w / aspect;
+            if (h > containerH) { h = containerH;
+                w = h * aspect; }
+            canvasWrapper.style.width = `${w}px`;
+            canvasWrapper.style.height = `${h}px`;
+            previewCanvas.style.width = `100%`;
+            previewCanvas.style.height = `100%`;
+            const zoomPercent = Math.round((w / state.resolution.width) * 100);
+            document.getElementById('canvasZoomInfo').textContent = `Zoom: ${zoomPercent}%`;
+        }
+        window.addEventListener('resize', resizePreviewContainer);
+
+        // ======================================================================
+        // INTERPOLATION
+        // ======================================================================
+        function getInterpFn(type) {
+            switch (type) {
+                case 'linear':
+                    return (t) => t;
+                case 'easeIn':
+                    return (t) => t * t;
+                case 'easeOut':
+                    return (t) => 1 - (1 - t) * (1 - t);
+                case 'easeInOut':
+                    return (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+                case 'bounce':
+                    return (t) => { const n1 = 7.5625,
+                            d1 = 2.75; if (t < 1 / d1) return n1 * t * t; else if (t < 2 / d1) return n1 * (t -= 1.5 /
+                            d1) * t + 0.75; else if (t < 2.5 / d1) return n1 * (t -= 2.25 / d1) * t + 0.9375; else
+                            return n1 * (t -= 2.625 / d1) * t + 0.984375; };
+                case 'elastic':
+                    return (t) => { const c4 = (2 * Math.PI) / 3; return t === 0 ? 0 : t === 1 ? 1 : Math.pow(2, -10 *
+                            t) * Math.sin((t * 10 - 0.75) * c4) + 1; };
+                default:
+                    return (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+            }
+        }
+
+        function getInterpolatedLayerValues(layer, time) {
+            const kfs = layer.keyframes;
+            if (kfs.length === 0) return { x: layer.x || 0, y: layer.y || 0, scale: layer.scale || 1, rot: layer.rot || 0,
+                op: layer.op || 1 };
+            if (time <= kfs[0].time) return { ...kfs[0] };
+            if (time >= kfs[kfs.length - 1].time) return { ...kfs[kfs.length - 1] };
+            let prevKf = kfs[0],
+                nextKf = kfs[1];
+            for (let i = 0; i < kfs.length - 1; i++) {
+                if (time >= kfs[i].time && time <= kfs[i + 1].time) { prevKf = kfs[i];
+                    nextKf = kfs[i + 1]; break; }
+            }
+            const duration = nextKf.time - prevKf.time;
+            const rawProgress = duration === 0 ? 0 : (time - prevKf.time) / duration;
+            const interpFn = getInterpFn(layer.interpolation || 'easeInOut');
+            const progress = interpFn(Math.max(0, Math.min(1, rawProgress)));
+            return {
+                x: prevKf.x + (nextKf.x - prevKf.x) * progress,
+                y: prevKf.y + (nextKf.y - prevKf.y) * progress,
+                scale: prevKf.scale + (nextKf.scale - prevKf.scale) * progress,
+                rot: prevKf.rot + (nextKf.rot - prevKf.rot) * progress,
+                op: prevKf.op + (nextKf.op - prevKf.op) * progress,
+            };
+        }
+
+        // ======================================================================
+        // LAYER MANAGEMENT
+        // ======================================================================
+        function addLayer(layer) {
+            // Ensure flip props exist
+            if (layer.flipX === undefined) layer.flipX = false;
+            if (layer.flipY === undefined) layer.flipY = false;
+            state.layers.push(layer);
+            selectLayer(layer.id);
+            renderTimelineTracks();
+            renderLayerList();
+            updateKeyframeNavInfo();
+        }
+
+        function selectLayer(id) {
+            state.selectedLayerId = id;
+            const layer = state.layers.find(l => l.id === id);
+            if (!layer) {
+                noLayerSelected.classList.remove('hidden');
+                layerPropsContent.classList.add('hidden');
+                return;
+            }
+            noLayerSelected.classList.add('hidden');
+            layerPropsContent.classList.remove('hidden');
+
+            const isLocked = layer.locked;
+            propLayerName.innerHTML = `${layer.name} ${isLocked ? '<i class="fa-solid fa-lock text-amber-400 text-[10px] ml-1"></i>' : ''}`;
+            propLayerType.textContent = layer.type;
+            propInTime.textContent = formatTime(layer.inTime);
+            propOutTime.textContent = formatTime(layer.outTime);
+
+            const val = getInterpolatedLayerValues(layer, state.currentTime);
+            inputX.value = Math.round(val.x);
+            rangeX.value = Math.round(val.x);
+            inputY.value = Math.round(val.y);
+            rangeY.value = Math.round(val.y);
+            inputScale.value = val.scale.toFixed(2);
+            rangeScale.value = val.scale.toFixed(2);
+            inputRot.value = Math.round(val.rot);
+            rangeRot.value = Math.round(val.rot);
+            inputOp.value = val.op.toFixed(2);
+            rangeOp.value = val.op.toFixed(2);
+            interpType.value = layer.interpolation || 'easeInOut';
+
+            // Flip controls (for image and bg layers)
+            const showFlip = (layer.type === 'image' || layer.type === 'bg');
+            flipControls.classList.toggle('hidden', !showFlip);
+            if (showFlip) {
+                flipX.checked = layer.flipX || false;
+                flipY.checked = layer.flipY || false;
+                flipX.disabled = isLocked;
+                flipY.disabled = isLocked;
+            }
+
+            // Text props
+            if (layer.type === 'text') {
+                textPropsSection.classList.remove('hidden');
+                const p = layer.textProps || {};
+                textContent.value = p.content || '';
+                textFontFamily.value = p.fontFamily || 'Arial';
+                textFontSize.value = p.fontSize || 48;
+                textFontSizeRange.value = p.fontSize || 48;
+                textFillColor.value = p.fillColor || '#ffffff';
+                textSecondaryColor.value = p.secondaryColor || '#facc15';
+                textOutlineColor.value = p.outlineColor || '#000000';
+                textShadowColor.value = p.shadowColor || '#000000';
+                textStrokeColor.value = p.strokeColor || '#000000';
+                textStrokeWidth.value = p.strokeWidth || 0;
+                textStrokeWidthRange.value = p.strokeWidth || 0;
+                textStrokePosition.value = p.strokePosition || 'center';
+                textShadowColor2.value = p.shadowColor2 || '#000000';
+                textShadowOpacity.value = p.shadowOpacity || 0.5;
+                textShadowOpacityRange.value = p.shadowOpacity || 0.5;
+                textShadowBlur.value = p.shadowBlur || 4;
+                textShadowBlurRange.value = p.shadowBlur || 4;
+                textShadowDistance.value = p.shadowDistance || 4;
+                textShadowDistanceRange.value = p.shadowDistance || 4;
+                textShadowAngle.value = p.shadowAngle || 45;
+                textBgEnable.checked = p.bgEnable || false;
+                textBgColor.value = p.bgColor || '#1e293b';
+                textBgOpacity.value = p.bgOpacity || 0.8;
+                textBgOpacityRange.value = p.bgOpacity || 0.8;
+                textBgRadius.value = p.bgRadius || 8;
+                textBgRadiusRange.value = p.bgRadius || 8;
+                textBgWidth.value = p.bgWidth || 0;
+                textBgHeight.value = p.bgHeight || 0;
+                textBgXoffset.value = p.bgXoffset || 0;
+                textBgYoffset.value = p.bgYoffset || 0;
+                textAlign.value = p.align || 'center';
+                textVAlign.value = p.vAlign || 'middle';
+                textCharSpacing.value = p.charSpacing || 0;
+                textCharSpacingRange.value = p.charSpacing || 0;
+                textLineSpacing.value = p.lineSpacing || 0;
+                textLineSpacingRange.value = p.lineSpacing || 0;
+                textMarginL.value = p.marginL || 0;
+                textMarginR.value = p.marginR || 0;
+                textMarginT.value = p.marginT || 0;
+                textMarginB.value = p.marginB || 0;
+                textScaleX.value = p.scaleX || 1;
+                textScaleXRange.value = p.scaleX || 1;
+                textScaleY.value = p.scaleY || 1;
+                textScaleYRange.value = p.scaleY || 1;
+                textRotZ.value = p.rotZ || 0;
+                textRotZRange.value = p.rotZ || 0;
+                textPosX.value = p.posX || 0;
+                textPosY.value = p.posY || 0;
+                textBlendMode.value = p.blendMode || 'source-over';
+                textBold.checked = p.bold || false;
+                textItalic.checked = p.italic || false;
+                textUnderline.checked = p.underline || false;
+                textStrikeout.checked = p.strikeout || false;
+
+                const textInputs = [textContent, textFontFamily, textFontSize, textFontSizeRange,
+                    textFillColor, textSecondaryColor, textOutlineColor, textShadowColor,
+                    textStrokeColor, textStrokeWidth, textStrokeWidthRange, textStrokePosition,
+                    textShadowColor2, textShadowOpacity, textShadowOpacityRange,
+                    textShadowBlur, textShadowBlurRange, textShadowDistance, textShadowDistanceRange,
+                    textShadowAngle, textBgEnable, textBgColor, textBgOpacity, textBgOpacityRange,
+                    textBgRadius, textBgRadiusRange, textBgWidth, textBgHeight, textBgXoffset, textBgYoffset,
+                    textAlign, textVAlign, textCharSpacing, textCharSpacingRange,
+                    textLineSpacing, textLineSpacingRange, textMarginL, textMarginR, textMarginT, textMarginB,
+                    textScaleX, textScaleXRange, textScaleY, textScaleYRange,
+                    textRotZ, textRotZRange, textPosX, textPosY, textBlendMode,
+                    textBold, textItalic, textUnderline, textStrikeout
+                ];
+                textInputs.forEach(inp => inp.disabled = isLocked);
+            } else {
+                textPropsSection.classList.add('hidden');
+            }
+
+            // Media props
+            if (layer.type === 'gif' || layer.type === 'video') {
+                mediaPropsSection.classList.remove('hidden');
+                inputMediaSpeed.value = layer.speed || 1;
+                rangeMediaSpeed.value = layer.speed || 1;
+                checkMediaLoop.checked = layer.loop !== undefined ? layer.loop : true;
+                checkMediaMute.checked = layer.mute !== undefined ? layer.mute : true;
+                const mediaInputs = [inputMediaSpeed, rangeMediaSpeed, checkMediaLoop, checkMediaMute];
+                mediaInputs.forEach(inp => inp.disabled = isLocked);
+            } else {
+                mediaPropsSection.classList.add('hidden');
+            }
+
+            const allInputs = [inputX, rangeX, inputY, rangeY, inputScale, rangeScale, inputRot, rangeRot, inputOp, rangeOp,
+                interpType
+            ];
+            allInputs.forEach(inp => inp.disabled = isLocked);
+            const actionBtns = [setInPointBtn, setOutPointBtn, addKeyframeBtn, prevKfBtn, nextKfBtn];
+            actionBtns.forEach(btn => btn.disabled = isLocked);
+
+            renderKeyframeList(layer);
+            renderLayerList();
+            renderTimelineTracks();
+            updateKeyframeNavInfo();
+        }
+
+        function updateKeyframeNavInfo() {
+            const layer = state.layers.find(l => l.id === state.selectedLayerId);
+            if (!layer || layer.keyframes.length === 0) { kfNavInfo.textContent = '0 / 0'; return; }
+            const idx = getKeyframeIndex(layer, state.currentTime);
+            kfNavInfo.textContent = `${idx+1} / ${layer.keyframes.length}`;
+        }
+
+        function getKeyframeIndex(layer, time) {
+            if (!layer || layer.keyframes.length === 0) return -1;
+            let idx = 0;
+            for (let i = 0; i < layer.keyframes.length; i++) {
+                if (layer.keyframes[i].time <= time) idx = i;
+            }
+            return idx;
+        }
+
+        function navigateKeyframe(direction) {
+            const layer = state.layers.find(l => l.id === state.selectedLayerId);
+            if (!layer || layer.keyframes.length === 0 || layer.locked) return;
+            const currentIdx = getKeyframeIndex(layer, state.currentTime);
+            let newIdx = direction === 'next' ? currentIdx + 1 : currentIdx - 1;
+            if (newIdx < 0) newIdx = 0;
+            if (newIdx >= layer.keyframes.length) newIdx = layer.keyframes.length - 1;
+            if (newIdx === currentIdx) return;
+            state.currentTime = layer.keyframes[newIdx].time;
+            updatePlayheadPosition();
+            if (state.audio.file) state.audio.element.currentTime = state.currentTime;
+            selectLayer(state.selectedLayerId);
+        }
+
+        // ======================================================================
+        // RENDER KEYFRAME LIST
+        // ======================================================================
+        function renderKeyframeList(layer) {
+            keyframeListContainer.innerHTML = '';
+            kfCountBadge.textContent = `${layer.keyframes.length} Keyframes`;
+            if (layer.keyframes.length === 0) {
+                keyframeListContainer.innerHTML =
+                `<p class="text-slate-500 italic text-center py-2">No keyframes added yet.</p>`;
+                return;
+            }
+            layer.keyframes.forEach((kf, idx) => {
+                const div = document.createElement('div');
+                div.className =
+                    'flex items-center justify-between bg-slate-900 px-2.5 py-1.5 rounded border border-slate-700/80 text-[11px]';
+                const isActive = Math.abs(kf.time - state.currentTime) < 0.05;
+                div.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="w-2 h-2 rounded-full ${isActive ? 'bg-emerald-400' : 'bg-indigo-500'}"></span>
+                            <span class="font-mono text-slate-300">Time: ${kf.time.toFixed(2)}s</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="jumpToKeyframe(${kf.time})" class="text-indigo-400 hover:text-indigo-300 px-1" title="Jump to Keyframe"><i class="fa-solid fa-crosshairs"></i></button>
+                            ${layer.keyframes.length > 1 && !layer.locked ? `<button onclick="deleteKeyframe('${layer.id}', ${idx})" class="text-red-400 hover:text-red-300 px-1" title="Delete Keyframe"><i class="fa-solid fa-trash"></i></button>` : ''}
+                        </div>
+                    `;
+                keyframeListContainer.appendChild(div);
+            });
+        }
+
+        window.jumpToKeyframe = function(time) {
+            state.currentTime = time;
+            updatePlayheadPosition();
+            if (state.audio.file) state.audio.element.currentTime = state.currentTime;
+            selectLayer(state.selectedLayerId);
+        };
+
+        window.deleteKeyframe = function(layerId, index) {
+            const layer = state.layers.find(l => l.id === layerId);
+            if (!layer || layer.locked) return;
+            layer.keyframes.splice(index, 1);
+            state.interpolationCache.clear();
+            renderKeyframeList(layer);
+            renderTimelineTracks();
+            updateKeyframeNavInfo();
+        };
+
+        // ======================================================================
+        // RENDER LAYER LIST
+        // ======================================================================
+        function renderLayerList() {
+            layerListContainer.innerHTML = '';
+            if (state.layers.length === 0) {
+                layerListContainer.innerHTML = `<p class="text-slate-500 italic text-center py-4">No layers created yet.</p>`;
+                return;
+            }
+            const reversed = [...state.layers].reverse();
+            reversed.forEach((layer) => {
+                const isSelected = layer.id === state.selectedLayerId;
+                const div = document.createElement('div');
+                div.className =
+                    `layer-item flex items-center justify-between p-2 rounded border transition ${isSelected ? 'selected border-indigo-500/80' : 'bg-slate-800/60 border-slate-700 text-slate-300'}`;
+                const iconMap = { text: 'fa-font text-emerald-400', gif: 'fa-film text-purple-400',
+                    video: 'fa-video text-rose-400', image: 'fa-image text-blue-400',
+                    placeholder: 'fa-square text-blue-400', bg: 'fa-image text-slate-400' };
+                const icon = iconMap[layer.type] || 'fa-layer-group text-slate-400';
+                const isVisible = layer.visible !== false;
+                div.innerHTML = `
+                        <div class="flex items-center space-x-2 cursor-pointer flex-1 truncate" onclick="selectLayer('${layer.id}')">
+                            <i class="fa-solid ${icon}"></i>
+                            <span class="truncate font-medium ${!isVisible ? 'opacity-40 line-through' : ''}">${layer.name}</span>
+                        </div>
+                        <div class="flex items-center space-x-1 shrink-0">
+                            <button onclick="toggleLayerVisibility('${layer.id}')" class="p-1 text-slate-400 hover:text-slate-200" title="${isVisible ? 'Hide Layer' : 'Show Layer'}">
+                                <i class="fa-solid ${isVisible ? 'fa-eye' : 'fa-eye-slash'}"></i>
+                            </button>
+                            <button onclick="toggleLayerLock('${layer.id}')" class="p-1 text-slate-400 hover:text-slate-200" title="${layer.locked ? 'Unlock Layer' : 'Lock Layer'}">
+                                <i class="fa-solid ${layer.locked ? 'fa-lock text-amber-400' : 'fa-lock-open'}"></i>
+                            </button>
+                            <button onclick="moveLayerZ('${layer.id}','up')" class="p-1 text-slate-400 hover:text-slate-200"><i class="fa-solid fa-chevron-up text-[10px]"></i></button>
+                            <button onclick="moveLayerZ('${layer.id}','down')" class="p-1 text-slate-400 hover:text-slate-200"><i class="fa-solid fa-chevron-down text-[10px]"></i></button>
+                            <button onclick="deleteLayer('${layer.id}')" class="p-1 text-red-400 hover:text-red-300"><i class="fa-solid fa-trash text-[10px]"></i></button>
+                        </div>
+                    `;
+                layerListContainer.appendChild(div);
+            });
+        }
+
+        window.toggleLayerVisibility = function(id) {
+            const layer = state.layers.find(l => l.id === id);
+            if (!layer) return;
+            layer.visible = layer.visible === undefined ? false : !layer.visible;
+            renderLayerList();
+            renderTimelineTracks();
+        };
+        window.toggleLayerLock = function(id) {
+            const layer = state.layers.find(l => l.id === id);
+            if (!layer) return;
+            layer.locked = !layer.locked;
+            selectLayer(state.selectedLayerId);
+            renderLayerList();
+            renderTimelineTracks();
+        };
+        window.moveLayerZ = function(id, direction) {
+            const index = state.layers.findIndex(l => l.id === id);
+            if (index === -1) return;
+            const layer = state.layers[index];
+            if (layer.locked) return;
+            if (direction === 'up' && index < state.layers.length - 1) {
+                state.layers.splice(index, 1);
+                state.layers.splice(index + 1, 0, layer);
+            } else if (direction === 'down' && index > 0) {
+                state.layers.splice(index, 1);
+                state.layers.splice(index - 1, 0, layer);
+            }
+            renderLayerList();
+            renderTimelineTracks();
+        };
+        window.deleteLayer = function(id) {
+            const layer = state.layers.find(l => l.id === id);
+            if (layer && layer.locked) return;
+            state.layers = state.layers.filter(l => l.id !== id);
+            if (state.selectedLayerId === id) {
+                state.selectedLayerId = state.layers.length > 0 ? state.layers[state.layers.length - 1].id : null;
+            }
+            selectLayer(state.selectedLayerId);
+            renderLayerList();
+            renderTimelineTracks();
+        };
+
+        // ======================================================================
+        // TIMELINE
+        // ======================================================================
+        function buildTimelineRuler() {
+            const totalPx = state.duration * state.zoom;
+            timelineRuler.style.width = `${totalPx}px`;
+            timelineTracksContainer.style.width = `${totalPx}px`;
+            timelineRuler.innerHTML = '';
+            const step = state.zoom < 60 ? 2 : state.zoom > 220 ? 0.5 : 1;
+            for (let t = 0; t <= state.duration; t += step) {
+                const div = document.createElement('div');
+                div.className =
+                    'absolute bottom-0 text-[10px] text-slate-400 font-mono border-l border-slate-700 pl-1 pb-0.5';
+                div.style.left = `${t*state.zoom}px`;
+                div.textContent = formatTime(t);
+                timelineRuler.appendChild(div);
+            }
+        }
+
+        function renderTimelineTracks() {
+            timelineLabelsList.innerHTML = '';
+            timelineLayerBlocks.innerHTML = '';
+            if (state.layers.length === 0) {
+                timelineLabelsList.innerHTML = `<div class="p-2 text-xs text-slate-500 italic">No layers</div>`;
+                return;
+            }
+            state.layers.forEach((layer) => {
+                const isVisible = layer.visible !== false;
+                const labelDiv = document.createElement('div');
+                labelDiv.className =
+                    `h-9 px-2 flex items-center justify-between bg-slate-900 border border-slate-800 rounded text-xs text-slate-300 truncate ${!isVisible ? 'opacity-40' : ''}`;
+                labelDiv.innerHTML =
+                    `<span class="truncate font-medium">${layer.name}</span><i class="fa-solid ${layer.locked ? 'fa-lock text-amber-400' : 'fa-layer-group'} text-[10px]"></i>`;
+                timelineLabelsList.appendChild(labelDiv);
+
+                const trackRow = document.createElement('div');
+                trackRow.className =
+                    `h-9 relative bg-slate-900/60 border border-slate-800/80 rounded flex items-center ${!isVisible ? 'opacity-30' : ''}`;
+                trackRow.style.width = `${state.duration*state.zoom}px`;
+
+                const leftPx = layer.inTime * state.zoom;
+                const widthPx = Math.max(30, (layer.outTime - layer.inTime) * state.zoom);
+
+                const clipDiv = document.createElement('div');
+                const isSelected = layer.id === state.selectedLayerId;
+                clipDiv.className =
+                    `timeline-clip absolute h-7 rounded border flex items-center px-2 shadow cursor-pointer select-none group transition ${isSelected ? 'bg-indigo-600/90 border-indigo-400 text-white' : 'bg-slate-800/90 border-slate-700 text-slate-300'}`;
+                clipDiv.style.left = `${leftPx}px`;
+                clipDiv.style.width = `${widthPx}px`;
+                clipDiv.style.top = '4px';
+
+                let kfDots = '';
+                const clipDuration = layer.outTime - layer.inTime;
+                if (clipDuration > 0) {
+                    layer.keyframes.forEach(kf => {
+                        const kfOffset = ((kf.time - layer.inTime) / clipDuration) * widthPx;
+                        if (kfOffset >= 0 && kfOffset <= widthPx) {
+                            const isActive = Math.abs(kf.time - state.currentTime) < 0.05;
+                            kfDots +=
+                                `<div class="keyframe-dot absolute top-1.5 w-2.5 h-2.5 rounded-full shadow -ml-1 ${isActive ? 'bg-emerald-400 ring-2 ring-emerald-400/50' : 'bg-amber-400'}" style="left: ${kfOffset}px"></div>`;
+                        }
+                    });
+                }
+                clipDiv.innerHTML = `
+                        <div class="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-white/30 rounded-l" data-handle="left"></div>
+                        <span class="text-[11px] truncate font-medium flex-1 px-1">${layer.name}</span>
+                        <div class="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize hover:bg-white/30 rounded-r" data-handle="right"></div>
+                        <div class="absolute inset-0 pointer-events-none">${kfDots}</div>
+                    `;
+
+                clipDiv.addEventListener('mousedown', (e) => {
+                    selectLayer(layer.id);
+                    if (layer.locked) return;
+                    const handle = e.target.getAttribute('data-handle') || e.target.closest('[data-handle]')
+                        ?.getAttribute('data-handle');
+                    const startX = e.clientX;
+                    const initialIn = layer.inTime,
+                        initialOut = layer.outTime,
+                        durationLen = initialOut - initialIn;
+                    const onMouseMove = (moveEvent) => {
+                        const deltaX = moveEvent.clientX - startX;
+                        const deltaSec = deltaX / state.zoom;
+                        if (handle === 'right') {
+                            let newOut = Math.max(layer.inTime + 0.1, initialOut + deltaSec);
+                            if (newOut > state.duration) newOut = state.duration;
+                            layer.outTime = newOut;
+                        } else if (handle === 'left') {
+                            let newIn = Math.min(layer.outTime - 0.1, Math.max(0, initialIn + deltaSec));
+                            layer.inTime = newIn;
+                        } else {
+                            let newIn = Math.max(0, initialIn + deltaSec);
+                            let newOut = newIn + durationLen;
+                            if (newOut > state.duration) { newOut = state.duration;
+                                newIn = newOut - durationLen; }
+                            const shift = newIn - initialIn;
+                            layer.inTime = newIn;
+                            layer.outTime = newOut;
+                            layer.keyframes.forEach(kf => { kf.time = Math.max(newIn, Math.min(newOut, kf.time +
+                                shift)); });
+                            state.interpolationCache.clear();
+                        }
+                        propInTime.textContent = formatTime(layer.inTime);
+                        propOutTime.textContent = formatTime(layer.outTime);
+                        renderTimelineTracks();
+                    };
+                    const onMouseUp = () => {
+                        window.removeEventListener('mousemove', onMouseMove);
+                        window.removeEventListener('mouseup', onMouseUp);
+                    };
+                    window.addEventListener('mousemove', onMouseMove);
+                    window.addEventListener('mouseup', onMouseUp);
+                });
+
+                trackRow.appendChild(clipDiv);
+                timelineLayerBlocks.appendChild(trackRow);
+            });
+        }
+
+        function updatePlayheadPosition() {
+            const leftPx = state.currentTime * state.zoom;
+            timelinePlayhead.style.left = `${leftPx}px`;
+            currentTimeDisplay.textContent = formatTime(state.currentTime);
+            const container = timelineScrollArea;
+            const scrollLeft = container.scrollLeft;
+            const containerWidth = container.clientWidth;
+            const targetLeft = leftPx - containerWidth / 2;
+            if (targetLeft > scrollLeft + 50 || targetLeft < scrollLeft - 50) {
+                container.scrollLeft = Math.max(0, targetLeft);
+            }
+            if (state.selectedLayerId) {
+                const layer = state.layers.find(l => l.id === state.selectedLayerId);
+                if (layer) {
+                    const val = getInterpolatedLayerValues(layer, state.currentTime);
+                    inputX.value = Math.round(val.x);
+                    rangeX.value = Math.round(val.x);
+                    inputY.value = Math.round(val.y);
+                    rangeY.value = Math.round(val.y);
+                    inputScale.value = val.scale.toFixed(2);
+                    rangeScale.value = val.scale.toFixed(2);
+                    inputRot.value = Math.round(val.rot);
+                    rangeRot.value = Math.round(val.rot);
+                    inputOp.value = val.op.toFixed(2);
+                    rangeOp.value = val.op.toFixed(2);
+                    updateKeyframeNavInfo();
+                    renderKeyframeList(layer);
+                    renderTimelineTracks();
+                }
+            }
+        }
+
+        // ======================================================================
+        // CANVAS INTERACTIONS (drag + resize handle + wheel)
+        // ======================================================================
+        function setupCanvasInteractions() {
+            let isMouseDown = false,
+                dragTargetLayer = null,
+                startMouseX = 0,
+                startMouseY = 0,
+                initialLayerX = 0,
+                initialLayerY = 0;
+
+            // --- Mouse down on canvas ---
+            previewCanvas.addEventListener('mousedown', (e) => {
+                const rect = previewCanvas.getBoundingClientRect();
+                const scaleX = previewCanvas.width / rect.width;
+                const scaleY = previewCanvas.height / rect.height;
+                const clickX = (e.clientX - rect.left) * scaleX;
+                const clickY = (e.clientY - rect.top) * scaleY;
+
+                // Check if clicking on resize handle of selected layer
+                const selLayer = state.layers.find(l => l.id === state.selectedLayerId);
+                if (selLayer && !selLayer.locked) {
+                    const val = getInterpolatedLayerValues(selLayer, state.currentTime);
+                    let w = (selLayer.width || 200) * val.scale;
+                    let h = (selLayer.height || 200) * val.scale;
+                    if (selLayer.type === 'text' && selLayer.textProps) {
+                        const fontSize = (selLayer.textProps.fontSize || 48) * val.scale;
+                        ctx.font = `${fontSize}px ${selLayer.textProps.fontFamily || 'Arial'}`;
+                        const lines = (selLayer.textProps.content || '').split('\n');
+                        let maxW = 0;
+                        for (const line of lines) { const m = ctx.measureText(line); if (m.width > maxW) maxW = m.width; }
+                        w = maxW + 40;
+                        h = fontSize * lines.length * 1.3 + 30;
+                    }
+                    const handleSize = 14;
+                    const hx = val.x + w;
+                    const hy = val.y + h;
+                    if (clickX >= hx - handleSize && clickX <= hx + handleSize &&
+                        clickY >= hy - handleSize && clickY <= hy + handleSize) {
+                        // Start resize
+                        state.isResizing = true;
+                        state.resizeLayerId = selLayer.id;
+                        state.resizeStartX = clickX;
+                        state.resizeStartY = clickY;
+                        state.resizeInitialScale = val.scale;
+                        state.resizeInitialX = val.x;
+                        state.resizeInitialY = val.y;
+                        state.resizeInitialW = selLayer.width || 200;
+                        state.resizeInitialH = selLayer.height || 200;
+                        previewCanvas.style.cursor = 'nw-resize';
+                        return;
+                    }
+                }
+
+                // Hit test for layer selection (drag)
+                for (let i = state.layers.length - 1; i >= 0; i--) {
+                    const layer = state.layers[i];
+                    if (layer.visible === false) continue;
+                    if (layer.type === 'bg') continue; // BG layer can't be selected via canvas (but can be dragged if selected)
+                    const val = getInterpolatedLayerValues(layer, state.currentTime);
+                    let w = (layer.width || 200) * val.scale;
+                    let h = (layer.height || 200) * val.scale;
+                    if (layer.type === 'text' && layer.textProps) {
+                        const fontSize = (layer.textProps.fontSize || 48) * val.scale;
+                        ctx.font = `${fontSize}px ${layer.textProps.fontFamily || 'Arial'}`;
+                        const lines = (layer.textProps.content || '').split('\n');
+                        let maxW = 0;
+                        for (const line of lines) { const m = ctx.measureText(line); if (m.width > maxW) maxW = m.width; }
+                        w = maxW + 40;
+                        h = fontSize * lines.length * 1.3 + 30;
+                    }
+                    if (clickX >= val.x && clickX <= val.x + w && clickY >= val.y && clickY <= val.y + h) {
+                        selectLayer(layer.id);
+                        if (!layer.locked) {
+                            isMouseDown = true;
+                            dragTargetLayer = layer;
+                            startMouseX = clickX;
+                            startMouseY = clickY;
+                            initialLayerX = val.x;
+                            initialLayerY = val.y;
+                            previewCanvas.style.cursor = 'grabbing';
+                        }
+                        return;
+                    }
+                }
+                // Click on empty space: do NOT deselect, just keep current selection
+                // But we can deselect if user clicks on empty area? Usually we keep selection.
+                // We'll keep current selection.
+            });
+
+            // --- Mouse move ---
+            window.addEventListener('mousemove', (e) => {
+                const rect = previewCanvas.getBoundingClientRect();
+                const scaleX = previewCanvas.width / rect.width;
+                const scaleY = previewCanvas.height / rect.height;
+                const currentX = (e.clientX - rect.left) * scaleX;
+                const currentY = (e.clientY - rect.top) * scaleY;
+
+                // Resize handling
+                if (state.isResizing) {
+                    const layer = state.layers.find(l => l.id === state.resizeLayerId);
+                    if (!layer || layer.locked) { state.isResizing = false; return; }
+                    const dx = currentX - state.resizeStartX;
+                    const dy = currentY - state.resizeStartY;
+                    // Compute new scale based on diagonal distance
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const sign = (dx + dy) > 0 ? 1 : -1;
+                    const scaleDelta = dist / (state.resizeInitialW + state.resizeInitialH) * 0.5;
+                    let newScale = state.resizeInitialScale + sign * scaleDelta;
+                    newScale = Math.max(0.1, Math.min(5, newScale));
+                    layer.scale = newScale;
+                    // Update keyframe if exists
+                    const kf = layer.keyframes.find(k => Math.abs(k.time - state.currentTime) < 0.05);
+                    if (kf) kf.scale = newScale;
+                    if (layer.id === state.selectedLayerId) {
+                        inputScale.value = newScale.toFixed(2);
+                        rangeScale.value = newScale.toFixed(2);
+                    }
+                    state.interpolationCache.clear();
+                    return;
+                }
+
+                // Dragging
+                if (!isMouseDown || !dragTargetLayer || dragTargetLayer.locked) {
+                    // Update cursor over resize handle
+                    const selLayer = state.layers.find(l => l.id === state.selectedLayerId);
+                    if (selLayer && !selLayer.locked) {
+                        const val = getInterpolatedLayerValues(selLayer, state.currentTime);
+                        let w = (selLayer.width || 200) * val.scale;
+                        let h = (selLayer.height || 200) * val.scale;
+                        if (selLayer.type === 'text' && selLayer.textProps) {
+                            const fontSize = (selLayer.textProps.fontSize || 48) * val.scale;
+                            ctx.font = `${fontSize}px ${selLayer.textProps.fontFamily || 'Arial'}`;
+                            const lines = (selLayer.textProps.content || '').split('\n');
+                            let maxW = 0;
+                            for (const line of lines) { const m = ctx.measureText(line); if (m.width > maxW) maxW = m
+                                    .width; }
+                            w = maxW + 40;
+                            h = fontSize * lines.length * 1.3 + 30;
+                        }
+                        const handleSize = 14;
+                        const hx = val.x + w;
+                        const hy = val.y + h;
+                        if (currentX >= hx - handleSize && currentX <= hx + handleSize &&
+                            currentY >= hy - handleSize && currentY <= hy + handleSize) {
+                            previewCanvas.style.cursor = 'nw-resize';
+                            return;
+                        }
+                    }
+                    previewCanvas.style.cursor = 'default';
+                    return;
+                }
+
+                const dx = currentX - startMouseX;
+                const dy = currentY - startMouseY;
+                dragTargetLayer.x = initialLayerX + dx;
+                dragTargetLayer.y = initialLayerY + dy;
+                const kf = dragTargetLayer.keyframes.find(k => Math.abs(k.time - state.currentTime) < 0.05);
+                if (kf) { kf.x = dragTargetLayer.x;
+                    kf.y = dragTargetLayer.y; }
+                if (dragTargetLayer.id === state.selectedLayerId) {
+                    inputX.value = Math.round(dragTargetLayer.x);
+                    rangeX.value = Math.round(dragTargetLayer.x);
+                    inputY.value = Math.round(dragTargetLayer.y);
+                    rangeY.value = Math.round(dragTargetLayer.y);
+                }
+            });
+
+            // --- Mouse up ---
+            window.addEventListener('mouseup', () => {
+                if (state.isResizing) {
+                    state.isResizing = false;
+                    state.resizeLayerId = null;
+                    previewCanvas.style.cursor = 'default';
+                    return;
+                }
+                isMouseDown = false;
+                dragTargetLayer = null;
+                previewCanvas.style.cursor = 'default';
+            });
+
+            // --- Mouse wheel for scaling selected layer ---
+            previewCanvas.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const layer = state.layers.find(l => l.id === state.selectedLayerId);
+                if (!layer || layer.locked) return;
+                const delta = e.deltaY > 0 ? -0.05 : 0.05;
+                let newScale = layer.scale + delta;
+                newScale = Math.max(0.1, Math.min(5, newScale));
+                layer.scale = newScale;
+                const kf = layer.keyframes.find(k => Math.abs(k.time - state.currentTime) < 0.05);
+                if (kf) kf.scale = newScale;
+                if (layer.id === state.selectedLayerId) {
+                    inputScale.value = newScale.toFixed(2);
+                    rangeScale.value = newScale.toFixed(2);
+                }
+                state.interpolationCache.clear();
+            }, { passive: false });
+        }
+
+        // ======================================================================
+        // BG MEDIA as LAYER
+        // ======================================================================
+        function createBgLayer(mediaElement, name, type) {
+            // Remove existing bg layer if any
+            const existing = state.layers.find(l => l.type === 'bg');
+            if (existing) {
+                state.layers = state.layers.filter(l => l.type !== 'bg');
+            }
+            const w = state.resolution.width;
+            const h = state.resolution.height;
+            const layer = {
+                id: 'bg_layer_' + Date.now(),
+                name: name || 'Background',
+                type: 'bg',
+                inTime: 0,
+                outTime: state.duration,
+                locked: false,
+                visible: true,
+                x: 0,
+                y: 0,
+                width: w,
+                height: h,
+                scale: 1,
+                rot: 0,
+                op: 1,
+                flipX: false,
+                flipY: false,
+                interpolation: 'linear',
+                bgElement: mediaElement,
+                bgType: type, // 'image' or 'video'
+                keyframes: [
+                    { time: 0, x: 0, y: 0, scale: 1, rot: 0, op: 1 },
+                    { time: state.duration, x: 0, y: 0, scale: 1, rot: 0, op: 1 }
+                ]
+            };
+            // Add to layers at index 0 (bottom)
+            state.layers.unshift(layer);
+            // Remove old bg media from state
+            // state.bgMedia = null; // we no longer use it
+            selectLayer(layer.id);
+            renderTimelineTracks();
+            renderLayerList();
+            updateKeyframeNavInfo();
+            return layer;
+        }
+
+        // ======================================================================
+        // FONT UPLOAD & CUSTOM FONTS
+        // ======================================================================
+        fontUploadInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const arrayBuffer = event.target.result;
+                const fontName = file.name.replace(/\.[^/.]+$/, "");
+                const fontFace = new FontFace(fontName, arrayBuffer);
+                fontFace.load().then(function(loadedFont) {
+                    document.fonts.add(loadedFont);
+                    state.customFonts.push(fontName);
+                    const option = document.createElement('option');
+                    option.value = `'${fontName}'`;
+                    option.textContent = fontName;
+                    customFontGroup.appendChild(option);
+                    textFontFamily.value = `'${fontName}'`;
+                    const layer = state.layers.find(l => l.id === state.selectedLayerId);
+                    if (layer && layer.type === 'text') {
+                        if (!layer.textProps) layer.textProps = {};
+                        layer.textProps.fontFamily = `'${fontName}'`;
+                    }
+                }).catch(err => console.error('Font load error:', err));
+            };
+            reader.readAsArrayBuffer(file);
+            this.value = '';
+        });
+
+        // ======================================================================
+        // EVENT LISTENERS
+        // ======================================================================
+        function setupEventListeners() {
+            resolutionPresetSelect.addEventListener('change', updateResolution);
+            bgColorPicker.addEventListener('input', (e) => { state.bgColor = e.target.value; });
+
+            // BG Media Upload -> create BG layer
+            bgMediaUpload.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                bgMediaName.textContent = file.name;
+                const url = URL.createObjectURL(file);
+                if (file.type.startsWith('video/')) {
+                    const video = document.createElement('video');
+                    video.src = url;
+                    video.loop = true;
+                    video.muted = true;
+                    video.autoplay = true;
+                    video.playsInline = true;
+                    video.play();
+                    createBgLayer(video, file.name, 'video');
+                } else {
+                    const img = new Image();
+                    img.src = url;
+                    img.onload = () => {
+                        createBgLayer(img, file.name, 'image');
+                    };
+                }
+            });
+
+            audioUpload.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                state.audio.file = file;
+                state.audio.name = file.name;
+                audioFileName.textContent = file.name;
+                removeAudioBtn.classList.remove('hidden');
+                const url = URL.createObjectURL(file);
+                state.audio.element.src = url;
+                state.audio.element.load();
+                state.audio.element.onloadedmetadata = () => {
+                    state.audio.duration = state.audio.element.duration;
+                    if (state.audio.duration > state.duration) {
+                        state.duration = Math.ceil(state.audio.duration);
+                        projectDurationInput.value = state.duration;
+                        buildTimelineRuler();
+                        renderTimelineTracks();
+                    }
+                    decodeAudioFile(file);
+                };
+            });
+
+            removeAudioBtn.addEventListener('click', () => {
+                state.audio.file = null;
+                state.audio.name = null;
+                state.audio.waveform = null;
+                state.audio.element.pause();
+                state.audio.element.src = '';
+                audioFileName.textContent = 'Upload Audio';
+                removeAudioBtn.classList.add('hidden');
+                clearAudioWaveform();
+            });
+
+            addPlaceholderBtn.addEventListener('click', () => {
+                const w = 300,
+                    h = 300;
+                addLayer({
+                    id: 'layer_' + Date.now(),
+                    name: 'Color Shape',
+                    type: 'placeholder',
+                    color: '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0'),
+                    inTime: 0,
+                    outTime: Math.min(5, state.duration),
+                    locked: false,
+                    visible: true,
+                    x: state.resolution.width / 2 - w / 2,
+                    y: state.resolution.height / 2 - h / 2,
+                    width: w,
+                    height: h,
+                    scale: 1,
+                    rot: 0,
+                    op: 1,
+                    flipX: false,
+                    flipY: false,
+                    interpolation: 'easeInOut',
+                    keyframes: [{ time: 0, x: state.resolution.width / 2 - w / 2, y: state.resolution.height / 2 - h /
+                            2, scale: 1, rot: 0, op: 1 }]
+                });
+            });
+
+            addTextBtn.addEventListener('click', () => {
+                addLayer({
+                    id: 'layer_' + Date.now(),
+                    name: 'Text Layer',
+                    type: 'text',
+                    inTime: 0,
+                    outTime: Math.min(5, state.duration),
+                    locked: false,
+                    visible: true,
+                    x: state.resolution.width / 2 - 200,
+                    y: state.resolution.height / 2 - 50,
+                    scale: 1,
+                    rot: 0,
+                    op: 1,
+                    flipX: false,
+                    flipY: false,
+                    interpolation: 'easeInOut',
+                    textProps: {
+                        content: 'អត្ថបទថ្មី\nNew Text',
+                        fontFamily: "'Noto Sans Khmer', sans-serif",
+                        fontSize: 48,
+                        fillColor: '#ffffff',
+                        secondaryColor: '#facc15',
+                        outlineColor: '#000000',
+                        shadowColor: '#000000',
+                        strokeColor: '#4f46e5',
+                        strokeWidth: 0,
+                        strokePosition: 'center',
+                        shadowColor2: '#000000',
+                        shadowOpacity: 0.5,
+                        shadowBlur: 4,
+                        shadowDistance: 4,
+                        shadowAngle: 45,
+                        bgEnable: false,
+                        bgColor: '#1e293b',
+                        bgOpacity: 0.8,
+                        bgRadius: 8,
+                        bgWidth: 0,
+                        bgHeight: 0,
+                        bgXoffset: 0,
+                        bgYoffset: 0,
+                        align: 'center',
+                        vAlign: 'middle',
+                        charSpacing: 0,
+                        lineSpacing: 0,
+                        marginL: 0,
+                        marginR: 0,
+                        marginT: 0,
+                        marginB: 0,
+                        scaleX: 1,
+                        scaleY: 1,
+                        rotZ: 0,
+                        posX: 0,
+                        posY: 0,
+                        blendMode: 'source-over',
+                        bold: false,
+                        italic: false,
+                        underline: false,
+                        strikeout: false
+                    },
+                    keyframes: [{ time: 0, x: state.resolution.width / 2 - 200, y: state.resolution.height / 2 - 50,
+                        scale: 1, rot: 0, op: 1 }]
+                });
+            });
+
+            layerMediaUpload.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const url = URL.createObjectURL(file);
+                if (file.type === 'image/gif' || file.name.toLowerCase().endsWith('.gif')) {
+                    gifler(url).get((err, gifData) => {
+                        if (err) return;
+                        const frames = gifData.frames || [];
+                        addLayer({
+                            id: 'layer_' + Date.now(),
+                            name: file.name,
+                            type: 'gif',
+                            url: url,
+                            gifFrames: frames,
+                            frameIndex: 0,
+                            frameTime: 0,
+                            speed: 1,
+                            loop: true,
+                            mute: true,
+                            inTime: 0,
+                            outTime: Math.min(5, state.duration),
+                            locked: false,
+                            visible: true,
+                            x: state.resolution.width / 2 - 200,
+                            y: state.resolution.height / 2 - 200,
+                            width: gifData.width || 300,
+                            height: gifData.height || 300,
+                            scale: 1,
+                            rot: 0,
+                            op: 1,
+                            flipX: false,
+                            flipY: false,
+                            interpolation: 'easeInOut',
+                            keyframes: [{ time: 0, x: state.resolution.width / 2 - 200, y: state.resolution
+                                    .height / 2 - 200, scale: 1, rot: 0, op: 1 }]
+                        });
+                    });
+                } else if (file.type.startsWith('video/')) {
+                    const video = document.createElement('video');
+                    video.src = url;
+                    video.muted = true;
+                    video.playsInline = true;
+                    video.loop = false;
+                    video.preload = 'auto';
+                    video.onloadedmetadata = () => {
+                        const w = video.videoWidth || 640,
+                            h = video.videoHeight || 360;
+                        addLayer({
+                            id: 'layer_' + Date.now(),
+                            name: file.name,
+                            type: 'video',
+                            url: url,
+                            videoElement: video,
+                            speed: 1,
+                            loop: true,
+                            mute: true,
+                            inTime: 0,
+                            outTime: Math.min(video.duration || 5, state.duration),
+                            locked: false,
+                            visible: true,
+                            x: state.resolution.width / 2 - w / 2,
+                            y: state.resolution.height / 2 - h / 2,
+                            width: w,
+                            height: h,
+                            scale: 1,
+                            rot: 0,
+                            op: 1,
+                            flipX: false,
+                            flipY: false,
+                            interpolation: 'easeInOut',
+                            keyframes: [{ time: 0, x: state.resolution.width / 2 - w / 2, y: state
+                                    .resolution.height / 2 - h / 2, scale: 1, rot: 0, op: 1 }]
+                        });
+                    };
+                    video.load();
+                } else if (file.type.startsWith('image/')) {
+                    const img = new Image();
+                    img.src = url;
+                    img.onload = () => {
+                        addLayer({
+                            id: 'layer_' + Date.now(),
+                            name: file.name,
+                            type: 'image',
+                            element: img,
+                            inTime: 0,
+                            outTime: Math.min(5, state.duration),
+                            locked: false,
+                            visible: true,
+                            x: state.resolution.width / 2 - img.width / 2,
+                            y: state.resolution.height / 2 - img.height / 2,
+                            width: img.width,
+                            height: img.height,
+                            scale: 1,
+                            rot: 0,
+                            op: 1,
+                            flipX: false,
+                            flipY: false,
+                            interpolation: 'easeInOut',
+                            keyframes: [{ time: 0, x: state.resolution.width / 2 - img.width / 2, y: state
+                                    .resolution.height / 2 - img.height / 2, scale: 1, rot: 0, op: 1 }]
+                        });
+                    };
+                }
+            });
+
+            exportFrameBtn.addEventListener('click', () => {
+                const link = document.createElement('a');
+                link.download = `frame_${state.currentTime.toFixed(2)}s.png`;
+                link.href = previewCanvas.toDataURL('image/png');
+                link.click();
+            });
+
+            playPauseBtn.addEventListener('click', togglePlayPause);
+            resetPlayheadBtn.addEventListener('click', () => {
+                state.currentTime = 0;
+                updatePlayheadPosition();
+                if (state.audio.file) state.audio.element.currentTime = 0;
+                state.layers.forEach(l => { if (l.type === 'video' && l.videoElement) l.videoElement.currentTime =
+                        0; });
+            });
+
+            projectDurationInput.addEventListener('change', (e) => {
+                state.duration = Math.max(1, parseFloat(e.target.value) || 10);
+                totalDurationDisplay.textContent = formatTime(state.duration);
+                buildTimelineRuler();
+                renderTimelineTracks();
+                drawAudioWaveform();
+                // Update bg layer outTime if exists
+                const bg = state.layers.find(l => l.type === 'bg');
+                if (bg) { bg.outTime = state.duration; }
+            });
+
+            timelineZoom.addEventListener('input', (e) => {
+                state.zoom = parseInt(e.target.value);
+                buildTimelineRuler();
+                renderTimelineTracks();
+                updatePlayheadPosition();
+            });
+
+            timelineRuler.addEventListener('click', (e) => {
+                const rect = timelineRuler.getBoundingClientRect();
+                const clickX = e.clientX - rect.left + timelineScrollArea.scrollLeft;
+                const newTime = Math.max(0, Math.min(state.duration, clickX / state.zoom));
+                state.currentTime = newTime;
+                updatePlayheadPosition();
+                if (state.audio.file) state.audio.element.currentTime = state.currentTime;
+                state.layers.forEach(l => { if (l.type === 'video' && l.videoElement) l.videoElement.currentTime =
+                        state.currentTime; });
+            });
+
+            tabProps.addEventListener('click', () => {
+                tabProps.className =
+                    'tab-btn flex-1 py-3 text-xs font-semibold text-indigo-400 border-b-2 border-indigo-500 bg-slate-800/50 transition';
+                tabLayers.className =
+                    'tab-btn flex-1 py-3 text-xs font-semibold text-slate-400 hover:text-slate-200 transition';
+                panelProps.classList.remove('hidden');
+                panelLayers.classList.add('hidden');
+            });
+            tabLayers.addEventListener('click', () => {
+                tabLayers.className =
+                    'tab-btn flex-1 py-3 text-xs font-semibold text-indigo-400 border-b-2 border-indigo-500 bg-slate-800/50 transition';
+                tabProps.className =
+                    'tab-btn flex-1 py-3 text-xs font-semibold text-slate-400 hover:text-slate-200 transition';
+                panelLayers.classList.remove('hidden');
+                panelProps.classList.add('hidden');
+            });
+
+            setupPropertyBindings();
+            setupCanvasInteractions();
+            prevKfBtn.addEventListener('click', () => navigateKeyframe('prev'));
+            nextKfBtn.addEventListener('click', () => navigateKeyframe('next'));
+        }
+
+        // ======================================================================
+        // PROPERTY BINDINGS (including flip and all text props)
+        // ======================================================================
+        function setupPropertyBindings() {
+            // Global transforms
+            const bindProp = (inputElem, rangeElem, propName) => {
+                const update = (val) => {
+                    const layer = state.layers.find(l => l.id === state.selectedLayerId);
+                    if (!layer || layer.locked) return;
+                    const num = parseFloat(val);
+                    if (isNaN(num)) return;
+                    layer[propName] = num;
+                    const kf = layer.keyframes.find(k => Math.abs(k.time - state.currentTime) < 0.05);
+                    if (kf) kf[propName] = num;
+                    state.interpolationCache.clear();
+                };
+                inputElem.addEventListener('input', (e) => { rangeElem.value = e.target.value;
+                    update(e.target.value); });
+                rangeElem.addEventListener('input', (e) => { inputElem.value = e.target.value;
+                    update(e.target.value); });
+            };
+            bindProp(inputX, rangeX, 'x');
+            bindProp(inputY, rangeY, 'y');
+            bindProp(inputScale, rangeScale, 'scale');
+            bindProp(inputRot, rangeRot, 'rot');
+            bindProp(inputOp, rangeOp, 'op');
+
+            interpType.addEventListener('change', (e) => {
+                const layer = state.layers.find(l => l.id === state.selectedLayerId);
+                if (!layer || layer.locked) return;
+                layer.interpolation = e.target.value;
+                state.interpolationCache.clear();
+            });
+
+            // Flip bindings
+            const bindFlip = (elem, propName) => {
+                elem.addEventListener('change', (e) => {
+                    const layer = state.layers.find(l => l.id === state.selectedLayerId);
+                    if (!layer || layer.locked) return;
+                    if (layer.type !== 'image' && layer.type !== 'bg') return;
+                    layer[propName] = e.target.checked;
+                });
+            };
+            bindFlip(flipX, 'flipX');
+            bindFlip(flipY, 'flipY');
+
+            // Helper: bind text prop with input+range
+            const bindTextProp = (inputElem, rangeElem, propName, isNum = true) => {
+                const update = (val) => {
+                    const layer = state.layers.find(l => l.id === state.selectedLayerId);
+                    if (!layer || layer.locked || layer.type !== 'text') return;
+                    if (!layer.textProps) layer.textProps = {};
+                    if (isNum) { layer.textProps[propName] = parseFloat(val) || 0; } else { layer.textProps[
+                        propName] = val; }
+                };
+                if (inputElem && rangeElem) {
+                    inputElem.addEventListener('input', (e) => { rangeElem.value = e.target.value;
+                        update(e.target.value); });
+                    rangeElem.addEventListener('input', (e) => { inputElem.value = e.target.value;
+                        update(e.target.value); });
+                } else if (inputElem) {
+                    inputElem.addEventListener('input', (e) => { update(e.target.value); });
+                    inputElem.addEventListener('change', (e) => { update(e.target.value); });
+                }
+            };
+
+            // Bind all text props
+            bindTextProp(textContent, null, 'content', false);
+            bindTextProp(textFontFamily, null, 'fontFamily', false);
+            bindTextProp(textFontSize, textFontSizeRange, 'fontSize');
+            bindTextProp(textFillColor, null, 'fillColor', false);
+            bindTextProp(textSecondaryColor, null, 'secondaryColor', false);
+            bindTextProp(textOutlineColor, null, 'outlineColor', false);
+            bindTextProp(textShadowColor, null, 'shadowColor', false);
+            bindTextProp(textStrokeColor, null, 'strokeColor', false);
+            bindTextProp(textStrokeWidth, textStrokeWidthRange, 'strokeWidth');
+            bindTextProp(textStrokePosition, null, 'strokePosition', false);
+            bindTextProp(textShadowColor2, null, 'shadowColor2', false);
+            bindTextProp(textShadowOpacity, textShadowOpacityRange, 'shadowOpacity');
+            bindTextProp(textShadowBlur, textShadowBlurRange, 'shadowBlur');
+            bindTextProp(textShadowDistance, textShadowDistanceRange, 'shadowDistance');
+            bindTextProp(textShadowAngle, null, 'shadowAngle');
+            bindTextProp(textBgEnable, null, 'bgEnable', false);
+            bindTextProp(textBgColor, null, 'bgColor', false);
+            bindTextProp(textBgOpacity, textBgOpacityRange, 'bgOpacity');
+            bindTextProp(textBgRadius, textBgRadiusRange, 'bgRadius');
+            bindTextProp(textBgWidth, null, 'bgWidth');
+            bindTextProp(textBgHeight, null, 'bgHeight');
+            bindTextProp(textBgXoffset, null, 'bgXoffset');
+            bindTextProp(textBgYoffset, null, 'bgYoffset');
+            bindTextProp(textAlign, null, 'align', false);
+            bindTextProp(textVAlign, null, 'vAlign', false);
+            bindTextProp(textCharSpacing, textCharSpacingRange, 'charSpacing');
+            bindTextProp(textLineSpacing, textLineSpacingRange, 'lineSpacing');
+            bindTextProp(textMarginL, null, 'marginL');
+            bindTextProp(textMarginR, null, 'marginR');
+            bindTextProp(textMarginT, null, 'marginT');
+            bindTextProp(textMarginB, null, 'marginB');
+            bindTextProp(textScaleX, textScaleXRange, 'scaleX');
+            bindTextProp(textScaleY, textScaleYRange, 'scaleY');
+            bindTextProp(textRotZ, textRotZRange, 'rotZ');
+            bindTextProp(textPosX, null, 'posX');
+            bindTextProp(textPosY, null, 'posY');
+            bindTextProp(textBlendMode, null, 'blendMode', false);
+
+            // Checkboxes
+            const bindCheckbox = (elem, propName) => {
+                elem.addEventListener('change', (e) => {
+                    const layer = state.layers.find(l => l.id === state.selectedLayerId);
+                    if (!layer || layer.locked || layer.type !== 'text') return;
+                    if (!layer.textProps) layer.textProps = {};
+                    layer.textProps[propName] = e.target.checked;
+                });
+            };
+            bindCheckbox(textBold, 'bold');
+            bindCheckbox(textItalic, 'italic');
+            bindCheckbox(textUnderline, 'underline');
+            bindCheckbox(textStrikeout, 'strikeout');
+
+            // Media props
+            const bindMediaProp = (inputElem, rangeElem, propName) => {
+                const update = (val) => {
+                    const layer = state.layers.find(l => l.id === state.selectedLayerId);
+                    if (!layer || layer.locked) return;
+                    if (layer.type !== 'gif' && layer.type !== 'video') return;
+                    layer[propName] = parseFloat(val) || 1;
+                };
+                inputElem.addEventListener('input', (e) => { rangeElem.value = e.target.value;
+                    update(e.target.value); });
+                rangeElem.addEventListener('input', (e) => { inputElem.value = e.target.value;
+                    update(e.target.value); });
+            };
+            bindMediaProp(inputMediaSpeed, rangeMediaSpeed, 'speed');
+            checkMediaLoop.addEventListener('change', (e) => {
+                const layer = state.layers.find(l => l.id === state.selectedLayerId);
+                if (!layer || layer.locked) return;
+                if (layer.type === 'gif' || layer.type === 'video') layer.loop = e.target.checked;
+            });
+            checkMediaMute.addEventListener('change', (e) => {
+                const layer = state.layers.find(l => l.id === state.selectedLayerId);
+                if (!layer || layer.locked) return;
+                if (layer.type === 'video') { layer.mute = e.target.checked; if (layer.videoElement) layer
+                        .videoElement.muted = e.target.checked; } else if (layer.type === 'gif') { layer.mute = e
+                        .target.checked; }
+            });
+
+            // In/Out & Keyframe
+            setInPointBtn.addEventListener('click', () => {
+                const layer = state.layers.find(l => l.id === state.selectedLayerId);
+                if (!layer || layer.locked) return;
+                layer.inTime = Math.min(state.currentTime, layer.outTime - 0.1);
+                propInTime.textContent = formatTime(layer.inTime);
+                renderTimelineTracks();
+            });
+            setOutPointBtn.addEventListener('click', () => {
+                const layer = state.layers.find(l => l.id === state.selectedLayerId);
+                if (!layer || layer.locked) return;
+                layer.outTime = Math.max(state.currentTime, layer.inTime + 0.1);
+                propOutTime.textContent = formatTime(layer.outTime);
+                renderTimelineTracks();
+            });
+            addKeyframeBtn.addEventListener('click', () => {
+                const layer = state.layers.find(l => l.id === state.selectedLayerId);
+                if (!layer || layer.locked) return;
+                const val = getInterpolatedLayerValues(layer, state.currentTime);
+                let existingKf = layer.keyframes.find(k => Math.abs(k.time - state.currentTime) < 0.05);
+                if (existingKf) {
+                    existingKf.x = val.x;
+                    existingKf.y = val.y;
+                    existingKf.scale = val.scale;
+                    existingKf.rot = val.rot;
+                    existingKf.op = val.op;
+                } else {
+                    layer.keyframes.push({ time: parseFloat(state.currentTime.toFixed(2)), x: val.x, y: val.y,
+                        scale: val.scale, rot: val.rot, op: val.op });
+                    layer.keyframes.sort((a, b) => a.time - b.time);
+                }
+                state.interpolationCache.clear();
+                renderKeyframeList(layer);
+                renderTimelineTracks();
+                updateKeyframeNavInfo();
+            });
+        }
+
+        // ======================================================================
+        // PLAYBACK
+        // ======================================================================
+        function togglePlayPause() {
+            state.isPlaying = !state.isPlaying;
+            if (state.isPlaying) {
+                playIcon.className = "fa-solid fa-pause text-xs";
+                if (state.audio.file) { state.audio.element.currentTime = state.currentTime;
+                    state.audio.element.play(); }
+                state.layers.forEach(l => {
+                    if (l.type === 'video' && l.videoElement && !l.mute) {
+                        l.videoElement.muted = false;
+                        l.videoElement.currentTime = state.currentTime;
+                        l.videoElement.play();
+                    }
+                });
+            } else {
+                playIcon.className = "fa-solid fa-play text-xs";
+                if (state.audio.file) state.audio.element.pause();
+                state.layers.forEach(l => { if (l.type === 'video' && l.videoElement) l.videoElement.pause(); });
+            }
+        }
+
+        // ======================================================================
+        // RENDER LOOP
+        // ======================================================================
+        let lastRenderTime = performance.now();
+
+        function mainRenderLoop(timestamp) {
+            const delta = (timestamp - lastRenderTime) / 1000;
+            lastRenderTime = timestamp;
+
+            state.fpsFrames++;
+            state.fpsTime += delta;
+            if (state.fpsTime >= 0.5) {
+                state.currentFps = Math.round(state.fpsFrames / state.fpsTime);
+                fpsCounter.textContent = `${state.currentFps} FPS`;
+                state.fpsFrames = 0;
+                state.fpsTime = 0;
+            }
+
+            if (state.isPlaying) {
+                state.currentTime += delta;
+                if (state.currentTime >= state.duration) {
+                    state.currentTime = 0;
+                    if (state.audio.file) { state.audio.element.currentTime = 0; if (state.isPlaying) state.audio
+                            .element.play(); }
+                    state.layers.forEach(l => {
+                        if (l.type === 'video' && l.videoElement) {
+                            l.videoElement.currentTime = 0;
+                            if (state.isPlaying && !l.mute) l.videoElement.play();
+                        }
+                    });
+                    if (state.isPlaying === false) playIcon.className = "fa-solid fa-play text-xs";
+                }
+                updatePlayheadPosition();
+                state.layers.forEach(l => {
+                    if (l.type === 'video' && l.videoElement) {
+                        const diff = Math.abs(l.videoElement.currentTime - state.currentTime);
+                        if (diff > 0.05) l.videoElement.currentTime = state.currentTime;
+                    }
+                });
+            }
+
+            // GIF frame update
+            state.layers.forEach(l => {
+                if (l.type === 'gif' && l.gifFrames && l.gifFrames.length > 0) {
+                    if (state.isPlaying) {
+                        const speed = l.speed || 1;
+                        const frameDelay = l.gifFrames[l.frameIndex]?.delay || 100;
+                        l.frameTime += delta * 1000 * speed;
+                        if (l.frameTime >= frameDelay) {
+                            l.frameTime = 0;
+                            l.frameIndex = (l.frameIndex + 1) % l.gifFrames.length;
+                            if (l.frameIndex === 0 && !l.loop) {
+                                l.frameIndex = l.gifFrames.length - 1;
+                            }
+                        }
+                    }
+                }
+            });
+
+            renderCanvasScene();
+            requestAnimationFrame(mainRenderLoop);
+        }
+
+        // ======================================================================
+        // RENDER CANVAS SCENE (with flip and bg layer support)
+        // ======================================================================
+        function renderCanvasScene() {
+            ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+
+            // Background color
+            ctx.fillStyle = state.bgColor;
+            ctx.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
+
+            // Render all layers (bg layer will be first because it's at index 0)
+            state.layers.forEach(layer => {
+                if (layer.visible === false) return;
+                if (state.currentTime < layer.inTime || state.currentTime > layer.outTime) return;
+
+                const val = getInterpolatedLayerValues(layer, state.currentTime);
+                ctx.save();
+                ctx.globalAlpha = val.op;
+
+                let w = (layer.width || 200) * val.scale;
+                let h = (layer.height || 200) * val.scale;
+
+                // For text, use measured size
+                if (layer.type === 'text' && layer.textProps) {
+                    const p = layer.textProps;
+                    const fontSize = (p.fontSize || 48) * val.scale * (p.scaleX || 1);
+                    const fontFamily = p.fontFamily || 'Arial';
+                    const fontStyle = (p.italic ? 'italic ' : '') + (p.bold ? 'bold ' : '') + `${fontSize}px ${fontFamily}`;
+                    ctx.font = fontStyle;
+                    const lines = (p.content || '').split('\n');
+                    const charSpacing = (p.charSpacing || 0) * val.scale;
+                    const lineSpacing = (p.lineSpacing || 0) * val.scale;
+                    let maxW = 0;
+                    for (const line of lines) {
+                        const m = ctx.measureText(line);
+                        let ww = m.width + (line.length - 1) * charSpacing;
+                        if (ww > maxW) maxW = ww;
+                    }
+                    const marginL = (p.marginL || 0) * val.scale;
+                    const marginR = (p.marginR || 0) * val.scale;
+                    const marginT = (p.marginT || 0) * val.scale;
+                    const marginB = (p.marginB || 0) * val.scale;
+                    const totalW = maxW + marginL + marginR;
+                    const totalH = (fontSize + lineSpacing) * lines.length + marginT + marginB;
+                    w = totalW;
+                    h = totalH;
+
+                    // Background box
+                    if (p.bgEnable) {
+                        const bgX = val.x - marginL + (p.bgXoffset || 0) * val.scale;
+                        const bgY = val.y - marginT + (p.bgYoffset || 0) * val.scale;
+                        let bgW = p.bgWidth > 0 ? p.bgWidth * val.scale : totalW;
+                        let bgH = p.bgHeight > 0 ? p.bgHeight * val.scale : totalH;
+                        const bgRadius = (p.bgRadius || 0) * val.scale;
+                        const bgOpacity = p.bgOpacity !== undefined ? p.bgOpacity : 0.8;
+                        ctx.globalAlpha = bgOpacity * val.op;
+                        ctx.fillStyle = p.bgColor || '#1e293b';
+                        ctx.beginPath();
+                        ctx.roundRect(bgX, bgY, bgW, bgH, bgRadius);
+                        ctx.fill();
+                        ctx.globalAlpha = 1;
+                    }
+
+                    // Shadow
+                    if (p.shadowColor2 && (p.shadowBlur || 0) > 0) {
+                        const shadowColor = p.shadowColor2 || '#000000';
+                        const shadowOpacity = p.shadowOpacity !== undefined ? p.shadowOpacity : 0.5;
+                        const shadowBlur = (p.shadowBlur || 0) * val.scale;
+                        const shadowDist = (p.shadowDistance || 0) * val.scale;
+                        const shadowAngle = (p.shadowAngle || 0) * Math.PI / 180;
+                        const shadowX = Math.cos(shadowAngle) * shadowDist;
+                        const shadowY = Math.sin(shadowAngle) * shadowDist;
+                        ctx.shadowColor = shadowColor;
+                        ctx.shadowBlur = shadowBlur;
+                        ctx.shadowOffsetX = shadowX;
+                        ctx.shadowOffsetY = shadowY;
+                    } else {
+                        ctx.shadowColor = 'transparent';
+                        ctx.shadowBlur = 0;
+                        ctx.shadowOffsetX = 0;
+                        ctx.shadowOffsetY = 0;
+                    }
+
+                    ctx.globalCompositeOperation = p.blendMode || 'source-over';
+
+                    const strokeWidth = (p.strokeWidth || 0) * val.scale;
+                    const strokeColor = p.strokeColor || '#000000';
+                    const strokePos = p.strokePosition || 'center';
+                    if (strokeWidth > 0) {
+                        ctx.strokeStyle = strokeColor;
+                        ctx.lineWidth = strokeWidth;
+                        ctx.lineJoin = 'round';
+                    }
+
+                    ctx.fillStyle = p.fillColor || '#ffffff';
+                    ctx.textBaseline = 'top';
+                    ctx.textAlign = p.align || 'center';
+
+                    const startY = val.y + (p.vAlign === 'middle' ? (totalH - (fontSize + lineSpacing) * lines.length) /
+                        2 : p.vAlign === 'bottom' ? totalH - (fontSize + lineSpacing) * lines.length : 0) + marginT;
+                    const startX = val.x + (p.align === 'center' ? 0 : p.align === 'right' ? -totalW / 2 + marginR :
+                        -totalW / 2 + marginL);
+
+                    for (let i = 0; i < lines.length; i++) {
+                        const line = lines[i];
+                        const yPos = startY + i * (fontSize + lineSpacing);
+                        let xPos = startX;
+                        if (p.align === 'center') xPos = startX;
+                        else if (p.align === 'right') xPos = startX + maxW - ctx.measureText(line).width;
+                        else xPos = startX;
+
+                        if (p.underline || p.strikeout) {
+                            const metrics = ctx.measureText(line);
+                            const lineW = metrics.width;
+                            const lineY = yPos + fontSize * (p.underline ? 0.9 : 0.5);
+                            ctx.strokeStyle = p.fillColor || '#ffffff';
+                            ctx.lineWidth = 1.5 * val.scale;
+                            ctx.beginPath();
+                            ctx.moveTo(xPos, lineY);
+                            ctx.lineTo(xPos + lineW, lineY);
+                            ctx.stroke();
+                        }
+
+                        if (strokeWidth > 0) {
+                            ctx.strokeText(line, xPos, yPos);
+                        }
+                        ctx.fillText(line, xPos, yPos);
+                    }
+
+                    ctx.restore();
+                    return;
+                }
+
+                // --- Transform for non-text layers ---
+                ctx.translate(val.x + w / 2, val.y + h / 2);
+                ctx.rotate((val.rot * Math.PI) / 180);
+                // Flip
+                if (layer.flipX) ctx.scale(-1, 1);
+                if (layer.flipY) ctx.scale(1, -1);
+                ctx.translate(-(val.x + w / 2), -(val.y + h / 2));
+
+                // Render based on type
+                if (layer.type === 'bg' && layer.bgElement) {
+                    try {
+                        ctx.drawImage(layer.bgElement, val.x, val.y, w, h);
+                    } catch (e) {}
+                    if (layer.id === state.selectedLayerId) {
+                        ctx.strokeStyle = '#6366f1';
+                        ctx.lineWidth = 2;
+                        ctx.setLineDash([6, 4]);
+                        ctx.strokeRect(val.x, val.y, w, h);
+                        ctx.setLineDash([]);
+                    }
+                } else if (layer.type === 'placeholder') {
+                    ctx.fillStyle = layer.color || '#6366f1';
+                    ctx.fillRect(val.x, val.y, w, h);
+                    if (layer.id === state.selectedLayerId) {
+                        ctx.strokeStyle = '#6366f1';
+                        ctx.lineWidth = 3;
+                        ctx.setLineDash([6, 4]);
+                        ctx.strokeRect(val.x, val.y, w, h);
+                        ctx.setLineDash([]);
+                    }
+                } else if (layer.type === 'image' && layer.element) {
+                    try { ctx.drawImage(layer.element, val.x, val.y, w, h); } catch (e) {}
+                    if (layer.id === state.selectedLayerId) {
+                        ctx.strokeStyle = '#6366f1';
+                        ctx.lineWidth = 3;
+                        ctx.setLineDash([6, 4]);
+                        ctx.strokeRect(val.x, val.y, w, h);
+                        ctx.setLineDash([]);
+                    }
+                } else if (layer.type === 'gif' && layer.gifFrames && layer.gifFrames.length > 0) {
+                    try {
+                        const frame = layer.gifFrames[layer.frameIndex || 0];
+                        if (frame && frame.data) {
+                            const imageData = new ImageData(new Uint8ClampedArray(frame.data), frame.width || layer
+                                .width, frame.height || layer.height);
+                            ctx.putImageData(imageData, val.x, val.y);
+                        } else {
+                            ctx.fillStyle = '#1e293b';
+                            ctx.fillRect(val.x, val.y, w, h);
+                            ctx.fillStyle = '#2d3748';
+                            const size = 20;
+                            for (let x = val.x; x < val.x + w; x += size)
+                                for (let y = val.y; y < val.y + h; y += size) {
+                                    if (((Math.floor((x - val.x) / size) + Math.floor((y - val.y) / size)) % 2) ===
+                                        0) ctx.fillRect(x, y, size, size);
+                                }
+                        }
+                    } catch (e) { ctx.fillStyle = '#1e293b';
+                        ctx.fillRect(val.x, val.y, w, h); }
+                    if (layer.id === state.selectedLayerId) {
+                        ctx.strokeStyle = '#6366f1';
+                        ctx.lineWidth = 3;
+                        ctx.setLineDash([6, 4]);
+                        ctx.strokeRect(val.x, val.y, w, h);
+                        ctx.setLineDash([]);
+                    }
+                } else if (layer.type === 'video' && layer.videoElement) {
+                    try {
+                        const video = layer.videoElement;
+                        if (video.readyState >= 2) ctx.drawImage(video, val.x, val.y, w, h);
+                        else { ctx.fillStyle = '#1a1a2e';
+                            ctx.fillRect(val.x, val.y, w, h);
+                            ctx.fillStyle = '#475569';
+                            ctx.font = '14px sans-serif';
+                            ctx.textAlign = 'center';
+                            ctx.fillText('Loading video...', val.x + w / 2, val.y + h / 2 + 5); }
+                    } catch (e) { ctx.fillStyle = '#1a1a2e';
+                        ctx.fillRect(val.x, val.y, w, h); }
+                    if (layer.id === state.selectedLayerId) {
+                        ctx.strokeStyle = '#6366f1';
+                        ctx.lineWidth = 3;
+                        ctx.setLineDash([6, 4]);
+                        ctx.strokeRect(val.x, val.y, w, h);
+                        ctx.setLineDash([]);
+                    }
+                }
+                ctx.restore();
+
+                // Draw resize handle if this layer is selected and not locked
+                if (layer.id === state.selectedLayerId && !layer.locked && layer.type !== 'bg') {
+                    ctx.save();
+                    const hx = val.x + w;
+                    const hy = val.y + h;
+                    const handleSize = 14;
+                    ctx.fillStyle = '#6366f1';
+                    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+                    ctx.shadowBlur = 8;
+                    ctx.beginPath();
+                    ctx.rect(hx - handleSize / 2, hy - handleSize / 2, handleSize, handleSize);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(hx - handleSize / 2, hy - handleSize / 2, handleSize, handleSize);
+                    ctx.restore();
+                }
+            });
+        }
+
+        // ======================================================================
+        // AUDIO WAVEFORM
+        // ======================================================================
+        function drawAudioWaveform() {
+            const canvas = document.getElementById('audioWaveformCanvas');
+            const waveCtx = canvas.getContext('2d');
+            const container = document.getElementById('timelineTracksContainer');
+            canvas.width = container.clientWidth || state.duration * state.zoom;
+            canvas.height = container.clientHeight || 200;
+            waveCtx.clearRect(0, 0, canvas.width, canvas.height);
+            if (!state.audio.file) {
+                waveCtx.fillStyle = '#334155';
+                waveCtx.font = '12px monospace';
+                waveCtx.textAlign = 'center';
+                waveCtx.fillText('No audio loaded', canvas.width / 2, canvas.height / 2 + 4);
+                return;
+            }
+            if (state.audio.waveform && state.audio.waveform.length > 0) {
+                const data = state.audio.waveform;
+                const step = Math.max(1, Math.floor(data.length / canvas.width));
+                const amp = canvas.height / 2.5;
+                waveCtx.beginPath();
+                waveCtx.strokeStyle = '#6366f1';
+                waveCtx.lineWidth = 1.5;
+                for (let i = 0; i < canvas.width; i++) {
+                    const idx = Math.min(data.length - 1, Math.floor(i * step));
+                    const val = data[idx] || 0;
+                    const y = canvas.height / 2 + val * amp;
+                    i === 0 ? waveCtx.moveTo(i, y) : waveCtx.lineTo(i, y);
+                }
+                waveCtx.stroke();
+                const grad = waveCtx.createLinearGradient(0, 0, 0, canvas.height);
+                grad.addColorStop(0, 'rgba(99,102,241,0.05)');
+                grad.addColorStop(0.5, 'rgba(99,102,241,0.15)');
+                grad.addColorStop(1, 'rgba(99,102,241,0.05)');
+                waveCtx.fillStyle = grad;
+                waveCtx.fillRect(0, 0, canvas.width, canvas.height);
+            } else {
+                const bars = 120;
+                const barW = canvas.width / bars;
+                for (let i = 0; i < bars; i++) {
+                    const h = (Math.random() * 0.6 + 0.2) * canvas.height;
+                    waveCtx.fillStyle = `rgba(99,102,241,${0.1+Math.random()*0.2})`;
+                    waveCtx.fillRect(i * barW, canvas.height - h, barW * 0.6, h);
+                }
+            }
+        }
+
+        function clearAudioWaveform() {
+            const canvas = document.getElementById('audioWaveformCanvas');
+            const waveCtx = canvas.getContext('2d');
+            waveCtx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function decodeAudioFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const audioContext = new(window.AudioContext || window.webkitAudioContext)();
+                audioContext.decodeAudioData(e.target.result, function(buffer) {
+                    const rawData = buffer.getChannelData(0);
+                    const samples = 2000;
+                    const waveform = [];
+                    const step = Math.floor(rawData.length / samples);
+                    for (let i = 0; i < samples; i++) {
+                        let sum = 0;
+                        for (let j = 0; j < step; j++) { sum += Math.abs(rawData[i * step + j] || 0); }
+                        waveform.push(sum / step);
+                    }
+                    state.audio.waveform = waveform;
+                    drawAudioWaveform();
+                }, function() {
+                    const dummy = [];
+                    for (let i = 0; i < 2000; i++) dummy.push(Math.random() * 0.5 + 0.1);
+                    state.audio.waveform = dummy;
+                    drawAudioWaveform();
+                });
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // ======================================================================
+        // UTILITY: roundRect polyfill for canvas
+        // ======================================================================
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+                if (r > w / 2) r = w / 2;
+                if (r > h / 2) r = h / 2;
+                this.moveTo(x + r, y);
+                this.arcTo(x + w, y, x + w, y + h, r);
+                this.arcTo(x + w, y + h, x, y + h, r);
+                this.arcTo(x, y + h, x, y, r);
+                this.arcTo(x, y, x + w, y, r);
+                return this;
+            };
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
+            const millis = Math.floor((seconds % 1) * 100).toString().padStart(2, '0');
+            return `${mins}:${secs}.${millis}`;
+        }
+
+        console.log('🚀 KeyframeStudio Pro loaded with Flip, BG Layer, and Resize Handle!');
+        console.log('📐 Resolution:', state.resolution.width, 'x', state.resolution.height);
+        console.log('🎬 Layers:', state.layers.length);
+        console.log('💡 Tip: Select a layer and use the corner handle to resize, or mouse wheel to scale.');
+    </script>
+</body>
+</html>
