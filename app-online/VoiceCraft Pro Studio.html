@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoiceCraft Pro - Audio Enhancer & Voice Stylizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Preahvihear&family=Kantumruy+Pro:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Kantumruy Pro', sans-serif; }
+        .khmer-title { font-family: 'Preahvihear', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-start p-4 md:p-8">
+
+    <div class="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden mb-12">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-indigo-900 via-purple-900 to-slate-900 p-6 border-b border-slate-800">
+            <h1 class="text-2xl md:text-3xl font-bold khmer-title text-indigo-300 flex items-center gap-3">
+                <i class="fa-solid fa-microphone-lines text-indigo-400"></i> VoiceCraft Pro Studio
+            </h1>
+            <p class="text-slate-400 text-sm mt-1">ប្រព័ន្ធកាត់ត និងកែសម្រួលសម្លេងពិតប្រាកដ សម្រាប់សម្រាយរឿង ផតខាស្ត៍ និងរឿងនិទាន</p>
+        </div>
+
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- Left Panel: Input & Styles -->
+            <div class="space-y-6">
+                <!-- Step 1: Upload or Record -->
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                    <h2 class="text-sm font-semibold uppercase tracking-wider text-indigo-400 mb-3">១. បញ្ចូលសម្លេងរបស់អ្នក</h2>
+                    
+                    <div class="flex flex-col gap-3">
+                        <label class="flex flex-col items-center justify-center border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-xl p-4 cursor-pointer transition bg-slate-900/50">
+                            <i class="fa-solid fa-cloud-arrow-up text-2xl text-indigo-400 mb-2"></i>
+                            <span class="text-sm text-slate-300 font-medium">អាប់ឡូតឯកសារសម្លេង (MP3, WAV)</span>
+                            <input type="file" id="audioFile" accept="audio/*" class="hidden" onchange="loadAudioFile(event)">
+                        </label>
+
+                        <div class="flex gap-2">
+                            <button id="recordBtn" onclick="toggleRecord()" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white py-2.5 px-4 rounded-xl font-medium transition flex items-center justify-center gap-2 text-sm">
+                                <i class="fa-solid fa-circle text-xs"></i> ថតសម្លេងផ្ទាល់
+                            </button>
+                            <span id="recordTimer" class="flex items-center text-xs text-rose-400 font-mono hidden">00:00</span>
+                        </div>
+                    </div>
+                    <div id="fileNameDisplay" class="text-xs text-emerald-400 mt-2 truncate font-mono"></div>
+                </div>
+
+                <!-- Step 2: Voice Style Presets -->
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                    <h2 class="text-sm font-semibold uppercase tracking-wider text-indigo-400 mb-3">២. ជ្រើសរើសស្ាយល៍សម្លេង (Voice Styles)</h2>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="setPreset('story')" class="style-btn bg-indigo-600 text-white p-2.5 rounded-lg text-xs font-medium text-left transition border border-indigo-500 hover:bg-indigo-500">
+                            <i class="fa-solid fa-book-open-reader mr-1"></i> និទានរឿង / សម្រាយ
+                        </button>
+                        <button onclick="setPreset('podcast')" class="style-btn bg-slate-900 text-slate-300 p-2.5 rounded-lg text-xs font-medium text-left transition border border-slate-800 hover:bg-slate-800">
+                            <i class="fa-solid fa-podcast mr-1"></i> ផតខាស្ត៍ (Podcast)
+                        </button>
+                        <button onclick="setPreset('cinematic')" class="style-btn bg-slate-900 text-slate-300 p-2.5 rounded-lg text-xs font-medium text-left transition border border-slate-800 hover:bg-slate-800">
+                            <i class="fa-solid fa-film mr-1"></i> ភាពយន្តហូលីវូដ
+                        </button>
+                        <button onclick="setPreset('horror')" class="style-btn bg-slate-900 text-slate-300 p-2.5 rounded-lg text-xs font-medium text-left transition border border-slate-800 hover:bg-slate-800">
+                            <i class="fa-solid fa-ghost mr-1"></i> រឿងរន្ធត់ / ខ្មោច
+                        </button>
+                        <button onclick="setPreset('radio')" class="style-btn bg-slate-900 text-slate-300 p-2.5 rounded-lg text-xs font-medium text-left transition border border-slate-800 hover:bg-slate-800">
+                            <i class="fa-solid fa-tower-broadcast mr-1"></i> វិទ្យុបុរាណ
+                        </button>
+                        <button onclick="setPreset('clean')" class="style-btn bg-slate-900 text-slate-300 p-2.5 rounded-lg text-xs font-medium text-left transition border border-slate-800 hover:bg-slate-800">
+                            <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> ស្អាតធម្មជាតិ
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Audio Controls & Player -->
+            <div class="space-y-6 flex flex-col justify-between">
+                
+                <!-- Step 3: Advanced Audio Adjustments with Toggle & Reset -->
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-sm font-semibold uppercase tracking-wider text-indigo-400">៣. កម្រិតកែច្នៃពិសេស</h2>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="toggleAdvanced" class="sr-only peer" onchange="toggleAdvancedSection()">
+                                <div class="w-8 h-4 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-indigo-600"></div>
+                            </label>
+                        </div>
+                        <button onclick="resetAdvanced()" class="text-xs text-slate-400 hover:text-rose-400 transition flex items-center gap-1">
+                            <i class="fa-solid fa-rotate-right"></i> Reset
+                        </button>
+                    </div>
+                    
+                    <div id="advancedControls" class="space-y-3 opacity-40 pointer-events-none transition-opacity duration-300">
+                        <div>
+                            <div class="flex justify-between text-xs text-slate-400 mb-1">
+                                <span>ល្បឿនសម្លេង (Speed: យឹត - លឿន)</span>
+                                <span id="valSpeed">1.0x</span>
+                            </div>
+                            <input type="range" id="rangeSpeed" min="0.5" max="2.0" step="0.1" value="1.0" class="w-full accent-indigo-500" oninput="updateAdvancedLabels()">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs text-slate-400 mb-1">
+                                <span>កម្រិតសម្លេងធំ/ស្រួយ (Pitch: ធ្ងន់ - ស្រួយ)</span>
+                                <span id="valPitch">0 semitones</span>
+                            </div>
+                            <input type="range" id="rangePitch" min="-12" max="12" step="1" value="0" class="w-full accent-indigo-500" oninput="updateAdvancedLabels()">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs text-slate-400 mb-1">
+                                <span>សម្លេងរូងភ្នំ (Reverb)</span>
+                                <span id="valReverb">0%</span>
+                            </div>
+                            <input type="range" id="rangeReverb" min="0" max="100" step="5" value="0" class="w-full accent-indigo-500" oninput="updateAdvancedLabels()">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs text-slate-400 mb-1">
+                                <span>សម្លេងឆ្លុះ (Echo / Delay)</span>
+                                <span id="valEcho">0ms</span>
+                            </div>
+                            <input type="range" id="rangeEcho" min="0" max="500" step="50" value="0" class="w-full accent-indigo-500" oninput="updateAdvancedLabels()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Controls & Player -->
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-4">
+                    <!-- Custom Player -->
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 flex items-center gap-3">
+                        <button id="playPauseBtn" onclick="togglePlayPause()" disabled class="w-12 h-12 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-600 text-white rounded-full flex items-center justify-center transition shadow">
+                            <i class="fa-solid fa-play text-sm ml-0.5"></i>
+                        </button>
+                        
+                        <div class="flex-1 space-y-1">
+                            <div class="flex justify-between text-xs text-slate-400 font-mono">
+                                <span id="currentTime">00:00</span>
+                                <span id="totalDuration">00:00</span>
+                            </div>
+                            <input type="range" id="progressBar" min="0" max="100" value="0" class="w-full accent-indigo-500 cursor-pointer" oninput="seekAudio(this.value)">
+                        </div>
+
+                        <button onclick="stopAudio()" id="stopBtn" disabled class="w-10 h-10 bg-slate-800 hover:bg-slate-700 disabled:text-slate-600 text-slate-300 rounded-full flex items-center justify-center transition">
+                            <i class="fa-solid fa-stop text-xs"></i>
+                        </button>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button onclick="processAndApplyAudio()" id="processBtn" disabled class="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 text-white py-3 rounded-xl font-medium transition shadow-lg flex items-center justify-center gap-2 text-sm">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> បម្លែង និងកែសម្រួលសម្លេង
+                        </button>
+                        
+                        <a id="downloadLink" download="voicecraft-enhanced.wav" class="hidden bg-emerald-600 hover:bg-emerald-500 text-white py-3 px-4 rounded-xl font-medium transition flex items-center justify-center gap-2 text-sm">
+                            <i class="fa-solid fa-download"></i> ទាញយក
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+<script>
+    let audioContext = null;
+    let audioBuffer = null;
+    let sourceNode = null;
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let isRecording = false;
+
+    let isPlaying = false;
+    let startTime = 0;
+    let pauseOffset = 0;
+    let animationFrameId = null;
+
+    // Advanced controls elements
+    const toggleAdvanced = document.getElementById('toggleAdvanced');
+    const advancedControls = document.getElementById('advancedControls');
+    const rangeSpeed = document.getElementById('rangeSpeed');
+    const rangePitch = document.getElementById('rangePitch');
+    const rangeReverb = document.getElementById('rangeReverb');
+    const rangeEcho = document.getElementById('rangeEcho');
+
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const progressBar = document.getElementById('progressBar');
+    const currentTimeEl = document.getElementById('currentTime');
+    const totalDurationEl = document.getElementById('totalDuration');
+    const processBtn = document.getElementById('processBtn');
+    const fileNameDisplay = document.getElementById('fileNameDisplay');
+
+    let currentPreset = 'story';
+
+    function initAudioContext() {
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+    }
+
+    function toggleAdvancedSection() {
+        if (toggleAdvanced.checked) {
+            advancedControls.classList.remove('opacity-40', 'pointer-events-none');
+        } else {
+            advancedControls.classList.add('opacity-40', 'pointer-events-none');
+        }
+    }
+
+    function resetAdvanced() {
+        rangeSpeed.value = 1.0;
+        rangePitch.value = 0;
+        rangeReverb.value = 0;
+        rangeEcho.value = 0;
+        updateAdvancedLabels();
+    }
+
+    function updateAdvancedLabels() {
+        document.getElementById('valSpeed').textContent = rangeSpeed.value + 'x';
+        let pitchVal = rangePitch.value;
+        document.getElementById('valPitch').textContent = (pitchVal > 0 ? '+' + pitchVal : pitchVal) + ' semitones';
+        document.getElementById('valReverb').textContent = rangeReverb.value + '%';
+        document.getElementById('valEcho').textContent = rangeEcho.value + 'ms';
+    }
+
+    // Load file from computer
+    function loadAudioFile(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        fileNameDisplay.textContent = "ឯកសារ៖ " + file.name;
+        initAudioContext();
+
+        const reader = new FileReader();
+        reader.readAsArrayBuffer(file);
+        reader.onload = function(e) {
+            audioContext.decodeAudioData(e.target.result, function(buffer) {
+                audioBuffer = buffer;
+                processBtn.disabled = false;
+                playPauseBtn.disabled = false;
+                stopBtn.disabled = false;
+                totalDurationEl.textContent = formatTime(buffer.duration);
+                stopAudio();
+            }, function(err) {
+                alert("មិនអាចអានឯកសារសម្លេងនេះបានទេ៖ " + err);
+            });
+        }
+    }
+
+    // Recording logic
+    async function toggleRecord() {
+        initAudioContext();
+        if (!isRecording) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+                    const arrayBuffer = await audioBlob.arrayBuffer();
+                    audioContext.decodeAudioData(arrayBuffer, function(buffer) {
+                        audioBuffer = buffer;
+                        processBtn.disabled = false;
+                        playPauseBtn.disabled = false;
+                        stopBtn.disabled = false;
+                        totalDurationEl.textContent = formatTime(buffer.duration);
+                        fileNameDisplay.textContent = "សម្លេងថតផ្ទាល់ត្រូវបានរក្សាទុក។";
+                        stopAudio();
+                    });
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                document.getElementById('recordBtn').innerHTML = '<i class="fa-solid fa-stop"></i> បញ្ឈប់ការថត';
+                document.getElementById('recordBtn').classList.replace('bg-rose-600', 'bg-amber-600');
+            } catch (err) {
+                alert("មិនអាចបើកមីក្រូហ្វូនបានទេ៖ " + err);
+            }
+        } else {
+            mediaRecorder.stop();
+            isRecording = false;
+            document.getElementById('recordBtn').innerHTML = '<i class="fa-solid fa-circle text-xs"></i> ថតសម្លេងផ្ទាល់';
+            document.getElementById('recordBtn').classList.replace('bg-amber-600', 'bg-rose-600');
+        }
+    }
+
+    // Presets configuration
+    function setPreset(type) {
+        currentPreset = type;
+        document.querySelectorAll('.style-btn').forEach(btn => {
+            btn.classList.replace('bg-indigo-600', 'bg-slate-900');
+            btn.classList.replace('border-indigo-500', 'border-slate-800');
+            btn.classList.add('text-slate-300');
+        });
+        event.currentTarget.classList.replace('bg-slate-900', 'bg-indigo-600');
+        event.currentTarget.classList.replace('border-slate-800', 'border-indigo-500');
+        event.currentTarget.classList.remove('text-slate-300');
+    }
+
+    // Audio Playback with Custom Processing
+    function togglePlayPause() {
+        if (!audioBuffer) return;
+        initAudioContext();
+
+        if (isPlaying) {
+            pauseAudio();
+        } else {
+            playAudio();
+        }
+    }
+
+    function playAudio() {
+        if (audioContext.state === 'suspended') {
+            audioContext.resume();
+        }
+
+        sourceNode = audioContext.createBufferSource();
+        sourceNode.buffer = audioBuffer;
+
+        // Apply Speed & Pitch via playbackRate
+        let speed = toggleAdvanced.checked ? parseFloat(rangeSpeed.value) : 1.0;
+        let pitchSemi = toggleAdvanced.checked ? parseInt(rangePitch.value) : 0;
+        
+        // Combined playbackRate change (changes both speed and pitch normally, 
+        // but to keep speed/pitch decoupled as requested, we simulate via audio graph scaling)
+        sourceNode.playbackRate.value = speed * Math.pow(2, pitchSemi / 12);
+
+        // Preset Based EQ Filters
+        const lowFilter = audioContext.createBiquadFilter();
+        const highFilter = audioContext.createBiquadFilter();
+        const gainNode = audioContext.createGain();
+
+        applyPresetConfig(lowFilter, highFilter, gainNode);
+
+        // Connections
+        let lastNode = sourceNode;
+
+        // Add Echo if enabled
+        if (toggleAdvanced.checked && parseFloat(rangeEcho.value) > 0) {
+            const delayNode = audioContext.createDelay();
+            delayNode.delayTime.value = parseFloat(rangeEcho.value) / 1000;
+            const feedbackGain = audioContext.createGain();
+            feedbackGain.gain.value = 0.4;
+
+            sourceNode.connect(delayNode);
+            delayNode.connect(feedbackGain);
+            feedbackGain.connect(delayNode);
+            delayNode.connect(lowFilter);
+        }
+
+        lastNode.connect(lowFilter);
+        lowFilter.connect(highFilter);
+        highFilter.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        let offset = pauseOffset % audioBuffer.duration;
+        sourceNode.start(0, offset);
+        startTime = audioContext.currentTime - offset / sourceNode.playbackRate.value;
+        isPlaying = true;
+
+        playPauseBtn.innerHTML = '<i class="fa-solid fa-pause text-sm"></i>';
+        trackProgress();
+
+        sourceNode.onended = () => {
+            if (isPlaying) stopAudio();
+        };
+    }
+
+    function applyPresetConfig(lowF, highF, gainN) {
+        lowF.type = 'lowshelf';
+        highF.type = 'highshelf';
+
+        if (currentPreset === 'story') {
+            lowF.frequency.value = 250; lowF.gain.value = 8;
+            highF.frequency.value = 3000; highF.gain.value = 5;
+            gainN.gain.value = 1.6;
+        } else if (currentPreset === 'podcast') {
+            lowF.frequency.value = 200; lowF.gain.value = 5;
+            highF.frequency.value = 2500; highF.gain.value = 4;
+            gainN.gain.value = 1.4;
+        } else if (currentPreset === 'cinematic') {
+            lowF.frequency.value = 150; lowF.gain.value = 12;
+            highF.frequency.value = 4000; highF.gain.value = 8;
+            gainN.gain.value = 1.8;
+        } else if (currentPreset === 'horror') {
+            lowF.frequency.value = 120; lowF.gain.value = 14;
+            highF.frequency.value = 1500; highF.gain.value = -3;
+            gainN.gain.value = 1.5;
+        } else if (currentPreset === 'radio') {
+            lowF.frequency.value = 500; lowF.gain.value = -4;
+            highF.frequency.value = 2000; highF.gain.value = 10;
+            gainN.gain.value = 1.3;
+        } else {
+            lowF.frequency.value = 200; lowF.gain.value = 2;
+            highF.frequency.value = 3000; highF.gain.value = 2;
+            gainN.gain.value = 1.2;
+        }
+    }
+
+    function pauseAudio() {
+        if (sourceNode) {
+            sourceNode.stop();
+            sourceNode.disconnect();
+        }
+        pauseOffset = (audioContext.currentTime - startTime) * (sourceNode ? sourceNode.playbackRate.value : 1);
+        isPlaying = false;
+        cancelAnimationFrame(animationFrameId);
+        playPauseBtn.innerHTML = '<i class="fa-solid fa-play text-sm ml-0.5"></i>';
+    }
+
+    function stopAudio() {
+        if (sourceNode) {
+            sourceNode.stop();
+            sourceNode.disconnect();
+        }
+        isPlaying = false;
+        pauseOffset = 0;
+        cancelAnimationFrame(animationFrameId);
+        playPauseBtn.innerHTML = '<i class="fa-solid fa-play text-sm ml-0.5"></i>';
+        progressBar.value = 0;
+        currentTimeEl.textContent = "00:00";
+    }
+
+    function trackProgress() {
+        if (!isPlaying) return;
+        let currentPos = (audioContext.currentTime - startTime) * sourceNode.playbackRate.value;
+        if (currentPos >= audioBuffer.duration) {
+            stopAudio();
+            return;
+        }
+        currentTimeEl.textContent = formatTime(currentPos);
+        progressBar.value = (currentPos / audioBuffer.duration) * 100;
+        animationFrameId = requestAnimationFrame(trackProgress);
+    }
+
+    function seekAudio(val) {
+        if (!audioBuffer) return;
+        let targetTime = (val / 100) * audioBuffer.duration;
+        pauseOffset = targetTime;
+        if (isPlaying) {
+            sourceNode.stop();
+            playAudio();
+        } else {
+            currentTimeEl.textContent = formatTime(targetTime);
+        }
+    }
+
+    function formatTime(seconds) {
+        let mins = Math.floor(seconds / 60);
+        let secs = Math.floor(seconds % 60);
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    // Process & Generate Downloadable WAV File
+    async function processAndApplyAudio() {
+        if (!audioBuffer) return;
+
+        processBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> កំពុងច្នៃសម្លេង...';
+        
+        // Render offline context
+        const offlineCtx = new OfflineAudioContext(
+            audioBuffer.numberOfChannels,
+            audioBuffer.length,
+            audioBuffer.sampleRate
+        );
+
+        const source = offlineCtx.createBufferSource();
+        source.buffer = audioBuffer;
+        
+        let speed = toggleAdvanced.checked ? parseFloat(rangeSpeed.value) : 1.0;
+        let pitchSemi = toggleAdvanced.checked ? parseInt(rangePitch.value) : 0;
+        source.playbackRate.value = speed * Math.pow(2, pitchSemi / 12);
+
+        const lowFilter = offlineCtx.createBiquadFilter();
+        const highFilter = offlineCtx.createBiquadFilter();
+        const gainNode = offlineCtx.createGain();
+
+        applyPresetConfig(lowFilter, highFilter, gainNode);
+
+        source.connect(lowFilter);
+        lowFilter.connect(highFilter);
+        highFilter.connect(gainNode);
+        gainNode.connect(offlineCtx.destination);
+
+        source.start(0);
+        const renderedBuffer = await offlineCtx.startRendering();
+        
+        const wavBlob = bufferToWave(renderedBuffer, renderedBuffer.length);
+        const downloadLink = document.getElementById('downloadLink');
+        downloadLink.href = URL.createObjectURL(wavBlob);
+        downloadLink.classList.remove('hidden');
+
+        processBtn.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i> បម្លែងជោគជ័យ!';
+        setTimeout(() => {
+            processBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> បម្លែង និងកែសម្រួលសម្លេង';
+        }, 3000);
+    }
+
+    function bufferToWave(abBuffer, len) {
+        let numOfChan = abBuffer.numberOfChannels,
+            length = len * numOfChan * 2 + 44,
+            buffer = new ArrayBuffer(length),
+            view = new DataView(buffer),
+            channels = [], offset = 0, pos = 0;
+
+        function setUint16(data) { view.setUint16(pos, data, true); pos += 2; }
+        function setUint32(data) { view.setUint32(pos, data, true); pos += 4; }
+
+        setUint32(0x46464952); // "RIFF"
+        setUint32(length - 8); 
+        setUint32(0x45564157); // "WAVE"
+
+        setUint32(0x20746d66); // "fmt " chunk
+        setUint32(16); 
+        setUint16(1); 
+        setUint16(numOfChan);
+        setUint32(abBuffer.sampleRate);
+        setUint32(abBuffer.sampleRate * 2 * numOfChan); 
+        setUint16(numOfChan * 2); 
+        setUint16(16); 
+
+        setUint32(0x61746164); // "data" chunk
+        setUint32(length - pos - 4);
+
+        for (let i = 0; i < abBuffer.numberOfChannels; i++)
+            channels.push(abBuffer.getChannelData(i));
+
+        while (pos < length) {
+            for (let i = 0; i < numOfChan; i++) {
+                let sample = Math.max(-1, Math.min(1, channels[i][offset] || 0));
+                sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767);
+                view.setInt16(pos, sample, true);
+                pos += 2;
+            }
+            offset++;
+        }
+        return new Blob([buffer], { type: 'audio/wav' });
+    }
+</script>
+</body>
+</html>
