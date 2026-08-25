@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reload 15s</title>
+    <style>
+        /* ----- Reset & base ----- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000000;
+            /* ផ្ទាំងខ្មៅសុទ្ធ */
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            user-select: none;
+            /* មិនឲ្យអ្នកប្រើប្រាស់ជ្រើសអត្ថបទ */;
+        }
+
+        /* ----- កុងតឺន័រចម្បង ----- */
+        .container {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        /* ----- ស្លាក "Reload in" ----- */
+        .label {
+            color: rgb(0 0 0 / 50%);
+            font-size: 1.2rem;
+            font-weight: 400;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            margin-bottom: 0.75rem;
+        }
+
+        /* ----- លេខរាប់ថយក្រោយ ----- */
+        .timer {
+            color: #ffffff;
+            font-size: 12rem;
+            font-weight: 700;
+            line-height: 1;
+            letter-spacing: -0.03em;
+            transition: transform 0.15s ease;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* ----- អត្ថបទខាងក្រោម (ជំនួយ) ----- */
+        .hint {
+            color: rrgb(0 0 0 / 20%);
+            font-size: 0.85rem;
+            font-weight: 300;
+            margin-top: 2rem;
+            letter-spacing: 0.05em;
+        }
+
+        /* ----- ការ៉េបង្ហាញពីវឌ្ឍនភាព (progress ring) ----- */
+        .progress-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-ring {
+            transform: rotate(-90deg);
+            /* ចាប់ផ្តើមពីកំពូល */
+            width: 180px;
+            height: 180px;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .progress-ring .bg {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.06);
+            stroke-width: 3;
+        }
+
+        .progress-ring .fg {
+            fill: none;
+            stroke: #000000;
+            stroke-width: 3;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.3s ease;
+        }
+
+        /* ----- លេខដាក់ពីលើរង្វង់ (ធ្វើឲ្យធំជាងមុន) ----- */
+        .timer-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #1c1010;
+            font-size: 4.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* ----- Responsive ----- */
+        @media (max-width: 600px) {
+            .timer {
+                font-size: 6rem;
+            }
+            .progress-ring {
+                width: 140px;
+                height: 140px;
+            }
+            .timer-overlay {
+                font-size: 3.2rem;
+            }
+            .label {
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .timer {
+                font-size: 4.5rem;
+            }
+            .progress-ring {
+                width: 110px;
+                height: 110px;
+            }
+            .timer-overlay {
+                font-size: 2.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <!-- ស្លាក -->
+        <div class="label">Reload in</div>
+
+        <!-- រង្វង់វឌ្ឍនភាព + លេខ -->
+        <div class="progress-wrapper">
+            <svg class="progress-ring" viewBox="0 0 120 120">
+                <!-- ផ្ទៃខាងក្រោយ -->
+                <circle class="bg" cx="60" cy="60" r="52" />
+                <!-- ផ្ទៃវឌ្ឍនភាព -->
+                <circle class="fg" cx="60" cy="60" r="52"
+                stroke-dasharray="326.726"
+                stroke-dashoffset="0"
+                id="progressCircle" />
+            </svg>
+            <!-- លេខរាប់ថយក្រោយ (ដាក់ពីលើ) -->
+            <div class="timer-overlay" id="timerDisplay">15</div>
+        </div>
+
+        <!-- អត្ថបទជំនួយ -->
+        <div class="hint">&#x21BB; ទំព័រនឹងផ្ទុកឡើងវិញដោយស្វ័យប្រវត្តិ</div>
+
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ----- អថេរ -----
+            const TOTAL_SECONDS = 15;
+            let remaining = TOTAL_SECONDS;
+
+            // DOM elements
+            const timerDisplay = document.getElementById('timerDisplay');
+            const progressCircle = document.getElementById('progressCircle');
+
+            // ប្រវែងរង្វង់ (circumference) = 2 * PI * r (r = 52)
+            const circumference = 2 * Math.PI * 52; // ≈ 326.726
+
+            // កំណត់ dasharray ឲ្យត្រឹមត្រូវ
+            progressCircle.style.strokeDasharray = circumference;
+
+            /**
+             * ធ្វើបច្ចុប្បន្នភាព UI
+             * @param {number} seconds - ចំនួនវិនាទីដែលនៅសល់
+             */
+            function updateUI(seconds) {
+                // បង្ហាញលេខ
+                timerDisplay.textContent = seconds;
+
+                // គណនា offset: 0 = ពេញ, circumference = ទទេ
+                const progress = seconds / TOTAL_SECONDS;
+                const offset = circumference * (1 - progress);
+                progressCircle.style.strokeDashoffset = offset;
+            }
+
+            /**
+             * ផ្ទុកទំព័រឡើងវិញ
+             */
+            function reloadPage() {
+                window.location.reload();
+            }
+
+            /**
+             * ចាប់ផ្ដើមកម្មវិធីរាប់ថយក្រោយ
+             */
+            function startCountdown() {
+                // កំណត់តម្លៃដំបូង
+                remaining = TOTAL_SECONDS;
+                updateUI(remaining);
+
+                // បង្កើត interval រាប់ថយក្រោយ
+                const intervalId = setInterval(function() {
+                    remaining -= 1;
+
+                    // ធ្វើបច្ចុប្បន្នភាព UI
+                    updateUI(remaining);
+
+                    // ប្រសិនបើដល់ 0 → បញ្ឈប់ interval ហើយផ្ទុកឡើងវិញ
+                    if (remaining <= 0) {
+                        clearInterval(intervalId);
+                        reloadPage();
+                    }
+                }, 1000);
+            }
+
+            // ----- ចាប់ផ្ដើម -----
+            startCountdown();
+
+        })();
+    </script>
+
+</body>
+</html>
