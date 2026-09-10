@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mind Map Canva AI - Subtree Group Drag, Links, Colors & Tooltip</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Kantumruy Pro', sans-serif;
+            background-color: #f8fafc;
+            overflow: hidden;
+            user-select: none;
+        }
+        .canvas-bg {
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        .canvas-bg-none {
+            background-image: none !important;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        .node-card {
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+        .node-card:hover {
+            box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.2), 0 8px 10px -6px rgba(99, 102, 241, 0.2);
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col text-slate-800">
+
+    <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm z-20">
+        <div class="flex items-center space-x-3">
+            <div class="bg-indigo-600 text-white p-2 rounded-xl shadow-md">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold text-indigo-900">Mind Map Canva AI</h1>
+                <p class="text-xs text-slate-500">មុខងារ AI ឆ្លាតវៃ, Custom Colors, Links & Standalone Viewer</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-2.5">
+            <button onclick="zoomIn()" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 transition" title="ការពង្រីក (Zoom In)">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            </button>
+            <button onclick="zoomOut()" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 transition" title="ការបង្រួម (Zoom Out)">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
+            </button>
+            <button onclick="resetView()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium text-slate-700 transition">ទំហំដើម</button>
+            
+            <div class="flex items-center space-x-1.5 bg-slate-100 px-2.5 py-1.5 rounded-xl border border-slate-200">
+                <button onclick="toggleBackground()" id="bgToggleBtn" class="text-xs font-medium text-slate-700 hover:text-indigo-600 transition" title="បិទ/បើក ផ្ទៃក្រឡា">
+                    <span id="bgToggleText">ផ្ទៃក្រឡា៖ បើក</span>
+                </button>
+                <input type="color" id="canvasBgColorPicker" value="#f8fafc" class="w-6 h-6 rounded-lg border border-slate-300 cursor-pointer p-0 bg-white" title="ប្ដូរពណ៌ផ្ទៃខាងក្រោយ" oninput="changeCanvasBgColor(this.value)">
+            </div>
+
+            <button onclick="exportJSONFile()" class="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-sm font-medium transition flex items-center space-x-1 shadow-sm" title="រក្សាទុកជា File (.json)">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                <span>រក្សាទុក File</span>
+            </button>
+            <label class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition flex items-center space-x-1 shadow-sm cursor-pointer" title="បើក File ចាស់មកប្រើប្រាស់វិញ">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                <span>បើក File</span>
+                <input type="file" id="importFile" accept=".json" class="hidden" onchange="importJSONFile(event)">
+            </label>
+
+            <div class="relative">
+                <button onclick="toggleExportMenu()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium shadow-md shadow-indigo-200 transition flex items-center space-x-1">
+                    <span>ទាញយក (Export) ▾</span>
+                </button>
+                <div id="exportMenu" class="absolute right-0 mt-2 w-52 bg-white border border-slate-200 rounded-xl shadow-xl hidden z-30 overflow-hidden py-1">
+                    <button onclick="exportAsPNG()" class="w-full text-left px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 transition flex items-center space-x-2">
+                        <span>🖼️ ទាញយកជា PNG</span>
+                    </button>
+                    <button onclick="exportAsSVG()" class="w-full text-left px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 transition flex items-center space-x-2">
+                        <span>📐 ទាញយកជា SVG</span>
+                    </button>
+                    <div class="border-t border-slate-100 my-1"></div>
+                    <button onclick="exportAsHTMLViewer()" class="w-full text-left px-4 py-2.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 transition flex items-center space-x-2">
+                        <span>🌐 ទាញយកជា HTML Viewer</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex-1 flex overflow-hidden relative">
+        <aside class="w-96 bg-white border-r border-slate-200 flex flex-col z-10 shadow-lg">
+            <div class="p-5 border-b border-slate-100 bg-slate-50">
+                <h2 class="font-bold text-slate-800 text-base mb-1 flex items-center">
+                    <span class="w-2 h-2 rounded-full bg-indigo-600 mr-2"></span>
+                    ផ្ទាំងបញ្ជា Mind Map
+                </h2>
+                <p class="text-xs text-slate-500">កែប្រែទម្រង់ បង្កប់ Link និងកំណត់ API Key (សម្រាប់ប្រើខាងក្រៅ)</p>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-5 space-y-6">
+                <div class="bg-amber-50 p-3 rounded-2xl border border-amber-200 space-y-2">
+                    <label class="text-xs font-bold text-amber-900 uppercase tracking-wider block">🔑 Gemini API Key (សម្រាប់ប្រើខាងក្រៅ)</label>
+                    <p class="text-[11px] text-amber-800">ពេលរត់ក្នុង Gemini គឺប្រើប្រាស់ស្វ័យប្រវត្តិ តែបើយកទៅផុសខាងក្រៅសូមបញ្ចូល Key ទីនេះ៖</p>
+                    <input type="password" id="apiKeyInput" placeholder="AIzaSy..." class="w-full px-3 py-2 border border-amber-300 rounded-xl bg-white text-xs focus:ring-2 focus:ring-amber-500 outline-none" oninput="saveApiKey()">
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-xs font-semibold text-slate-600 uppercase tracking-wider">ចំណងជើងមេ (Root Node)</label>
+                    <div class="flex space-x-2">
+                        <input type="text" id="rootInput" value="ពុទ្ធគុណ ទាំង១០" class="flex-1 px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm outline-none">
+                        <button onclick="updateRootNode()" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-sm font-medium transition shadow-sm">កែប្រែ</button>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-br from-purple-50 to-indigo-50 p-4 rounded-2xl border border-purple-100 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-purple-700 uppercase tracking-wider flex items-center">
+                            AI Dynamic Style Generator
+                        </span>
+                        <span class="text-[10px] bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full font-semibold">Gemini AI</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="changeStyle('modern')" class="py-2 px-3 bg-white hover:bg-purple-100 border border-purple-200 rounded-xl text-xs font-semibold text-purple-800 transition shadow-sm">🌟 ទំនើប (Modern)</button>
+                        <button onclick="changeStyle('sunset')" class="py-2 px-3 bg-white hover:bg-orange-100 border border-orange-200 rounded-xl text-xs font-semibold text-orange-800 transition shadow-sm">🌅 ថ្ងៃរៀបលិច (Sunset)</button>
+                        <button onclick="changeStyle('emerald')" class="py-2 px-3 bg-white hover:bg-emerald-100 border border-emerald-200 rounded-xl text-xs font-semibold text-emerald-800 transition shadow-sm">🌿 បៃតង (Emerald)</button>
+                        <button onclick="changeStyle('dark')" class="py-2 px-3 bg-slate-800 hover:bg-slate-900 border border-slate-700 rounded-xl text-xs font-semibold text-white transition shadow-sm">🌙 ងងឹត (Cyber Dark)</button>
+                    </div>
+                    <button onclick="generateAIStyle()" id="aiStyleBtn" class="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-purple-200 transition flex items-center justify-center space-x-2">
+                        <span id="aiStyleBtnText">🎨 ឱ្យ AI ច្នៃស្ទីលពណ៌ថ្មី</span>
+                    </button>
+                </div>
+
+                <div class="bg-gradient-to-br from-indigo-50 to-violet-50 p-4 rounded-2xl border border-indigo-100 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-indigo-700 uppercase tracking-wider">AI Smart Count Assistant</span>
+                    </div>
+                    <p class="text-xs text-indigo-900/70">AI នឹងផ្ទៀងផ្ទាត់ចំនួនក្នុងចំណងជើងមេ (ឧ. រតនៈ ៤) និងបំពេញឱ្យបានត្រឹមត្រូវ។</p>
+                    <button onclick="generateWithAI()" id="aiBtn" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-indigo-200 transition flex items-center justify-center space-x-2">
+                        <span id="aiBtnText">ឱ្យ AI បង្កើតមាតិកា (Smart Count)</span>
+                    </button>
+                </div>
+
+                <div class="space-y-3 pt-2 border-t border-slate-100">
+                    <label class="text-xs font-semibold text-slate-600 uppercase tracking-wider">បន្ថែមខ្នែងដោយខ្លួនឯង</label>
+                    <div class="space-y-2">
+                        <input type="text" id="subNodeInput" placeholder="បញ្ចូលអត្ថបទខ្នែង..." class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm outline-none">
+                        <select id="parentNodeSelect" class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm outline-none bg-white">
+                        </select>
+                        <button onclick="addSubNode()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-emerald-200 transition flex items-center justify-center space-x-1">
+                            <span>➕ បន្ថែមខ្នែងថ្មី (Add Sub)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-2 pt-2 border-t border-slate-100">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-semibold text-slate-600 uppercase tracking-wider">បញ្ជីខ្នែងទាំងអស់</label>
+                        <button onclick="clearAllNodes()" class="text-xs text-rose-600 hover:underline font-medium">លុបទាំងអស់</button>
+                    </div>
+                    <div id="nodeListContainer" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="flex-1 relative canvas-bg overflow-hidden cursor-grab active:cursor-grabbing" id="canvasContainer" style="background-color: #f8fafc;">
+            <div id="canvasViewport" class="absolute inset-0 transform-gpu origin-center transition-transform duration-75">
+                <svg id="svgLines" class="absolute inset-0 w-full h-full pointer-events-none" style="width: 15000px; height: 15000px;"></svg>
+                <div id="nodesLayer" class="absolute" style="width: 15000px; height: 15000px; top: 0; left: 0;"></div>
+            </div>
+        </main>
+    </div>
+
+    <div id="editNodeModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-6 w-[420px] shadow-2xl border border-slate-100 space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="font-bold text-slate-800 text-base">កែប្រែអត្ថបទ ពណ៌ និង Link ខ្នែង</h3>
+                <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">✕</button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="text-xs font-medium text-slate-500 mb-1 block">អត្ថបទថ្មី៖</label>
+                    <input type="text" id="editNodeInput" class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-slate-500 mb-1 block">តំណភ្ជាប់ (URL Link, ឧ. https://...):</label>
+                    <input type="text" id="editNodeUrlInput" placeholder="https://example.com" class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-slate-500 mb-1 block">ពណ៌ផ្ទៃខ្នែង (Custom Color):</label>
+                    <div class="flex items-center space-x-2">
+                        <input type="color" id="editNodeColorInput" value="#ffffff" class="w-10 h-10 rounded-xl border border-slate-300 cursor-pointer p-1 bg-white">
+                        <span class="text-xs text-slate-500">ជ្រើសរើសពណ៌ផ្ទាល់ខ្លួន (ប្រសិនបើចង់ប្ដូរ)</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex space-x-2 pt-2">
+                <button onclick="closeEditModal()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-semibold transition">បោះបង់</button>
+                <button onclick="submitEditNode()" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-indigo-200 transition">រក្សាទុក</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="nodeModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-6 w-[420px] shadow-2xl border border-slate-100 space-y-4 transform transition-all">
+            <div class="flex items-center justify-between">
+                <h3 id="modalTitle" class="font-bold text-slate-800 text-base">បន្ថែមខ្នែងថ្មី</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">✕</button>
+            </div>
+            
+            <div class="space-y-3">
+                <div class="bg-indigo-50/70 border border-indigo-100 p-3 rounded-xl space-y-1">
+                    <span class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider block">ពាក្យ/ប្រធានបទដើម៖</span>
+                    <p id="modalParentContext" class="text-xs font-semibold text-indigo-900 truncate"></p>
+                </div>
+
+                <div>
+                    <label class="text-xs font-medium text-slate-500 mb-1 block">បញ្ចូលខ្នែងរងបន្ថែម៖</label>
+                    <input type="text" id="modalInput" placeholder="ឧ. កិច្ចការទី១..." class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                </div>
+
+                <div>
+                    <label class="text-xs font-medium text-slate-500 mb-1 block">តំណភ្ជាប់ (URL Link, ស្រេចចិត្ត):</label>
+                    <input type="text" id="modalUrlInput" placeholder="https://example.com" class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                </div>
+
+                <div>
+                    <label class="text-xs font-medium text-slate-500 mb-1 block">ពណ៌ខ្នែង (Custom Color, ស្រេចចិត្ត):</label>
+                    <input type="color" id="modalColorInput" value="#ffffff" class="w-10 h-10 rounded-xl border border-slate-300 cursor-pointer p-1 bg-white">
+                </div>
+
+                <button onclick="submitModalManual()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-emerald-200 transition">
+                    ➕ បន្ថែមដោយខ្លួនឯង
+                </button>
+
+                <div class="relative flex py-1 items-center">
+                    <div class="flex-grow border-t border-slate-200"></div>
+                    <span class="flex-shrink mx-4 text-xs text-slate-400 uppercase font-semibold">ឬ</span>
+                    <div class="flex-grow border-t border-slate-200"></div>
+                </div>
+
+                <button onclick="submitModalAI()" id="modalAiBtn" class="w-full py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-indigo-200 transition flex items-center justify-center space-x-2">
+                    <span id="modalAiBtnText">បង្កើតខ្នែងរងបន្ត</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTheme = {
+            name: "modern",
+            rootBg: "bg-indigo-600 text-white border-indigo-700 shadow-indigo-300 ring-4 ring-indigo-100",
+            nodeBg: "bg-white text-slate-700 border-slate-200 hover:border-indigo-400 shadow-slate-200",
+            lineColor: "#6366f1",
+            subLineColor: "#94a3b8"
+        };
+
+        let mindMapData = {
+            id: "root-1",
+            text: "ពុទ្ធគុណ ទាំង១០",
+            url: "",
+            color: "",
+            x: 7500,
+            y: 7500,
+            collapsed: false,
+            children: [
+                {
+                    id: "child-1",
+                    text: "១. អរហំ (ជាព្រះអរហន្ត)",
+                    url: "https://km.wikipedia.org/wiki/ពុទ្ធគុណ",
+                    color: "",
+                    x: 7100,
+                    y: 7200,
+                    collapsed: false,
+                    children: [
+                        { id: "sub-1-1", text: "បំផ្លាញកិលេស", url: "", color: "", x: 6700, y: 7000, collapsed: false, children: [] },
+                        { id: "sub-1-2", text: "គួរដល់ការបូជា", url: "", color: "", x: 6700, y: 7400, collapsed: false, children: [] }
+                    ]
+                },
+                {
+                    id: "child-2",
+                    text: "២. សម្មាសម្ពuddho (ត្រាស់ដឹងដោយប្រពៃ)",
+                    url: "",
+                    color: "",
+                    x: 7900,
+                    y: 7200,
+                    collapsed: false,
+                    children: []
+                }
+            ]
+        };
+
+        let scale = 1, panX = 0, panY = 0, isPanning = false, startX = 0, startY = 0;
+        let activeDraggedNode = null;
+        let dragOffsets = new Map();
+        let targetParentNodeId = null;
+        let editingNodeId = null;
+        let isBackgroundEnabled = true;
+        let canvasBgColor = "#f8fafc";
+
+        const canvasContainer = document.getElementById('canvasContainer');
+        const canvasViewport = document.getElementById('canvasViewport');
+        const svgLines = document.getElementById('svgLines');
+        const nodesLayer = document.getElementById('nodesLayer');
+        const parentNodeSelect = document.getElementById('parentNodeSelect');
+        const nodeListContainer = document.getElementById('nodeListContainer');
+        const nodeModal = document.getElementById('nodeModal');
+        const modalParentContext = document.getElementById('modalParentContext');
+        const modalInput = document.getElementById('modalInput');
+        const modalUrlInput = document.getElementById('modalUrlInput');
+        const modalColorInput = document.getElementById('modalColorInput');
+        const editNodeModal = document.getElementById('editNodeModal');
+        const editNodeInput = document.getElementById('editNodeInput');
+        const editNodeUrlInput = document.getElementById('editNodeUrlInput');
+        const editNodeColorInput = document.getElementById('editNodeColorInput');
+        const apiKeyInput = document.getElementById('apiKeyInput');
+
+        const tooltipEl = document.createElement('div');
+        tooltipEl.id = 'nodeTooltip';
+        tooltipEl.className = 'fixed bg-slate-900 text-white text-xs px-3 py-2 rounded-xl shadow-2xl z-50 pointer-events-none hidden max-w-xs border border-slate-700 leading-relaxed whitespace-pre-wrap';
+        document.body.appendChild(tooltipEl);
+
+        window.onload = function() {
+            const savedKey = localStorage.getItem('gemini_api_key') || '';
+            apiKeyInput.value = savedKey;
+            centerCanvas();
+            renderMindMap();
+            setupPanAndZoom();
+            setupDragging();
+        };
+
+        function saveApiKey() {
+            localStorage.setItem('gemini_api_key', apiKeyInput.value.trim());
+        }
+
+        function getApiKey() {
+            const manualKey = apiKeyInput.value.trim() || localStorage.getItem('gemini_api_key') || '';
+            if (manualKey) return manualKey;
+            if (typeof window.GEMINI_API_KEY !== 'undefined' && window.GEMINI_API_KEY) {
+                return window.GEMINI_API_KEY;
+            }
+            if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+                return process.env.API_KEY;
+            }
+            return '';
+        }
+
+        async function callGeminiAPI(systemInstruction, userQuery) {
+            const apiKey = getApiKey();
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: { parts: [{ text: systemInstruction }] },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "ARRAY",
+                        items: { type: "STRING" }
+                    }
+                }
+            };
+
+            let response;
+            if (apiKey) {
+                const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=' + apiKey;
+                response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            } else {
+                const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent';
+                response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            }
+
+            const result = await response.json();
+            const candidate = result.candidates?.[0];
+            if (candidate && candidate.content?.parts?.[0]?.text) {
+                return JSON.parse(candidate.content.parts[0].text);
+            }
+            throw new Error("No valid response from AI");
+        }
+
+        function centerCanvas() {
+            panX = canvasContainer.clientWidth / 2 - mindMapData.x;
+            panY = canvasContainer.clientHeight / 2 - mindMapData.y;
+            updateTransform();
+        }
+
+        function updateTransform() {
+            canvasViewport.style.transform = 'translate(' + panX + 'px, ' + panY + 'px) scale(' + scale + ')';
+        }
+
+        function zoomIn() {
+            scale = Math.min(scale * 1.15, 3);
+            updateTransform();
+        }
+
+        function zoomOut() {
+            scale = Math.max(scale / 1.15, 0.2);
+            updateTransform();
+        }
+
+        function resetView() {
+            scale = 1;
+            centerCanvas();
+        }
+
+        function toggleBackground() {
+            isBackgroundEnabled = !isBackgroundEnabled;
+            const btnText = document.getElementById('bgToggleText');
+            applyCanvasBackground();
+            if (isBackgroundEnabled) {
+                btnText.textContent = "ផ្ទៃក្រឡា៖ បើក";
+            } else {
+                btnText.textContent = "ផ្ទៃក្រឡា៖ បិទ";
+            }
+        }
+
+        function changeCanvasBgColor(color) {
+            canvasBgColor = color;
+            applyCanvasBackground();
+        }
+
+        function applyCanvasBackground() {
+            canvasContainer.style.backgroundColor = canvasBgColor;
+            if (isBackgroundEnabled) {
+                canvasContainer.classList.add('canvas-bg');
+                canvasContainer.classList.remove('canvas-bg-none');
+            } else {
+                canvasContainer.classList.remove('canvas-bg');
+                canvasContainer.classList.add('canvas-bg-none');
+            }
+        }
+
+        function toggleExportMenu() {
+            const menu = document.getElementById('exportMenu');
+            menu.classList.toggle('hidden');
+        }
+
+        window.addEventListener('click', (e) => {
+            if (!e.target.closest('button') && !e.target.closest('#exportMenu')) {
+                document.getElementById('exportMenu').classList.add('hidden');
+            }
+        });
+
+        function setupPanAndZoom() {
+            canvasContainer.addEventListener('mousedown', (e) => {
+                if (e.target.closest('.node-card')) return;
+                isPanning = true;
+                startX = e.clientX - panX;
+                startY = e.clientY - panY;
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (isPanning) {
+                    panX = e.clientX - startX;
+                    panY = e.clientY - startY;
+                    updateTransform();
+                }
+            });
+
+            window.addEventListener('mouseup', () => {
+                isPanning = false;
+            });
+
+            canvasContainer.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const zoomFactor = 1.1;
+                let newScale = e.deltaY < 0 ? scale * zoomFactor : scale / zoomFactor;
+                scale = Math.max(0.2, Math.min(newScale, 3));
+                updateTransform();
+            }, { passive: false });
+        }
+
+        function collectSubtreeNodes(node, set = new Set()) {
+            set.add(node);
+            if (node.children) {
+                node.children.forEach(child => collectSubtreeNodes(child, set));
+            }
+            return set;
+        }
+
+        function setupDragging() {
+            window.addEventListener('mousemove', (e) => {
+                if (!activeDraggedNode) return;
+                const dx = (e.clientX - startX) / scale;
+                const dy = (e.clientY - startY) / scale;
+
+                dragOffsets.forEach((orig, node) => {
+                    node.x = orig.x + dx;
+                    node.y = orig.y + dy;
+                });
+                renderMindMap();
+            });
+
+            window.addEventListener('mouseup', () => {
+                activeDraggedNode = null;
+                dragOffsets.clear();
+            });
+        }
+
+        function findNodeById(node, id) {
+            if (node.id === id) return node;
+            if (node.children) {
+                for (let child of node.children) {
+                    const found = findNodeById(child, id);
+                    if (found) return found;
+                }
+            }
+            return null;
+        }
+
+        function toggleCollapse(id) {
+            const node = findNodeById(mindMapData, id);
+            if (node) {
+                node.collapsed = !node.collapsed;
+                renderMindMap();
+            }
+        }
+
+        function renderMindMap() {
+            svgLines.innerHTML = '';
+            nodesLayer.innerHTML = '';
+            parentNodeSelect.innerHTML = '';
+            nodeListContainer.innerHTML = '';
+
+            drawTreeVisuals(mindMapData);
+            populateSidebarOptions(mindMapData, 0);
+        }
+
+        function drawTreeVisuals(node) {
+            const isRoot = node.id === mindMapData.id;
+            const cardDiv = document.createElement('div');
+            
+            let colorStyle = '';
+            if (node.color && node.color.trim() !== '') {
+                colorStyle = 'background-color: ' + node.color + ';';
+            }
+
+            cardDiv.className = 'absolute node-card px-4 py-3 rounded-2xl border flex items-center justify-between space-x-3 shadow-md z-10 ' + (isRoot && !node.color ? currentTheme.rootBg : (!node.color ? currentTheme.nodeBg : 'border-slate-200 text-slate-800 shadow-slate-200'));
+            if (colorStyle) cardDiv.style.cssText += colorStyle;
+
+            cardDiv.style.left = node.x + 'px';
+            cardDiv.style.top = node.y + 'px';
+            cardDiv.style.minWidth = '180px';
+            cardDiv.style.maxWidth = '280px';
+
+            cardDiv.addEventListener('mouseenter', (e) => {
+                let tipText = node.text;
+                if (node.url) tipText += '\n🔗 Link: ' + node.url;
+                tooltipEl.textContent = tipText;
+                tooltipEl.classList.remove('hidden');
+                updateTooltipPosition(e);
+            });
+            cardDiv.addEventListener('mousemove', (e) => {
+                updateTooltipPosition(e);
+            });
+            cardDiv.addEventListener('mouseleave', () => {
+                tooltipEl.classList.add('hidden');
+            });
+
+            cardDiv.addEventListener('mousedown', (e) => {
+                if (e.target.closest('button') || e.target.closest('a')) return;
+                activeDraggedNode = node;
+                startX = e.clientX;
+                startY = e.clientY;
+                dragOffsets.clear();
+                const subtree = collectSubtreeNodes(node);
+                subtree.forEach(n => dragOffsets.set(n, { x: n.x, y: n.y }));
+                e.stopPropagation();
+            });
+
+            cardDiv.addEventListener('dblclick', () => {
+                openEditModalPrompt(node.id);
+            });
+
+            let contentHTML = '<span class="text-sm font-semibold truncate flex-1">' + node.text + '</span>';
+            
+            let buttonsHTML = '<div class="flex items-center space-x-1.5 ml-2">';
+            if (node.url && node.url.trim() !== '') {
+                let safeUrl = node.url.startsWith('http') ? node.url : 'https://' + node.url;
+                buttonsHTML += '<a href="' + safeUrl + '" target="_blank" class="p-1 hover:bg-slate-200/50 rounded-lg text-indigo-600 transition font-bold" title="បើក Link: ' + safeUrl + '" onclick="event.stopPropagation();">🔗</a>';
+            }
+            buttonsHTML += '<button onclick="openEditModalPrompt(\'' + node.id + '\')" class="p-1 hover:bg-slate-200/50 rounded-lg text-slate-500 hover:text-indigo-600 transition" title="កែប្រែ">✏️</button>';
+            buttonsHTML += '<button onclick="openModal(\'' + node.id + '\')" class="w-6 h-6 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg flex items-center justify-center text-xs font-bold transition shadow-sm" title="បន្ថែមខ្នែង">+</button>';
+            
+            if (node.children && node.children.length > 0) {
+                const icon = node.collapsed ? '➕' : '➖';
+                buttonsHTML += '<button onclick="toggleCollapse(\'' + node.id + '\')" class="w-6 h-6 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg flex items-center justify-center text-xs font-bold transition" title="លាក់/ពន្លា">' + icon + '</button>';
+            }
+            if (!isRoot) {
+                buttonsHTML += '<button onclick="deleteNode(\'' + node.id + '\')" class="p-1 hover:bg-rose-100 rounded-lg text-rose-500 hover:text-rose-700 transition" title="លុប">🗑️</button>';
+            }
+            buttonsHTML += '</div>';
+
+            cardDiv.innerHTML = contentHTML + buttonsHTML;
+            nodesLayer.appendChild(cardDiv);
+
+            if (node.children && !node.collapsed) {
+                node.children.forEach(child => {
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    const startXCoord = node.x + 100;
+                    const startYCoord = node.y + 25;
+                    const endXCoord = child.x + 100;
+                    const endYCoord = child.y + 25;
+                    const controlX = (startXCoord + endXCoord) / 2;
+
+                    line.setAttribute('d', 'M ' + startXCoord + ' ' + startYCoord + ' C ' + controlX + ' ' + startYCoord + ', ' + controlX + ' ' + endYCoord + ', ' + endXCoord + ' ' + endYCoord);
+                    line.setAttribute('stroke', isRoot ? currentTheme.lineColor : currentTheme.subLineColor);
+                    line.setAttribute('stroke-width', isRoot ? '3' : '2');
+                    line.setAttribute('fill', 'none');
+                    svgLines.appendChild(line);
+
+                    drawTreeVisuals(child);
+                });
+            }
+        }
+
+        function updateTooltipPosition(e) {
+            const padding = 15;
+            let left = e.clientX + padding;
+            let top = e.clientY + padding;
+            if (left + tooltipEl.offsetWidth > window.innerWidth) {
+                left = e.clientX - tooltipEl.offsetWidth - padding;
+            }
+            if (top + tooltipEl.offsetHeight > window.innerHeight) {
+                top = e.clientY - tooltipEl.offsetHeight - padding;
+            }
+            tooltipEl.style.left = left + 'px';
+            tooltipEl.style.top = top + 'px';
+        }
+
+        function populateSidebarOptions(node, depth) {
+            const indent = "— ".repeat(depth);
+            const opt = document.createElement('option');
+            opt.value = node.id;
+            opt.textContent = indent + node.text;
+            parentNodeSelect.appendChild(opt);
+
+            const itemDiv = document.createElement('div');
+            itemDiv.className = "flex items-center justify-between p-2 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 text-xs";
+            itemDiv.innerHTML = '<span class="truncate font-medium text-slate-700" title="' + node.text + '">' + indent + node.text + '</span>' +
+                '<div class="flex items-center space-x-1">' +
+                '<button onclick="openEditModalPrompt(\'' + node.id + '\')" class="p-1 text-slate-500 hover:text-indigo-600 transition" title="កែប្រែ">✏️</button>' +
+                (node.id !== mindMapData.id ? '<button onclick="deleteNode(\'' + node.id + '\')" class="p-1 text-rose-500 hover:text-rose-700 transition" title="លុប">🗑️</button>' : '') +
+                '</div>';
+            nodeListContainer.appendChild(itemDiv);
+
+            if (node.children) {
+                node.children.forEach(child => populateSidebarOptions(child, depth + 1));
+            }
+        }
+
+        function openModal(id) {
+            targetParentNodeId = id;
+            const parentNode = findNodeById(mindMapData, id);
+            modalParentContext.textContent = parentNode ? parentNode.text : '';
+            modalInput.value = '';
+            modalUrlInput.value = '';
+            modalColorInput.value = '#ffffff';
+            nodeModal.classList.remove('hidden');
+            nodeModal.classList.add('flex');
+        }
+
+        function closeModal() {
+            nodeModal.classList.remove('flex');
+            nodeModal.classList.add('hidden');
+            targetParentNodeId = null;
+        }
+
+        function openEditModalPrompt(id) {
+            editingNodeId = id;
+            const node = findNodeById(mindMapData, id);
+            if (!node) return;
+            editNodeInput.value = node.text;
+            editNodeUrlInput.value = node.url || '';
+            editNodeColorInput.value = node.color || '#ffffff';
+            editNodeModal.classList.remove('hidden');
+            editNodeModal.classList.add('flex');
+        }
+
+        function closeEditModal() {
+            editNodeModal.classList.remove('flex');
+            editNodeModal.classList.add('hidden');
+            editingNodeId = null;
+        }
+
+        function submitEditNode() {
+            const val = editNodeInput.value.trim();
+            const urlVal = editNodeUrlInput.value.trim();
+            const colorVal = editNodeColorInput.value;
+            if (!val || !editingNodeId) return;
+            const node = findNodeById(mindMapData, editingNodeId);
+            if (node) {
+                node.text = val;
+                node.url = urlVal;
+                node.color = colorVal === '#ffffff' ? '' : colorVal;
+                renderMindMap();
+            }
+            closeEditModal();
+        }
+
+        function submitModalManual() {
+            const text = modalInput.value.trim();
+            const urlVal = modalUrlInput.value.trim();
+            const colorVal = modalColorInput.value;
+            if (!text) return;
+            const parentNode = findNodeById(mindMapData, targetParentNodeId);
+            if (parentNode) {
+                if (!parentNode.children) parentNode.children = [];
+                parentNode.collapsed = false;
+                parentNode.children.push({
+                    id: 'node-' + Date.now(),
+                    text: text,
+                    url: urlVal,
+                    color: colorVal === '#ffffff' ? '' : colorVal,
+                    x: parentNode.x + (Math.random() * 150 - 75),
+                    y: parentNode.y + 120,
+                    collapsed: false,
+                    children: []
+                });
+                renderMindMap();
+            }
+            closeModal();
+        }
+
+        async function submitModalAI() {
+            const userSubPrompt = modalInput.value.trim();
+            const parentNode = findNodeById(mindMapData, targetParentNodeId);
+            if (!parentNode) return;
+
+            const modalAiBtn = document.getElementById('modalAiBtn');
+            const modalAiBtnText = document.getElementById('modalAiBtnText');
+            modalAiBtn.disabled = true;
+            modalAiBtnText.textContent = "កំពុងបង្កើត...";
+
+            try {
+                const systemPrompt = "You are an expert AI assistant that creates accurate mind map sub-topics based on the parent node and context. Return ONLY a JSON array of strings in Khmer language.";
+                const userQuery = userSubPrompt 
+                    ? 'ផ្អែកលើពាក្យដើម៖ "' + parentNode.text + '" និងសំណើបន្ថែមរបស់អ្នកប្រើ៖ "' + userSubPrompt + '"។ សូមបង្កើតខ្នែងរងបន្តយ៉ាងសមស្របជា JSON Array នៃអត្ថបទភាសាខ្មែរសុទ្ធសាធ។' 
+                    : 'បង្កើតខ្នែងរងបន្តពីប្រធានបទ៖ "' + parentNode.text + '" យ៉ាងសមស្រប។ សូមផ្តល់ជាបញ្ជីរាយ JSON Array នៃអត្ថបទភាសាខ្មែរសុទ្ធសាធ។';
+
+                const items = await callGeminiAPI(systemPrompt, userQuery);
+                if (Array.isArray(items) && items.length > 0) {
+                    if (!parentNode.children) parentNode.children = [];
+                    parentNode.collapsed = false;
+                    items.forEach((item, idx) => {
+                        const angle = (idx / items.length) * Math.PI;
+                        parentNode.children.push({
+                            id: 'ai-sub-' + Date.now() + '-' + idx,
+                            text: item,
+                            url: "",
+                            color: "",
+                            x: parentNode.x + Math.cos(angle) * 180,
+                            y: parentNode.y + 120 + (idx * 30),
+                            collapsed: false,
+                            children: []
+                        });
+                    });
+                    renderMindMap();
+                }
+            } catch (error) {
+                console.error("AI Error:", error);
+                alert("មានបញ្ហាក្នុងការភ្ជាប់ទៅ AI API សូមពិនិត្យ API Key ឬការតភ្ជាប់របស់អ្នកឡើងវិញ។");
+            } finally {
+                modalAiBtn.disabled = false;
+                modalAiBtnText.textContent = "បង្កើតខ្នែងរងបន្ត";
+                closeModal();
+            }
+        }
+
+        function updateRootNode() {
+            const val = document.getElementById('rootInput').value.trim();
+            if (!val) return;
+            mindMapData.text = val;
+            renderMindMap();
+        }
+
+        function addSubNode() {
+            const text = document.getElementById('subNodeInput').value.trim();
+            const parentId = parentNodeSelect.value;
+            if (!text) return;
+
+            const parentNode = findNodeById(mindMapData, parentId);
+            if (parentNode) {
+                if (!parentNode.children) parentNode.children = [];
+                parentNode.collapsed = false;
+                parentNode.children.push({
+                    id: 'node-' + Date.now(),
+                    text: text,
+                    url: "",
+                    color: "",
+                    x: parentNode.x + (Math.random() * 150 - 75),
+                    y: parentNode.y + 120,
+                    collapsed: false,
+                    children: []
+                });
+                document.getElementById('subNodeInput').value = '';
+                renderMindMap();
+            }
+        }
+
+        function deleteNode(id) {
+            if (id === mindMapData.id) return;
+            removeNodeRecursive(mindMapData, id);
+            renderMindMap();
+        }
+
+        function removeNodeRecursive(parent, id) {
+            if (!parent.children) return;
+            parent.children = parent.children.filter(child => child.id !== id);
+            parent.children.forEach(child => removeNodeRecursive(child, id));
+        }
+
+        function clearAllNodes() {
+            mindMapData.children = [];
+            renderMindMap();
+        }
+
+        function changeStyle(styleName) {
+            if (styleName === 'modern') {
+                currentTheme = {
+                    name: "modern",
+                    rootBg: "bg-indigo-600 text-white border-indigo-700 shadow-indigo-300 ring-4 ring-indigo-100",
+                    nodeBg: "bg-white text-slate-700 border-slate-200 hover:border-indigo-400 shadow-slate-200",
+                    lineColor: "#6366f1",
+                    subLineColor: "#94a3b8"
+                };
+            } else if (styleName === 'sunset') {
+                currentTheme = {
+                    name: "sunset",
+                    rootBg: "bg-orange-600 text-white border-orange-700 shadow-orange-300 ring-4 ring-orange-100",
+                    nodeBg: "bg-amber-50 text-amber-900 border-amber-200 hover:border-orange-400 shadow-amber-100",
+                    lineColor: "#ea580c",
+                    subLineColor: "#d97706"
+                };
+            } else if (styleName === 'emerald') {
+                currentTheme = {
+                    name: "emerald",
+                    rootBg: "bg-emerald-600 text-white border-emerald-700 shadow-emerald-300 ring-4 ring-emerald-100",
+                    nodeBg: "bg-emerald-50 text-emerald-900 border-emerald-200 hover:border-emerald-400 shadow-emerald-100",
+                    lineColor: "#059669",
+                    subLineColor: "#10b981"
+                };
+            } else if (styleName === 'dark') {
+                currentTheme = {
+                    name: "dark",
+                    rootBg: "bg-purple-600 text-white border-purple-700 shadow-purple-900/50 ring-4 ring-purple-900/50",
+                    nodeBg: "bg-slate-800 text-slate-100 border-slate-700 hover:border-purple-500 shadow-slate-900",
+                    lineColor: "#a855f7",
+                    subLineColor: "#64748b"
+                };
+            }
+            renderMindMap();
+        }
+
+        async function generateAIStyle() {
+            const aiStyleBtn = document.getElementById('aiStyleBtn');
+            const aiStyleBtnText = document.getElementById('aiStyleBtnText');
+            aiStyleBtn.disabled = true;
+            aiStyleBtnText.textContent = "AI កំពុងច្នៃស្ទីលពណ៌...";
+
+            try {
+                const systemPrompt = "You are a UI color expert. Choose a random harmonious theme style name from: 'sunset', 'emerald', 'dark', 'modern'. Return ONLY JSON with key styleName.";
+                const apiKey = getApiKey();
+                const payload = {
+                    contents: [{ parts: [{ text: "Suggest a mindmap theme style name." }] }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] },
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "OBJECT",
+                            properties: { styleName: { type: "STRING" } }
+                        }
+                    }
+                };
+
+                let response;
+                if (apiKey) {
+                    const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=' + apiKey;
+                    response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                } else {
+                    const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent';
+                    response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                }
+
+                const result = await response.json();
+                const candidate = result.candidates?.[0];
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    const parsed = JSON.parse(candidate.content.parts[0].text);
+                    if (parsed.styleName) {
+                        changeStyle(parsed.styleName.toLowerCase());
+                    }
+                }
+            } catch (e) {
+                console.error("AI Style Error:", e);
+                changeStyle('sunset');
+            } finally {
+                aiStyleBtn.disabled = false;
+                aiStyleBtnText.textContent = "🎨 ឱ្យ AI ច្នៃស្ទីលពណ៌ថ្មី";
+            }
+        }
+
+        async function generateWithAI() {
+            const rootText = document.getElementById('rootInput').value.trim();
+            const aiBtn = document.getElementById('aiBtn');
+            const aiBtnText = document.getElementById('aiBtnText');
+
+            aiBtn.disabled = true;
+            aiBtnText.textContent = "AI កំពុងវិភាគ Smart Count...";
+
+            try {
+                const systemPrompt = "You are an intelligent AI assistant. Analyze the user's root title carefully. If the title explicitly specifies a number (e.g. 'ទាំង១០', 'ទាំង៤', 'ទាំង៣', '៣ យ៉ាង', '៤ ប្រភេទ'), you MUST generate EXACTLY that number of accurate sub-topics matching the count. If no number is specified, generate a reasonable number (4 to 6). Return ONLY a JSON array of strings in Khmer language.";
+                const userQuery = 'ប្រធានបទមេ៖ "' + rootText + '"។ សូមវិភាគចំនួនដែលមានក្នុងប្រធានបទនេះ (Smart Count Validation) ហើយបង្កើតខ្នែងរងឱ្យបានត្រឹមត្រូវតាមចំនួននោះជា JSON Array នៃអត្ថបទភាសាខ្មែរសុទ្ធសាធ។';
+
+                const items = await callGeminiAPI(systemPrompt, userQuery);
+                if (Array.isArray(items) && items.length > 0) {
+                    mindMapData.text = rootText;
+                    mindMapData.collapsed = false;
+                    mindMapData.children = items.map((item, idx) => {
+                        const angle = (idx / items.length) * (Math.PI * 2);
+                        return {
+                            id: 'ai-node-' + Date.now() + '-' + idx,
+                            text: item,
+                            url: "",
+                            color: "",
+                            x: mindMapData.x + Math.cos(angle) * 350,
+                            y: mindMapData.y + Math.sin(angle) * 350,
+                            collapsed: false,
+                            children: []
+                        };
+                    });
+                    renderMindMap();
+                }
+            } catch (error) {
+                console.error("AI Generation Error:", error);
+                alert("មានបញ្ហាក្នុងការភ្ជាប់ទៅ AI API សូមពិនិត្យ API Key ឬការតភ្ជាប់របស់អ្នកឡើងវិញ។");
+            } finally {
+                aiBtn.disabled = false;
+                aiBtnText.textContent = "ឱ្យ AI បង្កើតមាតិកា (Smart Count)";
+            }
+        }
+
+        function exportJSONFile() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(mindMapData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "mindmap_data.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importJSONFile(event) {
+            const fileReader = new FileReader();
+            if (event.target.files[0]) {
+                fileReader.readAsText(event.target.files[0], "UTF-8");
+                fileReader.onload = (e) => {
+                    try {
+                        const parsed = JSON.parse(e.target.result);
+                        if (parsed && parsed.id && parsed.text) {
+                            mindMapData = parsed;
+                            document.getElementById('rootInput').value = mindMapData.text;
+                            centerCanvas();
+                            renderMindMap();
+                        }
+                    } catch (err) {
+                        console.error("Import JSON Error:", err);
+                    }
+                };
+            }
+        }
+
+        function exportAsPNG() {
+            const svgElement = svgLines.outerHTML;
+            const nodesHTML = nodesLayer.innerHTML;
+            const wrapperHTML = '<div style="position:relative; width:15000px; height:15000px; background:' + (isBackgroundEnabled ? canvasBgColor : 'transparent') + '; font-family:\'Kantumruy Pro\', sans-serif;">' + svgElement + nodesHTML + '</div>';
+            
+            const blob = new Blob([wrapperHTML], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const win = window.open(url, '_blank');
+            if (win) {
+                setTimeout(() => {
+                    win.print();
+                }, 500);
+            }
+        }
+
+        function exportAsSVG() {
+            const svgContent = '<svg xmlns="http://www.w3.org/2000/svg" width="15000" height="15000">' + svgLines.innerHTML + '</svg>';
+            const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.href = url;
+            downloadAnchor.download = 'mindmap.svg';
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function exportAsHTMLViewer() {
+            const encodedJson = encodeURIComponent(JSON.stringify(mindMapData));
+            
+            let viewerCode = "";
+            viewerCode += "<!DOCTYPE html>\n";
+            viewerCode += "<html lang=\"km\">\n";
+            viewerCode += "<head>\n";
+            viewerCode += "    <meta charset=\"UTF-8\">\n";
+            viewerCode += "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n";
+            viewerCode += "    <title>Mind Map Viewer</title>\n";
+            viewerCode += "    <script src=\"https://cdn.tailwindcss.com\"><\/script>\n";
+            viewerCode += "    <link href=\"https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@300;400;500;600;700&display=swap\" rel=\"stylesheet\">\n";
+            viewerCode += "    <style>\n";
+            viewerCode += "        body { font-family: 'Kantumruy Pro', sans-serif; background-color: " + canvasBgColor + "; overflow: hidden; user-select: none; }\n";
+            viewerCode += "        .canvas-bg { background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 24px 24px; }\n";
+            viewerCode += "        .canvas-bg-none { background-image: none !important; }\n";
+            viewerCode += "        .node-card { transition: box-shadow 0.2s, border-color 0.2s; }\n";
+            viewerCode += "        .node-card:hover { box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.2); }\n";
+            viewerCode += "    </style>\n";
+            viewerCode += "</head>\n";
+            viewerCode += "<body class=\"h-screen flex flex-col text-slate-800\">\n";
+            viewerCode += "    <header class=\"bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm z-20\">\n";
+            viewerCode += "        <h1 class=\"text-lg font-bold text-indigo-900\" id=\"headerTitle\">Mind Map Viewer</h1>\n";
+            viewerCode += "        <div class=\"flex items-center space-x-3\">\n";
+            viewerCode += "            <span class=\"text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 font-medium\">Interactive Viewer</span>\n";
+            viewerCode += "        </div>\n";
+            viewerCode += "    </header>\n";
+            viewerCode += "    <main class=\"flex-1 relative " + (isBackgroundEnabled ? 'canvas-bg' : 'canvas-bg-none') + " overflow-hidden cursor-grab active:cursor-grabbing\" id=\"canvasContainer\" style=\"background-color: " + canvasBgColor + ";\">\n";
+            viewerCode += "        <div id=\"canvasViewport\" class=\"absolute inset-0 transform-gpu origin-center transition-transform duration-75\">\n";
+            viewerCode += "            <svg id=\"svgLines\" class=\"absolute inset-0 w-full h-full pointer-events-none\" style=\"width: 15000px; height: 15000px;\"></svg>\n";
+            viewerCode += "            <div id=\"nodesLayer\" class=\"absolute\" style=\"width: 15000px; height: 15000px; top: 0; left: 0;\"></div>\n";
+            viewerCode += "        </div>\n";
+            viewerCode += "    </main>\n";
+            viewerCode += "    <script>\n";
+            viewerCode += "        const mindMapData = JSON.parse(decodeURIComponent(\"" + encodedJson + "\"));\n";
+            viewerCode += "        let scale = 1, panX = 0, panY = 0, isPanning = false, startX = 0, startY = 0;\n";
+            viewerCode += "        const canvasContainer = document.getElementById('canvasContainer');\n";
+            viewerCode += "        const canvasViewport = document.getElementById('canvasViewport');\n";
+            viewerCode += "        const svgLines = document.getElementById('svgLines');\n";
+            viewerCode += "        const nodesLayer = document.getElementById('nodesLayer');\n";
+            viewerCode += "        const tooltipEl = document.createElement('div');\n";
+            viewerCode += "        tooltipEl.id = 'nodeTooltip';\n";
+            viewerCode += "        tooltipEl.className = 'fixed bg-slate-900 text-white text-xs px-3 py-2 rounded-xl shadow-2xl z-50 pointer-events-none hidden max-w-xs border border-slate-700 leading-relaxed whitespace-pre-wrap';\n";
+            viewerCode += "        document.body.appendChild(tooltipEl);\n";
+            viewerCode += "        window.onload = function() {\n";
+            viewerCode += "            document.getElementById('headerTitle').textContent = 'Mind Map: ' + mindMapData.text;\n";
+            viewerCode += "            panX = canvasContainer.clientWidth / 2 - mindMapData.x;\n";
+            viewerCode += "            panY = canvasContainer.clientHeight / 2 - mindMapData.y;\n";
+            viewerCode += "            updateTransform();\n";
+            viewerCode += "            renderMindMap();\n";
+            viewerCode += "            setupPanAndZoom();\n";
+            viewerCode += "        };\n";
+            viewerCode += "        function updateTransform() {\n";
+            viewerCode += "            canvasViewport.style.transform = 'translate(' + panX + 'px, ' + panY + 'px) scale(' + scale + ')';\n";
+            viewerCode += "        }\n";
+            viewerCode += "        function setupPanAndZoom() {\n";
+            viewerCode += "            canvasContainer.addEventListener('mousedown', (e) => {\n";
+            viewerCode += "                if (e.target.closest('.node-card')) return;\n";
+            viewerCode += "                isPanning = true;\n";
+            viewerCode += "                startX = e.clientX - panX;\n";
+            viewerCode += "                startY = e.clientY - panY;\n";
+            viewerCode += "            });\n";
+            viewerCode += "            window.addEventListener('mousemove', (e) => {\n";
+            viewerCode += "                if (isPanning) {\n";
+            viewerCode += "                    panX = e.clientX - startX;\n";
+            viewerCode += "                    panY = e.clientY - startY;\n";
+            viewerCode += "                    updateTransform();\n";
+            viewerCode += "                }\n";
+            viewerCode += "            });\n";
+            viewerCode += "            window.addEventListener('mouseup', () => { isPanning = false; });\n";
+            viewerCode += "            canvasContainer.addEventListener('wheel', (e) => {\n";
+            viewerCode += "                e.preventDefault();\n";
+            viewerCode += "                const zoomFactor = 1.1;\n";
+            viewerCode += "                let newScale = e.deltaY < 0 ? scale * zoomFactor : scale / zoomFactor;\n";
+            viewerCode += "                scale = Math.max(0.2, Math.min(newScale, 3));\n";
+            viewerCode += "                updateTransform();\n";
+            viewerCode += "            }, { passive: false });\n";
+            viewerCode += "        }\n";
+            viewerCode += "        function findNodeById(node, id) {\n";
+            viewerCode += "            if (node.id === id) return node;\n";
+            viewerCode += "            if (node.children) {\n";
+            viewerCode += "                for (let child of node.children) {\n";
+            viewerCode += "                    const found = findNodeById(child, id);\n";
+            viewerCode += "                    if (found) return found;\n";
+            viewerCode += "                }\n";
+            viewerCode += "            }\n";
+            viewerCode += "            return null;\n";
+            viewerCode += "        }\n";
+            viewerCode += "        function toggleCollapse(id) {\n";
+            viewerCode += "            const node = findNodeById(mindMapData, id);\n";
+            viewerCode += "            if (node) {\n";
+            viewerCode += "                node.collapsed = !node.collapsed;\n";
+            viewerCode += "                renderMindMap();\n";
+            viewerCode += "            }\n";
+            viewerCode += "        }\n";
+            viewerCode += "        function renderMindMap() {\n";
+            viewerCode += "            svgLines.innerHTML = '';\n";
+            viewerCode += "            nodesLayer.innerHTML = '';\n";
+            viewerCode += "            drawTreeVisuals(mindMapData);\n";
+            viewerCode += "        }\n";
+            viewerCode += "        function drawTreeVisuals(node) {\n";
+            viewerCode += "            const isRoot = node.id === mindMapData.id;\n";
+            viewerCode += "            const cardDiv = document.createElement('div');\n";
+            viewerCode += "            let colorStyle = '';\n";
+            viewerCode += "            if (node.color && node.color.trim() !== '') {\n";
+            viewerCode += "                colorStyle = 'background-color: ' + node.color + ';';\n";
+            viewerCode += "            }\n";
+            viewerCode += "            let defaultThemeBg = isRoot ? 'bg-indigo-600 text-white border-indigo-700 shadow-indigo-300 ring-4 ring-indigo-100' : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-400 shadow-slate-200';\n";
+            viewerCode += "            cardDiv.className = 'absolute node-card px-4 py-3 rounded-2xl border flex items-center justify-between space-x-3 shadow-md z-10 ' + (node.color ? 'border-slate-200 text-slate-800 shadow-slate-200' : defaultThemeBg);\n";
+            viewerCode += "            if (colorStyle) cardDiv.style.cssText += colorStyle;\n";
+            viewerCode += "            cardDiv.style.left = node.x + 'px';\n";
+            viewerCode += "            cardDiv.style.top = node.y + 'px';\n";
+            viewerCode += "            cardDiv.style.minWidth = '180px';\n";
+            viewerCode += "            cardDiv.style.maxWidth = '280px';\n";
+            viewerCode += "            cardDiv.addEventListener('mouseenter', (e) => {\n";
+            viewerCode += "                let tipText = node.text;\n";
+            viewerCode += "                if (node.url) tipText += '\\n🔗 Link: ' + node.url;\n";
+            viewerCode += "                tooltipEl.textContent = tipText;\n";
+            viewerCode += "                tooltipEl.classList.remove('hidden');\n";
+            viewerCode += "                updateTooltipPosition(e);\n";
+            viewerCode += "            });\n";
+            viewerCode += "            cardDiv.addEventListener('mousemove', (e) => {\n";
+            viewerCode += "                updateTooltipPosition(e);\n";
+            viewerCode += "            });\n";
+            viewerCode += "            cardDiv.addEventListener('mouseleave', () => {\n";
+            viewerCode += "                tooltipEl.classList.add('hidden');\n";
+            viewerCode += "            });\n";
+            viewerCode += "            let contentHTML = '<span class=\"text-sm font-semibold truncate flex-1\">' + node.text + '</span>';\n";
+            viewerCode += "            let buttonsHTML = '<div class=\"flex items-center space-x-1.5 ml-2\">';\n";
+            viewerCode += "            if (node.url && node.url.trim() !== '') {\n";
+            viewerCode += "                let safeUrl = node.url.startsWith('http') ? node.url : 'https://' + node.url;\n";
+            viewerCode += "                buttonsHTML += '<a href=\"' + safeUrl + '\" target=\"_blank\" class=\"p-1 hover:bg-slate-200/50 rounded-lg text-indigo-600 transition font-bold\" title=\"បើក Link: ' + safeUrl + '\" onclick=\"event.stopPropagation();\">🔗</a>';\n";
+            viewerCode += "            }\n";
+            viewerCode += "            if (node.children && node.children.length > 0) {\n";
+            viewerCode += "                const icon = node.collapsed ? '➕' : '➖';\n";
+            viewerCode += "                buttonsHTML += '<button onclick=\"toggleCollapse(\\'' + node.id + '\\')\" class=\"w-6 h-6 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg flex items-center justify-center text-xs font-bold transition\" title=\"លាក់/ពន្លា\">' + icon + '</button>';\n";
+            viewerCode += "            }\n";
+            viewerCode += "            buttonsHTML += '</div>';\n";
+            viewerCode += "            cardDiv.innerHTML = contentHTML + buttonsHTML;\n";
+            viewerCode += "            nodesLayer.appendChild(cardDiv);\n";
+            viewerCode += "            if (node.children && !node.collapsed) {\n";
+            viewerCode += "                node.children.forEach(child => {\n";
+            viewerCode += "                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');\n";
+            viewerCode += "                    const startXCoord = node.x + 100, startYCoord = node.y + 25;\n";
+            viewerCode += "                    const endXCoord = child.x + 100, endYCoord = child.y + 25;\n";
+            viewerCode += "                    const controlX = (startXCoord + endXCoord) / 2;\n";
+            viewerCode += "                    line.setAttribute('d', 'M ' + startXCoord + ' ' + startYCoord + ' C ' + controlX + ' ' + startYCoord + ', ' + controlX + ' ' + endYCoord + ', ' + endXCoord + ' ' + endYCoord);\n";
+            viewerCode += "                    line.setAttribute('stroke', isRoot ? '#6366f1' : '#94a3b8');\n";
+            viewerCode += "                    line.setAttribute('stroke-width', isRoot ? '3' : '2');\n";
+            viewerCode += "                    line.setAttribute('fill', 'none');\n";
+            viewerCode += "                    svgLines.appendChild(line);\n";
+            viewerCode += "                    drawTreeVisuals(child);\n";
+            viewerCode += "                });\n";
+            viewerCode += "            }\n";
+            viewerCode += "        }\n";
+            viewerCode += "        function updateTooltipPosition(e) {\n";
+            viewerCode += "            const padding = 15;\n";
+            viewerCode += "            let left = e.clientX + padding;\n";
+            viewerCode += "            let top = e.clientY + padding;\n";
+            viewerCode += "            if (left + tooltipEl.offsetWidth > window.innerWidth) {\n";
+            viewerCode += "                left = e.clientX - tooltipEl.offsetWidth - padding;\n";
+            viewerCode += "            }\n";
+            viewerCode += "            if (top + tooltipEl.offsetHeight > window.innerHeight) {\n";
+            viewerCode += "                top = e.clientY - tooltipEl.offsetHeight - padding;\n";
+            viewerCode += "            }\n";
+            viewerCode += "            tooltipEl.style.left = left + 'px';\n";
+            viewerCode += "            tooltipEl.style.top = top + 'px';\n";
+            viewerCode += "        }\n";
+            viewerCode += "    <\/script>\n";
+            viewerCode += "</body>\n";
+            viewerCode += "</html>";
+
+            const blob = new Blob([viewerCode], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.href = url;
+            downloadAnchor.download = 'mindmap_viewer.html';
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+    </script>
+</body>
+</html>
