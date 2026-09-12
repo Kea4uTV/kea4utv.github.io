@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mind Map Canva AI - Subtree Group Drag, Links, Colors, Overlay PNG, Cross Links & HTML Viewer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Kantumruy Pro', sans-serif;
+            background-color: #f8fafc;
+            overflow: hidden;
+            user-select: none;
+            touch-action: none;
+        }
+        .canvas-bg {
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        .canvas-bg-none {
+            background-image: none !important;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        .node-card {
+            transition: box-shadow 0.2s, border-color 0.2s;
+            touch-action: none;
+        }
+        .node-card:hover {
+            box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.2), 0 8px 10px -6px rgba(99, 102, 241, 0.2);
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col text-slate-800">
+
+    <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm z-20">
+        <div class="flex items-center space-x-3">
+            <div class="bg-indigo-600 text-white p-2 rounded-xl shadow-md">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold text-indigo-900">Mind Map Canva AI</h1>
+                <p class="text-xs text-slate-500">មុខងារ AI វិភាគតាមគន្លង (Contextual Chain AI), Custom Colors, Links & HTML Viewer</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-2.5">
+            <button onclick="zoomIn()" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 transition" title="ការពង្រីក (Zoom In)">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            </button>
+            <button onclick="zoomOut()" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 transition" title="ការបង្រួម (Zoom Out)">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
+            </button>
+            <button onclick="resetView()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium text-slate-700 transition">ទំហំដើម</button>
+            
+            <div class="flex items-center space-x-1.5 bg-slate-100 px-2.5 py-1.5 rounded-xl border border-slate-200">
+                <button onclick="toggleBackground()" id="bgToggleBtn" class="text-xs font-medium text-slate-700 hover:text-indigo-600 transition" title="បិទ/បើក ផ្ទៃក្រឡា">
+                    <span id="bgToggleText">ផ្ទៃក្រឡា៖ បើក</span>
+                </button>
+                <input type="color" id="canvasBgColorPicker" value="#f8fafc" class="w-6 h-6 rounded-lg border border-slate-300 cursor-pointer p-0 bg-white" title="ប្ដូរពណ៌ផ្ទៃខាងក្រោយ" oninput="changeCanvasBgColor(this.value)">
+            </div>
+
+            <label class="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition flex items-center space-x-1 shadow-sm cursor-pointer" title="Upload រូបភាព PNG ជា Overlay">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                <span>ដាក់រូប Overlay</span>
+                <input type="file" id="overlayImageInput" accept="image/png, image/jpeg, image/webp" class="hidden" onchange="handleOverlayImageUpload(event)">
+            </label>
+
+            <button onclick="exportJSONFile()" class="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-sm font-medium transition flex items-center space-x-1 shadow-sm" title="រក្សាទុកជា File (.json)">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                <span>រក្សាទុក File</span>
+            </button>
+            <label class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition flex items-center space-x-1 shadow-sm cursor-pointer" title="បើក File ចាស់មកប្រើប្រាស់វិញ">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                <span>បើក File</span>
+                <input type="file" id="importFile" accept=".json" class="hidden" onchange="importJSONFile(event)">
+            </label>
+
+            <div class="relative">
+                <button onclick="toggleExportMenu()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium shadow-md shadow-indigo-200 transition flex items-center space-x-1">
+                    <span>ទាញយក (Export) ▾</span>
+                </button>
+                <div id="exportMenu" class="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-xl shadow-xl hidden z-30 overflow-hidden py-1">
+                    <button onclick="exportAsHTMLViewer()" class="w-full text-left px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 transition flex items-center space-x-2">
+                        <span>🌐 ទាញយក HTML Viewer</span>
+                    </button>
+                    <button onclick="exportAsPNG()" class="w-full text-left px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 transition flex items-center space-x-2">
+                        <span>🖼️ ទាញយកជា PNG</span>
+                    </button>
+                    <button onclick="exportAsSVG()" class="w-full text-left px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 transition flex items-center space-x-2">
+                        <span>📐 ទាញយកជា SVG</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex-1 flex overflow-hidden relative">
+        <aside class="w-96 bg-white border-r border-slate-200 flex flex-col z-10 shadow-lg">
+            <div class="p-5 border-b border-slate-100 bg-slate-50">
+                <h2 class="font-bold text-slate-800 text-base mb-1 flex items-center">
+                    <span class="w-2 h-2 rounded-full bg-indigo-600 mr-2"></span>
+                    ផ្ទាំងបញ្ជា Mind Map
+                </h2>
+                <p class="text-xs text-slate-500">កែប្រែទម្រង់ តភ្ជាប់ខ្សែរវាងខ្នែង (Cross-Link) និង API Key</p>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-5 space-y-6">
+                <!-- Cross-Link Management Section -->
+                <div class="bg-gradient-to-br from-violet-50 to-purple-50 p-4 rounded-2xl border border-violet-200 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-violet-800 uppercase tracking-wider">🔗 តភ្ជាប់ខ្សែរវាងខ្នែង (Cross-Link)</span>
+                    </div>
+                    <p class="text-[11px] text-violet-900/70">បង្កើតខ្សែរបន្ថែមតភ្ជាប់រវាងខ្នែងពីរផ្សេងគ្នាដោយផ្ទាល់៖</p>
+                    <div class="space-y-2">
+                        <div>
+                            <label class="text-[11px] font-semibold text-slate-600 block mb-1">ពីខ្នែង (From):</label>
+                            <select id="crossLinkFromSelect" class="w-full px-2.5 py-1.5 border border-violet-200 rounded-xl text-xs bg-white outline-none focus:ring-2 focus:ring-violet-500"></select>
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-semibold text-slate-600 block mb-1">ទៅខ្នែង (To):</label>
+                            <select id="crossLinkToSelect" class="w-full px-2.5 py-1.5 border border-violet-200 rounded-xl text-xs bg-white outline-none focus:ring-2 focus:ring-violet-500"></select>
+                        </div>
+                        <button onclick="addCrossLink()" class="w-full py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-violet-200 transition">
+                            🔗 បង្កើតខ្សែរតភ្ជាប់ថ្មី
+                        </button>
+                    </div>
+                    <div id="crossLinksListContainer" class="space-y-1.5 max-h-32 overflow-y-auto pt-2 border-t border-violet-100"></div>
+                </div>
+
+                <div class="bg-amber-50 p-3 rounded-2xl border border-amber-200 space-y-2">
+                    <label class="text-xs font-bold text-amber-900 uppercase tracking-wider block">🔑 Gemini API Key</label>
+                    <input type="password" id="apiKeyInput" placeholder="AIzaSy..." class="w-full px-3 py-2 border border-amber-300 rounded-xl bg-white text-xs focus:ring-2 focus:ring-amber-500 outline-none" oninput="saveApiKey()">
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-xs font-semibold text-slate-600 uppercase tracking-wider">ចំណងជើងមេ (Root Node)</label>
+                    <div class="flex space-x-2">
+                        <input type="text" id="rootInput" value="ពុទ្ធគុណ ទាំង១០" class="flex-1 px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm outline-none">
+                        <button onclick="updateRootNode()" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-sm font-medium transition shadow-sm">កែប្រែ</button>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-br from-purple-50 to-indigo-50 p-4 rounded-2xl border border-purple-100 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-purple-700 uppercase tracking-wider">AI Dynamic Style Generator</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="changeStyle('modern')" class="py-2 px-3 bg-white hover:bg-purple-100 border border-purple-200 rounded-xl text-xs font-semibold text-purple-800 transition shadow-sm">🌟 ទំនើប (Modern)</button>
+                        <button onclick="changeStyle('sunset')" class="py-2 px-3 bg-white hover:bg-orange-100 border border-orange-200 rounded-xl text-xs font-semibold text-orange-800 transition shadow-sm">🌅 ថ្ងៃរៀបលិច (Sunset)</button>
+                        <button onclick="changeStyle('emerald')" class="py-2 px-3 bg-white hover:bg-emerald-100 border border-emerald-200 rounded-xl text-xs font-semibold text-emerald-800 transition shadow-sm">🌿 បៃតង (Emerald)</button>
+                        <button onclick="changeStyle('dark')" class="py-2 px-3 bg-slate-800 hover:bg-slate-900 border border-slate-700 rounded-xl text-xs font-semibold text-white transition shadow-sm">🌙 ងងឹត (Cyber Dark)</button>
+                    </div>
+                    <button onclick="generateAIStyle()" id="aiStyleBtn" class="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-purple-200 transition flex items-center justify-center space-x-2">
+                        <span id="aiStyleBtnText">🎨 ឱ្យ AI ច្នៃស្ទីលពណ៌ថ្មី</span>
+                    </button>
+                </div>
+
+                <div class="bg-gradient-to-br from-indigo-50 to-violet-50 p-4 rounded-2xl border border-indigo-100 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-indigo-700 uppercase tracking-wider">AI Smart Chain Assistant</span>
+                    </div>
+                    <button onclick="generateWithAI()" id="aiBtn" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-indigo-200 transition flex items-center justify-center space-x-2">
+                        <span id="aiBtnText">ឱ្យ AI បង្កើតមាតិកាតាមគន្លង</span>
+                    </button>
+                </div>
+
+                <div class="space-y-3 pt-2 border-t border-slate-100">
+                    <label class="text-xs font-semibold text-slate-600 uppercase tracking-wider">បន្ថែមខ្នែងដោយខ្លួនឯង</label>
+                    <div class="space-y-2">
+                        <input type="text" id="subNodeInput" placeholder="បញ្ចូលអត្ថបទខ្នែង..." class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                        <select id="parentNodeSelect" class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-sm"></select>
+                        <button onclick="addSubNode()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-emerald-200 transition">
+                            ➕ បន្ថែមខ្នែងថ្មី (Add Sub)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-2 pt-2 border-t border-slate-100">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-semibold text-slate-600 uppercase tracking-wider">បញ្ជីខ្នែងទាំងអស់</label>
+                        <button onclick="clearAllNodes()" class="text-xs text-rose-600 hover:underline font-medium">លុបទាំងអស់</button>
+                    </div>
+                    <div id="nodeListContainer" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="flex-1 relative canvas-bg overflow-hidden cursor-grab active:cursor-grabbing" id="canvasContainer" style="background-color: #f8fafc;">
+            <div id="canvasViewport" class="absolute inset-0 transform-gpu origin-center transition-transform duration-75">
+                <svg id="svgLines" class="absolute inset-0 w-full h-full pointer-events-none" style="width: 15000px; height: 15000px;"></svg>
+                
+                <div id="imageOverlayLayer" class="absolute z-0 pointer-events-auto" style="top: 7300px; left: 7300px; display: none;">
+                    <div id="overlayWrapper" class="relative group border-2 border-dashed border-indigo-400 hover:border-indigo-600 rounded-xl p-1 bg-white/40 backdrop-blur-xs transition select-none inline-block cursor-move">
+                        <img id="overlayImgElement" src="" alt="Overlay PNG" class="max-w-none block rounded-lg pointer-events-none" style="width: 300px; height: auto;">
+                        <div class="absolute -top-3 -right-3 flex space-x-1 opacity-0 group-hover:opacity-100 transition">
+                            <button onclick="removeOverlayImage()" class="bg-rose-600 hover:bg-rose-700 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs shadow-md" title="លុបរូបភាពចេញ">✕</button>
+                        </div>
+                        <div class="absolute -bottom-2 -right-2 bg-indigo-600 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold cursor-se-resize shadow-md" id="resizeHandle" title="អូសដើម្បីបង្រីក/បង្រួម">⤢</div>
+                    </div>
+                </div>
+
+                <div id="nodesLayer" class="absolute" style="width: 15000px; height: 15000px; top: 0; left: 0;"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editNodeModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-6 w-[420px] shadow-2xl border border-slate-100 space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="font-bold text-slate-800 text-base">កែប្រែខ្នែង Mind Map</h3>
+                <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">✕</button>
+            </div>
+            
+            <div class="space-y-3">
+                <div>
+                    <label class="text-xs font-medium text-slate-500 mb-1 block">អត្ថបទ (Text):</label>
+                    <input type="text" id="editNodeInput" class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                </div>
+
+                <div>
+                    <label class="text-xs font-medium text-slate-500 mb-1 block">តំណភ្ជាប់ (URL Link, ស្រេចចិត្ត):</label>
+                    <input type="text" id="editNodeUrlInput" placeholder="https://example.com" class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                </div>
+
+                <div>
+                    <label class="text-xs font-medium text-slate-500 mb-1 block">រូបភាពក្នុងខ្នែង (Node Image, ៣០% ទំហំខ្នែង):</label>
+                    <div class="flex items-center space-x-2">
+                        <input type="file" id="editNodeImageInput" accept="image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 cursor-pointer">
+                        <button type="button" onclick="clearNodeImage()" class="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-medium transition">លុបរូប</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs font-medium text-slate-500 mb-1 block">ពណ៌ផ្ទៃខ្នែង (Custom Color):</label>
+                    <input type="color" id="editNodeColorInput" value="#ffffff" class="w-10 h-10 rounded-xl border border-slate-300 cursor-pointer p-1 bg-white">
+                </div>
+
+                <div class="flex space-x-2 pt-2">
+                    <button onclick="closeEditModal()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition">បោះបង់</button>
+                    <button onclick="submitEditNode()" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-md transition">រក្សាទុក</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Details View Modal -->
+    <div id="detailsModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden items-center justify-center z-50">
+        <div class="bg-white rounded-3xl p-6 w-[520px] max-h-[85vh] overflow-y-auto shadow-2xl border border-slate-100 space-y-5">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-3 h-3 bg-indigo-600 rounded-full animate-pulse"></div>
+                    <h3 id="detailsModalTitle" class="font-bold text-slate-900 text-lg">ចំណងជើងលម្អិត</h3>
+                </div>
+                <button onclick="closeDetailsModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center font-bold transition">✕</button>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="bg-indigo-50/60 p-4 rounded-2xl border border-indigo-100 space-y-1.5">
+                    <span class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider block">ប្រធានបទខ្នែង៖</span>
+                    <p id="detailsModalHeading" class="text-sm font-bold text-indigo-900"></p>
+                </div>
+
+                <div class="space-y-2">
+                    <span class="text-xs font-bold text-slate-700 uppercase tracking-wider block">អត្ថបទពន្យល់លម្អិត៖</span>
+                    <div id="detailsModalBody" class="text-sm text-slate-600 bg-slate-50 p-4 rounded-2xl border border-slate-200 leading-relaxed whitespace-pre-line">
+                        កំពុងទាញយកការពន្យល់លម្អិត...
+                    </div>
+                </div>
+
+                <div id="detailsModalLinkContainer" class="hidden">
+                    <span class="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">តំណភ្ជាប់ពាក់ព័ន្ធ៖</span>
+                    <a id="detailsModalLink" href="#" target="_blank" class="text-xs font-semibold text-indigo-600 hover:underline flex items-center space-x-1">🔗 <span></span></a>
+                </div>
+            </div>
+
+            <div class="pt-2 flex justify-end">
+                <button onclick="closeDetailsModal()" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold shadow-md transition">បិទផ្ទាំង</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Child Modal -->
+    <div id="nodeModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-6 w-[420px] shadow-2xl border border-slate-100 space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 id="modalTitle" class="font-bold text-slate-800 text-base">បន្ថែមខ្នែងថ្មី</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">✕</button>
+            </div>
+            
+            <div class="space-y-3">
+                <div class="bg-indigo-50/70 border border-indigo-100 p-3 rounded-xl space-y-1">
+                    <span class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider block">គន្លងប្រធានបទ (Contextual Chain Path):</span>
+                    <p id="modalParentContext" class="text-xs font-semibold text-indigo-900 break-words"></p>
+                </div>
+
+                <div>
+                    <label class="text-xs font-medium text-slate-500 mb-1 block">បញ្ចូលខ្នែងរងបន្ថែម៖</label>
+                    <input type="text" id="modalInput" placeholder="ឧ. កិច្ចការទី១..." class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                </div>
+
+                <div>
+                    <label class="text-xs font-medium text-slate-500 mb-1 block">តំណភ្ជាប់ (URL Link, ស្រេចចិត្ត):</label>
+                    <input type="text" id="modalUrlInput" placeholder="https://example.com" class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-xs font-medium text-slate-500 mb-1 block">កំណត់ចំនួនខ្នែង (Auto):</label>
+                        <input type="number" id="modalCountInput" min="1" max="20" placeholder="ទទេ = Auto" class="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                    </div>
+                    <div class="flex flex-col justify-end">
+                        <label class="flex items-center space-x-2 p-2 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition">
+                            <input type="checkbox" id="modalNumberingCheckbox" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500" checked>
+                            <span class="text-xs font-semibold text-slate-700">ដាក់លេខរៀង ១,២</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs font-medium text-slate-500 mb-1 block">ពណ៌ខ្នែង (Custom Color):</label>
+                    <input type="color" id="modalColorInput" value="#ffffff" class="w-10 h-10 rounded-xl border border-slate-300 cursor-pointer p-1 bg-white">
+                </div>
+
+                <button onclick="submitModalManual()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-md transition">
+                    ➕ បន្ថែមដោយខ្លួនឯង
+                </button>
+
+                <div class="relative flex py-1 items-center">
+                    <div class="flex-grow border-t border-slate-200"></div>
+                    <span class="flex-shrink mx-4 text-xs text-slate-400 uppercase font-semibold">ឬ</span>
+                    <div class="flex-grow border-t border-slate-200"></div>
+                </div>
+
+                <button onclick="submitModalAI()" id="modalAiBtn" class="w-full py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-xl text-sm font-semibold shadow-md transition flex items-center justify-center space-x-2">
+                    <span id="modalAiBtnText">វិភាគ និង បង្កើតខ្នែង</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="tooltipEl" class="fixed hidden z-50 bg-slate-900 text-white text-xs px-3 py-2 rounded-xl shadow-xl max-w-xs whitespace-pre-line pointer-events-none transition-opacity duration-150"></div>
+
+    <script>
+        let currentTheme = {
+            name: "modern",
+            rootBg: "bg-indigo-600 text-white border-indigo-700 shadow-indigo-300 ring-4 ring-indigo-100",
+            nodeBg: "bg-white text-slate-700 border-slate-200 hover:border-indigo-400 shadow-slate-200",
+            lineColor: "#6366f1",
+            subLineColor: "#94a3b8",
+            crossLineColor: "#8b5cf6"
+        };
+
+        let mindMapData = {
+            id: "root-1",
+            text: "ពុទ្ធគុណ ទាំង១០",
+            url: "",
+            imageUrl: "",
+            detailsText: "",
+            color: "",
+            x: 7500,
+            y: 7500,
+            collapsed: false,
+            children: [
+                {
+                    id: "child-1",
+                    text: "១. អរហំ (ជាព្រះអរហន្ត)",
+                    url: "https://km.wikipedia.org/wiki/ពុទ្ធគុណ",
+                    imageUrl: "",
+                    detailsText: "",
+                    color: "",
+                    x: 7100,
+                    y: 7200,
+                    collapsed: false,
+                    children: [
+                        { id: "sub-1-1", text: "បំផ្លាញកិលេស", url: "", imageUrl: "", detailsText: "", color: "", x: 6700, y: 7000, collapsed: false, children: [] },
+                        { id: "sub-1-2", text: "គួរដល់ការបូជា", url: "", imageUrl: "", detailsText: "", color: "", x: 6700, y: 7400, collapsed: false, children: [] }
+                    ]
+                },
+                {
+                    id: "child-2",
+                    text: "២. សម្មាសម្ពuddho (ត្រាស់ដឹងដោយប្រពៃ)",
+                    url: "",
+                    imageUrl: "",
+                    detailsText: "",
+                    color: "",
+                    x: 7900,
+                    y: 7200,
+                    collapsed: false,
+                    children: []
+                }
+            ]
+        };
+
+        let crossLinks = [];
+
+        let scale = 1, panX = 0, panY = 0, isPanning = false, startX = 0, startY = 0;
+        let activeDraggedNode = null;
+        let dragOffsets = new Map();
+        let targetParentNodeId = null;
+        let editingNodeId = null;
+        let detailsNodeId = null;
+        let isBackgroundEnabled = true;
+        let canvasBgColor = "#f8fafc";
+
+        let overlayState = {
+            active: false,
+            url: "",
+            x: 7350,
+            y: 7300,
+            width: 300,
+            isSelected: false,
+            isDragging: false,
+            isResizing: false,
+            startX: 0,
+            startY: 0,
+            startOverlayX: 0,
+            startOverlayY: 0,
+            startWidth: 0
+        };
+
+        const canvasContainer = document.getElementById('canvasContainer');
+        const canvasViewport = document.getElementById('canvasViewport');
+        const svgLines = document.getElementById('svgLines');
+        const nodesLayer = document.getElementById('nodesLayer');
+        const parentNodeSelect = document.getElementById('parentNodeSelect');
+        const nodeListContainer = document.getElementById('nodeListContainer');
+        const nodeModal = document.getElementById('nodeModal');
+        const modalParentContext = document.getElementById('modalParentContext');
+        const modalInput = document.getElementById('modalInput');
+        const modalUrlInput = document.getElementById('modalUrlInput');
+        const modalColorInput = document.getElementById('modalColorInput');
+        const editNodeModal = document.getElementById('editNodeModal');
+        const editNodeInput = document.getElementById('editNodeInput');
+        const editNodeUrlInput = document.getElementById('editNodeUrlInput');
+        const editNodeColorInput = document.getElementById('editNodeColorInput');
+        const tooltipEl = document.getElementById('tooltipEl');
+
+        window.onload = function() {
+            centerCanvas();
+            setupPanAndZoom();
+            setupDragging();
+            setupOverlayInteractions();
+            renderMindMap();
+            loadApiKey();
+        };
+
+        function getApiKey() {
+            const manualKey = localStorage.getItem('gemini_api_key');
+            if (manualKey && manualKey.trim() !== '') return manualKey.trim();
+            return "";
+        }
+
+        function saveApiKey() {
+            const key = document.getElementById('apiKeyInput').value.trim();
+            localStorage.setItem('gemini_api_key', key);
+        }
+
+        function loadApiKey() {
+            const saved = localStorage.getItem('gemini_api_key');
+            if (saved) document.getElementById('apiKeyInput').value = saved;
+        }
+
+        async function callGeminiAPI(systemInstruction, userQuery) {
+            const apiKey = getApiKey();
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: { parts: [{ text: systemInstruction }] },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: { type: "ARRAY", items: { type: "STRING" } }
+                }
+            };
+            const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent' + (apiKey ? '?key=' + apiKey : '');
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            const candidate = result.candidates?.[0];
+            if (candidate && candidate.content?.parts?.[0]?.text) {
+                return JSON.parse(candidate.content.parts[0].text);
+            }
+            throw new Error("No valid response from AI");
+        }
+
+        function centerCanvas() {
+            if (!canvasContainer) return;
+            panX = canvasContainer.clientWidth / 2 - mindMapData.x;
+            panY = canvasContainer.clientHeight / 2 - mindMapData.y;
+            updateTransform();
+        }
+
+        function updateTransform() {
+            if (canvasViewport) {
+                canvasViewport.style.transform = 'translate(' + panX + 'px, ' + panY + 'px) scale(' + scale + ')';
+            }
+        }
+
+        function zoomIn() { scale = Math.min(scale * 1.15, 3); updateTransform(); }
+        function zoomOut() { scale = Math.max(scale / 1.15, 0.2); updateTransform(); }
+        function resetView() { scale = 1; centerCanvas(); }
+
+        function toggleBackground() {
+            isBackgroundEnabled = !isBackgroundEnabled;
+            const btnText = document.getElementById('bgToggleText');
+            applyCanvasBackground();
+            btnText.textContent = isBackgroundEnabled ? "ផ្ទៃក្រឡា៖ បើក" : "ផ្ទៃក្រឡា៖ បិទ";
+        }
+
+        function changeCanvasBgColor(color) {
+            canvasBgColor = color;
+            applyCanvasBackground();
+        }
+
+        function applyCanvasBackground() {
+            if (!canvasContainer) return;
+            canvasContainer.style.backgroundColor = canvasBgColor;
+            if (isBackgroundEnabled) {
+                canvasContainer.classList.add('canvas-bg');
+                canvasContainer.classList.remove('canvas-bg-none');
+            } else {
+                canvasContainer.classList.remove('canvas-bg');
+                canvasContainer.classList.add('canvas-bg-none');
+            }
+        }
+
+        function toggleExportMenu() {
+            document.getElementById('exportMenu').classList.toggle('hidden');
+        }
+
+        window.addEventListener('click', (e) => {
+            if (!e.target.closest('button') && !e.target.closest('#exportMenu')) {
+                document.getElementById('exportMenu').classList.add('hidden');
+            }
+        });
+
+        function setupPanAndZoom() {
+            if (!canvasContainer) return;
+            canvasContainer.addEventListener('mousedown', (e) => {
+                if (e.target.closest('.node-card') || e.target.closest('#imageOverlayLayer')) return;
+                if (overlayState.isSelected) {
+                    overlayState.isSelected = false;
+                    updateOverlaySelectionStyle();
+                }
+                isPanning = true;
+                startX = e.clientX - panX;
+                startY = e.clientY - panY;
+            });
+
+            canvasContainer.addEventListener('touchstart', (e) => {
+                if (e.target.closest('.node-card') || e.target.closest('#imageOverlayLayer')) return;
+                if (overlayState.isSelected) {
+                    overlayState.isSelected = false;
+                    updateOverlaySelectionStyle();
+                }
+                if (e.touches.length === 1) {
+                    isPanning = true;
+                    startX = e.touches[0].clientX - panX;
+                    startY = e.touches[0].clientY - panY;
+                }
+            }, { passive: true });
+
+            window.addEventListener('mousemove', (e) => {
+                if (isPanning) {
+                    panX = e.clientX - startX;
+                    panY = e.clientY - startY;
+                    updateTransform();
+                }
+            });
+
+            window.addEventListener('touchmove', (e) => {
+                if (isPanning && e.touches.length === 1) {
+                    panX = e.touches[0].clientX - startX;
+                    panY = e.touches[0].clientY - startY;
+                    updateTransform();
+                }
+            }, { passive: true });
+
+            window.addEventListener('mouseup', () => { isPanning = false; });
+            window.addEventListener('touchend', () => { isPanning = false; });
+
+            canvasContainer.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                let newScale = e.deltaY < 0 ? scale * 1.15 : scale / 1.15;
+                scale = Math.max(0.2, Math.min(newScale, 3));
+                updateTransform();
+            }, { passive: false });
+        }
+
+        function collectSubtreeNodes(node, list = []) {
+            list.push(node);
+            if (node.children && !node.collapsed) {
+                node.children.forEach(child => collectSubtreeNodes(child, list));
+            }
+            return list;
+        }
+
+        function setupDragging() {
+            window.addEventListener('mousemove', (e) => {
+                if (!activeDraggedNode) return;
+                const dx = (e.clientX - startX) / scale;
+                const dy = (e.clientY - startY) / scale;
+                dragOffsets.forEach((orig, node) => {
+                    node.x = orig.x + dx;
+                    node.y = orig.y + dy;
+                });
+                renderMindMap();
+            });
+
+            window.addEventListener('touchmove', (e) => {
+                if (!activeDraggedNode || e.touches.length !== 1) return;
+                const dx = (e.touches[0].clientX - startX) / scale;
+                const dy = (e.touches[0].clientY - startY) / scale;
+                dragOffsets.forEach((orig, node) => {
+                    node.x = orig.x + dx;
+                    node.y = orig.y + dy;
+                });
+                renderMindMap();
+            }, { passive: true });
+
+            window.addEventListener('mouseup', () => {
+                activeDraggedNode = null;
+                dragOffsets.clear();
+            });
+            window.addEventListener('touchend', () => {
+                activeDraggedNode = null;
+                dragOffsets.clear();
+            });
+        }
+
+        function handleOverlayImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                overlayState.url = e.target.result;
+                overlayState.active = true;
+                overlayState.isSelected = true;
+                overlayState.width = 300;
+                overlayState.x = mindMapData.x - 150;
+                overlayState.y = mindMapData.y - 200;
+                renderOverlayImage();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function renderOverlayImage() {
+            const layer = document.getElementById('imageOverlayLayer');
+            const imgEl = document.getElementById('overlayImgElement');
+            if (!layer || !imgEl) return;
+            if (!overlayState.active || !overlayState.url) {
+                layer.style.display = 'none';
+                return;
+            }
+            layer.style.display = 'block';
+            layer.style.left = overlayState.x + 'px';
+            layer.style.top = overlayState.y + 'px';
+            imgEl.src = overlayState.url;
+            imgEl.style.width = overlayState.width + 'px';
+            updateOverlaySelectionStyle();
+        }
+
+        function updateOverlaySelectionStyle() {
+            const wrapper = document.getElementById('overlayWrapper');
+            if (!wrapper) return;
+            if (overlayState.isSelected) {
+                wrapper.classList.remove('border-dashed', 'border-indigo-400');
+                wrapper.classList.add('border-solid', 'border-indigo-600', 'ring-4', 'ring-indigo-200');
+            } else {
+                wrapper.classList.remove('border-solid', 'border-indigo-600', 'ring-4', 'ring-indigo-200');
+                wrapper.classList.add('border-dashed', 'border-indigo-400');
+            }
+        }
+
+        function removeOverlayImage() {
+            overlayState.active = false;
+            overlayState.isSelected = false;
+            overlayState.url = "";
+            document.getElementById('imageOverlayLayer').style.display = 'none';
+            document.getElementById('overlayImageInput').value = '';
+        }
+
+        function setupOverlayInteractions() {
+            const wrapper = document.getElementById('overlayWrapper');
+            const resizeHandle = document.getElementById('resizeHandle');
+            const layer = document.getElementById('imageOverlayLayer');
+            if (!wrapper || !resizeHandle || !layer) return;
+
+            const startDragOrResize = (clientX, clientY, target) => {
+                overlayState.isSelected = true;
+                updateOverlaySelectionStyle();
+                if (target === resizeHandle || resizeHandle.contains(target)) {
+                    overlayState.isResizing = true;
+                } else {
+                    overlayState.isDragging = true;
+                }
+                overlayState.startX = clientX;
+                overlayState.startY = clientY;
+                overlayState.startOverlayX = overlayState.x;
+                overlayState.startOverlayY = overlayState.y;
+                overlayState.startWidth = overlayState.width;
+            };
+
+            wrapper.addEventListener('mousedown', (e) => {
+                if (e.target.closest('button')) return;
+                startDragOrResize(e.clientX, e.clientY, e.target);
+                e.stopPropagation();
+            });
+
+            wrapper.addEventListener('touchstart', (e) => {
+                if (e.target.closest('button') || e.touches.length !== 1) return;
+                startDragOrResize(e.touches[0].clientX, e.touches[0].clientY, e.target);
+                e.stopPropagation();
+            }, { passive: true });
+
+            window.addEventListener('mousemove', (e) => {
+                if (overlayState.isDragging) {
+                    const dx = (e.clientX - overlayState.startX) / scale;
+                    const dy = (e.clientY - overlayState.startY) / scale;
+                    overlayState.x = overlayState.startOverlayX + dx;
+                    overlayState.y = overlayState.startOverlayY + dy;
+                    layer.style.left = overlayState.x + 'px';
+                    layer.style.top = overlayState.y + 'px';
+                } else if (overlayState.isResizing) {
+                    const dx = (e.clientX - overlayState.startX) / scale;
+                    let newWidth = overlayState.startWidth + dx;
+                    overlayState.width = Math.max(80, Math.min(newWidth, 2000));
+                    document.getElementById('overlayImgElement').style.width = overlayState.width + 'px';
+                }
+            });
+
+            window.addEventListener('touchmove', (e) => {
+                if (e.touches.length !== 1) return;
+                if (overlayState.isDragging) {
+                    const dx = (e.touches[0].clientX - overlayState.startX) / scale;
+                    const dy = (e.touches[0].clientY - overlayState.startY) / scale;
+                    overlayState.x = overlayState.startOverlayX + dx;
+                    overlayState.y = overlayState.startOverlayY + dy;
+                    layer.style.left = overlayState.x + 'px';
+                    layer.style.top = overlayState.y + 'px';
+                } else if (overlayState.isResizing) {
+                    const dx = (e.touches[0].clientX - overlayState.startX) / scale;
+                    let newWidth = overlayState.startWidth + dx;
+                    overlayState.width = Math.max(80, Math.min(newWidth, 2000));
+                    document.getElementById('overlayImgElement').style.width = overlayState.width + 'px';
+                }
+            }, { passive: true });
+
+            window.addEventListener('mouseup', () => {
+                overlayState.isDragging = false;
+                overlayState.isResizing = false;
+            });
+            window.addEventListener('touchend', () => {
+                overlayState.isDragging = false;
+                overlayState.isResizing = false;
+            });
+        }
+
+        function findNodeById(node, id) {
+            if (node.id === id) return node;
+            if (node.children) {
+                for (let child of node.children) {
+                    const found = findNodeById(child, id);
+                    if (found) return found;
+                }
+            }
+            return null;
+        }
+
+        function getNodePath(root, targetId, currentPath = []) {
+            const newPath = [...currentPath, root.text];
+            if (root.id === targetId) return newPath;
+            if (root.children) {
+                for (let child of root.children) {
+                    const res = getNodePath(child, targetId, newPath);
+                    if (res) return res;
+                }
+            }
+            return null;
+        }
+
+        function toggleCollapse(id) {
+            const node = findNodeById(mindMapData, id);
+            if (node) {
+                node.collapsed = !node.collapsed;
+                renderMindMap();
+            }
+        }
+
+        function renderMindMap() {
+            if (svgLines) svgLines.innerHTML = '';
+            if (nodesLayer) nodesLayer.innerHTML = '';
+            if (parentNodeSelect) parentNodeSelect.innerHTML = '';
+            if (nodeListContainer) nodeListContainer.innerHTML = '';
+
+            drawTreeVisuals(mindMapData);
+            renderCrossLinks();
+            populateSidebarOptions(mindMapData, 0);
+            populateCrossLinkSelects(mindMapData);
+            renderCrossLinksList();
+        }
+
+        function drawTreeVisuals(node) {
+            const isRoot = node.id === mindMapData.id;
+            const cardDiv = document.createElement('div');
+            
+            let colorStyle = '';
+            if (node.color && node.color.trim() !== '') {
+                colorStyle = 'background-color: ' + node.color + ';';
+            }
+
+            cardDiv.className = 'absolute node-card px-4 py-3 rounded-2xl border flex flex-col items-center shadow-md z-10 ' + (isRoot && !node.color ? currentTheme.rootBg : (!node.color ? currentTheme.nodeBg : 'border-slate-200 text-slate-800 shadow-slate-200'));
+            if (colorStyle) cardDiv.style.cssText += colorStyle;
+
+            cardDiv.style.left = node.x + 'px';
+            cardDiv.style.top = node.y + 'px';
+            cardDiv.style.minWidth = '200px';
+            cardDiv.style.maxWidth = '300px';
+
+            cardDiv.addEventListener('mouseenter', (e) => {
+                let tipText = node.text;
+                if (node.url) tipText += '\n🔗 Link: ' + node.url;
+                if (tooltipEl) {
+                    tooltipEl.textContent = tipText;
+                    tooltipEl.classList.remove('hidden');
+                    updateTooltipPosition(e);
+                }
+            });
+            cardDiv.addEventListener('mousemove', (e) => { updateTooltipPosition(e); });
+            cardDiv.addEventListener('mouseleave', () => { if (tooltipEl) tooltipEl.classList.add('hidden'); });
+
+            cardDiv.addEventListener('mousedown', (e) => {
+                if (e.target.closest('button') || e.target.closest('a') || e.target.closest('input')) return;
+                activeDraggedNode = node;
+                startX = e.clientX;
+                startY = e.clientY;
+                dragOffsets.clear();
+                const subtree = collectSubtreeNodes(node);
+                subtree.forEach(n => dragOffsets.set(n, { x: n.x, y: n.y }));
+                e.stopPropagation();
+            });
+
+            cardDiv.addEventListener('touchstart', (e) => {
+                if (e.target.closest('button') || e.target.closest('a') || e.target.closest('input') || e.touches.length !== 1) return;
+                activeDraggedNode = node;
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+                dragOffsets.clear();
+                const subtree = collectSubtreeNodes(node);
+                subtree.forEach(n => dragOffsets.set(n, { x: n.x, y: n.y }));
+                e.stopPropagation();
+            }, { passive: true });
+
+            cardDiv.addEventListener('dblclick', () => { openEditModalPrompt(node.id); });
+
+            let imageHTML = '';
+            if (node.imageUrl && node.imageUrl.trim() !== '') {
+                imageHTML = '<div class="w-full flex justify-center mb-2"><img src="' + node.imageUrl + '" alt="Node Image" class="rounded-lg object-cover shadow-sm" style="width: 50%; height: auto; max-height: 100%;" onerror="this.style.display=\'none\'"></div>';
+            }
+
+            let innerContentHTML = '<div class="w-full flex items-center justify-between space-x-2">';
+            innerContentHTML += '<span class="text-sm font-semibold truncate flex-1 text-center">' + node.text + '</span>';
+            
+            let buttonsHTML = '<div class="flex items-center space-x-1 ml-1">';
+            buttonsHTML += '<button onclick="openDetailsModal(\'' + node.id + '\')" class="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 rounded-lg text-indigo-700 text-xs font-bold transition flex items-center space-x-1" title="អានព័ត៌មានលម្អិត"><span>📖</span></button>';
+            
+            if (node.url && node.url.trim() !== '') {
+                let safeUrl = node.url.startsWith('http') ? node.url : 'https://' + node.url;
+                buttonsHTML += '<a href="' + safeUrl + '" target="_blank" class="p-1 hover:bg-slate-200/50 rounded-lg text-indigo-600 transition font-bold" title="បើក Link" onclick="event.stopPropagation();">🔗</a>';
+            }
+            buttonsHTML += '<button onclick="openEditModalPrompt(\'' + node.id + '\')" class="p-1 hover:bg-slate-200/50 rounded-lg text-slate-500 hover:text-indigo-600 transition" title="កែប្រែ">✏️</button>';
+            buttonsHTML += '<button onclick="openModal(\'' + node.id + '\')" class="w-6 h-6 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg flex items-center justify-center text-xs font-bold transition shadow-sm" title="បន្ថែមខ្នែង">+</button>';
+            
+            if (node.children && node.children.length > 0) {
+                const icon = node.collapsed ? '➕ បង្ហាញ' : '➖ លាក់';
+                buttonsHTML += '<button onclick="toggleCollapse(\'' + node.id + '\')" class="px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-[11px] font-bold transition shadow-sm">' + icon + '</button>';
+            }
+
+            if (!isRoot) {
+                buttonsHTML += '<button onclick="deleteNode(\'' + node.id + '\')" class="p-1 hover:bg-rose-100 rounded-lg text-rose-500 hover:text-rose-700 transition" title="លុប">🗑️</button>';
+            }
+            buttonsHTML += '</div></div>';
+
+            cardDiv.innerHTML = imageHTML + innerContentHTML + buttonsHTML;
+            if (nodesLayer) nodesLayer.appendChild(cardDiv);
+
+            if (node.children && !node.collapsed) {
+                node.children.forEach(child => {
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    const startXCoord = node.x + 110;
+                    const startYCoord = node.y + 45;
+                    const endXCoord = child.x + 110;
+                    const endYCoord = child.y + 45;
+                    const controlX = (startXCoord + endXCoord) / 2;
+
+                    line.setAttribute('d', 'M ' + startXCoord + ' ' + startYCoord + ' C ' + controlX + ' ' + startYCoord + ', ' + controlX + ' ' + endYCoord + ', ' + endXCoord + ' ' + endYCoord);
+                    line.setAttribute('stroke', isRoot ? currentTheme.lineColor : currentTheme.subLineColor);
+                    line.setAttribute('stroke-width', isRoot ? '3' : '2');
+                    line.setAttribute('fill', 'none');
+                    if (svgLines) svgLines.appendChild(line);
+
+                    drawTreeVisuals(child);
+                });
+            }
+        }
+
+        function renderCrossLinks() {
+            if (!svgLines) return;
+            crossLinks.forEach(link => {
+                const fromNode = findNodeById(mindMapData, link.fromId);
+                const toNode = findNodeById(mindMapData, link.toId);
+                if (!fromNode || !toNode) return;
+
+                const sx = fromNode.x + 110;
+                const sy = fromNode.y + 45;
+                const ex = toNode.x + 110;
+                const ey = toNode.y + 45;
+                const cx = (sx + ex) / 2;
+                const cy = (sy + ey) / 2 - 50;
+
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', 'M ' + sx + ' ' + sy + ' Q ' + cx + ' ' + cy + ', ' + ex + ' ' + ey);
+                path.setAttribute('stroke', currentTheme.crossLineColor);
+                path.setAttribute('stroke-width', '2.5');
+                path.setAttribute('stroke-dasharray', '6,6');
+                path.setAttribute('fill', 'none');
+                svgLines.appendChild(path);
+            });
+        }
+
+        function collectAllNodesList(node, list = []) {
+            list.push(node);
+            if (node.children) {
+                node.children.forEach(child => collectAllNodesList(child, list));
+            }
+            return list;
+        }
+
+        function populateSidebarOptions(node, depth) {
+            const indent = '— '.repeat(depth);
+            const opt = document.createElement('option');
+            opt.value = node.id;
+            opt.textContent = indent + node.text;
+            if (parentNodeSelect) parentNodeSelect.appendChild(opt);
+
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 transition';
+            itemDiv.innerHTML = '<span class="text-xs font-medium text-slate-700 truncate flex-1">' + indent + node.text + '</span>' +
+                '<button onclick="openModal(\'' + node.id + '\')" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[11px] font-semibold transition ml-2 shadow-sm">+ បន្ថែម</button>';
+            if (nodeListContainer) nodeListContainer.appendChild(itemDiv);
+
+            if (node.children) {
+                node.children.forEach(child => populateSidebarOptions(child, depth + 1));
+            }
+        }
+
+        function populateCrossLinkSelects(rootNode) {
+            const allNodes = collectAllNodesList(rootNode, []);
+            const fromSelect = document.getElementById('crossLinkFromSelect');
+            const toSelect = document.getElementById('crossLinkToSelect');
+            if (!fromSelect || !toSelect) return;
+
+            fromSelect.innerHTML = '';
+            toSelect.innerHTML = '';
+
+            allNodes.forEach(node => {
+                const opt1 = document.createElement('option');
+                opt1.value = node.id;
+                opt1.textContent = node.text;
+                fromSelect.appendChild(opt1);
+
+                const opt2 = document.createElement('option');
+                opt2.value = node.id;
+                opt2.textContent = node.text;
+                toSelect.appendChild(opt2);
+            });
+            if (allNodes.length > 1) toSelect.selectedIndex = 1;
+        }
+
+        function addCrossLink() {
+            const fromId = document.getElementById('crossLinkFromSelect').value;
+            const toId = document.getElementById('crossLinkToSelect').value;
+            if (fromId === toId) {
+                alert("សូមជ្រើសរើសខ្នែងពីរផ្សេងគ្នាដើម្បីតភ្ជាប់!");
+                return;
+            }
+            const exists = crossLinks.some(l => (l.fromId === fromId && l.toId === toId) || (l.fromId === toId && l.toId === fromId));
+            if (exists) {
+                alert("ខ្សែរតភ្ជាប់នេះមានរួចហើយ!");
+                return;
+            }
+
+            crossLinks.push({
+                id: 'cl-' + Date.now(),
+                fromId: fromId,
+                toId: toId
+            });
+            renderMindMap();
+        }
+
+        function removeCrossLink(linkId) {
+            crossLinks = crossLinks.filter(l => l.id !== linkId);
+            renderMindMap();
+        }
+
+        function renderCrossLinksList() {
+            const container = document.getElementById('crossLinksListContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            if (crossLinks.length === 0) {
+                container.innerHTML = '<p class="text-[11px] text-slate-400 italic">មិនទាន់មានខ្សែរតភ្ជាប់ Cross-Link នៅឡើយ</p>';
+                return;
+            }
+
+            crossLinks.forEach(link => {
+                const fromNode = findNodeById(mindMapData, link.fromId);
+                const toNode = findNodeById(mindMapData, link.toId);
+                if (!fromNode || !toNode) return;
+
+                const div = document.createElement('div');
+                div.className = 'flex items-center justify-between bg-white p-2 rounded-xl border border-violet-100 shadow-xs text-[11px]';
+                div.innerHTML = '<span class="truncate text-slate-700 font-medium">🔗 ' + fromNode.text.substring(0, 12) + ' ➔ ' + toNode.text.substring(0, 12) + '</span>' +
+                    '<button onclick="removeCrossLink(\'' + link.id + '\')" class="text-rose-500 hover:text-rose-700 font-bold px-1.5 py-0.5 rounded">✕</button>';
+                container.appendChild(div);
+            });
+        }
+
+        function openModal(id) {
+            targetParentNodeId = id;
+            const node = findNodeById(mindMapData, id);
+            if (!node) return;
+            
+            const pathArray = getNodePath(mindMapData, id) || [node.text];
+            modalParentContext.textContent = pathArray.join(" ➔ ");
+            
+            modalInput.value = '';
+            modalUrlInput.value = '';
+            document.getElementById('modalCountInput').value = '';
+            document.getElementById('modalNumberingCheckbox').checked = true;
+            modalColorInput.value = '#ffffff';
+            nodeModal.classList.remove('hidden');
+            nodeModal.classList.add('flex');
+        }
+
+        function closeModal() {
+            nodeModal.classList.remove('flex');
+            nodeModal.classList.add('hidden');
+        }
+
+        function openEditModalPrompt(id) {
+            editingNodeId = id;
+            const node = findNodeById(mindMapData, id);
+            if (!node) return;
+            editNodeInput.value = node.text;
+            editNodeUrlInput.value = node.url || '';
+            editNodeColorInput.value = node.color || '#ffffff';
+            document.getElementById('editNodeImageInput').value = '';
+            editNodeModal.classList.remove('hidden');
+            editNodeModal.classList.add('flex');
+        }
+
+        function closeEditModal() {
+            editNodeModal.classList.remove('flex');
+            editNodeModal.classList.add('hidden');
+        }
+
+        function clearNodeImage() {
+            if (!editingNodeId) return;
+            const node = findNodeById(mindMapData, editingNodeId);
+            if (node) node.imageUrl = '';
+            document.getElementById('editNodeImageInput').value = '';
+        }
+
+        function submitEditNode() {
+            if (!editingNodeId) return;
+            const node = findNodeById(mindMapData, editingNodeId);
+            if (!node) return;
+            node.text = editNodeInput.value.trim() || node.text;
+            node.url = editNodeUrlInput.value.trim();
+            node.color = editNodeColorInput.value === '#ffffff' ? '' : editNodeColorInput.value;
+
+            const imgInput = document.getElementById('editNodeImageInput');
+            if (imgInput && imgInput.files && imgInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    node.imageUrl = e.target.result;
+                    closeEditModal();
+                    renderMindMap();
+                };
+                reader.readAsDataURL(imgInput.files[0]);
+                return;
+            }
+            closeEditModal();
+            renderMindMap();
+        }
+
+        async function openDetailsModal(id) {
+            const node = findNodeById(mindMapData, id);
+            if (!node) return;
+            detailsNodeId = id;
+            
+            document.getElementById('detailsModalHeading').textContent = node.text;
+            const modalBody = document.getElementById('detailsModalBody');
+            const linkContainer = document.getElementById('detailsModalLinkContainer');
+            const modalLink = document.getElementById('detailsModalLink');
+            
+            if (node.detailsText && node.detailsText.trim() !== '') {
+                modalBody.textContent = node.detailsText;
+                if (node.url && node.url.trim() !== '') {
+                    linkContainer.classList.remove('hidden');
+                    let safeUrl = node.url.startsWith('http') ? node.url : 'https://' + node.url;
+                    modalLink.href = safeUrl;
+                    modalLink.querySelector('span').textContent = safeUrl;
+                } else {
+                    linkContainer.classList.add('hidden');
+                }
+                document.getElementById('detailsModal').classList.remove('hidden');
+                document.getElementById('detailsModal').classList.add('flex');
+                return;
+            }
+
+            modalBody.textContent = "— កំពុងពន្យល់លម្អិតតាមគន្លងប្រធានបទ\nសូមរង់ចាំបន្តិច។";
+            if (node.url && node.url.trim() !== '') {
+                linkContainer.classList.remove('hidden');
+                let safeUrl = node.url.startsWith('http') ? node.url : 'https://' + node.url;
+                modalLink.href = safeUrl;
+                modalLink.querySelector('span').textContent = safeUrl;
+            } else {
+                linkContainer.classList.add('hidden');
+            }
+
+            document.getElementById('detailsModal').classList.remove('hidden');
+            document.getElementById('detailsModal').classList.add('flex');
+
+            try {
+                const pathArray = getNodePath(mindMapData, id) || [node.text];
+                const systemPrompt = "Provide a well-structured detailed explanation in Khmer following the exact contextual hierarchy chain.";
+                const userQuery = `សូមពន្យល់លម្អិតតាមគន្លងប្រធានបទ៖ [ ${pathArray.join(" ➔ ")} ] ឱ្យបានក្បោះក្បាយជាភាសាខ្មែរ ដោយមិនត្រូវឱ្យខុសប្រធានបទដាច់ខាត។`;
+                const explanation = await callGeminiAPI(systemPrompt, userQuery);
+                let resultText = Array.isArray(explanation) ? explanation.join('\n\n') : String(explanation);
+                node.detailsText = resultText;
+                modalBody.textContent = resultText;
+            } catch (err) {
+                modalBody.textContent = "ព័ត៌មានលម្អិតសម្រាប់ប្រធានបទនេះ៖ " + node.text;
+            }
+        }
+
+        function closeDetailsModal() {
+            document.getElementById('detailsModal').classList.remove('flex');
+            document.getElementById('detailsModal').classList.add('hidden');
+        }
+
+        function updateTooltipPosition(e) {
+            if (!tooltipEl) return;
+            const padding = 15;
+            let left = e.clientX + padding;
+            let top = e.clientY + padding;
+            if (left + tooltipEl.offsetWidth > window.innerWidth) left = e.clientX - tooltipEl.offsetWidth - padding;
+            if (top + tooltipEl.offsetHeight > window.innerHeight) top = e.clientY - tooltipEl.offsetHeight - padding;
+            tooltipEl.style.left = left + 'px';
+            tooltipEl.style.top = top + 'px';
+        }
+
+        function addSubNode() {
+            const input = document.getElementById('subNodeInput');
+            const text = input ? input.value.trim() : "";
+            const parentId = parentNodeSelect ? parentNodeSelect.value : mindMapData.id;
+            if (!text) return;
+            const parentNode = findNodeById(mindMapData, parentId);
+            if (!parentNode) return;
+
+            if (!parentNode.children) parentNode.children = [];
+            const angle = Math.random() * Math.PI * 2;
+            parentNode.children.push({
+                id: 'node-' + Date.now(),
+                text: text,
+                url: "",
+                imageUrl: "",
+                detailsText: "",
+                color: "",
+                x: parentNode.x + Math.cos(angle) * 160,
+                y: parentNode.y + Math.sin(angle) * 160,
+                collapsed: false,
+                children: []
+            });
+            input.value = '';
+            renderMindMap();
+        }
+
+        function submitModalManual() {
+            if (!targetParentNodeId) return;
+            const parentNode = findNodeById(mindMapData, targetParentNodeId);
+            if (!parentNode) return;
+            
+            let text = modalInput.value.trim();
+            const url = modalUrlInput.value.trim();
+            const color = modalColorInput.value;
+            if (!text) return;
+
+            if (!parentNode.children) parentNode.children = [];
+            const angle = Math.random() * Math.PI * 2;
+            parentNode.children.push({
+                id: 'node-' + Date.now(),
+                text: text,
+                url: url,
+                imageUrl: "",
+                detailsText: "",
+                color: color === '#ffffff' ? '' : color,
+                x: parentNode.x + Math.cos(angle) * 160,
+                y: parentNode.y + Math.sin(angle) * 160,
+                collapsed: false,
+                children: []
+            });
+            closeModal();
+            renderMindMap();
+        }
+
+        async function submitModalAI() {
+            if (!targetParentNodeId) return;
+            const parentNode = findNodeById(mindMapData, targetParentNodeId);
+            if (!parentNode) return;
+
+            const countInput = document.getElementById('modalCountInput');
+            const numberingChecked = document.getElementById('modalNumberingCheckbox').checked;
+            const userCount = countInput && countInput.value ? parseInt(countInput.value) : null;
+            const btnText = document.getElementById('modalAiBtnText');
+            btnText.textContent = "កំពុងវិភាគគន្លង...";
+
+            try {
+                const pathArray = getNodePath(mindMapData, targetParentNodeId) || [parentNode.text];
+                let countInstruction = userCount ? `Generate exactly ${userCount} sub-topics.` : `Generate appropriate sub-topics strictly relevant to this exact branch chain.`;
+                let numberingInstruction = numberingChecked ? `Prefix each sub-topic with clear Khmer numbering like '១. ', '២. ', etc.` : `Do not include numbers.`;
+                
+                const systemPrompt = `You are an expert AI Mind Map assistant. Analyze the absolute contextual hierarchy chain from root to the target branch.
+Chain Path: [ ${pathArray.join(" ➔ ")} ].
+Generate sub-topics in Khmer that STRICTLY and logically follow this exact chain path, ensuring zero deviation or drift from the topic context. ${countInstruction} ${numberingInstruction} Return strictly a JSON array of strings.`;
+                
+                const userQuery = `ប្រធានបទមេ និងគន្លងបច្ចុប្បន្ន៖ [ ${pathArray.join(" ➔ ")} ]. សូមវិភាគនិងបង្កើតខ្នែងរងបន្តជាភាសាខ្មែរដោយប្រុងប្រយ័ត្នបំផុត។`;
+                const subTopics = await callGeminiAPI(systemPrompt, userQuery);
+
+                if (subTopics && Array.isArray(subTopics)) {
+                    if (!parentNode.children) parentNode.children = [];
+                    subTopics.forEach((topic, idx) => {
+                        const angle = (idx / subTopics.length) * Math.PI * 2;
+                        parentNode.children.push({
+                            id: 'ai-sub-' + Date.now() + '-' + idx,
+                            text: topic,
+                            url: "",
+                            imageUrl: "",
+                            detailsText: "",
+                            color: "",
+                            x: parentNode.x + Math.cos(angle) * 180,
+                            y: parentNode.y + Math.sin(angle) * 180,
+                            collapsed: false,
+                            children: []
+                        });
+                    });
+                }
+                closeModal();
+                renderMindMap();
+            } catch (err) {
+                alert("កំហុសក្នុងការតភ្ជាប់ AI វិភាគគន្លង");
+            } finally {
+                btnText.textContent = "វិភាគ និង បង្កើតខ្នែង";
+            }
+        }
+
+        async function generateWithAI() {
+            const btnText = document.getElementById('aiBtnText');
+            btnText.textContent = "កំពុងបង្កើត Mind Map...";
+            const rootTitle = document.getElementById('rootInput').value.trim() || "ពុទ្ធគុណ ទាំង១០";
+
+            try {
+                const systemPrompt = "Generate a complete hierarchical mind map structure in Khmer as a JSON object with id, text, children array.";
+                const userQuery = `សូមបង្កើតរចនាសម្ព័ន្ធ Mind Map លម្អិតជាភាសាខ្មែរសម្រាប់ប្រធានបទ៖ "${rootTitle}"។`;
+                const apiKey = getApiKey();
+                const payload = { contents: [{ parts: [{ text: userQuery }] }], systemInstruction: { parts: [{ text: systemPrompt }] } };
+                const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent' + (apiKey ? '?key=' + apiKey : '');
+                
+                const res = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const result = await res.json();
+                const textResult = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (textResult) {
+                    const jsonMatch = textResult.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) {
+                        mindMapData = JSON.parse(jsonMatch[0]);
+                        mindMapData.x = 7500;
+                        mindMapData.y = 7500;
+                        crossLinks = [];
+                        centerCanvas();
+                        renderMindMap();
+                    }
+                }
+            } catch (err) {
+                alert("មិនអាចបង្កើត Mind Map បានទេ។");
+            } finally {
+                btnText.textContent = "ឱ្យ AI បង្កើតមាតិកាតាមគន្លង";
+            }
+        }
+
+        async function generateAIStyle() {
+            try {
+                const themeObj = await callGeminiAPI("Generate a JSON array of 3 hex colors", "Give me 3 colors");
+                if (themeObj && themeObj.length >= 3) {
+                    currentTheme.lineColor = themeObj[0];
+                    currentTheme.crossLineColor = themeObj[1];
+                    renderMindMap();
+                }
+            } catch (e) {}
+        }
+
+        function changeStyle(styleName) {
+            if (styleName === 'modern') {
+                currentTheme.rootBg = "bg-indigo-600 text-white border-indigo-700 shadow-indigo-300 ring-4 ring-indigo-100";
+                currentTheme.lineColor = "#6366f1";
+                currentTheme.crossLineColor = "#8b5cf6";
+            } else if (styleName === 'sunset') {
+                currentTheme.rootBg = "bg-gradient-to-r from-orange-500 to-amber-500 text-white border-orange-600 shadow-orange-300 ring-4 ring-orange-100";
+                currentTheme.lineColor = "#f97316";
+                currentTheme.crossLineColor = "#e11d48";
+            } else if (styleName === 'emerald') {
+                currentTheme.rootBg = "bg-emerald-600 text-white border-emerald-700 shadow-emerald-300 ring-4 ring-emerald-100";
+                currentTheme.lineColor = "#10b981";
+                currentTheme.crossLineColor = "#06b6d4";
+            } else if (styleName === 'dark') {
+                currentTheme.rootBg = "bg-slate-900 text-white border-slate-800 shadow-slate-900 ring-4 ring-slate-800";
+                currentTheme.lineColor = "#cbd5e1";
+                currentTheme.crossLineColor = "#a855f7";
+            }
+            renderMindMap();
+        }
+
+        function updateRootNode() {
+            const rootInput = document.getElementById('rootInput');
+            if (rootInput && rootInput.value.trim() !== '') {
+                mindMapData.text = rootInput.value.trim();
+                renderMindMap();
+            }
+        }
+
+        function deleteNode(id) {
+            if (id === mindMapData.id) return;
+            function removeFromTree(node) {
+                if (!node.children) return;
+                node.children = node.children.filter(child => child.id !== id);
+                node.children.forEach(child => removeFromTree(child));
+            }
+            removeFromTree(mindMapData);
+            crossLinks = crossLinks.filter(l => l.fromId !== id && l.toId !== id);
+            renderMindMap();
+        }
+
+        function clearAllNodes() {
+            mindMapData.children = [];
+            crossLinks = [];
+            renderMindMap();
+        }
+
+        function exportJSONFile() {
+            const exportData = { mindMapData, crossLinks };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+            const a = document.createElement('a');
+            a.href = dataStr;
+            a.download = 'mind_map_data.json';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        }
+
+        function importJSONFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed.mindMapData) {
+                        mindMapData = parsed.mindMapData;
+                        crossLinks = parsed.crossLinks || [];
+                    } else if (parsed.text) {
+                        mindMapData = parsed;
+                        crossLinks = [];
+                    }
+                    document.getElementById('rootInput').value = mindMapData.text;
+                    centerCanvas();
+                    renderMindMap();
+                } catch (err) {
+                    alert("File មិនត្រឹមត្រូវ!");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function exportAsHTMLViewer() {
+            const exportPayload = { mindMapData, crossLinks, overlayState };
+            const jsonString = JSON.stringify(exportPayload);
+            const htmlContent = `<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mind Map Viewer</title>
+    <script src="https://cdn.tailwindcss.com"><\/script>
+    <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Kantumruy Pro', sans-serif; background-color: #f8fafc; overflow: hidden; user-select: none; }</style>
+</head>
+<body class="h-screen flex flex-col text-slate-800">
+    <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm z-20">
+        <h1 class="text-lg font-bold text-indigo-900">សម្រាប់ មើល នឹងអាន</h1>
+        <span class="text-xs text-slate-500">Mind Map Viewer</span>
+    </header>
+    <main class="flex-1 relative overflow-hidden bg-slate-50" id="canvasContainer">
+        <div id="canvasViewport" class="absolute inset-0 transform-gpu origin-center">
+            <svg id="svgLines" class="absolute inset-0 w-full h-full pointer-events-none" style="width: 15000px; height: 15000px;"></svg>
+            <div id="imageOverlayLayer" class="absolute z-0 pointer-events-auto" style="display: none;">
+                <div class="relative border-2 border-indigo-400 rounded-xl p-1 bg-white/40 backdrop-blur-xs inline-block">
+                    <img id="overlayImgElement" src="" alt="Overlay PNG" class="max-w-none block rounded-lg pointer-events-none">
+                </div>
+            </div>
+            <div id="nodesLayer" class="absolute" style="width: 15000px; height: 15000px; top: 0; left: 0;"></div>
+        </div>
+    </main>
+    <script>
+        const savedData = ` + jsonString + `;
+        let mindMapData = savedData.mindMapData;
+        let crossLinks = savedData.crossLinks || [];
+        let overlayState = savedData.overlayState || {};
+        
+        const canvasContainer = document.getElementById('canvasContainer');
+        const canvasViewport = document.getElementById('canvasViewport');
+        const svgLines = document.getElementById('svgLines');
+        const nodesLayer = document.getElementById('nodesLayer');
+        let scale = 1, panX = 0, panY = 0, isPanning = false, startX = 0, startY = 0;
+
+        window.onload = function() {
+            panX = canvasContainer.clientWidth / 2 - mindMapData.x;
+            panY = canvasContainer.clientHeight / 2 - mindMapData.y;
+            updateTransform();
+            renderOverlayImage();
+            renderMindMap();
+            setupPan();
+        };
+
+        function updateTransform() {
+            canvasViewport.style.transform = 'translate(' + panX + 'px, ' + panY + 'px) scale(' + scale + ')';
+        }
+
+        function renderOverlayImage() {
+            const layer = document.getElementById('imageOverlayLayer');
+            const imgEl = document.getElementById('overlayImgElement');
+            if (!layer || !imgEl) return;
+            if (!overlayState.active || !overlayState.url) {
+                layer.style.display = 'none';
+                return;
+            }
+            layer.style.display = 'block';
+            layer.style.left = overlayState.x + 'px';
+            layer.style.top = overlayState.y + 'px';
+            imgEl.src = overlayState.url;
+            imgEl.style.width = overlayState.width + 'px';
+        }
+
+        function setupPan() {
+            canvasContainer.addEventListener('mousedown', (e) => {
+                if (e.target.closest('.node-card')) return;
+                isPanning = true; startX = e.clientX - panX; startY = e.clientY - panY;
+            });
+            window.addEventListener('mousemove', (e) => {
+                if (isPanning) { panX = e.clientX - startX; panY = e.clientY - startY; updateTransform(); }
+            });
+            window.addEventListener('mouseup', () => { isPanning = false; });
+            canvasContainer.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                scale = Math.max(0.2, Math.min(e.deltaY < 0 ? scale * 1.15 : scale / 1.15, 3));
+                updateTransform();
+            }, { passive: false });
+        }
+
+        function findNodeById(node, id) {
+            if (node.id === id) return node;
+            if (node.children) {
+                for (let child of node.children) {
+                    const found = findNodeById(child, id);
+                    if (found) return found;
+                }
+            }
+            return null;
+        }
+
+        function toggleCollapseViewer(id) {
+            const node = findNodeById(mindMapData, id);
+            if (node) {
+                node.collapsed = !node.collapsed;
+                renderMindMap();
+            }
+        }
+
+        function renderMindMap() {
+            svgLines.innerHTML = '';
+            nodesLayer.innerHTML = '';
+            drawTreeVisuals(mindMapData);
+            renderCrossLinks();
+        }
+
+        function drawTreeVisuals(node) {
+            const isRoot = node.id === mindMapData.id;
+            const cardDiv = document.createElement('div');
+            
+            let colorStyle = '';
+            if (node.color && node.color.trim() !== '') {
+                colorStyle = 'background-color: ' + node.color + ';';
+            }
+
+            cardDiv.className = 'absolute node-card px-4 py-3 rounded-2xl border flex flex-col items-center shadow-md z-10 ' + (isRoot && !node.color ? 'bg-indigo-600 text-white border-indigo-700' : (!node.color ? 'bg-white text-slate-700 border-slate-200' : 'border-slate-200 text-slate-800'));
+            if (colorStyle) cardDiv.style.cssText += colorStyle;
+
+            cardDiv.style.left = node.x + 'px';
+            cardDiv.style.top = node.y + 'px';
+            cardDiv.style.minWidth = '200px';
+
+            let imageHTML = node.imageUrl ? '<div class="w-full flex justify-center mb-2"><img src="' + node.imageUrl + '" class="rounded-lg object-cover" style="width: 50%;"></div>' : '';
+            
+            let innerContentHTML = '<div class="w-full flex items-center justify-between space-x-2">';
+            innerContentHTML += '<span class="text-sm font-semibold truncate flex-1 text-center">' + node.text + '</span>';
+            
+            if (node.children && node.children.length > 0) {
+                const icon = node.collapsed ? '➕ បង្ហាញ' : '➖ លាក់';
+                innerContentHTML += '<button onclick="toggleCollapseViewer(\\'' + node.id + '\\')" class="px-2 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-[11px] font-bold transition shadow-sm ml-1">' + icon + '</button>';
+            }
+            innerContentHTML += '</div>';
+
+            cardDiv.innerHTML = imageHTML + innerContentHTML;
+            nodesLayer.appendChild(cardDiv);
+
+            if (node.children && !node.collapsed) {
+                node.children.forEach(child => {
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    const sx = node.x + 110, sy = node.y + 45, ex = child.x + 110, ey = child.y + 45;
+                    line.setAttribute('d', 'M ' + sx + ' ' + sy + ' C ' + ((sx+ex)/2) + ' ' + sy + ', ' + ((sx+ex)/2) + ' ' + ey + ', ' + ex + ' ' + ey);
+                    line.setAttribute('stroke', '#6366f1');
+                    line.setAttribute('stroke-width', '2');
+                    line.setAttribute('fill', 'none');
+                    svgLines.appendChild(line);
+                    drawTreeVisuals(child);
+                });
+            }
+        }
+
+        function renderCrossLinks() {
+            if (!svgLines) return;
+            crossLinks.forEach(link => {
+                const fromNode = findNodeById(mindMapData, link.fromId);
+                const toNode = findNodeById(mindMapData, link.toId);
+                if (!fromNode || !toNode) return;
+
+                const sx = fromNode.x + 110;
+                const sy = fromNode.y + 45;
+                const ex = toNode.x + 110;
+                const ey = toNode.y + 45;
+                const cx = (sx + ex) / 2;
+                const cy = (sy + ey) / 2 - 50;
+
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', 'M ' + sx + ' ' + sy + ' Q ' + cx + ' ' + cy + ', ' + ex + ' ' + ey);
+                path.setAttribute('stroke', '#8b5cf6');
+                path.setAttribute('stroke-width', '2.5');
+                path.setAttribute('stroke-dasharray', '6,6');
+                path.setAttribute('fill', 'none');
+                svgLines.appendChild(path);
+            });
+        }
+    <\/script>
+</body>
+</html>`;
+
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'mind_map_viewer.html';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        }
+
+        function exportAsSVG() {
+            const svgContent = document.getElementById('canvasViewport').innerHTML;
+            const blob = new Blob([svgContent], {type: 'image/svg+xml;charset=utf-8'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'mind_map.svg';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        }
+    </script>
+</body>
+</html>
