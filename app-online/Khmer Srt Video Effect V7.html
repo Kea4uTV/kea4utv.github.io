@@ -1,0 +1,1748 @@
+<!DOCTYPE html>
+<html lang="km" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dubify AI Pro — Khmer Neural TTS Studio</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { darkMode:'class', theme:{ extend:{ colors:{ brand:{900:'#110d21',800:'#17112c',700:'#1f163b',600:'#6366f1',500:'#8b5cf6'} } } }
+</script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Kantumruy+Pro:wght@300;400;500;600;700&display=swap');
+html,body{font-family:'Inter','Kantumruy Pro',sans-serif;}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:#110d21;}
+::-webkit-scrollbar-thumb{background:#2e2456;border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:#4f46e5;}
+.dragover{border-color:#8b5cf6 !important;background:rgba(139,92,246,.08) !important;}
+input[type="range"]{appearance:none;-webkit-appearance:none;background:#1e1b3a;height:4px;border-radius:2px;}
+input[type="range"]::-webkit-slider-thumb{appearance:none;width:12px;height:12px;background:#8b5cf6;border-radius:50%;cursor:pointer;}
+.toast-enter{transform:translateY(0);opacity:1;}
+.toast-leave{transform:translateY(5rem);opacity:0;}
+.tts-playing{animation:pulseAudio 1s infinite;background:rgba(139,92,246,.15) !important;}
+@keyframes pulseAudio{0%,100%{box-shadow:inset 0 0 0 0 rgba(139,92,246,.7);}50%{box-shadow:inset 0 0 0 4px rgba(139,92,246,.2);}}
+.assistant-glow{box-shadow:0 0 20px rgba(139,92,246,.35),inset 0 0 20px rgba(139,92,246,.08);}
+.voice-chip{cursor:pointer;transition:all .15s ease;}
+.voice-chip.selected{background:linear-gradient(135deg,#6366f1,#8b5cf6);border-color:#a78bfa;color:#fff;}
+.fx-badge{font-size:8px;padding:1px 4px;border-radius:3px;font-weight:700;}
+.srt-active-glow{box-shadow:0 0 12px rgba(16,185,129,.5);}
+.recording-pulse{animation:recPulse 1s infinite;}
+@keyframes recPulse{0%,100%{box-shadow:0 0 0 0 rgba(244,63,94,.7);}50%{box-shadow:0 0 0 20px rgba(244,63,94,0);}}
+.queue-active-glow{box-shadow:0 0 10px rgba(34,211,238,.4);}
+.queue-flash{animation:qFlash 0.8s ease;}
+@keyframes qFlash{0%,100%{background-color:transparent;}50%{background-color:rgba(34,211,238,.2);}}
+.embed-video-wrapper video{width:100%;max-width:100%;background:#000;border-radius:6px;display:block;}
+.duck-active{animation:duckPulse 1.2s infinite;}
+@keyframes duckPulse{0%,100%{background-color:rgba(245,158,11,.9);}50%{background-color:rgba(245,158,11,.6);}}
+.overlay-layer{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:5;}
+.overlay-item{position:absolute;pointer-events:auto;cursor:move;user-select:none;transition:outline .15s ease;outline:1px dashed transparent;}
+.overlay-item:hover{outline-color:rgba(139,92,246,.6);}
+.overlay-item.selected{outline:2px dashed #fbbf24;outline-offset:2px;}
+.overlay-item.dragging{cursor:grabbing;opacity:.85;}
+.overlay-item.text-overlay{transform-origin:center center;white-space:pre-wrap;word-break:break-word;display:inline-block;}
+.overlay-item.logo-overlay{display:inline-block;}
+.overlay-item.logo-overlay img{display:block;max-width:none;pointer-events:none;-webkit-user-drag:none;}
+.video-container{position:relative;background:#000;border-radius:12px;overflow:hidden;border:1px solid rgba(30,27,58,1);display:flex;align-items:center;justify-content:center;transition:all .25s ease;}
+.video-container video{display:block;}
+.aspect-landscape{aspect-ratio:16/9;width:100%;}
+.aspect-portrait{aspect-ratio:9/16;height:340px;}
+.aspect-square{aspect-ratio:1/1;height:340px;}
+.aspect-original{aspect-ratio:auto;height:auto;min-height:200px;}
+.fit-fill video{width:100%;height:100%;object-fit:fill;}
+.fit-contain video{width:100%;height:100%;object-fit:contain;}
+.fit-cover video{width:auto;height:auto;object-fit:cover;}
+.fit-none video{width:auto;height:auto;object-fit:unset;max-width:100%;max-height:100%;}
+.fit-scale-down video{width:100%;height:100%;object-fit:scale-down;}
+.video-container.flip-h video{transform:scaleX(-1);}
+.video-container.flip-v video{transform:scaleY(-1);}
+.video-container.flip-h.flip-v video{transform:scale(-1,-1);}
+.video-container.expanded{position:fixed !important;top:50% !important;left:50% !important;transform:translate(-50%,-50%) !important;width:90vw !important;height:90vh !important;max-width:90vw !important;max-height:90vh !important;z-index:100 !important;border-radius:16px !important;box-shadow:0 30px 80px rgba(0,0,0,.85) !important;border:1px solid rgba(139,92,246,.6) !important;aspect-ratio:auto !important;}
+.video-container.expanded video{max-width:100%;max-height:100%;width:100%;height:100%;object-fit:contain;}
+body.video-expanded::before{content:'';position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(6px);z-index:99;}
+.tab-btn{padding:6px 12px;font-size:11px;border-radius:6px;background:transparent;color:#94a3b8;cursor:pointer;border:1px solid transparent;transition:all .15s;font-weight:500;white-space:nowrap;}
+.tab-btn:hover{background:rgba(99,102,241,.1);color:#c7d2fe;}
+.tab-btn.active{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;box-shadow:0 2px 8px rgba(139,92,246,.4);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+.form-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.form-label{font-size:10px;color:#94a3b8;font-weight:500;min-width:60px;}
+.form-input{background:#0f0a1e;border:1px solid #312e5e;color:#c7d2fe;font-size:11px;padding:4px 8px;border-radius:5px;width:60px;text-align:center;font-family:monospace;}
+.form-input:focus{outline:none;border-color:#6366f1;}
+.form-color{width:32px;height:22px;padding:0;border:1px solid #312e5e;border-radius:4px;background:transparent;cursor:pointer;}
+.form-color::-webkit-color-swatch-wrapper{padding:1px;}
+.form-color::-webkit-color-swatch{border:none;border-radius:3px;}
+.form-select{background:#0f0a1e;border:1px solid #312e5e;color:#c7d2fe;font-size:11px;padding:4px 6px;border-radius:5px;width:100%;}
+.form-select:focus{outline:none;border-color:#6366f1;}
+.section-title{font-size:10px;font-weight:700;color:#8b5cf6;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;padding-bottom:3px;border-bottom:1px solid rgba(139,92,246,.2);}
+.chip-toggle{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:26px;padding:0 8px;font-size:11px;background:#15102a;border:1px solid #312e5e;border-radius:5px;color:#c7d2fe;cursor:pointer;transition:all .15s;font-weight:600;}
+.chip-toggle:hover{background:#1f163b;}
+.chip-toggle.active{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border-color:#a78bfa;}
+.overlay-list-item{display:flex;align-items:center;justify-content:space-between;padding:4px 8px;background:#15102a;border:1px solid #312e5e;border-radius:5px;font-size:10px;cursor:pointer;}
+.overlay-list-item:hover{background:#1f163b;border-color:#6366f1;}
+.overlay-list-item.active{border-color:#fbbf24;background:rgba(251,191,36,.1);}
+.fx-toggle-btn{padding:4px 8px;font-size:9px;border-radius:5px;background:#15102a;border:1px solid #312e5e;color:#c7d2fe;cursor:pointer;transition:all .15s;font-weight:600;display:inline-flex;align-items:center;gap:3px;}
+.fx-toggle-btn:hover{background:#1f163b;border-color:#6366f1;}
+.fx-toggle-btn.active{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border-color:#a78bfa;}
+.lang-option{padding:6px 12px;font-size:11px;cursor:pointer;border-bottom:1px solid rgba(99,102,241,.08);transition:background .1s;}
+.lang-option:hover{background:rgba(99,102,241,.15);}
+.lang-option.selected{background:linear-gradient(90deg,rgba(99,102,241,.25),rgba(139,92,246,.25));border-left:3px solid #a78bfa;}
+.direct-badge{background:linear-gradient(135deg,#0891b2,#06b6d4);animation:directPulse 2s infinite;}
+@keyframes directPulse{0%,100%{box-shadow:0 0 0 0 rgba(6,182,212,.4);}50%{box-shadow:0 0 0 6px rgba(6,182,212,0);}}
+.row-playable{cursor:pointer;}
+.row-playable:hover{background:rgba(6,182,212,.08) !important;}
+/* ⭐ GT Voice Style Chips */
+.style-chip{padding:4px 8px;font-size:10px;border-radius:5px;background:#15102a;border:1px solid #312e5e;color:#c7d2fe;cursor:pointer;transition:all .15s;font-weight:600;display:inline-flex;align-items:center;gap:3px;}
+.style-chip:hover{background:#1f163b;border-color:#6366f1;}
+.style-chip.active{background:linear-gradient(135deg,#0891b2,#06b6d4);color:#fff;border-color:#22d3ee;box-shadow:0 2px 8px rgba(6,182,212,.4);}
+</style>
+</head>
+<body class="bg-[#110d21] text-slate-200 h-screen flex flex-col overflow-hidden select-none">
+
+<header class="flex items-center justify-between px-4 py-2.5 bg-[#17112c] border-b border-indigo-950/80 text-xs shrink-0 z-30 shadow-sm">
+  <div class="flex items-center space-x-3">
+    <div class="flex items-center space-x-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 px-3 py-1 rounded-md text-white font-bold shadow-sm">
+      <i data-lucide="sparkles" class="w-3.5 h-3.5"></i><span class="tracking-wide">Dubify AI Studio</span>
+    </div>
+    <span class="bg-amber-500/20 text-amber-400 text-[10px] px-2 py-0.5 rounded font-bold border border-amber-500/30">PRO</span>
+    <span class="text-slate-400 text-[11px] border-l border-slate-700/60 pl-3 hidden md:inline">TTS • 🎬 Direct Stream • 🌐 Multi-Lang • 🎤 Voice Style</span>
+  </div>
+  <div class="flex items-center space-x-2">
+    <button onclick="toggleAssistant()" class="flex items-center space-x-1.5 px-3 py-1 bg-gradient-to-r from-purple-700/60 to-indigo-700/60 hover:from-purple-600 hover:to-indigo-600 rounded-md transition border border-purple-600/60 text-white cursor-pointer shadow">
+      <i data-lucide="bot" class="w-3.5 h-3.5"></i><span class="font-medium">AI Assistant</span>
+    </button>
+    <button onclick="loadProject()" class="hidden sm:flex items-center space-x-1.5 px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded-md transition border border-slate-700/60 text-slate-300 cursor-pointer"><i data-lucide="folder-open" class="w-3.5 h-3.5"></i></button>
+    <button onclick="saveProject()" class="hidden sm:flex items-center space-x-1.5 px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded-md transition border border-slate-700/60 text-slate-300 cursor-pointer"><i data-lucide="save" class="w-3.5 h-3.5"></i></button>
+    <button onclick="openModal('settingsModal')" class="flex items-center space-x-1.5 px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded-md transition border border-slate-700/60 text-slate-300 cursor-pointer"><i data-lucide="settings" class="w-3.5 h-3.5"></i></button>
+  </div>
+</header>
+
+<div class="flex flex-1 overflow-hidden flex-col lg:flex-row relative">
+
+  <!-- LEFT: VIDEO -->
+  <div class="w-full lg:w-[460px] bg-[#140e26] border-b lg:border-b-0 lg:border-r border-indigo-950/80 flex flex-col p-3 space-y-2.5 shrink-0 overflow-y-auto">
+    <div class="flex items-center justify-between text-xs text-slate-400 gap-2">
+      <div class="flex items-center space-x-1.5 font-medium text-slate-300 truncate flex-1 min-w-0">
+        <i data-lucide="video" class="w-3.5 h-3.5 text-indigo-400 shrink-0"></i><span id="videoFilenameLabel" class="truncate">គ្មានឯកសារ</span>
+      </div>
+      <div class="flex items-center gap-1.5 shrink-0">
+        <button onclick="toggleVideoExpand()" id="expandBtn" class="flex items-center gap-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/60 px-2 py-1 rounded text-[10px] cursor-pointer transition">
+          <i data-lucide="maximize-2" class="w-3 h-3" id="expandIcon"></i><span id="expandText">Expand</span>
+        </button>
+        <label class="bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1 rounded text-[10px] cursor-pointer shadow transition flex items-center space-x-1">
+          <i data-lucide="upload" class="w-3 h-3"></i><span>Load</span>
+          <input type="file" id="videoUploadInput" accept="video/*" class="hidden" onchange="handleVideoUpload(event)">
+        </label>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-2">
+      <div>
+        <div class="text-[9px] text-slate-400 mb-1 font-semibold flex items-center space-x-1"><i data-lucide="monitor" class="w-2.5 h-2.5"></i><span>Resolution</span></div>
+        <select id="resolutionSelect" onchange="applyResolution()" class="form-select" style="font-size:10px;padding:3px 5px;">
+          <option value="original">Original</option>
+          <optgroup label="Landscape (16:9)"><option value="landscape:4320">4320p (8K)</option><option value="landscape:2160">2160p (4K)</option><option value="landscape:1440">1440p (2K)</option><option value="landscape:1080">1080p (HD)</option><option value="landscape:720" selected>720p (HD)</option><option value="landscape:480">480p (SD)</option><option value="landscape:360">360p (SD)</option><option value="landscape:240">240p (SD)</option></optgroup>
+          <optgroup label="Portrait (9:16)"><option value="portrait:2160">2160p (4K)</option><option value="portrait:1080">1080p (HD)</option><option value="portrait:720">720p (HD)</option><option value="portrait:480">480p (SD)</option></optgroup>
+          <optgroup label="Square (1:1)"><option value="square:2160">2160×2160</option><option value="square:1080">1080×1080</option><option value="square:720">720×720</option><option value="square:480">480×480</option></optgroup>
+        </select>
+      </div>
+      <div>
+        <div class="text-[9px] text-slate-400 mb-1 font-semibold flex items-center space-x-1"><i data-lucide="maximize" class="w-2.5 h-2.5"></i><span>Fill Mode</span></div>
+        <select id="fillModeSelect" onchange="applyFillMode()" class="form-select" style="font-size:10px;padding:3px 5px;">
+          <option value="fill">Fill</option><option value="contain">Fit</option><option value="cover" selected>Cover</option><option value="none">None</option><option value="scale-down">Scale Down</option>
+        </select>
+      </div>
+    </div>
+    <div class="flex items-center gap-1.5 flex-wrap">
+      <button id="flipHBtn" onclick="toggleFlip('h')" class="fx-toggle-btn"><i data-lucide="flip-horizontal" class="w-3 h-3"></i><span>Flip H</span></button>
+      <button id="flipVBtn" onclick="toggleFlip('v')" class="fx-toggle-btn"><i data-lucide="flip-vertical" class="w-3 h-3"></i><span>Flip V</span></button>
+      <button onclick="resetVideoFx()" class="fx-toggle-btn"><i data-lucide="rotate-ccw" class="w-3 h-3"></i><span>Reset</span></button>
+      <button id="subtitleToggleBtn" onclick="toggleSubtitleOverlay()" class="fx-toggle-btn active" style="margin-left:auto;"><i data-lucide="eye" class="w-3 h-3" id="subtitleToggleIcon"></i><span id="subtitleToggleText">SRT: ON</span></button>
+    </div>
+    <div class="bg-[#19122f] rounded-lg border border-indigo-950/70 p-2.5 space-y-2">
+      <div class="flex items-center justify-between">
+        <div class="text-[10px] text-cyan-300 font-semibold flex items-center space-x-1"><i data-lucide="palette" class="w-3 h-3"></i><span>🎨 Video Color (HSL)</span></div>
+        <button onclick="resetHSL()" class="text-[9px] text-slate-400 hover:text-slate-200">↺</button>
+      </div>
+      <div class="flex items-center justify-between text-[10px]"><span class="text-slate-400 min-w-[70px]">Hue</span><input type="range" id="hslHue" min="-180" max="180" value="0" step="1" class="flex-1 mx-2" oninput="applyHSL()"><span id="hslHueVal" class="text-cyan-300 font-mono w-9 text-right">0°</span></div>
+      <div class="flex items-center justify-between text-[10px]"><span class="text-slate-400 min-w-[70px]">Saturation</span><input type="range" id="hslSaturation" min="0" max="300" value="100" step="5" class="flex-1 mx-2" oninput="applyHSL()"><span id="hslSaturationVal" class="text-cyan-300 font-mono w-9 text-right">100%</span></div>
+      <div class="flex items-center justify-between text-[10px]"><span class="text-slate-400 min-w-[70px]">Brightness</span><input type="range" id="hslBrightness" min="0" max="300" value="100" step="5" class="flex-1 mx-2" oninput="applyHSL()"><span id="hslBrightnessVal" class="text-cyan-300 font-mono w-9 text-right">100%</span></div>
+      <div class="flex items-center justify-between text-[10px]"><span class="text-slate-400 min-w-[70px]">Contrast</span><input type="range" id="hslContrast" min="0" max="300" value="100" step="5" class="flex-1 mx-2" oninput="applyHSL()"><span id="hslContrastVal" class="text-cyan-300 font-mono w-9 text-right">100%</span></div>
+      <div class="flex items-center justify-between text-[10px]"><span class="text-slate-400 min-w-[70px]">Blur</span><input type="range" id="hslBlur" min="0" max="20" value="0" step="0.5" class="flex-1 mx-2" oninput="applyHSL()"><span id="hslBlurVal" class="text-cyan-300 font-mono w-9 text-right">0px</span></div>
+    </div>
+    <div id="videoContainer" class="video-container aspect-landscape fit-cover" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleVideoDrop(event)">
+      <video id="mainVideoPlayer" ontimeupdate="onVideoTimeUpdate()" onloadedmetadata="onVideoLoadedMetadata()" onplay="onVideoPlay()" onpause="onVideoPause()" onseeked="onVideoSeeked()" onended="onVideoEnded()" playsinline></video>
+      <div id="overlayLayer" class="overlay-layer"></div>
+      <div id="videoPlaceholder" class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-900/40 via-purple-950/60 to-black flex items-center justify-center pointer-events-none">
+        <div class="text-center p-4"><div class="w-14 h-14 mx-auto mb-2 rounded-full border-2 border-indigo-500/40 bg-indigo-950/80 flex items-center justify-center text-indigo-300 shadow-xl"><i data-lucide="film" class="w-6 h-6 text-indigo-400"></i></div><p class="text-[11px] text-indigo-300 font-medium">ចុច "Load" ឬ Drag & Drop</p></div>
+      </div>
+      <div id="currentSubtitlePreview" class="absolute bottom-5 bg-black/80 backdrop-blur-md text-amber-300 px-4 py-1.5 rounded-lg text-xs font-bold shadow-lg border border-amber-500/30 text-center max-w-[92%] hidden z-10"></div>
+      <div class="absolute top-2.5 left-2.5 flex items-center space-x-1 z-10" id="duckIndicator"></div>
+      <div id="srtPlayIndicator" class="absolute top-2.5 right-2.5 bg-emerald-600/90 p-1.5 rounded-md backdrop-blur shadow hidden items-center space-x-1 z-10">
+        <i data-lucide="headphones" class="w-3.5 h-3.5 text-white" id="srtPlayIndicatorIcon"></i><span class="text-[9px] text-white font-bold" id="srtPlayIndicatorText">SRT PLAY</span>
+      </div>
+    </div>
+    <div class="flex items-center gap-1.5 flex-wrap">
+      <button onclick="openOverlayModal(null, 'text')" class="flex-1 flex items-center justify-center space-x-1 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-2 py-1.5 rounded-lg text-[10px] font-bold shadow transition cursor-pointer"><i data-lucide="type" class="w-3.5 h-3.5"></i><span>+ Text</span></button>
+      <button onclick="openOverlayModal(null, 'logo')" class="flex-1 flex items-center justify-center space-x-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white px-2 py-1.5 rounded-lg text-[10px] font-bold shadow transition cursor-pointer"><i data-lucide="image" class="w-3.5 h-3.5"></i><span>+ Logo</span></button>
+      <button onclick="clearOverlays()" class="p-1.5 bg-rose-900/50 hover:bg-rose-900/80 text-rose-300 rounded-lg border border-rose-800/50 transition cursor-pointer"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+    </div>
+    <div id="overlayList" class="bg-[#19122f] rounded-lg border border-indigo-950/70 p-2 space-y-1 max-h-[100px] overflow-y-auto">
+      <div class="text-[9px] text-slate-500 uppercase font-bold">📋 Overlays (0)</div>
+      <div id="overlayListInner" class="space-y-1"></div>
+    </div>
+    <div class="space-y-2 bg-[#19122f] p-2.5 rounded-xl border border-indigo-950/70 shadow-sm">
+      <div class="flex items-center justify-between text-[11px] text-slate-400 font-mono"><span id="currentTimeDisplay" class="text-indigo-300 font-semibold">00:00.00</span><span id="durationDisplay">00:00.00</span></div>
+      <div class="relative w-full bg-indigo-950 h-2 rounded-full overflow-hidden cursor-pointer shadow-inner" onclick="seekVideo(event)"><div id="videoProgressBar" class="absolute top-0 left-0 h-full bg-gradient-to-r from-indigo-500 to-purple-500 w-[0%] rounded-full transition-all"></div></div>
+      <div class="flex items-center justify-between pt-1">
+        <div class="flex items-center space-x-1.5">
+          <button onclick="togglePlay()" class="flex items-center space-x-1.5 bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition shadow cursor-pointer"><i data-lucide="play" class="w-3.5 h-3.5" id="playIcon"></i><span id="playText">ចាក់</span></button>
+          <button onclick="stopVideo()" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition border border-slate-700/50 cursor-pointer"><i data-lucide="square" class="w-3.5 h-3.5"></i></button>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button onclick="toggleAudioMode()" id="audioModeBtn" class="px-2 py-1 rounded-md text-[10px] font-medium border transition bg-indigo-950/90 text-indigo-300 border-indigo-800 cursor-pointer">សំឡេងដើម</button>
+          <div class="flex items-center space-x-1 text-slate-400"><i data-lucide="volume-2" class="w-3 h-3"></i><input type="range" id="videoVolumeSlider" min="0" max="1" step="0.05" value="1" oninput="adjustVolume(this.value)" class="w-10 cursor-pointer"><span id="videoVolumeLabel" class="text-[9px] font-mono w-7 text-right text-indigo-300">100%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTER: SRT -->
+  <div class="flex-1 flex flex-col bg-[#110d21] overflow-hidden min-w-0">
+    <div class="flex items-center justify-between px-4 py-2.5 bg-[#17112d] border-b border-indigo-950/80 shrink-0 flex-wrap gap-2">
+      <div class="flex items-center space-x-2"><i data-lucide="file-text" class="w-4 h-4 text-indigo-400"></i><span class="text-xs font-bold text-slate-200">SRT</span></div>
+      <div class="flex items-center space-x-1 flex-wrap gap-1">
+        <button onclick="openAddModal()" class="flex items-center space-x-1 bg-indigo-900/50 hover:bg-indigo-900/80 text-indigo-200 border border-indigo-700/60 px-2.5 py-1.5 rounded-lg text-xs transition cursor-pointer"><i data-lucide="plus" class="w-3.5 h-3.5"></i><span class="hidden sm:inline">Add</span></button>
+        <button onclick="openTranslateModal()" class="flex items-center space-x-1 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white border border-cyan-500/60 px-2.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer shadow-lg"><i data-lucide="languages" class="w-3.5 h-3.5"></i><span class="hidden sm:inline">🌐 Translate</span></button>
+        <button onclick="generateAllTTS()" class="flex items-center space-x-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white border border-purple-500/60 px-2.5 py-1.5 rounded-lg text-xs transition cursor-pointer shadow"><i data-lucide="wand-2" class="w-3.5 h-3.5"></i><span class="hidden sm:inline">Generate</span></button>
+        <button onclick="openFxModal('all')" class="flex items-center space-x-1 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white border border-amber-500/60 px-2.5 py-1.5 rounded-lg text-xs transition cursor-pointer shadow"><i data-lucide="layers" class="w-3.5 h-3.5"></i><span class="hidden sm:inline">FX</span></button>
+        <button onclick="deleteSelectedSubtitle()" class="flex items-center space-x-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/60 px-2.5 py-1.5 rounded-lg text-xs transition cursor-pointer"><i data-lucide="trash-2" class="w-3.5 h-3.5 text-rose-400"></i></button>
+        <button onclick="clearAllSubtitles()" class="flex items-center space-x-1 bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800/60 px-2.5 py-1.5 rounded-lg text-xs transition cursor-pointer"><i data-lucide="trash" class="w-3.5 h-3.5"></i></button>
+      </div>
+    </div>
+
+    <div id="srtPlaybackBar" class="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-emerald-950/40 via-teal-950/30 to-emerald-950/40 border-b border-emerald-900/40 shrink-0 flex-wrap gap-2">
+      <div class="flex items-center space-x-2 flex-wrap">
+        <button onclick="toggleSrtPlay()" id="srtPlayBtn" class="flex items-center space-x-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition shadow cursor-pointer"><i data-lucide="play" class="w-3.5 h-3.5" id="srtPlayIcon"></i><span id="srtPlayText">Play SRT</span></button>
+        <button onclick="srtStop()" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition border border-slate-700/50 cursor-pointer"><i data-lucide="square" class="w-3.5 h-3.5"></i></button>
+        <button onclick="toggleAutoGap()" id="autoGapBtn" class="flex items-center space-x-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition shadow cursor-pointer"><i data-lucide="timer" class="w-3.5 h-3.5" id="autoGapIcon"></i><span id="autoGapText">Auto-Gap: ON</span></button>
+        <button onclick="toggleSkipIntro()" id="skipIntroBtn" class="flex items-center space-x-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/60 px-3 py-1.5 rounded-lg text-xs font-semibold transition shadow cursor-pointer"><i data-lucide="skip-forward" class="w-3.5 h-3.5" id="skipIntroIcon"></i><span id="skipIntroText">Skip Intro: OFF</span></button>
+        <div class="flex items-center space-x-1 bg-slate-900/70 border border-emerald-700/50 rounded-lg px-2 py-1">
+          <button onclick="srtVolumeDown()" class="text-emerald-300 hover:text-white p-0.5 cursor-pointer"><i data-lucide="volume-1" class="w-3 h-3"></i></button>
+          <input type="range" id="srtVolumeSlider" min="0" max="200" value="100" step="5" oninput="setSrtVolume(this.value)" class="w-20 cursor-pointer">
+          <button onclick="srtVolumeUp()" class="text-emerald-300 hover:text-white p-0.5 cursor-pointer"><i data-lucide="volume-2" class="w-3 h-3"></i></button>
+          <span id="srtVolumeLabel" class="text-[10px] font-mono text-emerald-300 w-10 text-right font-bold">100%</span>
+          <button onclick="resetSrtVolume()" class="text-[9px] text-slate-400 hover:text-white cursor-pointer ml-0.5">↺</button>
+        </div>
+        <div class="flex items-center space-x-1 font-mono text-[11px]"><span id="srtTimeDisplay" class="text-emerald-300 font-semibold">00:00.00</span><span class="text-slate-500">/</span><span id="srtDurationDisplay" class="text-slate-400">00:00.00</span></div>
+        <span id="videoSyncBadge" class="hidden text-[9px] bg-cyan-500/20 text-cyan-300 px-1.5 py-0.5 rounded border border-cyan-500/40 font-bold">🎬 SYNC</span>
+      </div>
+      <div class="flex-1 min-w-[100px] relative bg-emerald-950/60 h-1.5 rounded-full overflow-hidden"><div id="srtProgressBar" class="absolute top-0 left-0 h-full bg-gradient-to-r from-emerald-500 to-teal-400 w-[0%] rounded-full transition-all"></div></div>
+      <div class="flex items-center space-x-1 text-[10px]"><i data-lucide="radio" class="w-3 h-3 text-emerald-400"></i><span id="srtRowIndicator" class="text-emerald-300 font-mono font-semibold">-- / --</span></div>
+    </div>
+
+    <div class="flex items-center justify-between px-4 py-1.5 bg-[#120b22] border-b border-indigo-950/60 shrink-0 flex-wrap gap-2">
+      <div class="flex items-center space-x-2">
+        <i data-lucide="filter" class="w-3 h-3 text-amber-400"></i>
+        <span class="text-[10px] text-slate-400 font-medium">ជួរ</span>
+        <input type="number" id="srtRangeStart" value="1" min="1" oninput="updateRangeInfo()" class="w-12 bg-indigo-950 border border-indigo-800/60 rounded px-1.5 py-0.5 text-indigo-200 text-center font-mono text-[10px]">
+        <span class="text-slate-500">→</span>
+        <input type="number" id="srtRangeEnd" value="0" min="0" oninput="updateRangeInfo()" class="w-12 bg-indigo-950 border border-indigo-800/60 rounded px-1.5 py-0.5 text-indigo-200 text-center font-mono text-[10px]">
+        <button onclick="selectRangeAll()" class="text-[9px] px-1.5 py-0.5 bg-slate-800 hover:bg-slate-700 rounded border border-slate-700/60 text-slate-300 cursor-pointer">All</button>
+      </div>
+      <div class="flex items-center space-x-3">
+        <div class="flex items-center space-x-1.5"><i data-lucide="check-circle-2" class="w-3 h-3 text-emerald-400"></i><span id="rangeInfo" class="text-[10px] text-emerald-300 font-mono">ជួរ 1-∞</span></div>
+        <div id="folderQueueStatus" class="flex items-center space-x-1.5 border-l border-slate-700/60 pl-3"><span class="text-slate-500 text-[10px]">📂 Queue: ទទេ</span></div>
+      </div>
+    </div>
+
+    <div class="flex-1 overflow-y-auto border-b border-indigo-950/60" id="tableWrapper">
+      <table class="w-full text-left border-collapse text-xs">
+        <thead><tr class="bg-[#191330] text-indigo-300 uppercase text-[10px] tracking-wider border-b border-indigo-950 sticky top-0 z-10 font-semibold">
+          <th class="py-2 px-2 w-10 text-center">#</th><th class="py-2 px-2 w-24">Start</th><th class="py-2 px-2 w-24">End</th><th class="py-2 px-2">Text</th><th class="py-2 px-2 w-72">🎙️ TTS + FX</th><th class="py-2 px-2 w-32 text-center">Status</th>
+        </tr></thead>
+        <tbody id="subtitleTableBody" class="divide-y divide-indigo-950/40"></tbody>
+      </table>
+    </div>
+
+    <div class="px-4 py-1.5 bg-[#140e25] text-[11px] text-slate-400 border-b border-indigo-950/40 shrink-0 flex items-center justify-between">
+      <span class="truncate">💡 🌐 Translate | 🎬 Direct Stream + 🎤 Voice Style | 📥 Download</span>
+      <span id="totalSubCount" class="font-mono text-indigo-300 shrink-0">សរុប: 0</span>
+    </div>
+
+    <div class="flex items-center justify-between px-4 py-2.5 bg-[#17112c] text-xs mt-auto border-t border-indigo-950 shrink-0 flex-wrap gap-2">
+      <div class="flex items-center space-x-2"><span class="w-2.5 h-2.5 rounded-full bg-indigo-400 animate-pulse"></span><span id="statusText" class="text-[11px] text-slate-300">ត្រៀមរួចរាល់</span></div>
+      <div class="flex items-center space-x-1 flex-wrap gap-1">
+        <label class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700/60 transition flex items-center space-x-1 cursor-pointer text-xs"><i data-lucide="upload" class="w-3.5 h-3.5"></i><span>SRT</span><input type="file" id="srtUploadInput" accept=".srt,.txt,.vtt" class="hidden" onchange="handleSrtUpload(event)"></label>
+        <label class="px-2.5 py-1.5 bg-gradient-to-r from-cyan-700 to-blue-700 hover:from-cyan-600 hover:to-blue-600 text-white rounded-lg border border-cyan-500/60 transition flex items-center space-x-1 cursor-pointer text-xs font-bold shadow-lg"><i data-lucide="folder-check" class="w-3.5 h-3.5"></i><span>📂 Auto-Fill</span><input type="file" id="folderUploadInput" webkitdirectory class="hidden" onchange="handleFolderUpload(event)"></label>
+        <button onclick="exportSRT()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700/60 transition flex items-center space-x-1 cursor-pointer text-xs"><i data-lucide="download" class="w-3.5 h-3.5"></i><span>SRT</span></button>
+        <button onclick="downloadAllDirect()" class="px-2.5 py-1.5 bg-cyan-800 hover:bg-cyan-700 text-cyan-100 rounded-lg border border-cyan-700/60 transition flex items-center space-x-1 cursor-pointer text-xs font-bold"><i data-lucide="download-cloud" class="w-3.5 h-3.5"></i><span>📥 All Direct</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: ASSISTANT -->
+  <aside id="assistantPanel" class="w-full lg:w-[330px] bg-[#0f0a1e] border-l border-purple-900/40 flex flex-col shrink-0 absolute lg:relative right-0 top-0 bottom-0 z-40 transform translate-x-full lg:translate-x-0 transition-transform duration-300 assistant-glow">
+    <div class="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border-b border-purple-900/40 shrink-0">
+      <div class="flex items-center space-x-2">
+        <div class="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-lg"><i data-lucide="bot" class="w-4 h-4 text-white"></i></div>
+        <div><div class="text-xs font-bold text-white">AI Smart Chain</div><div class="text-[10px] text-purple-300">Multi-Lang + Voice Style</div></div>
+      </div>
+      <button onclick="toggleAssistant()" class="lg:hidden text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+
+    <div class="px-4 py-2.5 border-b border-purple-900/30 bg-[#120a26] space-y-2">
+      <div>
+        <div class="text-[10px] text-slate-400 mb-1">🔌 TTS Engine Mode</div>
+        <select id="ttsModeSelect" onchange="onModeChange()" class="w-full bg-[#0f0a1e] border border-purple-900/50 rounded-md p-1.5 text-[11px] text-purple-200 focus:outline-none">
+          <option value="auto">🤖 Auto Chain</option>
+          <option value="gemini">🔷 Gemini TTS</option>
+          <option value="gtranslate">🟢 Google Translate</option>
+          <option value="directurl" selected>🎬 GT Direct Stream ⭐</option>
+          <option value="webspeech">🟣 Web Speech</option>
+        </select>
+      </div>
+
+      <!-- ⭐ GT LANG -->
+      <div id="gtLangSelectorWrap">
+        <div class="text-[10px] text-slate-400 mb-1 flex items-center justify-between">
+          <span>🌐 ភាសាសម្លេង GT</span>
+          <button onclick="quickSetGtLang('km')" class="text-[9px] text-cyan-400 hover:text-cyan-300">ខ្មែរ</button>
+        </div>
+        <div class="relative">
+          <input type="text" id="gtLangDisplay" readonly onclick="toggleGtLangDropdown(event)" class="w-full bg-[#0f0a1e] border border-cyan-900/50 rounded-md p-1.5 text-[11px] text-cyan-200 cursor-pointer focus:outline-none focus:border-cyan-500" value="ខ្មែរ (Khmer)">
+          <input type="hidden" id="gtLang" value="km">
+          <button type="button" onclick="toggleGtLangDropdown(event)" class="absolute right-1.5 top-1/2 -translate-y-1/2 text-cyan-400 hover:text-cyan-300"><i data-lucide="chevron-down" class="w-3.5 h-3.5"></i></button>
+          <div id="gtLangDropdown" class="hidden absolute z-[60] left-0 right-0 mt-1 bg-[#0f0a1e] border border-cyan-700/60 rounded-lg shadow-2xl" style="max-height:280px;">
+            <div class="p-1.5 border-b border-cyan-900/60 bg-[#0a0714] sticky top-0 z-10"><input type="text" id="gtLangFilter" placeholder="🔍 ស្វែងរក..." oninput="renderGtLangList()" class="w-full bg-indigo-950 border border-cyan-800 rounded px-2 py-1 text-[10px] text-slate-200 focus:outline-none focus:border-cyan-500"></div>
+            <div id="gtLangList" class="overflow-y-auto" style="max-height:210px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ⭐ ⭐ GT VOICE STYLE (NEW) -->
+      <div id="gtVoiceStyleWrap" class="pt-1.5 border-t border-purple-900/30">
+        <div class="text-[10px] text-cyan-400 mb-1.5 font-semibold flex items-center justify-between">
+          <span class="flex items-center space-x-1"><i data-lucide="mic-vocal" class="w-3 h-3"></i><span>🎤 GT Voice Style</span></span>
+          <span id="gtVoiceStyleCurrent" class="text-[9px] text-cyan-300 font-mono">Default</span>
+        </div>
+        <div class="grid grid-cols-3 gap-1">
+          <button onclick="setGtVoiceStyle('default')" data-style="default" class="gt-style-chip style-chip active" title="សម្លេងដើម GT">
+            <span class="text-[10px]">🎤</span><span>Default</span>
+          </button>
+          <button onclick="setGtVoiceStyle('male')" data-style="male" class="gt-style-chip style-chip" title="ប្រុស (សម្លេងទាប)">
+            <span>♂</span><span>ប្រុស</span>
+          </button>
+          <button onclick="setGtVoiceStyle('female')" data-style="female" class="gt-style-chip style-chip" title="ស្រី (សម្លេងខ្ពស់)">
+            <span>♀</span><span>ស្រី</span>
+          </button>
+          <button onclick="setGtVoiceStyle('child')" data-style="child" class="gt-style-chip style-chip" title="កូនក្មេង">
+            <span>👶</span><span>កូនក្មេង</span>
+          </button>
+          <button onclick="setGtVoiceStyle('teen')" data-style="teen" class="gt-style-chip style-chip" title="វ័យជំទង់">
+            <span>🧑</span><span>ជំទង់</span>
+          </button>
+          <button onclick="setGtVoiceStyle('young')" data-style="young" class="gt-style-chip style-chip" title="កំលោះ/ក្រមុំ">
+            <span>👨</span><span>កំលោះ</span>
+          </button>
+          <button onclick="setGtVoiceStyle('adult')" data-style="adult" class="gt-style-chip style-chip" title="ពេញវ័យ">
+            <span>🧔</span><span>ពេញវ័យ</span>
+          </button>
+          <button onclick="setGtVoiceStyle('old')" data-style="old" class="gt-style-chip style-chip" title="វ័យចាស់">
+            <span>👴</span><span>ចាស់</span>
+          </button>
+          <button onclick="setGtVoiceStyle('elder')" data-style="elder" class="gt-style-chip style-chip" title="វ័យជរា">
+            <span>🧓</span><span>ជរា</span>
+          </button>
+        </div>
+        <div class="text-[9px] text-cyan-400/70 italic mt-1.5 leading-relaxed">
+          💡 GT TTS មានតែ 1 សម្លេង/ភាសា — Style ប្រើ Pitch-Shift ដើម្បីបង្កើតសម្លេងខុសៗគ្នា
+        </div>
+        <!-- Live pitch info -->
+        <div id="gtVoiceInfo" class="text-[9px] text-slate-500 font-mono mt-1 flex items-center justify-between">
+          <span>Pitch: <span id="gtPitchLabel" class="text-cyan-300">0%</span></span>
+          <span>Net Speed: <span id="gtSpeedLabel" class="text-cyan-300">1.00x</span></span>
+        </div>
+      </div>
+
+      <div>
+        <div class="text-[10px] text-slate-400 mb-1">⚡ GT Speed (Base)</div>
+        <select id="gtSpeed" class="w-full bg-[#0f0a1e] border border-purple-900/50 rounded-md p-1.5 text-[11px] text-purple-200 focus:outline-none">
+          <option value="1">Normal</option>
+          <option value="0.7" selected>Slow ⭐</option>
+          <option value="0.5">Slower</option>
+          <option value="0.24">Slowest</option>
+        </select>
+      </div>
+      <div class="flex items-center justify-between text-[10px]">
+        <span id="apiKeyStatus" class="text-amber-400 font-mono">⚠ គ្មាន Key</span>
+        <span id="activeEngine" class="text-emerald-400 font-mono">✓ directurl</span>
+      </div>
+    </div>
+
+    <div class="flex-1 overflow-y-auto p-3 space-y-3">
+      <div class="bg-amber-950/30 border border-amber-800/40 rounded-lg p-3 space-y-2">
+        <div class="text-[10px] text-amber-300 font-semibold flex items-center justify-between">
+          <div class="flex items-center space-x-1"><i data-lucide="audio-waveform" class="w-3 h-3"></i><span>🔊 Ducking</span></div>
+          <button onclick="testDucking()" class="text-[9px] bg-amber-600 hover:bg-amber-500 text-black px-2 py-0.5 rounded font-bold">TEST</button>
+        </div>
+        <div class="flex items-center justify-between text-[10px]"><span class="text-slate-400">Enable</span><input type="checkbox" id="duckingEnabled" checked class="accent-amber-500 w-4 h-4 cursor-pointer"></div>
+        <div class="flex items-center justify-between text-[10px]"><span class="text-slate-400">Depth</span><input type="range" id="duckingDepth" min="0" max="100" value="70" step="1" class="w-20"><span id="duckingDepthVal" class="text-amber-300 font-mono w-9 text-right">70%</span></div>
+        <div class="flex items-center justify-between text-[10px]"><span class="text-slate-400">Pre-Duck (s)</span><input type="number" id="preDuck" value="0.3" min="0" max="2" step="0.1" class="w-14 bg-[#0f0a1e] border border-amber-900/50 rounded px-1.5 py-0.5 text-amber-200 text-center"></div>
+        <div class="flex items-center justify-between text-[10px]"><span class="text-slate-400">Post-Duck (s)</span><input type="number" id="postDuck" value="0.5" min="0" max="3" step="0.1" class="w-14 bg-[#0f0a1e] border border-amber-900/50 rounded px-1.5 py-0.5 text-amber-200 text-center"></div>
+        <div class="flex items-center justify-between text-[10px]"><span class="text-slate-400">Sync w/ video</span><input type="checkbox" id="ttsSyncEnabled" checked class="accent-amber-500 w-4 h-4 cursor-pointer"></div>
+      </div>
+
+      <div>
+        <div class="flex items-center space-x-1.5 mb-2"><i data-lucide="star" class="w-3 h-3 text-amber-400"></i><span class="text-[11px] font-bold text-amber-300 uppercase">សម្លេងគោល (Gemini)</span></div>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="selectBaseVoice('Piseth')" id="baseVoicePiseth" class="voice-chip base-voice bg-gradient-to-br from-indigo-950 to-purple-950/50 border border-indigo-800/60 rounded-lg p-2 text-left"><div class="flex items-center space-x-1.5"><div class="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center"><i data-lucide="user" class="w-3 h-3 text-white"></i></div><div><div class="text-[10px] font-bold text-white">Piseth</div><div class="text-[8px] text-indigo-300">♂</div></div></div></button>
+          <button onclick="selectBaseVoice('Sreymom')" id="baseVoiceSreymom" class="voice-chip base-voice bg-gradient-to-br from-pink-950/70 to-purple-950/50 border border-pink-800/60 rounded-lg p-2 text-left"><div class="flex items-center space-x-1.5"><div class="w-6 h-6 rounded-full bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center"><i data-lucide="user" class="w-3 h-3 text-white"></i></div><div><div class="text-[10px] font-bold text-white">Sreymom</div><div class="text-[8px] text-pink-300">♀</div></div></div></button>
+        </div>
+      </div>
+
+      <div>
+        <div class="flex items-center space-x-1.5 mb-2"><i data-lucide="users" class="w-3 h-3 text-purple-400"></i><span class="text-[11px] font-bold text-purple-300 uppercase">ក្រុមវ័យ (Gemini)</span></div>
+        <div id="ageVoiceGrid" class="space-y-1.5"></div>
+      </div>
+
+      <div class="bg-purple-950/30 border border-purple-800/40 rounded-lg p-3">
+        <div class="text-[10px] text-purple-300 mb-1.5 font-semibold">🔊 សាកល្បងសម្លេង</div>
+        <textarea id="previewText" rows="2" class="w-full bg-[#0f0a1e] border border-purple-900/60 rounded p-2 text-[11px] text-slate-200 focus:outline-none resize-none">សូមសួស្តី!</textarea>
+        <div class="flex items-center space-x-1.5 mt-2">
+          <button onclick="previewVoice()" class="flex-1 bg-purple-600 hover:bg-purple-500 text-white py-1.5 rounded text-[11px] font-semibold flex items-center justify-center space-x-1"><i data-lucide="play" class="w-3 h-3"></i><span>Test</span></button>
+          <button onclick="stopPreview()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-1.5 rounded"><i data-lucide="square" class="w-3 h-3"></i></button>
+        </div>
+      </div>
+
+      <div class="bg-indigo-950/30 border border-indigo-800/40 rounded-lg p-3 space-y-2">
+        <div class="text-[10px] text-indigo-300 font-semibold">⚙️ Advanced</div>
+        <div class="flex items-center justify-between text-[10px]"><span class="text-slate-400">Master speed</span><input type="range" id="speechRate" min="0.5" max="2" step="0.05" value="1.15" class="w-20"><span id="speechRateVal" class="text-indigo-300 font-mono w-9 text-right">1.15</span></div>
+        <div class="flex items-center justify-between text-[10px]"><span class="text-slate-400">Auto-retry</span><input type="number" id="maxRetries" value="5" min="1" max="10" class="w-14 bg-[#0f0a1e] border border-indigo-900/50 rounded px-1.5 py-0.5 text-indigo-200 text-center"></div>
+        <div class="flex items-center justify-between text-[10px]"><span class="text-slate-400">Chunk size</span><input type="number" id="chunkSize" value="180" min="50" max="500" step="10" class="w-14 bg-[#0f0a1e] border border-indigo-900/50 rounded px-1.5 py-0.5 text-indigo-200 text-center"></div>
+        <div class="flex items-center justify-between text-[10px]"><span class="text-slate-400">Hover autoplay</span><input type="checkbox" id="hoverAutoplay" checked class="accent-purple-500 w-4 h-4 cursor-pointer"></div>
+        <div class="flex items-center justify-between text-[10px]"><span class="text-slate-400">Auto-scroll</span><input type="checkbox" id="autoScrollToggle" checked class="accent-purple-500 w-4 h-4 cursor-pointer"></div>
+      </div>
+
+      <div id="generationProgress" class="hidden bg-gradient-to-r from-purple-950/60 to-indigo-950/60 border border-purple-700/40 rounded-lg p-3">
+        <div class="flex items-center justify-between text-[10px] mb-1.5"><span class="text-purple-200 font-semibold">កំពុង Generate...</span><span id="progressCounter" class="text-purple-300 font-mono">0/0</span></div>
+        <div class="w-full bg-purple-950 h-1.5 rounded-full overflow-hidden"><div id="progressBar" class="h-full bg-gradient-to-r from-purple-500 to-pink-500 w-0 transition-all"></div></div>
+      </div>
+
+      <div class="bg-black/40 border border-slate-800/60 rounded-lg p-2 max-h-[100px] overflow-y-auto">
+        <div class="text-[9px] text-slate-500 uppercase font-bold mb-1">📋 Log</div>
+        <div id="chainLog" class="space-y-0.5 text-[10px] font-mono"></div>
+      </div>
+    </div>
+
+    <div class="px-3 py-2.5 border-t border-purple-900/40 bg-[#120a26] shrink-0 space-y-2">
+      <button onclick="generateAllTTS()" class="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 hover:from-purple-500 hover:via-pink-500 hover:to-indigo-500 text-white py-2.5 rounded-lg font-bold text-xs shadow-lg transition flex items-center justify-center space-x-2"><i data-lucide="wand-2" class="w-4 h-4"></i><span>⚡ Generate All</span></button>
+      <button onclick="downloadAllDirect()" class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white py-2 rounded-lg font-bold text-xs shadow-lg transition flex items-center justify-center space-x-2"><i data-lucide="download-cloud" class="w-3.5 h-3.5"></i><span>📥 Download All Direct</span></button>
+    </div>
+  </aside>
+</div>
+
+<!-- TRANSLATE MODAL -->
+<div id="translateModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-[80] p-4">
+  <div class="bg-[#17112c] border border-cyan-900/60 rounded-2xl p-6 w-full max-w-2xl space-y-4 shadow-2xl" style="max-height:92vh;overflow-y:auto;">
+    <div class="flex items-center justify-between border-b border-indigo-950 pb-3">
+      <h3 class="font-bold text-sm text-cyan-300 flex items-center space-x-2"><i data-lucide="languages" class="w-4 h-4"></i><span>🌐 Google Translate</span></h3>
+      <button onclick="closeModal('translateModal')" class="text-slate-400 hover:text-white cursor-pointer"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="relative">
+        <label class="block text-[11px] text-slate-400 mb-1.5 font-semibold flex items-center space-x-1"><i data-lucide="log-out" class="w-3 h-3"></i><span>From</span></label>
+        <div class="relative">
+          <input type="text" id="langFromSearch" readonly onclick="toggleLangDropdown('from')" class="w-full bg-indigo-950 border border-indigo-800 rounded-lg p-2.5 text-slate-200 cursor-pointer focus:outline-none focus:border-cyan-600" placeholder="ជ្រើសរើសភាសា...">
+          <button type="button" onclick="toggleLangDropdown('from')" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400"><i data-lucide="chevron-down" class="w-4 h-4"></i></button>
+        </div>
+        <input type="hidden" id="langFromValue" value="auto">
+        <div id="langFromDropdown" class="hidden absolute z-[90] left-0 right-0 mt-1 bg-[#0f0a1e] border border-cyan-800/60 rounded-lg shadow-2xl" style="max-height:280px;">
+          <div class="p-2 border-b border-indigo-900/60 bg-[#0a0714] sticky top-0 z-10"><input type="text" id="langFromFilter" placeholder="🔍 ស្វែងរក..." oninput="filterLangOptions('from')" onkeydown="event.stopPropagation()" class="w-full bg-indigo-950 border border-indigo-800 rounded px-2 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-cyan-600"></div>
+          <div id="langFromList" class="overflow-y-auto" style="max-height:220px;"></div>
+        </div>
+      </div>
+      <div class="relative">
+        <label class="block text-[11px] text-slate-400 mb-1.5 font-semibold flex items-center space-x-1"><i data-lucide="log-in" class="w-3 h-3"></i><span>To</span></label>
+        <div class="relative">
+          <input type="text" id="langToSearch" readonly onclick="toggleLangDropdown('to')" class="w-full bg-indigo-950 border border-indigo-800 rounded-lg p-2.5 text-slate-200 cursor-pointer focus:outline-none focus:border-cyan-600" placeholder="ជ្រើសរើសភាសា...">
+          <button type="button" onclick="toggleLangDropdown('to')" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400"><i data-lucide="chevron-down" class="w-4 h-4"></i></button>
+        </div>
+        <input type="hidden" id="langToValue" value="km">
+        <div id="langToDropdown" class="hidden absolute z-[90] left-0 right-0 mt-1 bg-[#0f0a1e] border border-cyan-800/60 rounded-lg shadow-2xl" style="max-height:280px;">
+          <div class="p-2 border-b border-indigo-900/60 bg-[#0a0714] sticky top-0 z-10"><input type="text" id="langToFilter" placeholder="🔍 ស្វែងរក..." oninput="filterLangOptions('to')" onkeydown="event.stopPropagation()" class="w-full bg-indigo-950 border border-indigo-800 rounded px-2 py-1.5 text-[11px] text-slate-200 focus:outline-none focus:border-cyan-600"></div>
+          <div id="langToList" class="overflow-y-auto" style="max-height:220px;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="flex justify-center -my-1"><button onclick="swapTranslateLangs()" class="p-1.5 bg-cyan-900/50 hover:bg-cyan-800 text-cyan-200 rounded-full border border-cyan-700/60 transition" title="Swap"><i data-lucide="arrow-left-right" class="w-3.5 h-3.5"></i></button></div>
+    <div class="bg-black/40 border border-cyan-900/40 rounded-lg p-3 space-y-2">
+      <label class="flex items-center justify-between text-[11px] cursor-pointer"><span class="text-slate-300 flex items-center space-x-1.5"><i data-lucide="replace" class="w-3 h-3 text-cyan-400"></i><span>Replace SRT text</span></span><input type="checkbox" id="translateReplaceText" checked class="accent-cyan-500 w-4 h-4 cursor-pointer"></label>
+      <label class="flex items-center justify-between text-[11px] cursor-pointer"><span class="text-slate-300 flex items-center space-x-1.5"><i data-lucide="wand-2" class="w-3 h-3 text-purple-400"></i><span>Auto-generate TTS</span></span><input type="checkbox" id="translateAutoTTS" class="accent-purple-500 w-4 h-4 cursor-pointer"></label>
+      <label class="flex items-center justify-between text-[11px] cursor-pointer"><span class="text-slate-300 flex items-center space-x-1.5"><i data-lucide="filter" class="w-3 h-3 text-amber-400"></i><span>Only active range</span></span><input type="checkbox" id="translateUseRange" class="accent-amber-500 w-4 h-4 cursor-pointer"></label>
+      <label class="flex items-center justify-between text-[11px] cursor-pointer"><span class="text-slate-300 flex items-center space-x-1.5"><i data-lucide="globe" class="w-3 h-3 text-emerald-400"></i><span>Sync GT Voice Lang with "To"</span></span><input type="checkbox" id="translateSyncGtLang" checked class="accent-emerald-500 w-4 h-4 cursor-pointer"></label>
+    </div>
+    <div class="bg-indigo-950/40 border border-indigo-900/60 rounded-lg p-3 space-y-2">
+      <div class="text-[10px] text-cyan-400 font-semibold flex items-center space-x-1"><i data-lucide="eye" class="w-3 h-3"></i><span>Preview</span></div>
+      <div class="text-[11px] text-slate-400 italic">ដើម: <span id="translatePreviewFrom" class="text-slate-300 not-italic">—</span></div>
+      <div class="text-[11px] text-slate-400 italic">បកប្រែ: <span id="translatePreviewTo" class="text-cyan-200 not-italic">—</span></div>
+      <button onclick="previewTranslation()" class="text-[10px] bg-cyan-800/60 hover:bg-cyan-700 text-cyan-100 px-2 py-1 rounded border border-cyan-700/60"><i data-lucide="play" class="w-3 h-3 inline mr-1"></i>Test</button>
+    </div>
+    <div id="translateProgress" class="hidden bg-gradient-to-r from-blue-950/60 to-cyan-950/60 border border-cyan-700/40 rounded-lg p-3 space-y-2">
+      <div class="flex items-center justify-between text-[11px]"><span class="text-cyan-200 font-semibold flex items-center space-x-1"><i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i><span>កំពុងបកប្រែ...</span></span><span id="translateCounter" class="text-cyan-300 font-mono">0/0</span></div>
+      <div class="w-full bg-cyan-950 h-1.5 rounded-full overflow-hidden"><div id="translateProgressBar" class="h-full bg-gradient-to-r from-cyan-500 to-blue-500 w-0 transition-all"></div></div>
+      <div id="translateCurrentText" class="text-[9px] text-slate-400 truncate"></div>
+      <div id="translateStats" class="text-[9px] text-emerald-400 font-mono"></div>
+    </div>
+    <div class="flex justify-between items-center pt-3 border-t border-indigo-950 gap-2 flex-wrap">
+      <div class="text-[10px] text-slate-500"><span id="translateLangCount">~130 ភាសា</span></div>
+      <div class="flex space-x-2">
+        <button onclick="closeModal('translateModal')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-medium cursor-pointer">បិទ</button>
+        <button onclick="translateAllRows()" id="translateBtn" class="px-5 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-lg text-xs font-bold shadow-lg cursor-pointer flex items-center space-x-1.5"><i data-lucide="languages" class="w-3.5 h-3.5"></i><span>🌐 បកប្រែទាំងអស់</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FX MODAL -->
+<div id="fxModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+  <div class="bg-[#17112c] border border-indigo-900 rounded-2xl p-6 w-full max-w-md space-y-4 shadow-2xl">
+    <div class="flex items-center justify-between border-b border-indigo-950 pb-3"><h3 class="font-bold text-sm text-indigo-300 flex items-center space-x-2"><i data-lucide="sliders-horizontal" class="w-4 h-4"></i><span>Audio FX — <span id="fxRowLabel" class="text-purple-300">Row 1</span></span></h3><button onclick="closeModal('fxModal')" class="text-slate-400 hover:text-white cursor-pointer"><i data-lucide="x" class="w-4 h-4"></i></button></div>
+    <input type="hidden" id="fxRowId">
+    <label class="flex items-center justify-between bg-amber-950/40 border border-amber-800/50 rounded-lg p-2.5 cursor-pointer"><div class="flex items-center space-x-2"><i data-lucide="layers" class="w-4 h-4 text-amber-300"></i><div class="text-[11px] font-bold text-amber-200">Apply to All</div></div><input type="checkbox" id="fxApplyAll" class="accent-amber-500 w-4 h-4 cursor-pointer"></label>
+    <div class="space-y-3 text-xs">
+      <div><label class="block text-slate-400 mb-1.5 font-medium">📐 Fit Mode</label><div class="grid grid-cols-2 gap-2">
+        <label class="flex items-center space-x-2 bg-indigo-950/60 border border-indigo-800/60 rounded-lg p-2 cursor-pointer"><input type="radio" name="fitMode" value="natural" class="accent-indigo-500"><div class="text-[11px] text-slate-200">Natural</div></label>
+        <label class="flex items-center space-x-2 bg-indigo-950/60 border border-indigo-800/60 rounded-lg p-2 cursor-pointer"><input type="radio" name="fitMode" value="stretch" class="accent-indigo-500"><div class="text-[11px] text-slate-200">Stretch</div></label>
+      </div></div>
+      <div><div class="flex items-center justify-between text-slate-400 mb-1.5"><span class="font-medium">⚡ Speed</span><span id="fxSpeedVal" class="text-indigo-300 font-mono">1.00x</span></div><input type="range" id="fxSpeed" min="0.5" max="2" step="0.05" value="1" class="w-full"></div>
+      <div><div class="flex items-center justify-between text-slate-400 mb-1.5"><span class="font-medium">🌊 Reverb</span><span id="fxReverbVal" class="text-indigo-300 font-mono">0%</span></div><input type="range" id="fxReverb" min="0" max="100" step="1" value="0" class="w-full"></div>
+      <div><div class="flex items-center justify-between text-slate-400 mb-1.5"><span class="font-medium">🔁 Echo</span><span id="fxEchoVal" class="text-indigo-300 font-mono">0%</span></div><input type="range" id="fxEcho" min="0" max="100" step="1" value="0" class="w-full"></div>
+      <div><div class="flex items-center justify-between text-slate-400 mb-1.5"><span class="font-medium">🔁 Echo Count</span><span id="fxEchoCountVal" class="text-indigo-300 font-mono">0</span></div><input type="range" id="fxEchoCount" min="0" max="5" step="1" value="0" class="w-full"></div>
+    </div>
+    <div class="flex justify-between items-center pt-3 border-t border-indigo-950">
+      <button onclick="previewFxSettings()" class="px-3 py-2 bg-purple-800/60 hover:bg-purple-700 text-purple-100 rounded-lg text-xs font-medium flex items-center space-x-1"><i data-lucide="play" class="w-3 h-3"></i><span>Test</span></button>
+      <div class="flex space-x-2">
+        <button onclick="closeModal('fxModal')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-medium cursor-pointer">Cancel</button>
+        <button onclick="saveFxSettings()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold shadow cursor-pointer">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RECORD MODAL -->
+<div id="recordModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+  <div class="bg-[#17112c] border border-rose-900/60 rounded-2xl p-6 w-full max-w-md space-y-4 shadow-2xl">
+    <div class="flex items-center justify-between border-b border-indigo-950 pb-3"><h3 class="font-bold text-sm text-rose-300 flex items-center space-x-2"><i data-lucide="mic" class="w-4 h-4"></i><span>Record — <span id="recordRowLabel" class="text-rose-200">Row 1</span></span></h3><button onclick="closeRecordModal()" class="text-slate-400 hover:text-white cursor-pointer"><i data-lucide="x" class="w-4 h-4"></i></button></div>
+    <input type="hidden" id="recordRowId">
+    <div class="text-[10px] text-slate-400 bg-indigo-950/50 rounded-lg p-2.5 border border-indigo-900/50 max-h-20 overflow-y-auto" id="recordScriptText"></div>
+    <div class="flex flex-col items-center justify-center py-4 space-y-3">
+      <div id="recordPulse" class="w-20 h-20 rounded-full bg-rose-600 hover:bg-rose-500 flex items-center justify-center shadow-lg cursor-pointer transition" onclick="toggleRecording()"><i data-lucide="mic" id="recordMainIcon" class="w-9 h-9 text-white pointer-events-none"></i></div>
+      <div class="text-2xl font-mono font-bold text-rose-300" id="recordTimer">00:00.0</div>
+    </div>
+    <div id="recordPlaybackSection" class="hidden space-y-2"><audio id="recordPreviewAudio" controls class="w-full h-9"></audio></div>
+    <div class="flex justify-between items-center pt-3 border-t border-indigo-950">
+      <button onclick="clearRowAudio()" class="px-3 py-2 bg-rose-950/60 hover:bg-rose-900 text-rose-300 rounded-lg text-xs font-medium border border-rose-800/50 cursor-pointer flex items-center space-x-1"><i data-lucide="trash-2" class="w-3 h-3"></i><span>Delete</span></button>
+      <div class="flex space-x-2">
+        <button onclick="closeRecordModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-medium cursor-pointer">Cancel</button>
+        <button onclick="saveRecordedAudio()" id="recordSaveBtn" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-semibold shadow cursor-pointer disabled:opacity-40" disabled>Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div id="settingsModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+  <div class="bg-[#17112c] border border-indigo-900 rounded-2xl p-6 w-full max-w-md space-y-4 shadow-2xl">
+    <div class="flex items-center justify-between border-b border-indigo-950 pb-3"><h3 class="font-bold text-sm text-indigo-300 flex items-center space-x-2"><i data-lucide="settings" class="w-4 h-4"></i><span>API Settings</span></h3><button onclick="closeModal('settingsModal')" class="text-slate-400 hover:text-white cursor-pointer"><i data-lucide="x" class="w-4 h-4"></i></button></div>
+    <div class="space-y-3 text-xs">
+      <div><label class="block text-slate-400 mb-1.5 font-medium">Gemini API Key</label><input type="password" id="apiKeyInput" placeholder="AIzaSy..." class="w-full bg-indigo-950 border border-indigo-800 rounded-lg p-2.5 font-mono text-indigo-200 focus:outline-none"></div>
+      <div><label class="block text-slate-400 mb-1.5 font-medium">Gemini Model</label><select id="ttsModelSelect" class="w-full bg-indigo-950 border border-indigo-800/80 rounded-lg p-2.5 text-indigo-200"><option value="gemini-2.5-flash-preview-tts">gemini-2.5-flash-preview-tts</option><option value="gemini-2.5-pro-preview-tts">gemini-2.5-pro-preview-tts</option></select></div>
+      <div class="flex items-center justify-between"><span class="text-slate-400 font-medium">CORS Proxy</span><input type="checkbox" id="useProxyToggle" checked class="accent-indigo-500 w-4 h-4 cursor-pointer"></div>
+    </div>
+    <div class="flex justify-end space-x-2 pt-3 border-t border-indigo-950">
+      <button onclick="closeModal('settingsModal')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-medium cursor-pointer">Cancel</button>
+      <button onclick="saveApiKey()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold shadow cursor-pointer">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUBTITLE MODAL -->
+<div id="subtitleModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+  <div class="bg-[#17112c] border border-indigo-900 rounded-2xl p-6 w-full max-w-md space-y-4 shadow-2xl">
+    <div class="flex items-center justify-between border-b border-indigo-950 pb-3"><h3 id="subtitleModalTitle" class="font-bold text-sm text-indigo-300">Add Subtitle</h3><button onclick="closeModal('subtitleModal')" class="text-slate-400 hover:text-white cursor-pointer"><i data-lucide="x" class="w-4 h-4"></i></button></div>
+    <input type="hidden" id="editSubtitleId">
+    <div class="space-y-3 text-xs">
+      <div class="flex space-x-3">
+        <div class="flex-1"><label class="block text-slate-400 mb-1.5 font-medium flex items-center justify-between">Start<button onclick="fillFromVideo('subStart')" class="text-indigo-400 text-[10px]" type="button">⏱</button></label><input type="text" id="subStart" value="00:00:00,000" class="w-full bg-indigo-950 border border-indigo-800 rounded-lg p-2.5 font-mono text-indigo-200"></div>
+        <div class="flex-1"><label class="block text-slate-400 mb-1.5 font-medium flex items-center justify-between">End<button onclick="fillFromVideo('subEnd')" class="text-indigo-400 text-[10px]" type="button">⏱</button></label><input type="text" id="subEnd" value="00:00:02,000" class="w-full bg-indigo-950 border border-indigo-800 rounded-lg p-2.5 font-mono text-indigo-200"></div>
+      </div>
+      <div><label class="block text-slate-400 mb-1.5 font-medium">Text</label><textarea id="subText" rows="3" class="w-full bg-indigo-950 border border-indigo-800 rounded-lg p-2.5 text-slate-200" placeholder="វាយបញ្ចូល..."></textarea></div>
+      <div><label class="block text-slate-400 mb-1.5 font-medium">🎙️ Voice</label><select id="subVoice" class="w-full bg-indigo-950 border border-indigo-800 rounded-lg p-2.5 text-indigo-200"></select></div>
+    </div>
+    <div class="flex justify-end space-x-2 pt-3 border-t border-indigo-950">
+      <button onclick="closeModal('subtitleModal')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-medium cursor-pointer">Cancel</button>
+      <button onclick="saveSubtitle()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold shadow cursor-pointer">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toastNotification" class="fixed bottom-6 right-6 bg-indigo-900/95 text-white px-5 py-3 rounded-xl border border-indigo-700 shadow-2xl text-xs flex items-center space-x-2.5 transform translate-y-20 opacity-0 transition-all duration-300 z-[100] backdrop-blur-md pointer-events-none">
+  <i data-lucide="sparkles" class="w-4 h-4 text-amber-300"></i><span id="toastText" class="font-medium">ជោគជ័យ!</span>
+</div>
+
+<audio id="hoverAudio" class="hidden"></audio>
+<input type="file" id="audioUploadInput" accept="audio/*" class="hidden" onchange="handleAudioUpload(event)">
+
+<script>
+lucide.createIcons();
+
+/* ============== LANGUAGES ============== */
+const LANGUAGES = [
+  { code:'auto', en:'Auto Detect', km:'🔍 រកឃើញស្វ័យប្រវត្ត' },
+  { code:'km', en:'Khmer', km:'ខ្មែរ' },
+  { code:'en', en:'English', km:'អង់គ្លេស' },
+  { code:'th', en:'Thai', km:'ថៃ' },
+  { code:'vi', en:'Vietnamese', km:'វៀតណាម' },
+  { code:'lo', en:'Lao', km:'ឡាវ' },
+  { code:'zh-CN', en:'Chinese (Simplified)', km:'ចិន (សាមញ្ញ)' },
+  { code:'zh-TW', en:'Chinese (Traditional)', km:'ចិន (ប្រពៃណី)' },
+  { code:'ja', en:'Japanese', km:'ជប៉ុន' },
+  { code:'ko', en:'Korean', km:'កូរ៉េ' },
+  { code:'hi', en:'Hindi', km:'ហិណ្ឌូ' },
+  { code:'bn', en:'Bengali', km:'បេងហ្គាល់' },
+  { code:'ta', en:'Tamil', km:'តាមីល' },
+  { code:'te', en:'Telugu', km:'តេលូហ្គូ' },
+  { code:'mr', en:'Marathi', km:'ម៉ារ៉ាធី' },
+  { code:'ur', en:'Urdu', km:'អ៊ូរឌូ' },
+  { code:'gu', en:'Gujarati', km:'គុជរាតី' },
+  { code:'kn', en:'Kannada', km:'កាណាដា' },
+  { code:'ml', en:'Malayalam', km:'ម៉ាឡាយ៉ាឡាំ' },
+  { code:'pa', en:'Punjabi', km:'បញ្ចាប' },
+  { code:'ne', en:'Nepali', km:'នេប៉ាល់' },
+  { code:'si', en:'Sinhala', km:'សីហឡ' },
+  { code:'my', en:'Myanmar (Burmese)', km:'ភូមា' },
+  { code:'id', en:'Indonesian', km:'ឥណ្ឌូនេស៊ី' },
+  { code:'ms', en:'Malay', km:'ម៉ាឡេ' },
+  { code:'tl', en:'Filipino', km:'ហ្វីលីពីន' },
+  { code:'ar', en:'Arabic', km:'អារ៉ាប់' },
+  { code:'he', en:'Hebrew', km:'ហេប្រូ' },
+  { code:'fa', en:'Persian', km:'ពែរ្ស' },
+  { code:'tr', en:'Turkish', km:'ទួរគី' },
+  { code:'ru', en:'Russian', km:'រុស្ស៊ី' },
+  { code:'uk', en:'Ukrainian', km:'អ៊ុយក្រែន' },
+  { code:'pl', en:'Polish', km:'ប៉ូឡូញ' },
+  { code:'cs', en:'Czech', km:'ឆេក' },
+  { code:'sk', en:'Slovak', km:'ស្លូវ៉ាគី' },
+  { code:'hu', en:'Hungarian', km:'ហុងគ្រី' },
+  { code:'ro', en:'Romanian', km:'រ៉ូម៉ានី' },
+  { code:'bg', en:'Bulgarian', km:'ប៊ុលហ្គារី' },
+  { code:'el', en:'Greek', km:'ក្រិក' },
+  { code:'de', en:'German', km:'អាល្លឺម៉ង់' },
+  { code:'fr', en:'French', km:'បារាំង' },
+  { code:'es', en:'Spanish', km:'អេស្ប៉ាញ' },
+  { code:'pt', en:'Portuguese', km:'ព័រទុយហ្គាល់' },
+  { code:'it', en:'Italian', km:'អ៊ីតាលី' },
+  { code:'nl', en:'Dutch', km:'ហូឡង់' },
+  { code:'sv', en:'Swedish', km:'ស៊ុយអែត' },
+  { code:'no', en:'Norwegian', km:'ន័រវេស' },
+  { code:'da', en:'Danish', km:'ដាណឺម៉ាក' },
+  { code:'fi', en:'Finnish', km:'ហ្វាំងឡង់' },
+  { code:'is', en:'Icelandic', km:'អ៊ីស្លង់' },
+  { code:'et', en:'Estonian', km:'អេស្តូនី' },
+  { code:'lv', en:'Latvian', km:'ឡាតវី' },
+  { code:'lt', en:'Lithuanian', km:'លីទុយអានី' },
+  { code:'hr', en:'Croatian', km:'ក្រូអាត' },
+  { code:'sr', en:'Serbian', km:'ស៊ែប៊ី' },
+  { code:'sl', en:'Slovenian', km:'ស្លូវេនី' },
+  { code:'bs', en:'Bosnian', km:'បូស្នៀ' },
+  { code:'mk', en:'Macedonian', km:'ម៉ាសេដូនី' },
+  { code:'sq', en:'Albanian', km:'អាល់បានី' },
+  { code:'af', en:'Afrikaans', km:'អាហ្វ្រិក' },
+  { code:'sw', en:'Swahili', km:'ស្វាហ៊ីលី' },
+  { code:'am', en:'Amharic', km:'អាំហារិក' },
+  { code:'yo', en:'Yoruba', km:'យូរូបា' },
+  { code:'ig', en:'Igbo', km:'អ៊ីកបូ' },
+  { code:'ha', en:'Hausa', km:'ហូសា' },
+  { code:'zu', en:'Zulu', km:'ហ្សូលូ' },
+  { code:'xh', en:'Xhosa', km:'ហ្សូសា' },
+  { code:'st', en:'Sesotho', km:'សេសូថូ' },
+  { code:'so', en:'Somali', km:'សូម៉ាលី' },
+  { code:'mg', en:'Malagasy', km:'ម៉ាឡាហ្គាស៊ី' },
+  { code:'eo', en:'Esperanto', km:'អេស្ពេរ៉ាន់តូ' },
+  { code:'la', en:'Latin', km:'ឡាតាំង' },
+  { code:'cy', en:'Welsh', km:'វេលស៍' },
+  { code:'ga', en:'Irish', km:'អៀរឡង់' },
+  { code:'gd', en:'Scots Gaelic', km:'ស្កុតហ្គេលិក' },
+  { code:'mt', en:'Maltese', km:'ម៉ាល់តា' },
+  { code:'eu', en:'Basque', km:'បាស' },
+  { code:'ca', en:'Catalan', km:'កាតាឡាន' },
+  { code:'gl', en:'Galician', km:'ហ្គាលីស៊ី' },
+  { code:'hy', en:'Armenian', km:'អាមេនី' },
+  { code:'az', en:'Azerbaijani', km:'អាហ្សែបៃហ្សង់' },
+  { code:'ka', en:'Georgian', km:'ហ្សកហ្ស៊ី' },
+  { code:'kk', en:'Kazakh', km:'កាហ្សាក់' },
+  { code:'ky', en:'Kyrgyz', km:'គៀហ្គីស' },
+  { code:'uz', en:'Uzbek', km:'អ៊ូសបេក' },
+  { code:'tg', en:'Tajik', km:'តាហ្ស៊ីក' },
+  { code:'mn', en:'Mongolian', km:'ម៉ុងហ្គោលី' },
+  { code:'ps', en:'Pashto', km:'ប៉ាស្តូ' },
+  { code:'ku', en:'Kurdish', km:'គួដ' },
+  { code:'sd', en:'Sindhi', km:'ស៊ីនឌី' },
+  { code:'yi', en:'Yiddish', km:'យីឌីស' },
+  { code:'haw', en:'Hawaiian', km:'ហាវ៉ៃ' },
+  { code:'mi', en:'Maori', km:'ម៉ាអូរី' },
+  { code:'sm', en:'Samoan', km:'សាម័រ' },
+  { code:'ny', en:'Chichewa', km:'ជីឈេវ៉ា' },
+  { code:'co', en:'Corsican', km:'កូស៊ីកា' },
+  { code:'fy', en:'Frisian', km:'ហ្វ្រីស៊ាន' },
+  { code:'hmn', en:'Hmong', km:'ម៉ុង' },
+  { code:'jw', en:'Javanese', km:'ជ្វា' },
+  { code:'lb', en:'Luxembourgish', km:'លុចសំបួ' },
+  { code:'sn', en:'Shona', km:'សូណា' },
+  { code:'su', en:'Sundanese', km:'ស៊ុនដានីស' },
+  { code:'tt', en:'Tatar', km:'តាតា' },
+  { code:'tk', en:'Turkmen', km:'តួកមេន' },
+  { code:'ug', en:'Uyghur', km:'អ៊ូយហ្គួរ' },
+  { code:'be', en:'Belarusian', km:'បេឡារុស' },
+  { code:'ceb', en:'Cebuano', km:'សេប៊ូអាណូ' },
+  { code:'ht', en:'Haitian Creole', km:'ហៃទីក្រេអូល' },
+];
+
+/* ============== ⭐ GT VOICE STYLE PRESETS ==============
+ * GT TTS has only 1 voice per language. We simulate different voices via:
+ * - sourceSpeed: Multiply user's gtSpeed at URL generation time
+ * - playRate: playbackRate at play time (shifts pitch + speed)
+ * - Net speed = sourceSpeed * playRate * userGtSpeed (approx)
+ * For stable speed, we choose pairs where sourceSpeed * playRate ≈ 1
+ */
+const GT_VOICE_STYLES = {
+  default: { id:'default', km:'🎤 Default',   sourceSpeed: 1.00, playRate: 1.00, pitchPct: 0 },
+  male:    { id:'male',    km:'♂ ប្រុស',      sourceSpeed: 1.10, playRate: 0.90, pitchPct: -10 },
+  female:  { id:'female',  km:'♀ ស្រី',        sourceSpeed: 0.90, playRate: 1.10, pitchPct: +10 },
+  child:   { id:'child',   km:'👶 កូនក្មេង',   sourceSpeed: 0.80, playRate: 1.25, pitchPct: +25 },
+  teen:    { id:'teen',    km:'🧑 ជំទង់',      sourceSpeed: 0.92, playRate: 1.08, pitchPct: +8 },
+  young:   { id:'young',   km:'👨 កំលោះ',      sourceSpeed: 1.02, playRate: 0.98, pitchPct: -2 },
+  adult:   { id:'adult',   km:'🧔 ពេញវ័យ',     sourceSpeed: 1.00, playRate: 1.00, pitchPct: 0 },
+  old:     { id:'old',     km:'👴 ចាស់',       sourceSpeed: 1.12, playRate: 0.88, pitchPct: -12 },
+  elder:   { id:'elder',   km:'🧓 ជរា',        sourceSpeed: 1.20, playRate: 0.82, pitchPct: -18 },
+};
+
+/* ============== CONFIG ============== */
+const TTS_MODEL = "gemini-2.5-flash-preview-tts";
+let apiKey = "";
+
+const GT_PROXIES = [
+  { name: 'direct', fn: u => u },
+  { name: 'corsproxy', fn: u => 'https://corsproxy.io/?' + encodeURIComponent(u) },
+  { name: 'codetabs', fn: u => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u) },
+  { name: 'allorigins', fn: u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u) },
+];
+
+const AGE_VOICES = [
+  { id:'baby', km:'កូនក្មេង', icon:'baby', female:{prebuilt:'Leda', style:'cute toddler voice'}, male:{prebuilt:'Puck', style:'playful toddler boy'}},
+  { id:'child', km:'ក្មេង', icon:'baby', female:{prebuilt:'Aoede', style:'young child girl'}, male:{prebuilt:'Puck', style:'young boy'}},
+  { id:'teen', km:'វ័យជំទង់', icon:'smile', female:{prebuilt:'Kore', style:'teenage girl'}, male:{prebuilt:'Fenrir', style:'teenage boy'}},
+  { id:'youth', km:'កំលោះ', icon:'user', female:{prebuilt:'Aoede', style:'young woman'}, male:{prebuilt:'Charon', style:'young man'}},
+  { id:'young', km:'វ័យតូច', icon:'user', female:{prebuilt:'Kore', style:'young woman'}, male:{prebuilt:'Orus', style:'young man'}},
+  { id:'middle', km:'វ័យល្មម', icon:'user-check', female:{prebuilt:'Aoede', style:'mature woman'}, male:{prebuilt:'Charon', style:'mature man'}},
+  { id:'adult', km:'វ័យពេញវ័យ', icon:'user-check', female:{prebuilt:'Kore', style:'adult woman'}, male:{prebuilt:'Fenrir', style:'adult man'}},
+  { id:'old', km:'វ័យចាស់', icon:'user-x', female:{prebuilt:'Leda', style:'elderly woman'}, male:{prebuilt:'Charon', style:'elderly man'}},
+  { id:'elder', km:'វ័យជរា', icon:'user-x', female:{prebuilt:'Leda', style:'very old woman'}, male:{prebuilt:'Enceladus', style:'very old man'}},
+];
+
+const BASE_VOICES = {
+  Piseth: { prebuilt:'Puck', style:'Khmer male voice', gender:'Male' },
+  Sreymom: { prebuilt:'Aoede', style:'Khmer female voice', gender:'Female' }
+};
+
+const FONT_LIST = [
+  { group:'Khmer Google', fonts:['Kantumruy Pro','Noto Sans Khmer','Moul','Bayon','Battambang','Koulen','Siemreap','Dangrek','Suwannaphum','Metal','Chenla','Odor Mean Chey','Preahvihear','Nokora','Hanuman','Freehand','Taprom','Fasthand','Angkor'] },
+  { group:'Latin Google', fonts:['Inter','Bebas Neue','Oswald','Roboto','Montserrat'] },
+  { group:'System', fonts:['Arial','Helvetica','Times New Roman','Courier New','Georgia','Verdana','Tahoma','Trebuchet MS','Impact'] },
+];
+
+/* ============== STATE ============== */
+let subtitles = [];
+let selectedRowIndex = 0;
+let isOriginalAudio = true;
+let currentVoice = { type:'base', id:'Piseth' };
+let audioCache = new Map();
+let previewAudioEl = null;
+let hoverTimer = null;
+let audioCtx = null;
+let currentPlayback = null;
+let lastTriggeredRowId = null;
+let reverbImpulseCache = null;
+let originalVolume = 1;
+let duckingActive = false;
+let videoExpanded = false;
+
+let autoGapFill = true;
+let skipIntroDelay = false;
+let srtVolume = 1.0;
+
+/* ⭐ GT STATES */
+let gtLangCode = 'km';
+let gtLangDropdownOpen = false;
+let gtVoiceStyle = 'default';  /* ⭐ NEW */
+
+/* TRANSLATE STATE */
+let translateFrom = 'auto';
+let translateTo = 'km';
+let translateLangOpen = null;
+let isTranslating = false;
+
+let videoFx = { flipH: false, flipV: false, hue: 0, saturation: 100, brightness: 100, contrast: 100, blur: 0 };
+let showSubtitleOnVideo = true;
+
+let overlays = [];
+let selectedOverlayId = null;
+let currentOverlayType = 'text';
+let editingOverlayId = null;
+let overlayPreviewRAF = null;
+
+const customFonts = [];
+let folderQueue = { files: [], nextIndex: 0, folderName: '', active: false };
+let mediaRecorder = null, recordedChunks = [], recordStream = null, recordStartTime = 0, recordTimerInterval = null, pendingRecordedBlob = null, pendingRecordRowIndex = -1;
+let srtPlayer = { playing:false, paused:false, startRealTime:0, elapsedBeforePause:0, rafId:null, currentRowIdx:-1, lastPlayedRowId:null, videoSync:false };
+
+const pad = (n,l=2) => String(n).padStart(l,'0');
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+function formatTime(s){ if(!isFinite(s)||s<0)s=0; return pad(Math.floor(s/60))+':'+pad(Math.floor(s%60))+'.'+pad(Math.floor((s%1)*100));}
+function formatSRTTime(s){ if(!isFinite(s)||s<0)s=0; return pad(Math.floor(s/3600))+':'+pad(Math.floor(s%3600/60))+':'+pad(Math.floor(s%60))+','+pad(Math.floor((s%1)*1000),3);}
+function parseTimestampToSeconds(ts){ try{ const n = ts.trim().replace(',','.'); const p = n.split(':'); if(p.length===3) return +p[0]*3600 + +p[1]*60 + +p[2]; if(p.length===2) return +p[0]*60 + +p[1]; return +n||0; }catch(e){return 0;} }
+const escapeHtml = s => String(s||'').replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});
+
+function showNotification(msg){
+  const t = document.getElementById('toastNotification');
+  document.getElementById('toastText').innerText = msg;
+  t.classList.remove('toast-leave'); t.classList.add('toast-enter');
+  clearTimeout(window._tt); window._tt = setTimeout(function(){t.classList.remove('toast-enter'); t.classList.add('toast-leave');},3200);
+}
+function logChain(msg, kind){
+  kind = kind || 'info';
+  const log = document.getElementById('chainLog');
+  const color = kind==='error' ? 'text-rose-400' : kind==='success' ? 'text-emerald-400' : 'text-slate-400';
+  const time = new Date().toLocaleTimeString('en-GB',{hour12:false}).slice(0,8);
+  const div = document.createElement('div');
+  div.className = color;
+  div.textContent = '[' + time + '] ' + msg;
+  log.insertBefore(div, log.firstChild);
+  while(log.children.length > 30) log.removeChild(log.lastChild);
+}
+function hexToRgba(hex, a){
+  hex = (hex||'#000000').replace('#','');
+  if (hex.length === 3) hex = hex.split('').map(c=>c+c).join('');
+  const r = parseInt(hex.slice(0,2),16), g = parseInt(hex.slice(2,4),16), b = parseInt(hex.slice(4,6),16);
+  return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+}
+
+/* ⭐ GT VOICE STYLE */
+function setGtVoiceStyle(style){
+  if (!GT_VOICE_STYLES[style]) return;
+  gtVoiceStyle = style;
+  document.querySelectorAll('.gt-style-chip').forEach(c => c.classList.toggle('active', c.dataset.style === style));
+  const s = GT_VOICE_STYLES[style];
+  document.getElementById('gtVoiceStyleCurrent').textContent = s.km;
+  document.getElementById('gtPitchLabel').textContent = (s.pitchPct > 0 ? '+' : '') + s.pitchPct + '%';
+  const baseSpeed = parseFloat(document.getElementById('gtSpeed').value) || 0.7;
+  const netSpeed = (s.sourceSpeed * s.playRate * baseSpeed).toFixed(2);
+  document.getElementById('gtSpeedLabel').textContent = netSpeed + 'x';
+  showNotification('🎤 Voice Style: ' + s.km);
+  logChain('🎤 GT Voice Style → ' + s.km + ' (pitch ' + s.pitchPct + '%, play ' + s.playRate + 'x)', 'info');
+}
+function updateGtStyleInfo(){
+  const s = GT_VOICE_STYLES[gtVoiceStyle] || GT_VOICE_STYLES.default;
+  document.getElementById('gtPitchLabel').textContent = (s.pitchPct > 0 ? '+' : '') + s.pitchPct + '%';
+  const baseSpeed = parseFloat(document.getElementById('gtSpeed').value) || 0.7;
+  const netSpeed = (s.sourceSpeed * s.playRate * baseSpeed).toFixed(2);
+  document.getElementById('gtSpeedLabel').textContent = netSpeed + 'x';
+}
+
+/* GT LANGUAGE */
+function toggleGtLangDropdown(e){
+  if (e) e.stopPropagation();
+  gtLangDropdownOpen = !gtLangDropdownOpen;
+  const d = document.getElementById('gtLangDropdown');
+  if (gtLangDropdownOpen){ d.classList.remove('hidden'); renderGtLangList(); setTimeout(() => document.getElementById('gtLangFilter').focus(), 100); }
+  else { d.classList.add('hidden'); }
+}
+function renderGtLangList(){
+  const listEl = document.getElementById('gtLangList');
+  const search = (document.getElementById('gtLangFilter').value || '').toLowerCase().trim();
+  const filtered = LANGUAGES.filter(l => l.code !== 'auto').filter(l => {
+    if (!search) return true;
+    return l.km.toLowerCase().includes(search) || l.en.toLowerCase().includes(search) || l.code.toLowerCase().includes(search);
+  });
+  if (!filtered.length){ listEl.innerHTML = '<div class="text-center text-slate-500 text-[10px] py-3 italic">រកមិនឃើញ</div>'; return; }
+  listEl.innerHTML = filtered.map(l => {
+    const sel = l.code === gtLangCode ? 'selected' : '';
+    return '<div onclick="setGtLang(\'' + l.code + '\')" class="lang-option ' + sel + '"><span class="font-mono text-[9px] text-cyan-400 mr-2 bg-cyan-950/50 px-1.5 py-0.5 rounded">' + l.code + '</span><span class="text-slate-100 font-medium">' + l.km + '</span><span class="text-slate-500 text-[10px] ml-1">(' + l.en + ')</span></div>';
+  }).join('');
+}
+function setGtLang(code){
+  const lang = LANGUAGES.find(l => l.code === code);
+  if (!lang) return;
+  gtLangCode = code;
+  document.getElementById('gtLang').value = code;
+  document.getElementById('gtLangDisplay').value = lang.km + ' (' + lang.en + ')';
+  gtLangDropdownOpen = false;
+  document.getElementById('gtLangDropdown').classList.add('hidden');
+  showNotification('🌐 GT Voice: ' + lang.km);
+}
+function quickSetGtLang(code){ setGtLang(code); }
+
+document.addEventListener('click', e => {
+  if (gtLangDropdownOpen && !e.target.closest('#gtLangDropdown') && !e.target.closest('#gtLangDisplay') && !e.target.closest('button[onclick*="toggleGtLangDropdown"]')){ gtLangDropdownOpen = false; document.getElementById('gtLangDropdown').classList.add('hidden'); }
+});
+
+/* TRANSLATE */
+function openTranslateModal(){ if (!subtitles.length){ showNotification('⚠️ សូមនាំចូល SRT ជាមុន'); return; } renderLangList('from'); renderLangList('to'); updateLangInputs(); previewTranslation(); openModal('translateModal'); }
+function toggleLangDropdown(which){
+  translateLangOpen = translateLangOpen === which ? null : which;
+  if (translateLangOpen === 'from'){ document.getElementById('langFromDropdown').classList.remove('hidden'); document.getElementById('langToDropdown').classList.add('hidden'); renderLangList('from'); }
+  else if (translateLangOpen === 'to'){ document.getElementById('langToDropdown').classList.remove('hidden'); document.getElementById('langFromDropdown').classList.add('hidden'); renderLangList('to'); }
+  else { document.getElementById('langFromDropdown').classList.add('hidden'); document.getElementById('langToDropdown').classList.add('hidden'); }
+}
+function renderLangList(which){
+  const listEl = document.getElementById(which === 'from' ? 'langFromList' : 'langToList');
+  const current = which === 'from' ? translateFrom : translateTo;
+  const search = (document.getElementById(which === 'from' ? 'langFromFilter' : 'langToFilter').value || '').toLowerCase().trim();
+  const filtered = LANGUAGES.filter(l => {
+    if (!search) return true;
+    return l.km.toLowerCase().includes(search) || l.en.toLowerCase().includes(search) || l.code.toLowerCase().includes(search);
+  });
+  if (!filtered.length){ listEl.innerHTML = '<div class="text-center text-slate-500 text-[11px] py-4 italic">រកមិនឃើញ</div>'; return; }
+  listEl.innerHTML = filtered.map(l => {
+    const sel = l.code === current ? 'selected' : '';
+    return '<div onclick="selectLang(\'' + which + '\',\'' + l.code + '\')" class="lang-option ' + sel + '"><span class="font-mono text-[9px] text-cyan-400 mr-2 bg-cyan-950/50 px-1.5 py-0.5 rounded">' + l.code + '</span><span class="text-slate-100 font-medium">' + l.km + '</span><span class="text-slate-500 text-[10px] ml-1">(' + l.en + ')</span></div>';
+  }).join('');
+}
+function filterLangOptions(which){ renderLangList(which); }
+function selectLang(which, code){
+  const lang = LANGUAGES.find(l => l.code === code); if (!lang) return;
+  if (which === 'from'){ translateFrom = code; } else { translateTo = code; }
+  updateLangInputs(); toggleLangDropdown(which); previewTranslation();
+}
+function updateLangInputs(){
+  const fromLang = LANGUAGES.find(l => l.code === translateFrom);
+  const toLang = LANGUAGES.find(l => l.code === translateTo);
+  document.getElementById('langFromSearch').value = fromLang ? fromLang.km + ' (' + fromLang.en + ')' : '—';
+  document.getElementById('langToSearch').value = toLang ? toLang.km + ' (' + toLang.en + ')' : '—';
+  document.getElementById('langFromValue').value = translateFrom;
+  document.getElementById('langToValue').value = translateTo;
+}
+function swapTranslateLangs(){
+  if (translateFrom === 'auto'){ showNotification('⚠️ មិនអាច swap'); return; }
+  const tmp = translateFrom; translateFrom = translateTo; translateTo = tmp;
+  updateLangInputs(); renderLangList('from'); renderLangList('to'); previewTranslation();
+}
+async function googleTranslate(text, from, to){
+  if (!text || !text.trim()) return '';
+  from = from || 'auto'; to = to || 'en';
+  const chunks = chunkText(text, 1200);
+  const translated = [];
+  for (const chunk of chunks){
+    const direct = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=' + from + '&tl=' + to + '&dt=t&q=' + encodeURIComponent(chunk);
+    let result = null, lastErr = null;
+    for (const proxy of GT_PROXIES){
+      try {
+        const url = proxy.fn(direct);
+        const controller = new AbortController();
+        const tid = setTimeout(() => controller.abort(), 10000);
+        const res = await fetch(url, { signal: controller.signal });
+        clearTimeout(tid);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        if (Array.isArray(data) && Array.isArray(data[0])){ result = data[0].map(s => s[0] || '').join(''); break; }
+        throw new Error('bad response');
+      } catch(e){ lastErr = e; }
+    }
+    if (result === null) throw lastErr || new Error('Translate failed');
+    translated.push(result);
+  }
+  return translated.join(' ');
+}
+async function previewTranslation(){
+  const fromEl = document.getElementById('translatePreviewFrom'); const toEl = document.getElementById('translatePreviewTo');
+  if (!subtitles.length){ fromEl.textContent = '—'; toEl.textContent = '—'; return; }
+  const first = subtitles[0]; fromEl.textContent = first.text || '—'; toEl.textContent = '⏳ ...';
+  try { toEl.textContent = (await googleTranslate(first.text, translateFrom, translateTo)) || '(empty)'; } catch(e){ toEl.textContent = '❌ ' + e.message; }
+}
+async function translateAllRows(){
+  if (isTranslating){ showNotification('⚠️ កំពុងបកប្រែ...'); return; }
+  if (!subtitles.length){ showNotification('⚠️ គ្មានជួរ SRT'); return; }
+  if (translateFrom === translateTo){ showNotification('⚠️ ដូចគ្នា'); return; }
+  const useRange = document.getElementById('translateUseRange').checked;
+  const range = useRange ? getActiveRange() : { start: 1, end: subtitles.length, count: subtitles.length };
+  const startIdx = range.start - 1, endIdx = range.end - 1, totalRows = range.count;
+  isTranslating = true;
+  const prog = document.getElementById('translateProgress'); const btn = document.getElementById('translateBtn');
+  prog.classList.remove('hidden');
+  if (btn){ btn.disabled = true; btn.style.opacity = '0.5'; }
+  document.getElementById('translateCounter').textContent = '0/' + totalRows;
+  document.getElementById('translateProgressBar').style.width = '0%';
+  document.getElementById('translateStats').textContent = '';
+  let done = 0, failed = 0;
+  const startTime = performance.now();
+  for (let i = startIdx; i <= endIdx; i++){
+    const sub = subtitles[i]; if (!sub || !sub.text || !sub.text.trim()){ done++; continue; }
+    document.getElementById('translateCurrentText').textContent = 'Row ' + (i+1) + ': ' + sub.text.slice(0, 60);
+    try {
+      const translated = await googleTranslate(sub.text, translateFrom, translateTo);
+      if (translated && translated.trim()){
+        if (document.getElementById('translateReplaceText').checked){
+          sub.text = translated;
+          const cached = audioCache.get(sub.id);
+          if (cached){ if (cached.urls && cached.type !== 'direct'){ cached.urls.forEach(u => { try { URL.revokeObjectURL(u); } catch(e){} }); } audioCache.delete(sub.id); sub.status = 'រួចបកប្រែ'; sub.statusKind = 'idle'; sub.hasAudio = false; }
+        } else { sub.translation = translated; }
+      }
+      done++;
+    } catch(err){ failed++; logChain('❌ Row ' + (i+1) + ': ' + err.message, 'error'); }
+    const cur = i - startIdx + 1;
+    document.getElementById('translateCounter').textContent = cur + '/' + totalRows;
+    document.getElementById('translateProgressBar').style.width = ((cur/totalRows)*100) + '%';
+    if (cur % 3 === 0) await sleep(0);
+    await sleep(80);
+  }
+  const elapsed = ((performance.now() - startTime) / 1000).toFixed(1);
+  document.getElementById('translateStats').textContent = '✓ ' + done + '/' + totalRows + (failed ? ' • ❌ ' + failed : '') + ' • ⏱ ' + elapsed + 's';
+  renderSubtitles();
+  logChain('🌐 Translate ' + translateFrom + ' → ' + translateTo + ': ' + done + '/' + totalRows, 'success');
+  showNotification('🌐 បកប្រែ ' + done + '/' + totalRows);
+  if (document.getElementById('translateSyncGtLang').checked){
+    const toLang = LANGUAGES.find(l => l.code === translateTo);
+    if (toLang && toLang.code !== 'auto'){ setGtLang(translateTo); }
+  }
+  if (document.getElementById('translateAutoTTS').checked && done > 0){ showNotification('⚡ កំពុង Generate TTS...'); setTimeout(() => generateAllTTS(), 500); }
+  setTimeout(() => { prog.classList.add('hidden'); if (btn){ btn.disabled = false; btn.style.opacity = ''; } isTranslating = false; }, 2500);
+}
+
+/* SRT VOLUME */
+function setSrtVolume(v){
+  srtVolume = Math.max(0, Math.min(2.0, parseFloat(v) / 100));
+  updateSrtVolumeUI();
+  if (currentPlayback){
+    if (currentPlayback.masterGain && currentPlayback.masterGain.gain){ try { currentPlayback.masterGain.gain.value = srtVolume; } catch(e){} }
+    if (currentPlayback.audios){ currentPlayback.audios.forEach(entry => { try { if (entry.audio && !entry.src) entry.audio.volume = Math.min(1, srtVolume); } catch(e){} }); }
+  }
+}
+function srtVolumeUp(){ setSrtVolume(Math.min(200, Math.round(srtVolume * 100) + 10)); showNotification('🔊 ' + Math.round(srtVolume * 100) + '%'); }
+function srtVolumeDown(){ setSrtVolume(Math.max(0, Math.round(srtVolume * 100) - 10)); showNotification('🔉 ' + Math.round(srtVolume * 100) + '%'); }
+function resetSrtVolume(){ setSrtVolume(100); showNotification('🔉 100%'); }
+function updateSrtVolumeUI(){
+  const s = document.getElementById('srtVolumeSlider'); const l = document.getElementById('srtVolumeLabel');
+  if (s) s.value = Math.round(srtVolume * 100);
+  if (l){
+    l.textContent = Math.round(srtVolume * 100) + '%';
+    if (srtVolume > 1.0) l.className = 'text-[10px] font-mono text-rose-300 w-10 text-right font-bold';
+    else if (srtVolume < 1.0) l.className = 'text-[10px] font-mono text-amber-300 w-10 text-right font-bold';
+    else l.className = 'text-[10px] font-mono text-emerald-300 w-10 text-right font-bold';
+  }
+}
+
+/* AUTO-GAP / SKIP INTRO */
+function toggleAutoGap(){ autoGapFill = !autoGapFill; const btn = document.getElementById('autoGapBtn'), icon = document.getElementById('autoGapIcon'), text = document.getElementById('autoGapText'); if (autoGapFill){ btn.className = 'flex items-center space-x-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition shadow cursor-pointer'; icon.setAttribute('data-lucide', 'timer'); text.textContent = 'Auto-Gap: ON'; } else { btn.className = 'flex items-center space-x-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/60 px-3 py-1.5 rounded-lg text-xs font-semibold transition shadow cursor-pointer'; icon.setAttribute('data-lucide', 'timer-off'); text.textContent = 'Auto-Gap: OFF'; } lucide.createIcons(); }
+function toggleSkipIntro(){ skipIntroDelay = !skipIntroDelay; const btn = document.getElementById('skipIntroBtn'), icon = document.getElementById('skipIntroIcon'), text = document.getElementById('skipIntroText'); if (skipIntroDelay){ btn.className = 'flex items-center space-x-1 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition shadow cursor-pointer'; icon.setAttribute('data-lucide', 'skip-forward'); text.textContent = 'Skip Intro: ON'; } else { btn.className = 'flex items-center space-x-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/60 px-3 py-1.5 rounded-lg text-xs font-semibold transition shadow cursor-pointer'; icon.setAttribute('data-lucide', 'skip-forward'); text.textContent = 'Skip Intro: OFF'; } lucide.createIcons(); }
+
+/* FLIP / HSL / SUBTITLE / EXPAND */
+function toggleFlip(dir){ const c = document.getElementById('videoContainer'); if (dir === 'h'){ videoFx.flipH = !videoFx.flipH; c.classList.toggle('flip-h', videoFx.flipH); document.getElementById('flipHBtn').classList.toggle('active', videoFx.flipH); } else { videoFx.flipV = !videoFx.flipV; c.classList.toggle('flip-v', videoFx.flipV); document.getElementById('flipVBtn').classList.toggle('active', videoFx.flipV); } }
+function resetVideoFx(){ videoFx = { flipH: false, flipV: false, hue: 0, saturation: 100, brightness: 100, contrast: 100, blur: 0 }; document.getElementById('videoContainer').classList.remove('flip-h','flip-v'); document.getElementById('flipHBtn').classList.remove('active'); document.getElementById('flipVBtn').classList.remove('active'); ['hslHue','hslSaturation','hslBrightness','hslContrast','hslBlur'].forEach(id => document.getElementById(id).value = id === 'hslBlur' ? 0 : (id === 'hslHue' ? 0 : 100)); applyHSL(); showNotification('↺ FX reset'); }
+function applyHSL(){
+  const hue = parseFloat(document.getElementById('hslHue').value) || 0, sat = parseFloat(document.getElementById('hslSaturation').value) || 100;
+  const bri = parseFloat(document.getElementById('hslBrightness').value) || 100, con = parseFloat(document.getElementById('hslContrast').value) || 100;
+  const blur = parseFloat(document.getElementById('hslBlur').value) || 0;
+  videoFx = { ...videoFx, hue, saturation: sat, brightness: bri, contrast: con, blur };
+  const filters = [];
+  if (hue !== 0) filters.push('hue-rotate(' + hue + 'deg)');
+  if (sat !== 100) filters.push('saturate(' + sat + '%)');
+  if (bri !== 100) filters.push('brightness(' + bri + '%)');
+  if (con !== 100) filters.push('contrast(' + con + '%)');
+  if (blur > 0) filters.push('blur(' + blur + 'px)');
+  document.getElementById('mainVideoPlayer').style.filter = filters.length ? filters.join(' ') : '';
+  document.getElementById('hslHueVal').textContent = hue + '°'; document.getElementById('hslSaturationVal').textContent = sat + '%';
+  document.getElementById('hslBrightnessVal').textContent = bri + '%'; document.getElementById('hslContrastVal').textContent = con + '%'; document.getElementById('hslBlurVal').textContent = blur + 'px';
+}
+function resetHSL(){ ['hslHue','hslSaturation','hslBrightness','hslContrast','hslBlur'].forEach(id => document.getElementById(id).value = id === 'hslBlur' ? 0 : (id === 'hslHue' ? 0 : 100)); applyHSL(); showNotification('↺ HSL reset'); }
+function toggleSubtitleOverlay(){ showSubtitleOnVideo = !showSubtitleOnVideo; const btn = document.getElementById('subtitleToggleBtn'), icon = document.getElementById('subtitleToggleIcon'), text = document.getElementById('subtitleToggleText'), el = document.getElementById('currentSubtitlePreview'); if (showSubtitleOnVideo){ btn.classList.add('active'); icon.setAttribute('data-lucide', 'eye'); text.textContent = 'SRT: ON'; el.style.display = ''; } else { btn.classList.remove('active'); icon.setAttribute('data-lucide', 'eye-off'); text.textContent = 'SRT: OFF'; el.style.display = 'none'; } lucide.createIcons(); showNotification(showSubtitleOnVideo ? '👁️ ON' : '🚫 OFF'); }
+function toggleVideoExpand(){ videoExpanded = !videoExpanded; const c = document.getElementById('videoContainer'), icon = document.getElementById('expandIcon'), text = document.getElementById('expandText'); if (videoExpanded){ c.classList.add('expanded'); document.body.classList.add('video-expanded'); icon.setAttribute('data-lucide','minimize-2'); text.textContent = 'Close'; c.style.zIndex = '100'; } else { c.classList.remove('expanded'); document.body.classList.remove('video-expanded'); icon.setAttribute('data-lucide','maximize-2'); text.textContent = 'Expand'; c.style.zIndex = ''; } lucide.createIcons(); setTimeout(renderOverlays, 50); }
+function applyResolution(){
+  const val = document.getElementById('resolutionSelect').value, c = document.getElementById('videoContainer');
+  c.classList.remove('aspect-landscape','aspect-portrait','aspect-square','aspect-original');
+  if (val === 'original'){ c.classList.add('aspect-original'); c.style.aspectRatio = 'auto'; c.style.height = 'auto'; c.style.minHeight = '200px'; c.style.maxHeight = 'none'; c.style.width = '100%'; }
+  else { const isL = val.startsWith('landscape'), isP = val.startsWith('portrait'), isS = val.startsWith('square'); if (isL){ c.style.aspectRatio = '16/9'; c.style.width = '100%'; c.style.height = 'auto'; } else if (isP){ c.style.aspectRatio = '9/16'; c.style.height = '360px'; c.style.width = 'auto'; c.style.maxWidth = '100%'; } else if (isS){ c.style.aspectRatio = '1/1'; c.style.height = '360px'; c.style.width = '360px'; c.style.maxWidth = '100%'; } }
+  setTimeout(renderOverlays, 50);
+}
+function applyFillMode(){ const val = document.getElementById('fillModeSelect').value, c = document.getElementById('videoContainer'); c.classList.remove('fit-fill','fit-contain','fit-cover','fit-none','fit-scale-down'); c.classList.add('fit-' + val); }
+
+/* OVERLAY SYSTEM (compact) */
+function newOverlayDefaults(type){ return { id: 'ov_' + Date.now() + '_' + Math.floor(Math.random()*1000), type, text: type === 'text' ? 'សូមសួស្តី' : '', imageUrl: '', fontFamily: 'Kantumruy Pro', fontSize: 42, fontWeight: '700', bold: false, italic: false, underline: false, strikeout: false, uppercase: false, smallcaps: false, letterSpacing: 0, lineHeight: 1.2, wordSpacing: 0, textPadding: 0, colorPrimary: '#ffffff', colorSecondary: '#000000', colorOutline: '#000000', colorShadow: '#000000', strokeEnabled: false, strokeThickness: 2, strokeColor: '#000000', strokePos: 'center', outlineW: 0, outlineH: 0, shadowEnabled: false, shadowBlur: 3, shadowDistance: 3, shadowAngle: 45, shadowOpacity: 80, shadowColor: '#000000', posX: 50, posY: 80, offsetX: 0, offsetY: 0, scaleX: 1, scaleY: 1, rotation: 0, skewX: 0, marginL: 5, marginR: 5, marginV: 5, maxWidth: 90, align: 'center', valign: 'middle', bgEnabled: false, bgColor: '#000000', bgOpacity: 60, bgRadius: 6, bgPadW: 12, bgPadH: 6, bgOffX: 0, bgOffY: 0, bgBorder: 0, bgBorderColor: '#ffffff', opacity: 100, blendMode: 'normal', filterBlur: 0, filterBrightness: 100, filterContrast: 100, filterSaturate: 100, timeStart: 0, timeEnd: 0, logoWidth: 120, logoHeight: 120 }; }
+function openOverlayModal(id, type){
+  editingOverlayId = id; currentOverlayType = type || 'text';
+  let ov;
+  if (id){ ov = overlays.find(o => o.id === id); if (!ov){ showNotification('រកមិនឃើញ'); return; } currentOverlayType = ov.type; } else { ov = newOverlayDefaults(currentOverlayType); }
+  document.getElementById('ovTextSection').classList.toggle('hidden', ov.type !== 'text');
+  document.getElementById('ovLogoSection').classList.toggle('hidden', ov.type !== 'logo');
+  document.getElementById('ovModalTitle').textContent = (ov.type === 'text' ? '✏️ Text Overlay' : '🖼️ Logo Overlay');
+  document.getElementById('ovModalSubtitle').textContent = id ? '— Edit' : '— New';
+  document.getElementById('ovModalIcon').setAttribute('data-lucide', ov.type === 'text' ? 'type' : 'image');
+  const set = (elId, val) => { const el = document.getElementById(elId); if (!el) return; if (el.type === 'checkbox') el.checked = !!val; else el.value = val; };
+  ['ovText','ovFontFamily','ovFontSize','ovFontWeight','ovLetterSpacing','ovLineHeight','ovWordSpacing','ovTextPadding','ovColorPrimary','ovColorSecondary','ovColorOutline','ovColorShadow','ovStrokeEnabled','ovStrokeThickness','ovStrokeColor','ovOutlineW','ovOutlineH','ovShadowEnabled','ovShadowBlur','ovShadowDistance','ovShadowAngle','ovShadowOpacity','ovShadowColor','ovPosX','ovPosY','ovOffsetX','ovOffsetY','ovScaleX','ovScaleY','ovRotation','ovSkewX','ovMarginL','ovMarginR','ovMarginV','ovMaxWidth','ovBgEnabled','ovBgColor','ovBgOpacity','ovBgRadius','ovBgPadW','ovBgPadH','ovBgOffX','ovBgOffY','ovBgBorder','ovBgBorderColor','ovOpacity','ovBlendMode','ovFilterBlur','ovFilterBrightness','ovFilterContrast','ovFilterSaturate','ovTimeStart','ovTimeEnd','ovLogoWidth','ovLogoHeight'].forEach(k => set(k, ov[k.replace('ov','').charAt(0).toLowerCase() + k.replace('ov','').slice(1)]));
+  ['bold','italic','underline','strikeout','uppercase','smallcaps'].forEach(f => { const el = document.getElementById('ov' + f.charAt(0).toUpperCase() + f.slice(1)); if (el) el.classList.toggle('active', !!ov[f]); });
+  setOvAlign(ov.align, true); setOvVAlign(ov.valign, true); setStrokePos(ov.strokePos, true);
+  if (ov.imageUrl){ document.getElementById('ovLogoImg').src = ov.imageUrl; document.getElementById('ovLogoPreview').classList.remove('hidden'); } else { document.getElementById('ovLogoImg').src = ''; document.getElementById('ovLogoPreview').classList.add('hidden'); }
+  switchOvTab('content'); openModal('overlayModal'); lucide.createIcons();
+  setTimeout(() => { document.getElementById('overlayModal').querySelectorAll('input, select, textarea').forEach(el => { el.oninput = el.onchange = scheduleOvPreview; }); updateOvPreview(); }, 50);
+}
+function closeOverlayModal(){ const temp = document.getElementById('ov_preview_temp'); if (temp) temp.remove(); document.querySelectorAll('.overlay-item').forEach(el => { el.style.visibility = ''; }); closeModal('overlayModal'); editingOverlayId = null; renderOverlays(); }
+function switchOvTab(tab){ document.querySelectorAll('#overlayTabs .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab)); document.querySelectorAll('#overlayModal .tab-panel').forEach(p => p.classList.toggle('active', p.dataset.panel === tab)); }
+function toggleOvFlag(flag){ const el = document.getElementById('ov' + flag.charAt(0).toUpperCase() + flag.slice(1)); if (el) el.classList.toggle('active'); updateOvPreview(); }
+function setOvAlign(a, silent){ ['left','center','right'].forEach(x => { const el = document.getElementById('ovAlign' + x.charAt(0).toUpperCase() + x.slice(1)); if (el) el.classList.toggle('active', x === a); }); if (!silent) updateOvPreview(); }
+function setOvVAlign(a, silent){ ['top','middle','bottom'].forEach(x => { const el = document.getElementById('ovVAlign' + x.charAt(0).toUpperCase() + x.slice(1)); if (el) el.classList.toggle('active', x === a); }); if (!silent) updateOvPreview(); }
+function setStrokePos(p, silent){ ['outside','center','inside'].forEach(x => { const el = document.getElementById('ovStroke' + x.charAt(0).toUpperCase() + x.slice(1)); if (el) el.classList.toggle('active', x === p); }); if (!silent) updateOvPreview(); }
+function insertOvToken(token){ const ta = document.getElementById('ovText'); const s = ta.selectionStart; ta.value = ta.value.slice(0,s) + token + ta.value.slice(ta.selectionEnd); ta.focus(); ta.selectionStart = ta.selectionEnd = s + token.length; updateOvPreview(); }
+function applyPalette(name){ const p = { 'white-black': { p:'#ffffff', o:'#000000' }, 'yellow-black': { p:'#facc15', o:'#000000' }, 'cyan-black': { p:'#67e8f9', o:'#000000' }, 'white-red': { p:'#ffffff', o:'#dc2626' }, 'black-white': { p:'#000000', o:'#ffffff' } }[name]; if (!p) return; document.getElementById('ovColorPrimary').value = p.p; document.getElementById('ovColorOutline').value = p.o; updateOvPreview(); }
+function collectOverlayFromForm(){
+  const gv = id => { const el = document.getElementById(id); return el ? (el.type === 'checkbox' ? el.checked : el.value) : null; };
+  const gn = id => { const el = document.getElementById(id); return el ? (parseFloat(el.value) || 0) : 0; };
+  const gb = id => { const el = document.getElementById(id); return el ? !!el.checked : false; };
+  return { id: editingOverlayId || ('ov_' + Date.now() + '_' + Math.floor(Math.random()*1000)), type: currentOverlayType, text: gv('ovText') || '', imageUrl: currentOverlayType === 'logo' ? (document.getElementById('ovLogoImg').src || '') : '', fontFamily: gv('ovFontFamily') || 'Kantumruy Pro', fontSize: gn('ovFontSize') || 42, fontWeight: gv('ovFontWeight') || '700', bold: document.getElementById('ovBold').classList.contains('active'), italic: document.getElementById('ovItalic').classList.contains('active'), underline: document.getElementById('ovUnderline').classList.contains('active'), strikeout: document.getElementById('ovStrikeout').classList.contains('active'), uppercase: document.getElementById('ovUppercase').classList.contains('active'), smallcaps: document.getElementById('ovSmallcaps').classList.contains('active'), letterSpacing: gn('ovLetterSpacing'), lineHeight: parseFloat(document.getElementById('ovLineHeight').value) || 1.2, wordSpacing: gn('ovWordSpacing'), textPadding: gn('ovTextPadding'), colorPrimary: gv('ovColorPrimary') || '#ffffff', colorSecondary: gv('ovColorSecondary') || '#000000', colorOutline: gv('ovColorOutline') || '#000000', colorShadow: gv('ovColorShadow') || '#000000', strokeEnabled: gb('ovStrokeEnabled'), strokeThickness: gn('ovStrokeThickness'), strokeColor: gv('ovStrokeColor') || '#000000', strokePos: document.getElementById('ovStrokeOutside').classList.contains('active') ? 'outside' : document.getElementById('ovStrokeInside').classList.contains('active') ? 'inside' : 'center', outlineW: gn('ovOutlineW'), outlineH: gn('ovOutlineH'), shadowEnabled: gb('ovShadowEnabled'), shadowBlur: gn('ovShadowBlur'), shadowDistance: gn('ovShadowDistance'), shadowAngle: gn('ovShadowAngle'), shadowOpacity: gn('ovShadowOpacity'), shadowColor: gv('ovShadowColor') || '#000000', posX: gn('ovPosX'), posY: gn('ovPosY'), offsetX: gn('ovOffsetX'), offsetY: gn('ovOffsetY'), scaleX: gn('ovScaleX') || 1, scaleY: gn('ovScaleY') || 1, rotation: gn('ovRotation'), skewX: gn('ovSkewX'), marginL: gn('ovMarginL'), marginR: gn('ovMarginR'), marginV: gn('ovMarginV'), maxWidth: gn('ovMaxWidth') || 90, align: document.getElementById('ovAlignLeft').classList.contains('active') ? 'left' : document.getElementById('ovAlignRight').classList.contains('active') ? 'right' : 'center', valign: document.getElementById('ovVAlignTop').classList.contains('active') ? 'top' : document.getElementById('ovVAlignBottom').classList.contains('active') ? 'bottom' : 'middle', bgEnabled: gb('ovBgEnabled'), bgColor: gv('ovBgColor') || '#000000', bgOpacity: gn('ovBgOpacity'), bgRadius: gn('ovBgRadius'), bgPadW: gn('ovBgPadW'), bgPadH: gn('ovBgPadH'), bgOffX: gn('ovBgOffX'), bgOffY: gn('ovBgOffY'), bgBorder: gn('ovBgBorder'), bgBorderColor: gv('ovBgBorderColor') || '#ffffff', opacity: gn('ovOpacity') || 100, blendMode: gv('ovBlendMode') || 'normal', filterBlur: gn('ovFilterBlur'), filterBrightness: gn('ovFilterBrightness') || 100, filterContrast: gn('ovFilterContrast') || 100, filterSaturate: gn('ovFilterSaturate') || 100, timeStart: gn('ovTimeStart'), timeEnd: gn('ovTimeEnd'), logoWidth: gn('ovLogoWidth') || 120, logoHeight: gn('ovLogoHeight') || 120 };
+}
+function scheduleOvPreview(){ if (overlayPreviewRAF) cancelAnimationFrame(overlayPreviewRAF); overlayPreviewRAF = requestAnimationFrame(() => { overlayPreviewRAF = null; updateOvPreview(); }); }
+function updateOvPreview(){
+  if (!document.getElementById('ovLivePreview')?.checked) return;
+  const data = collectOverlayFromForm(); const layer = document.getElementById('overlayLayer');
+  const ex = document.getElementById('ov_preview_temp'); if (ex) ex.remove();
+  if (editingOverlayId){ const realEl = document.querySelector('.overlay-item[data-id="' + editingOverlayId + '"]'); if (realEl) realEl.style.visibility = 'hidden'; }
+  const el = createOverlayElement(data, true); el.id = 'ov_preview_temp'; el.classList.add('selected'); el.style.pointerEvents = 'none'; layer.appendChild(el);
+}
+function createOverlayElement(ov, isPreview){
+  const el = document.createElement('div');
+  el.className = 'overlay-item ' + (ov.type === 'text' ? 'text-overlay' : 'logo-overlay');
+  el.dataset.id = ov.id;
+  el.style.left = ov.posX + '%'; el.style.top = ov.posY + '%';
+  el.style.maxWidth = ov.maxWidth + '%'; el.style.transformOrigin = 'center center';
+  const tx = (-50 + (ov.offsetX / 10)) + '%', ty = (-50 + (ov.offsetY / 10)) + '%';
+  el.style.transform = `translate(${tx}, ${ty}) scale(${ov.scaleX}, ${ov.scaleY}) rotate(${ov.rotation}deg) skewX(${ov.skewX}deg)`;
+  el.style.opacity = (ov.opacity / 100);
+  if (ov.blendMode && ov.blendMode !== 'normal') el.style.mixBlendMode = ov.blendMode;
+  const filters = [];
+  if (ov.filterBlur > 0) filters.push('blur(' + ov.filterBlur + 'px)');
+  if (ov.filterBrightness !== 100) filters.push('brightness(' + ov.filterBrightness + '%)');
+  if (ov.filterContrast !== 100) filters.push('contrast(' + ov.filterContrast + '%)');
+  if (ov.filterSaturate !== 100) filters.push('saturate(' + ov.filterSaturate + '%)');
+  if (filters.length) el.style.filter = filters.join(' ');
+  if (ov.type === 'text'){
+    el.textContent = ov.uppercase ? (ov.text||'').toUpperCase() : (ov.text||'');
+    el.style.fontFamily = '"' + ov.fontFamily + '", "Kantumruy Pro", sans-serif';
+    el.style.fontSize = ov.fontSize + 'px';
+    el.style.fontWeight = ov.bold ? 'bold' : (ov.fontWeight || '700');
+    el.style.fontStyle = ov.italic ? 'italic' : 'normal';
+    el.style.fontVariant = ov.smallcaps ? 'small-caps' : 'normal';
+    el.style.color = ov.colorPrimary;
+    el.style.letterSpacing = ov.letterSpacing + 'px';
+    el.style.lineHeight = ov.lineHeight; el.style.wordSpacing = ov.wordSpacing + 'px';
+    el.style.textAlign = ov.align; el.style.padding = ov.textPadding + 'px';
+    const decos = [];
+    if (ov.underline) decos.push('underline');
+    if (ov.strikeout) decos.push('line-through');
+    el.style.textDecoration = decos.join(' ') || 'none';
+    const shadows = [];
+    if (ov.shadowEnabled){ const rad = (ov.shadowAngle * Math.PI) / 180; shadows.push((Math.cos(rad)*ov.shadowDistance).toFixed(2) + 'px ' + (Math.sin(rad)*ov.shadowDistance).toFixed(2) + 'px ' + ov.shadowBlur + 'px ' + hexToRgba(ov.shadowColor, ov.shadowOpacity/100)); }
+    if (ov.strokeEnabled && ov.strokeThickness > 0){ const t = ov.strokeThickness, steps = Math.max(16, Math.ceil(t * 4)); for (let i = 0; i < steps; i++){ const a = (i / steps) * 2 * Math.PI; shadows.push((Math.cos(a)*t).toFixed(2) + 'px ' + (Math.sin(a)*t).toFixed(2) + 'px 0 ' + ov.strokeColor); } }
+    if (shadows.length) el.style.textShadow = shadows.join(', ');
+    if (ov.bgEnabled){ el.style.background = hexToRgba(ov.bgColor, ov.bgOpacity/100); el.style.borderRadius = ov.bgRadius + 'px'; el.style.padding = ov.bgPadH + 'px ' + ov.bgPadW + 'px'; el.style.marginLeft = ov.bgOffX + 'px'; el.style.marginTop = ov.bgOffY + 'px'; if (ov.bgBorder > 0) el.style.border = ov.bgBorder + 'px solid ' + ov.bgBorderColor; }
+  } else {
+    if (ov.imageUrl){ const img = document.createElement('img'); img.src = ov.imageUrl; img.style.width = ov.logoWidth + 'px'; img.style.height = ov.logoHeight + 'px'; img.style.objectFit = 'contain'; img.draggable = false; el.appendChild(img); } else { el.textContent = '🖼️ No Image'; el.style.padding = '12px'; el.style.background = 'rgba(0,0,0,.5)'; el.style.borderRadius = '6px'; el.style.color = '#94a3b8'; el.style.fontSize = '12px'; }
+  }
+  if (!isPreview){ el.addEventListener('click', e => { e.stopPropagation(); selectOverlay(ov.id); }); el.addEventListener('mousedown', e => { if (e.button !== 0) return; e.preventDefault(); e.stopPropagation(); startOverlayDrag(e, ov.id, el); }); el.addEventListener('touchstart', e => { if (e.touches.length !== 1) return; const t = e.touches[0]; startOverlayDrag({clientX:t.clientX, clientY:t.clientY, preventDefault:()=>e.preventDefault(), stopPropagation:()=>e.stopPropagation()}, ov.id, el); }, {passive:false}); }
+  return el;
+}
+function renderOverlays(){
+  const layer = document.getElementById('overlayLayer'); if (!layer) return;
+  layer.innerHTML = '';
+  overlays.forEach(ov => { const el = createOverlayElement(ov, false); if (selectedOverlayId === ov.id) el.classList.add('selected'); layer.appendChild(el); });
+  const modal = document.getElementById('overlayModal');
+  if (modal && modal.classList.contains('flex') && document.getElementById('ovLivePreview').checked){ updateOvPreview(); }
+  renderOverlayList();
+}
+function renderOverlayList(){
+  const inner = document.getElementById('overlayListInner'); const header = document.querySelector('#overlayList > div:first-child');
+  if (header) header.textContent = '📋 Overlays (' + overlays.length + ')';
+  if (!overlays.length){ inner.innerHTML = '<div class="text-[9px] text-slate-600 italic text-center py-1">គ្មាន overlay</div>'; return; }
+  inner.innerHTML = '';
+  overlays.forEach((ov, i) => {
+    const div = document.createElement('div');
+    div.className = 'overlay-list-item ' + (selectedOverlayId === ov.id ? 'active' : '');
+    const icon = ov.type === 'text' ? '✏️' : '🖼️';
+    const label = ov.type === 'text' ? (ov.text.slice(0, 22) || '(empty)') : (ov.imageUrl ? 'Logo' : 'No image');
+    div.innerHTML = '<span class="flex items-center gap-1.5 truncate flex-1 min-w-0"><span>' + icon + '</span><span class="text-slate-300 truncate">' + escapeHtml(label) + '</span></span><span class="flex items-center gap-1 shrink-0"><button onclick="event.stopPropagation();openOverlayModal(\'' + ov.id + '\',\'' + ov.type + '\')" class="text-[10px] text-cyan-400 hover:text-cyan-300 px-1">✎</button><button onclick="event.stopPropagation();deleteOverlay(\'' + ov.id + '\')" class="text-[10px] text-rose-400 hover:text-rose-300 px-1">✕</button></span>';
+    div.onclick = () => selectOverlay(ov.id);
+    inner.appendChild(div);
+  });
+}
+function selectOverlay(id){ selectedOverlayId = id; renderOverlays(); }
+function deleteOverlay(id){ overlays = overlays.filter(o => o.id !== id); if (selectedOverlayId === id) selectedOverlayId = null; renderOverlays(); showNotification('🗑️ Deleted'); }
+function clearOverlays(){ if (!overlays.length) return; if (!confirm('Delete all?')) return; overlays = []; selectedOverlayId = null; renderOverlays(); showNotification('🗑️ Cleared'); }
+function startOverlayDrag(e, id, el){
+  const ov = overlays.find(o => o.id === id); if (!ov) return;
+  const rect = document.getElementById('overlayLayer').getBoundingClientRect();
+  const startX = e.clientX, startY = e.clientY, startPosX = ov.posX, startPosY = ov.posY;
+  el.classList.add('dragging'); document.body.style.userSelect = 'none';
+  function onMove(ev){
+    const clientX = ev.clientX !== undefined ? ev.clientX : (ev.touches && ev.touches[0] ? ev.touches[0].clientX : startX);
+    const clientY = ev.clientY !== undefined ? ev.clientY : (ev.touches && ev.touches[0] ? ev.touches[0].clientY : startY);
+    ov.posX = Math.max(-20, Math.min(120, startPosX + ((clientX - startX) / rect.width) * 100));
+    ov.posY = Math.max(-20, Math.min(120, startPosY + ((clientY - startY) / rect.height) * 100));
+    el.style.left = ov.posX + '%'; el.style.top = ov.posY + '%';
+    if (editingOverlayId === id){ const px = document.getElementById('ovPosX'), py = document.getElementById('ovPosY'); if (px) px.value = Math.round(ov.posX); if (py) py.value = Math.round(ov.posY); }
+  }
+  function onUp(){ document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); document.removeEventListener('touchmove', onMove); document.removeEventListener('touchend', onUp); el.classList.remove('dragging'); document.body.style.userSelect = ''; }
+  document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp);
+  document.addEventListener('touchmove', onMove, {passive:false}); document.addEventListener('touchend', onUp);
+}
+function saveOverlay(){
+  const data = collectOverlayFromForm();
+  if (data.type === 'text' && !data.text.trim()){ showNotification('⚠️ បញ្ចូលអត្ថបទ'); return; }
+  if (data.type === 'logo' && !data.imageUrl){ showNotification('⚠️ Upload Logo'); return; }
+  if (editingOverlayId){ const idx = overlays.findIndex(o => o.id === editingOverlayId); if (idx >= 0) overlays[idx] = data; } else { overlays.push(data); }
+  editingOverlayId = null;
+  const temp = document.getElementById('ov_preview_temp'); if (temp) temp.remove();
+  closeModal('overlayModal'); renderOverlays(); showNotification('✓ saved');
+}
+function resetOverlay(){ if (!confirm('Reset?')) return; const ov = newOverlayDefaults(currentOverlayType); const set = (elId, val) => { const el = document.getElementById(elId); if (!el) return; if (el.type === 'checkbox') el.checked = !!val; else el.value = val; }; Object.keys(ov).forEach(k => set('ov' + k.charAt(0).toUpperCase() + k.slice(1), ov[k])); updateOvPreview(); showNotification('↺'); }
+function handleFontUpload(event){ const file = event.target.files[0]; event.target.value = ''; if (!file) return; (async () => { try { const buf = await file.arrayBuffer(); const family = file.name.replace(/\.[^.]+$/, '') + '_' + Date.now().toString(36); const font = new FontFace(family, buf); await font.load(); document.fonts.add(font); customFonts.push(family); const sel = document.getElementById('ovFontFamily'); const opt = document.createElement('option'); opt.value = family; opt.textContent = family + ' (Custom)'; sel.appendChild(opt); sel.value = family; showNotification('✓ Font'); updateOvPreview(); } catch(e){ showNotification('❌ ' + e.message); } })(); }
+function handleLogoUpload(event){ const file = event.target.files[0]; event.target.value = ''; if (!file) return; const reader = new FileReader(); reader.onload = e => { document.getElementById('ovLogoImg').src = e.target.result; document.getElementById('ovLogoPreview').classList.remove('hidden'); updateOvPreview(); }; reader.readAsDataURL(file); }
+function removeOvLogo(){ document.getElementById('ovLogoImg').src = ''; document.getElementById('ovLogoPreview').classList.add('hidden'); updateOvPreview(); }
+function buildFontDropdown(){ const sel = document.getElementById('ovFontFamily'); sel.innerHTML = ''; FONT_LIST.forEach(group => { const og = document.createElement('optgroup'); og.label = group.group; group.fonts.forEach(f => { const opt = document.createElement('option'); opt.value = f; opt.textContent = f; opt.style.fontFamily = '"' + f + '"'; og.appendChild(opt); }); sel.appendChild(og); }); sel.value = 'Kantumruy Pro'; }
+
+/* VIDEO */
+function handleVideoUpload(e){ const f = e.target.files[0]; if (f) loadVideoFile(f); }
+function handleVideoDrop(e){ e.preventDefault(); document.getElementById('videoContainer').classList.remove('dragover'); const f = e.dataTransfer.files[0]; if (!f) return; if (f.type.indexOf('video/') === 0) loadVideoFile(f); else if (/\.(srt|vtt|txt)$/i.test(f.name)){ const r = new FileReader(); r.onload = ev => parseSRT(ev.target.result); r.readAsText(f); } }
+function loadVideoFile(file){ const v = document.getElementById('mainVideoPlayer'); v.src = URL.createObjectURL(file); v.load(); document.getElementById('videoPlaceholder').style.display = 'none'; document.getElementById('videoFilenameLabel').innerText = file.name; originalVolume = 1; v.volume = 1; updateVolumeLabel(); showNotification('ផ្ទុក: ' + file.name); if (srtPlayer.playing && !srtPlayer.paused){ srtPlayer.videoSync = true; } }
+function togglePlay(){ if (srtPlayer.playing) srtStop(); const v = document.getElementById('mainVideoPlayer'); if (!v.src){ showNotification('ផ្ទុកវីដេអូ'); return; } if (v.paused) v.play(); else v.pause(); updatePlayUI(); }
+function updatePlayUI(){ const v = document.getElementById('mainVideoPlayer'); document.getElementById('playText').innerText = v.paused ? 'ចាក់' : 'ផ្អាក'; document.getElementById('playIcon').setAttribute('data-lucide', v.paused ? 'play' : 'pause'); lucide.createIcons(); }
+function stopVideo(){ const v = document.getElementById('mainVideoPlayer'); v.pause(); v.currentTime = 0; updatePlayUI(); stopCurrentPlayback(); applyDucking(false); lastTriggeredRowId = null; if (srtPlayer.playing) srtStop(); }
+function seekVideo(e){ const v = document.getElementById('mainVideoPlayer'); if (!v.duration) return; const r = e.currentTarget.getBoundingClientRect(); v.currentTime = ((e.clientX - r.left)/r.width) * v.duration; }
+function adjustVolume(v){ const val = parseFloat(v); const video = document.getElementById('mainVideoPlayer'); video.volume = val; if (!duckingActive) originalVolume = val; updateVolumeLabel(); }
+function updateVolumeLabel(){ const v = document.getElementById('mainVideoPlayer'); const lbl = document.getElementById('videoVolumeLabel'), slider = document.getElementById('videoVolumeSlider'); if (lbl) lbl.textContent = Math.round(v.volume * 100) + '%'; if (slider && !duckingActive) slider.value = v.volume; }
+function onVideoLoadedMetadata(){ document.getElementById('durationDisplay').innerText = formatTime(document.getElementById('mainVideoPlayer').duration); }
+function onVideoPlay(){ updatePlayUI(); getAudioCtx(); }
+function onVideoPause(){ updatePlayUI(); if (currentPlayback){ currentPlayback.audios.forEach(e => { try { e.audio.pause(); } catch(err){} }); } if (srtPlayer.playing && !srtPlayer.paused && srtPlayer.videoSync){ srtPause(); } }
+function onVideoSeeked(){ stopCurrentPlayback(); applyDucking(false); lastTriggeredRowId = null; if (srtPlayer.playing && !srtPlayer.paused && srtPlayer.videoSync){ const v = document.getElementById('mainVideoPlayer'); srtPlayer.elapsedBeforePause = v.currentTime; srtPlayer.startRealTime = performance.now(); srtPlayer.currentRowIdx = -1; srtPlayer.lastPlayedRowId = null; } }
+function onVideoEnded(){ updatePlayUI(); stopCurrentPlayback(); applyDucking(false); lastTriggeredRowId = null; if (srtPlayer.playing && srtPlayer.videoSync){ showNotification('✓ ចប់'); srtStop(); } }
+function onVideoTimeUpdate(){
+  const v = document.getElementById('mainVideoPlayer');
+  const cur = v.currentTime, dur = v.duration || 1;
+  document.getElementById('currentTimeDisplay').innerText = formatTime(cur);
+  document.getElementById('videoProgressBar').style.width = ((cur/dur)*100) + '%';
+  const overlay = document.getElementById('currentSubtitlePreview');
+  const active = subtitles.find(s => cur >= s.startSec && cur <= s.endSec);
+  if (active && showSubtitleOnVideo){ overlay.innerText = active.text; overlay.classList.remove('hidden'); } else overlay.classList.add('hidden');
+  overlays.forEach(ov => { if (ov.timeStart > 0 || ov.timeEnd > 0){ const el = document.querySelector('.overlay-item[data-id="' + ov.id + '"]'); if (el){ const visible = (ov.timeStart === 0 || cur >= ov.timeStart) && (ov.timeEnd === 0 || cur <= ov.timeEnd); el.style.display = visible ? '' : 'none'; } } });
+  if (!srtPlayer.playing && !v.paused) checkTTSSync(cur);
+}
+function toggleAudioMode(){ isOriginalAudio = !isOriginalAudio; const b = document.getElementById('audioModeBtn'); b.innerText = isOriginalAudio ? 'សំឡេងដើម' : 'សំឡេងឌុប'; b.className = isOriginalAudio ? 'px-2 py-1 rounded-md text-[10px] font-medium border transition bg-indigo-950/90 text-indigo-300 border-indigo-800 cursor-pointer' : 'px-2 py-1 rounded-md text-[10px] font-medium border transition bg-purple-950/80 text-purple-300 border-purple-800 cursor-pointer'; if (isOriginalAudio){ stopCurrentPlayback(); applyDucking(false); document.getElementById('mainVideoPlayer').volume = 1; originalVolume = 1; updateVolumeLabel(); } }
+
+/* DUCKING */
+function smoothVideoVolume(target, durationMs){ const v = document.getElementById('mainVideoPlayer'); if (v._volAnim) cancelAnimationFrame(v._volAnim); const start = v.volume, startT = performance.now(); if (durationMs <= 0){ v.volume = target; updateVolumeLabel(); return; } function step(){ const now = performance.now(); const t = Math.min((now - startT) / durationMs, 1); v.volume = start + (target - start) * t; if (t < 1) v._volAnim = requestAnimationFrame(step); else updateVolumeLabel(); } v._volAnim = requestAnimationFrame(step); }
+function applyDucking(active){ const enabled = document.getElementById('duckingEnabled'); if (!enabled || !enabled.checked){ if (active){ setDuckIndicator(false); duckingActive = false; } return; } const depth = (parseInt(document.getElementById('duckingDepth').value) || 70) / 100; const pre = (parseFloat(document.getElementById('preDuck').value) || 0.3) * 1000; const post = (parseFloat(document.getElementById('postDuck').value) || 0.5) * 1000; const target = active ? Math.max(0.05, 1 - depth) : originalVolume; const dur = active ? pre : post; if (active && !duckingActive){ const v = document.getElementById('mainVideoPlayer'); originalVolume = v.volume || 1; if (originalVolume < 0.3) originalVolume = 1; } duckingActive = active; smoothVideoVolume(target, dur); setDuckIndicator(active); }
+function setDuckIndicator(active){ const el = document.getElementById('duckIndicator'); if (active) el.innerHTML = '<span class="duck-active text-[9px] font-bold px-2 py-0.5 rounded">🔊 DUCKING</span>'; else el.innerHTML = ''; }
+function testDucking(){ const v = document.getElementById('mainVideoPlayer'); if (!v.src){ showNotification('⚠️ ផ្ទុកវីដេអូ'); return; } if (v.paused){ v.play().catch(()=>{}); } applyDucking(true); setTimeout(() => { applyDucking(false); showNotification('✓ Ducking tested'); }, 1500); }
+
+/* AUDIO PLAYBACK */
+function stopCurrentPlayback(){ if (!currentPlayback) return; currentPlayback.cancelled = true; currentPlayback.audios.forEach(entry => { try { entry.audio.pause(); entry.audio.currentTime = 0; } catch(e){} try { if (entry.src && entry.src.disconnect) entry.src.disconnect(); } catch(e){} }); currentPlayback = null; if (duckingActive) applyDucking(false); }
+async function playRowWithFX(index){
+  const sub = subtitles[index]; if (!sub) return;
+  const cached = audioCache.get(sub.id); if (!cached) return;
+  applyDucking(true);
+  if (cached.type === 'webspeech'){ document.querySelectorAll('#subtitleTableBody tr').forEach((r,i) => r.classList.toggle('tts-playing', i===index)); const clearH = () => { document.querySelectorAll('#subtitleTableBody tr').forEach(r => r.classList.remove('tts-playing')); if (duckingActive) applyDucking(false); }; speakWithWebSpeech(sub.text, cached.voiceCfg, srtVolume).then(clearH).catch(clearH); return; }
+  if (cached.type === 'direct'){ await playDirectUrls(cached.urls, sub, index); return; }
+  const ctx = getAudioCtx();
+  if (!ctx){ const audio = document.getElementById('hoverAudio'); audio.src = cached.urls[0]; audio.volume = Math.min(1, srtVolume); audio.playbackRate = parseFloat(document.getElementById('speechRate').value) || 1; audio.play().catch(()=>{}); audio.onended = () => { if (duckingActive) applyDucking(false); }; return; }
+  stopCurrentPlayback(); applyDucking(true);
+  let firstBuf = null;
+  try { const res = await fetch(cached.urls[0]); const arr = await res.arrayBuffer(); firstBuf = await ctx.decodeAudioData(arr.slice(0)); } catch(e){}
+  const masterSpeed = parseFloat(document.getElementById('speechRate').value) || 1.15;
+  const rowSpeed = sub.speed != null ? parseFloat(sub.speed) : 1;
+  const rowDur = (sub.endSec || 0) - (sub.startSec || 0);
+  const isStretch = (sub.fitMode === 'stretch');
+  let rate = 1;
+  if (isStretch && firstBuf && rowDur > 0.1){ rate = Math.max(0.5, Math.min(3.0, (firstBuf.duration * cached.urls.length) / rowDur)); }
+  else { if (cached.isManual){ rate = rowSpeed; } else { rate = rowSpeed * (masterSpeed / 1.15); } rate = Math.max(0.5, Math.min(2.0, rate)); }
+  const masterGain = ctx.createGain(); masterGain.gain.value = srtVolume;
+  const reverbAmt = (sub.reverb || 0) / 100;
+  if (reverbAmt > 0){ if (!reverbImpulseCache) reverbImpulseCache = getReverbImpulse(ctx, 1.8, 2.5); const conv = ctx.createConvolver(); conv.buffer = reverbImpulseCache; const wet = ctx.createGain(); wet.gain.value = reverbAmt * 0.6; masterGain.connect(conv); conv.connect(wet); wet.connect(ctx.destination); }
+  const echoAmt = (sub.echo || 0) / 100; const echoCount = Math.min(sub.echoCount || 0, 5);
+  if (echoAmt > 0 && echoCount > 0){ for (let i = 1; i <= echoCount; i++){ const delay = ctx.createDelay(2.0); delay.delayTime.value = 0.28 * i; const dGain = ctx.createGain(); dGain.gain.value = Math.pow(echoAmt, i) * 0.55; masterGain.connect(delay); delay.connect(dGain); dGain.connect(ctx.destination); } }
+  masterGain.connect(ctx.destination);
+  const playback = { audios: [], masterGain, cancelled: false }; currentPlayback = playback;
+  document.querySelectorAll('#subtitleTableBody tr').forEach((r,i) => r.classList.toggle('tts-playing', i===index));
+  for (let i = 0; i < cached.urls.length; i++){ if (playback.cancelled) break; await new Promise(resolve => { const audio = new Audio(); audio.src = cached.urls[i]; audio.preservesPitch = true; audio.mozPreservesPitch = true; audio.webkitPreservesPitch = true; audio.playbackRate = rate; let srcNode = null; try { srcNode = ctx.createMediaElementSource(audio); srcNode.connect(masterGain); } catch(e){ audio.volume = Math.min(1, srtVolume); } playback.audios.push({ audio, src: srcNode }); audio.onended = resolve; audio.onerror = resolve; audio.play().catch(resolve); }); }
+  if (currentPlayback === playback){ document.querySelectorAll('#subtitleTableBody tr').forEach(r => r.classList.remove('tts-playing')); applyDucking(false); }
+}
+/* ⭐ playDirectUrls — Apply GT Voice Style playRate for pitch shift */
+async function playDirectUrls(urls, sub, index){
+  stopCurrentPlayback(); applyDucking(true);
+  document.querySelectorAll('#subtitleTableBody tr').forEach((r,i) => r.classList.toggle('tts-playing', i===index));
+  const ctx = getAudioCtx();
+  const playback = { audios: [], cancelled: false, isDirect: true, masterGain: null };
+  let masterGain = null;
+  if (ctx){ try { masterGain = ctx.createGain(); masterGain.gain.value = srtVolume; masterGain.connect(ctx.destination); playback.masterGain = masterGain; } catch(e){ masterGain = null; } }
+  currentPlayback = playback;
+  const style = GT_VOICE_STYLES[gtVoiceStyle] || GT_VOICE_STYLES.default;
+  const rowSpeed = sub.speed != null ? parseFloat(sub.speed) : 1;
+  /* ⭐ Apply playRate from style for pitch shift */
+  const pitchRate = style.playRate * rowSpeed;
+  logChain('🎤 Direct play: style=' + style.km + ' rate=' + pitchRate.toFixed(2) + 'x (pitch ' + style.pitchPct + '%)', 'info');
+  for (let i = 0; i < urls.length; i++){
+    if (playback.cancelled) break;
+    await new Promise(resolve => {
+      const audio = new Audio();
+      audio.crossOrigin = 'anonymous';
+      audio.src = urls[i];
+      audio.playbackRate = pitchRate;
+      /* ⭐ preservesPitch = false → changes pitch (voice simulation) */
+      audio.preservesPitch = false;
+      audio.mozPreservesPitch = false;
+      audio.webkitPreservesPitch = false;
+      if (masterGain && ctx){
+        try { const srcNode = ctx.createMediaElementSource(audio); srcNode.connect(masterGain); playback.audios.push({ audio, src: srcNode }); }
+        catch(e){ audio.volume = Math.min(1, srtVolume); playback.audios.push({ audio }); }
+      } else { audio.volume = Math.min(1, srtVolume); playback.audios.push({ audio }); }
+      audio.onended = resolve; audio.onerror = resolve; audio.play().catch(resolve);
+    });
+  }
+  document.querySelectorAll('#subtitleTableBody tr').forEach(r => r.classList.remove('tts-playing'));
+  if (currentPlayback === playback) applyDucking(false);
+}
+function getAudioCtx(){ if (!audioCtx){ const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null; audioCtx = new AC(); } if (audioCtx.state === 'suspended'){ audioCtx.resume().catch(()=>{}); } return audioCtx; }
+function getReverbImpulse(ctx, duration, decay){ const rate = ctx.sampleRate, length = Math.floor(rate * duration); const impulse = ctx.createBuffer(2, length, rate); for (let ch = 0; ch < 2; ch++){ const data = impulse.getChannelData(ch); for (let i = 0; i < length; i++){ data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay); } } return impulse; }
+
+/* SRT PLAYER */
+function getSrtTotalDuration(){ if (!subtitles.length) return 0; let maxEnd = 0; subtitles.forEach(s => { if ((s.endSec||0) > maxEnd) maxEnd = s.endSec; }); return maxEnd; }
+function toggleSrtPlay(){ if (!subtitles.length){ showNotification('គ្មានជួរ SRT'); return; } const hasAny = subtitles.some(s => audioCache.has(s.id)); if (!hasAny){ showNotification('សូម Generate'); return; } const v = document.getElementById('mainVideoPlayer'); const hasVideo = !!v.src; if (!srtPlayer.playing){ if (!v.paused) v.pause(); stopCurrentPlayback(); srtPlayer.playing = true; srtPlayer.paused = false; srtPlayer.videoSync = hasVideo; srtPlayer.currentRowIdx = -1; srtPlayer.lastPlayedRowId = null; let startAt = 0; const firstRow = subtitles[0]; if (skipIntroDelay && firstRow){ startAt = firstRow.startSec; } else if (hasVideo){ startAt = v.currentTime || 0; } srtPlayer.elapsedBeforePause = startAt; srtPlayer.startRealTime = performance.now(); if (hasVideo){ v.currentTime = startAt; v.play().catch(()=>{}); } updateVideoSyncBadge(); } else if (srtPlayer.paused){ srtPlayer.paused = false; srtPlayer.startRealTime = performance.now(); if (srtPlayer.videoSync && hasVideo){ v.play().catch(()=>{}); } } else { srtPause(); return; } updateSrtPlayBtn(); srtPlayer.rafId = requestAnimationFrame(srtTick); }
+function srtPause(){ if (!srtPlayer.playing || srtPlayer.paused) return; srtPlayer.elapsedBeforePause += (performance.now() - srtPlayer.startRealTime) / 1000; srtPlayer.paused = true; if (srtPlayer.rafId) cancelAnimationFrame(srtPlayer.rafId); stopCurrentPlayback(); applyDucking(false); const v = document.getElementById('mainVideoPlayer'); if (srtPlayer.videoSync && v.src && !v.paused){ v.pause(); } updateSrtPlayBtn(); }
+function srtStop(){ if (!srtPlayer.playing) return; const wasVideoSync = srtPlayer.videoSync; srtPlayer.playing = false; srtPlayer.paused = false; srtPlayer.elapsedBeforePause = 0; srtPlayer.startRealTime = 0; srtPlayer.currentRowIdx = -1; srtPlayer.lastPlayedRowId = null; srtPlayer.videoSync = false; if (srtPlayer.rafId) cancelAnimationFrame(srtPlayer.rafId); stopCurrentPlayback(); applyDucking(false); const v = document.getElementById('mainVideoPlayer'); if (wasVideoSync && v.src && !v.paused){ v.pause(); } updateSrtPlayBtn(); updateVideoSyncBadge(); updateSrtPlayheadUI(0, -1); document.querySelectorAll('#subtitleTableBody tr').forEach(r => r.classList.remove('bg-amber-900/20','bg-emerald-900/30')); document.getElementById('srtPlayIndicator').classList.add('hidden'); document.getElementById('srtPlayIndicator').classList.remove('flex'); }
+function updateVideoSyncBadge(){ const b = document.getElementById('videoSyncBadge'); if (!b) return; if (srtPlayer.playing && srtPlayer.videoSync){ b.classList.remove('hidden'); } else { b.classList.add('hidden'); } }
+function updateSrtPlayBtn(){ const btn = document.getElementById('srtPlayBtn'), icon = document.getElementById('srtPlayIcon'), text = document.getElementById('srtPlayText'), indicator = document.getElementById('srtPlayIndicator'); if (srtPlayer.playing && !srtPlayer.paused){ text.textContent = 'Pause SRT'; icon.setAttribute('data-lucide', 'pause'); btn.className = 'flex items-center space-x-1.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition shadow cursor-pointer srt-active-glow'; indicator.classList.remove('hidden'); indicator.classList.add('flex'); } else if (srtPlayer.playing && srtPlayer.paused){ text.textContent = 'Resume'; icon.setAttribute('data-lucide', 'play'); btn.className = 'flex items-center space-x-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition shadow cursor-pointer'; indicator.classList.remove('hidden'); indicator.classList.add('flex'); } else { text.textContent = 'Play SRT'; icon.setAttribute('data-lucide', 'play'); btn.className = 'flex items-center space-x-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition shadow cursor-pointer'; indicator.classList.add('hidden'); indicator.classList.remove('flex'); } lucide.createIcons(); }
+function srtTick(){
+  if (!srtPlayer.playing || srtPlayer.paused) return;
+  let virtualTime;
+  const v = document.getElementById('mainVideoPlayer');
+  if (srtPlayer.videoSync && v.src && !v.paused){ virtualTime = v.currentTime; srtPlayer.elapsedBeforePause = virtualTime; srtPlayer.startRealTime = performance.now(); } else { virtualTime = srtPlayer.elapsedBeforePause + (performance.now() - srtPlayer.startRealTime) / 1000; }
+  const totalDur = getSrtTotalDuration();
+  if (!autoGapFill && !srtPlayer.videoSync && subtitles.length){ const inGap = !subtitles.some(s => virtualTime >= s.startSec && virtualTime < s.endSec); if (inGap){ const nextRow = subtitles.find(s => s.startSec > virtualTime); if (nextRow){ const jumpDelta = nextRow.startSec - virtualTime; srtPlayer.elapsedBeforePause += jumpDelta; srtPlayer.startRealTime = performance.now(); virtualTime = nextRow.startSec; srtPlayer.currentRowIdx = -1; } else { const last = subtitles[subtitles.length - 1]; if (last && virtualTime >= last.endSec){ showNotification('✓ ចប់'); srtStop(); return; } } } }
+  let activeIdx = -1;
+  for (let i = 0; i < subtitles.length; i++){ const s = subtitles[i]; if (virtualTime >= s.startSec && virtualTime < s.endSec){ activeIdx = i; break; } }
+  if (activeIdx !== srtPlayer.currentRowIdx){ srtPlayer.currentRowIdx = activeIdx; if (activeIdx >= 0){ const sub = subtitles[activeIdx]; if (srtPlayer.lastPlayedRowId !== sub.id){ srtPlayer.lastPlayedRowId = sub.id; if (audioCache.has(sub.id)){ playRowWithFX(activeIdx); } } } }
+  updateSrtPlayheadUI(virtualTime, activeIdx);
+  const rows = document.querySelectorAll('#subtitleTableBody tr');
+  rows.forEach((r, i) => r.classList.toggle('bg-emerald-900/30', i === activeIdx));
+  if (srtPlayer.videoSync && v.src && v.duration && v.currentTime >= v.duration - 0.05){ showNotification('✓ វីដេអូចប់'); srtStop(); return; }
+  if (totalDur > 0 && virtualTime > totalDur + 0.3){ showNotification('✓ ចប់'); srtStop(); return; }
+  srtPlayer.rafId = requestAnimationFrame(srtTick);
+}
+function updateSrtPlayheadUI(virtualTime, activeIdx){ const totalDur = getSrtTotalDuration() || 1; document.getElementById('srtTimeDisplay').textContent = formatTime(virtualTime); document.getElementById('srtDurationDisplay').textContent = formatTime(totalDur); document.getElementById('srtProgressBar').style.width = Math.min(100, (virtualTime / totalDur) * 100) + '%'; const rowInd = document.getElementById('srtRowIndicator'); if (activeIdx >= 0){ rowInd.textContent = (activeIdx+1) + ' / ' + subtitles.length; } else { rowInd.textContent = '-- / ' + subtitles.length; } }
+function checkTTSSync(cur){ if (srtPlayer.playing) return; const syncEl = document.getElementById('ttsSyncEnabled'); if (!syncEl || !syncEl.checked){ if (lastTriggeredRowId !== null){ lastTriggeredRowId = null; stopCurrentPlayback(); applyDucking(false); } return; } const active = subtitles.find(s => cur >= s.startSec && cur <= s.endSec); const hasAudio = active && audioCache.has(active.id); if (hasAudio){ if (lastTriggeredRowId !== active.id){ lastTriggeredRowId = active.id; const idx = subtitles.findIndex(s => s.id === active.id); playRowWithFX(idx); } } else { if (lastTriggeredRowId !== null){ lastTriggeredRowId = null; stopCurrentPlayback(); applyDucking(false); } } }
+
+/* TTS */
+function chunkText(text, maxLen){ text = (text||'').trim(); if (!text) return []; if (text.length <= maxLen) return [text]; const chunks = []; const sentences = text.split(/(?<=[.!?។៕\n])\s+/); let buf = ''; for (let i = 0; i < sentences.length; i++){ const s = sentences[i]; if ((buf + ' ' + s).trim().length <= maxLen){ buf = (buf ? buf + ' ' : '') + s; } else { if (buf) chunks.push(buf.trim()); if (s.length <= maxLen){ buf = s; } else { const words = s.split(/\s+/); let w = ''; for (let k = 0; k < words.length; k++){ if ((w + ' ' + words[k]).trim().length <= maxLen) w = (w ? w + ' ' : '') + words[k]; else { if (w) chunks.push(w.trim()); w = words[k]; } } buf = w || ''; } } } if (buf) chunks.push(buf.trim()); return chunks.filter(Boolean); }
+function pcmBase64ToWavUrl(base64, sampleRate, numChannels){ const binary = atob(base64), len = binary.length, bytes = new Uint8Array(len); for (let i=0;i<len;i++) bytes[i] = binary.charCodeAt(i); const buffer = new ArrayBuffer(44 + len); const view = new DataView(buffer); const ws = (off,s) => { for (let i=0;i<s.length;i++) view.setUint8(off+i,s.charCodeAt(i)); }; ws(0,'RIFF'); view.setUint32(4,36+len,true); ws(8,'WAVE'); ws(12,'fmt '); view.setUint32(16,16,true); view.setUint16(20,1,true); view.setUint16(22,numChannels,true); view.setUint32(24,sampleRate,true); view.setUint32(28,sampleRate*numChannels*2,true); view.setUint16(32,numChannels*2,true); view.setUint16(34,16,true); ws(36,'data'); view.setUint32(40,len,true); new Uint8Array(buffer,44).set(bytes); return URL.createObjectURL(new Blob([buffer],{type:'audio/wav'})); }
+async function fetchGTChunk(chunk, idx, total, lang, gtSpeed){ const q = encodeURIComponent(chunk); const direct = 'https://translate.google.com/translate_tts?ie=UTF-8&q=' + q + '&tl=' + lang + '&client=tw-ob&ttsspeed=' + gtSpeed + '&total=' + total + '&idx=' + idx + '&textlen=' + chunk.length; let lastErr = null; for (const proxy of GT_PROXIES){ try { const url = proxy.fn(direct); const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 8000); const res = await fetch(url, { signal: controller.signal }); clearTimeout(timeoutId); if (!res.ok) throw new Error('HTTP ' + res.status); const blob = await res.blob(); if (blob.size < 500) throw new Error('too small'); return URL.createObjectURL(blob); } catch(e){ lastErr = e; } } throw lastErr || new Error('All proxies failed'); }
+async function callGeminiTTS(text, voiceCfg){ const key = apiKey || localStorage.getItem('dubify_gemini_key') || ''; if (!key) throw new Error('No Gemini key'); const model = document.getElementById('ttsModelSelect').value || TTS_MODEL; const body = { contents:[{parts:[{text:'Say with a ' + voiceCfg.style + ': ' + text}]}], generationConfig:{ responseModalities:["AUDIO"], speechConfig:{ voiceConfig:{ prebuiltVoiceConfig:{ voiceName: voiceCfg.prebuilt } } } } }; const direct = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + key; const useProxy = document.getElementById('useProxyToggle').checked; const proxyFns = useProxy ? [{ fn: u => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u) }, { fn: u => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u) }, { fn: u => u }] : [{ fn: u => u }]; let lastErr; for (const proxy of proxyFns){ try { const res = await fetch(proxy.fn(direct), { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) }); if (!res.ok) throw new Error('HTTP ' + res.status); const data = await res.json(); const part = data?.candidates?.[0]?.content?.parts?.[0]?.inlineData; if (!part?.data) throw new Error('no audio'); const m = (part.mimeType||'').match(/rate=(\d+)/); return pcmBase64ToWavUrl(part.data, m ? +m[1] : 24000, 1); } catch(e){ lastErr = e; } } throw lastErr || new Error('Gemini failed'); }
+async function callGoogleTranslateTTS(text, lang){ lang = lang || 'km'; const chunkSz = parseInt(document.getElementById('chunkSize').value) || 180; const chunks = chunkText(text, Math.min(chunkSz, 180)); if (!chunks.length) throw new Error('Empty text'); const gtSpeed = document.getElementById('gtSpeed').value; const urls = []; for (let i = 0; i < chunks.length; i++){ const url = await fetchGTChunk(chunks[i], i, chunks.length, lang, gtSpeed); urls.push(url); if (i < chunks.length - 1) await sleep(180); } return urls; }
+function speakWithWebSpeech(text, voiceCfg, volume){ return new Promise((resolve, reject) => { if (!('speechSynthesis' in window)){ reject(new Error('No Web Speech')); return; } speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.rate = parseFloat(document.getElementById('speechRate').value) || 1.15; u.pitch = voiceCfg.gender === 'Female' ? 1.15 : 0.85; u.volume = Math.min(1, volume || 1); u.lang = 'km-KH'; const voices = speechSynthesis.getVoices(); const km = voices.find(v => v.lang.indexOf('km') === 0) || voices.find(v => v.lang.indexOf('en') === 0); if (km) u.voice = km; u.onend = resolve; u.onerror = () => reject(new Error('WebSpeech error')); speechSynthesis.speak(u); }); }
+async function tryWithRetry(fn, maxRetries){ let lastErr; for (let attempt = 1; attempt <= maxRetries; attempt++){ try { return await fn(); } catch(err){ lastErr = err; if (attempt < maxRetries) await sleep(Math.min(600 * Math.pow(1.8, attempt-1), 6000)); } } throw lastErr; }
+/* ⭐ buildDirectGTUrl — Apply style sourceSpeed */
+function buildDirectGTUrl(text, lang){
+  const style = GT_VOICE_STYLES[gtVoiceStyle] || GT_VOICE_STYLES.default;
+  const baseSpeed = parseFloat(document.getElementById('gtSpeed').value) || 0.7;
+  /* GT ttsspeed clamps to [0.24, 1]. So sourceSpeed > 1 caps at 1 */
+  let effectiveSpeed = baseSpeed * style.sourceSpeed;
+  effectiveSpeed = Math.max(0.24, Math.min(1, effectiveSpeed));
+  const speedStr = effectiveSpeed.toFixed(2);
+  return 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=' + (lang || 'km') + '&ttsspeed=' + speedStr + '&q=' + encodeURIComponent(text);
+}
+function buildVideoEmbedHtml(url){ const esc = url.replace(/&/g, '&amp;').replace(/"/g, '&quot;'); return '<video controls="" autoplay="" name="media" crossorigin="anonymous"><source src="' + esc + '" type="audio/mpeg"></video>'; }
+async function generateTTSUrls(text, voiceCfg){
+  const mode = document.getElementById('ttsModeSelect').value;
+  if (mode === 'directurl'){
+    const langToUse = gtLangCode || 'km';
+    const chunkSz = parseInt(document.getElementById('chunkSize').value) || 180;
+    const chunks = chunkText(text, Math.min(chunkSz, 180));
+    if (!chunks.length) throw new Error('Empty text');
+    const directUrls = chunks.map(chunk => buildDirectGTUrl(chunk, langToUse));
+    return { type: 'direct', urls: directUrls, embeds: directUrls.map(buildVideoEmbedHtml) };
+  }
+  const gtLang = 'km';
+  const maxRetries = parseInt(document.getElementById('maxRetries').value) || 5;
+  const hasKey = !!(apiKey || localStorage.getItem('dubify_gemini_key'));
+  let providers;
+  if (mode === 'auto'){ providers = []; if (hasKey) providers.push('gemini'); providers.push('gtranslate'); providers.push('webspeech'); } else { providers = [mode]; }
+  let lastErr;
+  for (const provider of providers){
+    try {
+      const effectiveRetries = (provider === 'gtranslate') ? 2 : maxRetries;
+      const result = await tryWithRetry(async () => {
+        if (provider === 'gemini'){ return { type:'audio', urls:[await callGeminiTTS(text, voiceCfg)] }; }
+        if (provider === 'gtranslate'){ return { type:'audio', urls: await callGoogleTranslateTTS(text, gtLang) }; }
+        if (provider === 'webspeech'){ return { type:'webspeech', urls: [] }; }
+      }, effectiveRetries);
+      document.getElementById('activeEngine').textContent = '✓ ' + provider;
+      return result;
+    } catch(err){ lastErr = err; }
+  }
+  throw lastErr || new Error('All providers failed');
+}
+function resolveVoiceCfg(voiceId){ const parts = (voiceId || '').split(':'); const type = parts[0], a = parts[1], b = parts[2]; if (type === 'base'){ const base = BASE_VOICES[a] || BASE_VOICES.Piseth; return { ...base, id: voiceId, label: a }; } if (type === 'age'){ const age = AGE_VOICES.find(x => x.id === a); if (!age) return BASE_VOICES.Piseth; const genderKey = (b && b.toLowerCase()) === 'male' ? 'male' : 'female'; return { ...age[genderKey], id: voiceId, label: age.km, gender: genderKey }; } return BASE_VOICES.Piseth; }
+async function generateTTSForRow(index){
+  const sub = subtitles[index];
+  if (!sub || !sub.text || !sub.text.trim()) return false;
+  const cfg = resolveVoiceCfg(sub.ttsVoice || 'base:Piseth');
+  setRowStatus(index, 'កំពុង...', 'loading');
+  try {
+    const old = audioCache.get(sub.id);
+    if (old && old.urls && old.type !== 'direct'){ old.urls.forEach(u => { try { URL.revokeObjectURL(u); } catch(e){} }); }
+    const result = await generateTTSUrls(sub.text, cfg);
+    audioCache.set(sub.id, { urls: result.urls, embeds: result.embeds || null, directUrls: result.type === 'direct' ? result.urls : null, type: result.type, voiceCfg: cfg, isManual: false, gtVoiceStyle: result.type === 'direct' ? gtVoiceStyle : null });
+    const style = GT_VOICE_STYLES[gtVoiceStyle];
+    const langTag = (LANGUAGES.find(l => l.code === gtLangCode) || {}).km || gtLangCode;
+    sub.status = result.type === 'direct' ? ('🎬 ' + (style ? style.km : '') + ' ' + langTag) : result.type === 'webspeech' ? 'WebSpeech ✓' : ('រួចរាល់');
+    sub.statusKind = 'success'; sub.hasAudio = true;
+    renderSubtitles();
+    return true;
+  } catch(err){
+    sub.status = 'បរាជ័យ'; sub.statusKind = 'error'; sub.hasAudio = false;
+    renderSubtitles(); return false;
+  }
+}
+function setRowStatus(index, text, kind){ const sub = subtitles[index]; if (sub){ sub.status = text; sub.statusKind = kind; renderSubtitles(); } }
+async function generateAllTTS(){
+  if (!subtitles.length){ showNotification('គ្មានទិន្នន័យ!'); return; }
+  const mode = document.getElementById('ttsModeSelect').value;
+  const hasKey = !!(apiKey || localStorage.getItem('dubify_gemini_key'));
+  if (mode === 'gemini' && !hasKey){ showNotification('ត្រូវការ Key'); openModal('settingsModal'); return; }
+  const range = getActiveRange();
+  const totalRows = range.count;
+  const prog = document.getElementById('generationProgress');
+  prog.classList.remove('hidden');
+  let done = 0, failed = 0;
+  for (let i = range.start - 1; i <= range.end - 1; i++){
+    const cur = i - range.start + 2;
+    document.getElementById('progressCounter').textContent = cur + '/' + totalRows;
+    document.getElementById('progressBar').style.width = ((cur/totalRows)*100) + '%';
+    const ok = await generateTTSForRow(i);
+    if (ok) done++; else failed++;
+    await sleep(mode === 'directurl' ? 60 : 350);
+  }
+  setTimeout(() => prog.classList.add('hidden'), 1500);
+  const style = GT_VOICE_STYLES[gtVoiceStyle];
+  const langTag = (LANGUAGES.find(l => l.code === gtLangCode) || {}).km || gtLangCode;
+  showNotification('បង្កើតរួច ' + done + '/' + totalRows + (mode === 'directurl' ? ' • ' + style.km + ' ' + langTag : ''));
+}
+
+/* DOWNLOAD ALL / ONE DIRECT */
+function downloadAllDirect(){
+  const directRows = subtitles.filter(s => { const c = audioCache.get(s.id); return c && c.type === 'direct' && c.directUrls && c.directUrls.length; });
+  if (!directRows.length){ showNotification('⚠️ គ្មាន Direct Stream'); return; }
+  showNotification('📥 ទាញ ' + directRows.length + ' ឯកសារ...');
+  let delay = 0;
+  directRows.forEach(sub => {
+    const c = audioCache.get(sub.id);
+    c.directUrls.forEach((url, k) => {
+      setTimeout(() => { const a = document.createElement('a'); a.href = url; a.target = '_blank'; a.rel = 'noopener'; a.download = 'srt_' + String(sub.id).padStart(3,'0') + (c.directUrls.length > 1 ? '_' + (k+1) : '') + '.mp3'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }, delay);
+      delay += 350;
+    });
+  });
+  logChain('📥 Download All: ' + directRows.length + ' rows', 'success');
+}
+function downloadDirectRow(index){
+  const sub = subtitles[index]; if (!sub) return;
+  const c = audioCache.get(sub.id);
+  if (!c || !c.directUrls || !c.directUrls.length){ showNotification('⚠️ គ្មាន direct'); return; }
+  showNotification('📥 ទាញឯកសារ...');
+  c.directUrls.forEach((url, k) => { setTimeout(() => { const a = document.createElement('a'); a.href = url; a.target = '_blank'; a.rel = 'noopener'; a.download = 'srt_' + String(sub.id).padStart(3,'0') + (c.directUrls.length > 1 ? '_' + (k+1) : '') + '.mp3'; document.body.appendChild(a); a.click(); document.body.removeChild(a); }, k * 350); });
+}
+
+/* RANGE / QUEUE */
+function getActiveRange(){ const total = subtitles.length; if (total === 0) return { start: 1, end: 0, count: 0 }; let start = Math.max(1, parseInt(document.getElementById('srtRangeStart').value) || 1); let end = parseInt(document.getElementById('srtRangeEnd').value) || 0; if (start > total) start = total; if (end <= 0 || end > total) end = total; if (end < start) end = start; return { start, end, count: end - start + 1 }; }
+function updateRangeInfo(){ const el = document.getElementById('rangeInfo'); const total = subtitles.length; if (total === 0){ el.textContent = 'ជួរ -- / 0'; return; } const r = getActiveRange(); el.textContent = 'ជួរ ' + r.start + '-' + r.end + ' (' + r.count + '/' + total + ')'; }
+function selectRangeAll(){ document.getElementById('srtRangeStart').value = 1; document.getElementById('srtRangeEnd').value = 0; updateRangeInfo(); }
+function updateFolderQueueUI(){ const el = document.getElementById('folderQueueStatus'); if (!folderQueue.active || !folderQueue.files.length){ el.innerHTML = '<span class="text-slate-500 text-[10px]">📂 Queue: ទទេ</span>'; return; } const used = folderQueue.nextIndex, total = folderQueue.files.length, remaining = total - used; const pct = total > 0 ? (used / total) * 100 : 0; el.innerHTML = '<div class="flex items-center space-x-1.5 queue-active-glow px-1.5 py-0.5 rounded"><span class="text-[10px] text-cyan-300 font-medium truncate max-w-[100px]">' + escapeHtml(folderQueue.folderName) + '</span><div class="w-16 bg-slate-800 h-1.5 rounded-full overflow-hidden"><div class="h-full bg-gradient-to-r from-cyan-500 to-blue-500" style="width:' + pct + '%"></div></div><span class="text-[10px] text-cyan-200 font-mono font-bold">' + used + '/' + total + '</span>' + (remaining > 0 ? '<span class="text-[9px] text-emerald-400">នៅសល់ ' + remaining + '</span>' : '<span class="text-[9px] text-amber-400">អស់</span>') + '<button onclick="resetFolderQueue()" class="text-[9px] text-amber-400 ml-1">↺</button><button onclick="clearFolderQueue()" class="text-[9px] text-rose-400">✕</button></div>'; }
+function clearFolderQueue(){ folderQueue = { files: [], nextIndex: 0, folderName: '', active: false }; updateFolderQueueUI(); }
+function resetFolderQueue(){ if (!folderQueue.active) return; folderQueue.nextIndex = 0; updateFolderQueueUI(); }
+const AUDIO_EXT_RE = /\.(mp3|wav|m4a|aac|ogg|oga|opus|flac|webm|mp4)$/i;
+function extractTimestamp(file){ const baseName = (file.webkitRelativePath || file.name || '').split('/').pop().replace(/\.[^.]+$/, ''); let m = baseName.match(/(\d{4})[-_]?(\d{2})[-_]?(\d{2})[-_ T]?(\d{2})[-_]?(\d{2})[-_]?(\d{2})/); if (m){ const t = new Date(+m[1], +m[2]-1, +m[3], +m[4], +m[5], +m[6]).getTime(); if (!isNaN(t)) return t; } m = baseName.match(/(\d{4})[-_]?(\d{2})[-_]?(\d{2})/); if (m){ const t = new Date(+m[1], +m[2]-1, +m[3]).getTime(); if (!isNaN(t)) return t; } m = baseName.match(/(?:^|[^\d])(\d{10,13})(?:[^\d]|$)/); if (m){ let ts = +m[1]; if (ts < 1e12) ts *= 1000; if (ts >= 946684800000 && ts <= 4102444800000) return ts; } return file.lastModified || 0; }
+function sortFilesByTimestamp(files){ const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }); return files.slice().sort((a, b) => { const ta = extractTimestamp(a), tb = extractTimestamp(b); if (ta !== tb) return ta - tb; return collator.compare((a.webkitRelativePath||a.name||'').toLowerCase(), (b.webkitRelativePath||b.name||'').toLowerCase()); }); }
+function applyAudioFileToRow(index, file, source){ const sub = subtitles[index]; if (!sub) return false; const old = audioCache.get(sub.id); if (old && old.urls && old.type !== 'direct'){ old.urls.forEach(u => { try { URL.revokeObjectURL(u); } catch(e){} }); } audioCache.set(sub.id, { urls: [URL.createObjectURL(file)], type: 'manual', isManual: true, isRecorded: false, fromFolder: true, fromQueue: source === 'queue', fileName: file.name, fileTimestamp: extractTimestamp(file), size: file.size }); sub.status = '📂 ' + (index + 1); sub.statusKind = 'success'; sub.hasAudio = true; return true; }
+async function handleFolderUpload(event){
+  try {
+    const files = Array.from(event.target.files || []); event.target.value = '';
+    if (!files.length){ showNotification('⚠️ គ្មានឯកសារ'); return; }
+    if (!subtitles.length){ showNotification('⚠️ នាំចូល SRT ជាមុន'); return; }
+    const audioFiles = files.filter(f => (f.type||'').startsWith('audio/') || AUDIO_EXT_RE.test((f.name||'').toLowerCase()));
+    if (!audioFiles.length){ showNotification('⚠️ គ្មានសំឡេង'); return; }
+    const sorted = sortFilesByTimestamp(audioFiles);
+    const folderName = sorted[0].webkitRelativePath ? sorted[0].webkitRelativePath.split('/')[0] : 'Folder';
+    const range = getActiveRange(); const willFill = Math.min(sorted.length, range.count);
+    folderQueue.files = sorted; folderQueue.nextIndex = 0; folderQueue.folderName = folderName; folderQueue.active = true;
+    const prog = document.getElementById('generationProgress'); prog.classList.remove('hidden');
+    let done = 0;
+    for (let k = 0; k < willFill; k++){ const rowIdx = range.start - 1 + k; if (!subtitles[rowIdx]) break; const file = folderQueue.files[folderQueue.nextIndex++]; applyAudioFileToRow(rowIdx, file, 'queue'); done++; document.getElementById('progressCounter').textContent = done + '/' + willFill; document.getElementById('progressBar').style.width = ((done/willFill)*100) + '%'; if (done % 15 === 0) await sleep(0); }
+    renderSubtitles(); updateFolderQueueUI(); setTimeout(() => prog.classList.add('hidden'), 1200);
+    const remaining = folderQueue.files.length - folderQueue.nextIndex;
+    showNotification('✅ Auto-fill ' + done + ' ជួរ' + (remaining > 0 ? ' • Queue ' + remaining : ''));
+  } catch(err){ showNotification('❌ ' + err.message); }
+}
+let _uploadRowIndex = -1;
+function uploadAudioForRow(index){ const sub = subtitles[index]; if (!sub) return; if (folderQueue.active && folderQueue.nextIndex < folderQueue.files.length){ const file = folderQueue.files[folderQueue.nextIndex++]; applyAudioFileToRow(index, file, 'queue'); renderSubtitles(); updateFolderQueueUI(); showNotification('📂 Queue → Row ' + (index+1)); return; } _uploadRowIndex = index; document.getElementById('audioUploadInput').click(); }
+function handleAudioUpload(event){ const file = event.target.files[0]; event.target.value = ''; if (!file || !subtitles[_uploadRowIndex]) return; applyAudioFileToRow(_uploadRowIndex, file, 'single'); renderSubtitles(); showNotification('✓ ' + file.name); }
+
+/* RECORD */
+function openRecordModal(index){ const sub = subtitles[index]; if (!sub) return; pendingRecordRowIndex = index; pendingRecordedBlob = null; document.getElementById('recordRowLabel').textContent = 'Row ' + (index+1); document.getElementById('recordScriptText').textContent = sub.text || ''; document.getElementById('recordTimer').textContent = '00:00.0'; document.getElementById('recordSaveBtn').disabled = true; document.getElementById('recordPlaybackSection').classList.add('hidden'); openModal('recordModal'); }
+function closeRecordModal(){ if (mediaRecorder && mediaRecorder.state !== 'inactive'){ try { mediaRecorder.stop(); } catch(e){} } stopRecordStream(); closeModal('recordModal'); }
+function stopRecordStream(){ if (recordStream){ recordStream.getTracks().forEach(t => { try { t.stop(); } catch(e){} }); recordStream = null; } if (recordTimerInterval){ clearInterval(recordTimerInterval); recordTimerInterval = null; } }
+async function toggleRecording(){ if (mediaRecorder && mediaRecorder.state === 'recording'){ stopRecording(); } else { await startRecording(); } }
+async function startRecording(){
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ showNotification('មិនគាំទ្រ mic'); return; }
+  try { recordStream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch(err){ showNotification('mic fail'); return; }
+  recordedChunks = []; let mimeType = '';
+  for (const c of ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4']) { if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(c)){ mimeType = c; break; } }
+  try { mediaRecorder = new MediaRecorder(recordStream, mimeType ? { mimeType } : undefined); } catch(err){ return; }
+  mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) recordedChunks.push(e.data); };
+  mediaRecorder.onstop = () => { const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'audio/webm' }); pendingRecordedBlob = blob; document.getElementById('recordPreviewAudio').src = URL.createObjectURL(blob); document.getElementById('recordPlaybackSection').classList.remove('hidden'); document.getElementById('recordSaveBtn').disabled = false; stopRecordStream(); };
+  mediaRecorder.start(); recordStartTime = performance.now();
+  recordTimerInterval = setInterval(() => { document.getElementById('recordTimer').textContent = formatTime((performance.now() - recordStartTime) / 1000); }, 100);
+}
+function stopRecording(){ if (mediaRecorder && mediaRecorder.state !== 'inactive'){ try { mediaRecorder.stop(); } catch(e){} } }
+function saveRecordedAudio(){ if (!pendingRecordedBlob || pendingRecordRowIndex < 0) return; const sub = subtitles[pendingRecordRowIndex]; if (!sub) return; const old = audioCache.get(sub.id); if (old && old.urls && old.type !== 'direct'){ old.urls.forEach(u => { try { URL.revokeObjectURL(u); } catch(e){} }); } audioCache.set(sub.id, { urls: [URL.createObjectURL(pendingRecordedBlob)], type: 'manual', isManual: true, isRecorded: true }); sub.status = 'Recorded ✓'; sub.statusKind = 'success'; sub.hasAudio = true; renderSubtitles(); pendingRecordedBlob = null; closeRecordModal(); showNotification('🎙️ Saved'); }
+function clearRowAudio(){ if (pendingRecordRowIndex < 0) return; const sub = subtitles[pendingRecordRowIndex]; if (!sub || !audioCache.has(sub.id)) return; if (!confirm('លុបសំឡេង?')) return; const c = audioCache.get(sub.id); if (c && c.urls && c.type !== 'direct'){ c.urls.forEach(u => { try { URL.revokeObjectURL(u); } catch(e){} }); } audioCache.delete(sub.id); sub.status = 'រង់ចាំ'; sub.statusKind = 'idle'; sub.hasAudio = false; renderSubtitles(); closeRecordModal(); }
+
+/* FX */
+function openFxModal(indexOrAll){ const isAll = (indexOrAll === 'all'); let refSub; if (isAll){ if (!subtitles.length) return; refSub = subtitles[0]; document.getElementById('fxRowId').value = 'all'; document.getElementById('fxRowLabel').textContent = 'All'; } else { const sub = subtitles[indexOrAll]; if (!sub) return; refSub = sub; document.getElementById('fxRowId').value = sub.id; document.getElementById('fxRowLabel').textContent = 'Row ' + (indexOrAll + 1); } document.querySelectorAll('input[name="fitMode"]').forEach(r => r.checked = (r.value === (refSub.fitMode || 'natural'))); document.getElementById('fxSpeed').value = refSub.speed || 1; document.getElementById('fxSpeedVal').textContent = parseFloat(refSub.speed || 1).toFixed(2) + 'x'; document.getElementById('fxReverb').value = refSub.reverb || 0; document.getElementById('fxReverbVal').textContent = (refSub.reverb || 0) + '%'; document.getElementById('fxEcho').value = refSub.echo || 0; document.getElementById('fxEchoVal').textContent = (refSub.echo || 0) + '%'; document.getElementById('fxEchoCount').value = refSub.echoCount || 0; document.getElementById('fxEchoCountVal').textContent = refSub.echoCount || 0; document.getElementById('fxApplyAll').checked = isAll; openModal('fxModal'); }
+function collectFxFromForm(){ const fitMode = document.querySelector('input[name="fitMode"]:checked'); return { fitMode: fitMode ? fitMode.value : 'natural', speed: parseFloat(document.getElementById('fxSpeed').value) || 1, reverb: parseInt(document.getElementById('fxReverb').value) || 0, echo: parseInt(document.getElementById('fxEcho').value) || 0, echoCount: parseInt(document.getElementById('fxEchoCount').value) || 0 }; }
+function saveFxSettings(){ const applyAll = document.getElementById('fxApplyAll').checked || document.getElementById('fxRowId').value === 'all'; const settings = collectFxFromForm(); if (applyAll){ subtitles.forEach(s => Object.assign(s, settings)); showNotification('FX → all'); } else { const id = parseInt(document.getElementById('fxRowId').value); const sub = subtitles.find(s => s.id === id); if (sub){ Object.assign(sub, settings); showNotification('FX saved'); } } closeModal('fxModal'); renderSubtitles(); }
+function previewFxSettings(){ const applyAll = document.getElementById('fxApplyAll').checked || document.getElementById('fxRowId').value === 'all'; let idx = applyAll ? selectedRowIndex : subtitles.findIndex(s => s.id === parseInt(document.getElementById('fxRowId').value)); if (idx < 0 || idx >= subtitles.length) idx = 0; if (!subtitles[idx]) return; const sub = subtitles[idx], tmp = collectFxFromForm(); const backup = { fitMode: sub.fitMode, speed: sub.speed, reverb: sub.reverb, echo: sub.echo, echoCount: sub.echoCount }; Object.assign(sub, tmp); playRowWithFX(idx).then(() => Object.assign(sub, backup)).catch(() => Object.assign(sub, backup)); }
+
+/* RENDER */
+function buildVoiceSelectHtml(selected){ let h = '<optgroup label="⭐">'; h += '<option value="base:Piseth" ' + (selected === 'base:Piseth' ? 'selected' : '') + '>♂ Piseth</option>'; h += '<option value="base:Sreymom" ' + (selected === 'base:Sreymom' ? 'selected' : '') + '>♀ Sreymom</option>'; h += '</optgroup>'; AGE_VOICES.forEach(a => { h += '<optgroup label="' + a.km + '">'; h += '<option value="age:' + a.id + ':Female" ' + (selected === 'age:' + a.id + ':Female' ? 'selected' : '') + '>♀ ' + a.km + '</option>'; h += '<option value="age:' + a.id + ':Male" ' + (selected === 'age:' + a.id + ':Male' ? 'selected' : '') + '>♂ ' + a.km + '</option>'; h += '</optgroup>'; }); return h; }
+function renderSubtitles(){
+  const tbody = document.getElementById('subtitleTableBody'); tbody.innerHTML = '';
+  if (!subtitles.length){ tbody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-slate-500 italic">គ្មានទិន្នន័យ</td></tr>'; document.getElementById('totalSubCount').innerText = 'សរុប: 0'; document.getElementById('currentSubtitlePreview').classList.add('hidden'); document.getElementById('srtDurationDisplay').textContent = '00:00.00'; document.getElementById('srtRowIndicator').textContent = '-- / 0'; updateRangeInfo(); updateFolderQueueUI(); return; }
+  const range = getActiveRange();
+  const queueReady = folderQueue.active && folderQueue.nextIndex < folderQueue.files.length;
+  subtitles.forEach((sub, index) => {
+    const tr = document.createElement('tr');
+    const cached = audioCache.get(sub.id);
+    const hasAudio = !!cached;
+    const isDirect = !!(cached && cached.type === 'direct');
+    const inRange = (index + 1 >= range.start && index + 1 <= range.end);
+    let cls = 'transition cursor-pointer ';
+    if (selectedRowIndex === index) cls += 'bg-indigo-900/40 border-l-4 border-indigo-500';
+    else if (inRange) cls += 'border-l-4 border-emerald-500/40';
+    else cls += 'border-l-4 border-transparent opacity-60';
+    if (isDirect) cls += ' row-playable';
+    tr.className = cls;
+    tr.onmouseenter = () => onRowHover(index);
+    tr.onmouseleave = onRowLeave;
+    tr.onclick = e => { if (['INPUT','SELECT','BUTTON','OPTION'].indexOf(e.target.tagName) !== -1) return; if (isDirect){ playRowWithFX(index); showNotification('▶️ ' + (subtitles[index].text||'').slice(0,30)); } else { selectRow(index); } };
+    const sk = sub.statusKind;
+    const statusClass = sk === 'error' ? 'text-rose-400 bg-rose-950/50 border-rose-800/50' : sk === 'loading' ? 'text-amber-400 bg-amber-950/50 border-amber-800/50 animate-pulse' : hasAudio ? (isDirect ? 'text-cyan-300 bg-cyan-950/50 border-cyan-700/50' : 'text-emerald-400 bg-emerald-950/50 border-emerald-800/50') : 'text-slate-400 bg-slate-950/50 border-slate-800/50';
+    const audioBtn = hasAudio ? '<button onclick="event.stopPropagation();playRowWithFX(' + index + ')" class="shrink-0 ' + (isDirect ? 'bg-cyan-700 hover:bg-cyan-600 direct-badge' : 'bg-emerald-700 hover:bg-emerald-600') + ' text-white p-1 rounded transition"><i data-lucide="play" class="w-3 h-3"></i></button>' : '';
+    const directDlBtn = isDirect ? '<button onclick="event.stopPropagation();downloadDirectRow(' + index + ')" title="📥 Direct Download" class="shrink-0 bg-gradient-to-br from-blue-700 to-indigo-700 hover:from-blue-600 hover:to-indigo-600 text-white p-1 rounded-md shadow transition"><i data-lucide="download" class="w-3 h-3"></i></button>' : '';
+    const uploadCls = queueReady ? 'bg-cyan-600 ring-1 ring-cyan-400' : 'bg-blue-700 hover:bg-blue-600';
+    tr.innerHTML =
+      '<td class="py-1.5 px-2 text-center font-mono text-slate-400"><div class="flex flex-col items-center"><span class="text-[10px]">' + (index+1) + '</span>' + (hasAudio ? '<i data-lucide="volume-2" class="w-2.5 h-2.5 ' + (isDirect ? 'text-cyan-400' : 'text-emerald-400') + '"></i>' : '') + '</div></td>' +
+      '<td class="py-1.5 px-2"><input type="text" value="' + escapeHtml(sub.start) + '" onchange="updateSubTime(' + sub.id + ',\'start\',this.value)" class="bg-transparent w-full focus:outline-none focus:bg-indigo-950/80 px-1 py-0.5 rounded font-mono text-indigo-300 text-[10px] border border-transparent"></td>' +
+      '<td class="py-1.5 px-2"><input type="text" value="' + escapeHtml(sub.end) + '" onchange="updateSubTime(' + sub.id + ',\'end\',this.value)" class="bg-transparent w-full focus:outline-none focus:bg-indigo-950/80 px-1 py-0.5 rounded font-mono text-purple-300 text-[10px] border border-transparent"></td>' +
+      '<td class="py-1.5 px-2"><input type="text" value="' + escapeHtml(sub.text) + '" onchange="updateSubText(' + sub.id + ', this.value)" class="bg-transparent w-full focus:outline-none focus:bg-indigo-950/80 px-2 py-1 rounded text-slate-100 border border-transparent"></td>' +
+      '<td class="py-1.5 px-2"><div class="flex items-center space-x-1">' +
+        '<select onchange="updateSubVoice(' + sub.id + ', this.value)" onclick="event.stopPropagation()" class="flex-1 bg-indigo-950/90 text-indigo-200 border border-indigo-800/60 rounded px-1 py-0.5 text-[10px] cursor-pointer min-w-0">' + buildVoiceSelectHtml(sub.ttsVoice || 'base:Piseth') + '</select>' +
+        '<button onclick="event.stopPropagation();openFxModal(' + index + ')" class="shrink-0 bg-gradient-to-br from-amber-600 to-orange-600 text-white p-1 rounded"><i data-lucide="sliders-horizontal" class="w-3 h-3"></i></button>' +
+        '<button onclick="event.stopPropagation();generateTTSForRow(' + index + ')" class="shrink-0 bg-gradient-to-br from-purple-600 to-indigo-600 text-white p-1 rounded"><i data-lucide="wand-2" class="w-3 h-3"></i></button>' +
+        '<button onclick="event.stopPropagation();uploadAudioForRow(' + index + ')" class="shrink-0 ' + uploadCls + ' text-white p-1 rounded"><i data-lucide="file-audio" class="w-3 h-3"></i></button>' +
+        '<button onclick="event.stopPropagation();openRecordModal(' + index + ')" class="shrink-0 bg-rose-700 hover:bg-rose-600 text-white p-1 rounded"><i data-lucide="mic" class="w-3 h-3"></i></button>' +
+        audioBtn + directDlBtn +
+      '</div></td>' +
+      '<td class="py-1.5 px-2 text-center"><span class="inline-flex items-center ' + statusClass + ' border px-2 py-0.5 rounded-full text-[9px] font-medium whitespace-nowrap">' + escapeHtml(sub.status || (hasAudio ? 'មាន ✓' : 'រង់ចាំ')) + '</span></td>';
+    tbody.appendChild(tr);
+  });
+  document.getElementById('totalSubCount').innerText = 'សរុប: ' + subtitles.length;
+  document.getElementById('srtDurationDisplay').textContent = formatTime(getSrtTotalDuration());
+  document.getElementById('srtRowIndicator').textContent = '-- / ' + subtitles.length;
+  updateRangeInfo(); updateFolderQueueUI();
+  lucide.createIcons();
+}
+
+/* VOICES UI */
+function buildAgeVoiceGrid(){ const grid = document.getElementById('ageVoiceGrid'); grid.innerHTML = ''; AGE_VOICES.forEach(a => { const w = document.createElement('div'); w.className = 'bg-indigo-950/40 border border-indigo-900/60 rounded-lg p-1.5'; w.innerHTML = '<div class="text-[9px] font-semibold text-indigo-200 mb-1 flex items-center space-x-1"><i data-lucide="' + a.icon + '" class="w-2.5 h-2.5"></i><span>' + a.km + '</span></div><div class="grid grid-cols-2 gap-1"><button onclick="selectAgeVoice(\'' + a.id + '\',\'Female\')" data-voice="age:' + a.id + ':Female" class="age-voice-chip voice-chip bg-[#15102a] border border-indigo-800/60 rounded py-1 text-[9px] text-indigo-200">♀</button><button onclick="selectAgeVoice(\'' + a.id + '\',\'Male\')" data-voice="age:' + a.id + ':Male" class="age-voice-chip voice-chip bg-[#15102a] border border-indigo-800/60 rounded py-1 text-[9px] text-indigo-200">♂</button></div>'; grid.appendChild(w); }); lucide.createIcons(); }
+function selectBaseVoice(name){ currentVoice = { type:'base', id:name }; document.querySelectorAll('.base-voice').forEach(b => b.classList.remove('selected')); document.getElementById('baseVoice' + name).classList.add('selected'); document.querySelectorAll('.age-voice-chip').forEach(c => c.classList.remove('selected')); }
+function selectAgeVoice(ageId, gender){ currentVoice = { type:'age', id:'age:' + ageId + ':' + gender }; document.querySelectorAll('.voice-chip').forEach(c => c.classList.remove('selected')); const el = document.querySelector('.age-voice-chip[data-voice="age:' + ageId + ':' + gender + '"]'); if (el) el.classList.add('selected'); }
+function toggleAssistant(){ const p = document.getElementById('assistantPanel'); p.classList.toggle('translate-x-full'); p.classList.toggle('lg:translate-x-0'); }
+async function previewVoice(){
+  const text = document.getElementById('previewText').value.trim(); if (!text) return;
+  try {
+    const vid = currentVoice.type === 'base' ? 'base:' + currentVoice.id : currentVoice.id;
+    const cfg = resolveVoiceCfg(vid);
+    const result = await generateTTSUrls(text, cfg);
+    if (result.type === 'webspeech'){ await speakWithWebSpeech(text, cfg, srtVolume); }
+    else if (result.type === 'direct'){
+      /* Use playDirectUrls for style application */
+      await playDirectUrls(result.urls, { speed: 1, fitMode: 'natural', endSec: 0, startSec: 0 }, -1);
+    } else {
+      const audio = new Audio(); let idx = 0; audio.volume = Math.min(1, srtVolume);
+      const next = () => { if (idx >= result.urls.length) return; audio.src = result.urls[idx++]; audio.play(); audio.onended = next; };
+      next(); previewAudioEl = audio;
+    }
+  } catch(err){ showNotification('បរាជ័យ: ' + err.message); }
+}
+function stopPreview(){ if (previewAudioEl){ previewAudioEl.pause(); } if ('speechSynthesis' in window) speechSynthesis.cancel(); stopCurrentPlayback(); }
+
+/* API */
+function saveApiKey(){ const k = document.getElementById('apiKeyInput').value.trim(); if (k) localStorage.setItem('dubify_gemini_key', k); else localStorage.removeItem('dubify_gemini_key'); apiKey = k; updateApiKeyStatus(); closeModal('settingsModal'); showNotification('✓'); }
+function updateApiKeyStatus(){ const k = apiKey || localStorage.getItem('dubify_gemini_key'); const el = document.getElementById('apiKeyStatus'); if (k){ el.innerText = '✓ ' + k.slice(0,6) + '...'; el.className = 'text-emerald-400 font-mono'; } else { el.innerText = '⚠ គ្មាន Key'; el.className = 'text-amber-400 font-mono'; } }
+function onModeChange(){
+  const m = document.getElementById('ttsModeSelect').value;
+  document.getElementById('activeEngine').textContent = '✓ ' + m;
+  const langWrap = document.getElementById('gtLangSelectorWrap');
+  const styleWrap = document.getElementById('gtVoiceStyleWrap');
+  if (m === 'directurl'){ langWrap.style.opacity = '1'; langWrap.style.pointerEvents = 'auto'; styleWrap.style.opacity = '1'; styleWrap.style.pointerEvents = 'auto'; showNotification('🎬 Direct Stream + 🎤 Voice Style បើក'); }
+  else { langWrap.style.opacity = '0.5'; styleWrap.style.opacity = '0.5'; }
+}
+
+/* SRT PARSE / CRUD */
+function handleSrtUpload(e){ const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = ev => parseSRT(ev.target.result); r.readAsText(f); }
+function parseSRT(data){ const clean = data.replace(/\r\n/g,'\n').replace(/\r/g,'\n').trim(); const blocks = clean.split(/\n\s*\n/); const parsed = []; blocks.forEach(block => { const lines = block.split('\n').map(l => l.trim()).filter(Boolean); const ti = lines.findIndex(l => l.includes('-->')); if (ti === -1) return; const parts = lines[ti].split('-->'); if (parts.length !== 2) return; const startStr = parts[0].trim().split(' ')[0], endStr = parts[1].trim().split(' ')[0]; const text = lines.slice(ti+1).join(' ').trim(); if (!text) return; parsed.push({ id: 0, start: startStr, end: endStr, startSec: parseTimestampToSeconds(startStr), endSec: parseTimestampToSeconds(endStr), text, ttsVoice: 'base:' + (parsed.length % 2 === 0 ? 'Piseth' : 'Sreymom'), status: 'រង់ចាំ', statusKind: 'idle', hasAudio: false, fitMode: 'natural', speed: 1, reverb: 0, echo: 0, echoCount: 0 }); }); if (!parsed.length){ showNotification('SRT មិនត្រឹមត្រូវ'); return; } parsed.sort((a,b) => a.startSec - b.startSec); parsed.forEach((s, i) => { s.id = i + 1; }); subtitles = parsed; selectedRowIndex = 0; renderSubtitles(); showNotification('នាំចូល ' + parsed.length + ' ជួរ!'); }
+function selectRow(i){ if (i < 0 || i >= subtitles.length) return; selectedRowIndex = i; renderSubtitles(); const v = document.getElementById('mainVideoPlayer'); if (v.src && subtitles[i].startSec != null) v.currentTime = subtitles[i].startSec; }
+function updateSubText(id, text){ const s = subtitles.find(x => x.id === id); if (!s) return; s.text = text; const c = audioCache.get(id); if (c && !c.isManual){ if (c.urls) c.urls.forEach(u => { try { URL.revokeObjectURL(u); } catch(e){} }); audioCache.delete(id); s.status = 'រង់ចាំ'; s.statusKind = 'idle'; s.hasAudio = false; } renderSubtitles(); }
+function updateSubTime(id, field, val){ const s = subtitles.find(x => x.id === id); if (!s) return; s[field] = val; s[field + 'Sec'] = parseTimestampToSeconds(val); if (s.endSec < s.startSec) s.endSec = s.startSec; }
+function updateSubVoice(id, voiceId){ const s = subtitles.find(x => x.id === id); if (!s) return; s.ttsVoice = voiceId; const c = audioCache.get(id); if (c && !c.isManual){ if (c.urls) c.urls.forEach(u => { try { URL.revokeObjectURL(u); } catch(e){} }); audioCache.delete(id); s.status = 'រង់ចាំ'; s.statusKind = 'idle'; s.hasAudio = false; } renderSubtitles(); }
+function openAddModal(){ document.getElementById('subtitleModalTitle').innerText = 'Add'; document.getElementById('editSubtitleId').value = ''; document.getElementById('subText').value = ''; const v = document.getElementById('mainVideoPlayer'); document.getElementById('subStart').value = formatSRTTime(v.currentTime || 0); document.getElementById('subEnd').value = formatSRTTime((v.currentTime || 0) + 2); document.getElementById('subVoice').innerHTML = buildVoiceSelectHtml('base:Piseth'); openModal('subtitleModal'); }
+function fillFromVideo(id){ document.getElementById(id).value = formatSRTTime(document.getElementById('mainVideoPlayer').currentTime || 0); }
+function saveSubtitle(){ const start = document.getElementById('subStart').value.trim(), end = document.getElementById('subEnd').value.trim(); const text = document.getElementById('subText').value.trim(), voice = document.getElementById('subVoice').value; if (!text){ showNotification('បញ្ចូលអត្ថបទ'); return; } const ids = subtitles.map(s => s.id); const nid = subtitles.length ? Math.max(...ids) + 1 : 1; subtitles.push({ id: nid, start, end, startSec: parseTimestampToSeconds(start), endSec: parseTimestampToSeconds(end), text, ttsVoice: voice, status: 'រង់ចាំ', statusKind: 'idle', hasAudio: false, fitMode: 'natural', speed: 1, reverb: 0, echo: 0, echoCount: 0 }); subtitles.sort((a,b) => a.startSec - b.startSec); subtitles.forEach((s, i) => { s.id = i + 1; }); renderSubtitles(); closeModal('subtitleModal'); }
+function deleteSelectedSubtitle(){ if (!subtitles.length) return; if (!confirm('លុប?')) return; const s = subtitles[selectedRowIndex]; const c = audioCache.get(s.id); if (c && c.urls) c.urls.forEach(u => { try { URL.revokeObjectURL(u); } catch(e){} }); audioCache.delete(s.id); subtitles.splice(selectedRowIndex, 1); subtitles.forEach((s, i) => { s.id = i + 1; }); if (selectedRowIndex >= subtitles.length) selectedRowIndex = Math.max(0, subtitles.length - 1); renderSubtitles(); }
+function clearAllSubtitles(){ if (!subtitles.length) return; if (!confirm('លុបទាំងអស់?')) return; if (srtPlayer.playing) srtStop(); audioCache.forEach(v => { if (v.urls) v.urls.forEach(u => { try { URL.revokeObjectURL(u); } catch(e){} }); }); audioCache.clear(); subtitles = []; folderQueue = { files: [], nextIndex: 0, folderName: '', active: false }; renderSubtitles(); }
+function onRowHover(i){ if (srtPlayer.playing) return; if (!document.getElementById('hoverAutoplay').checked) return; clearTimeout(hoverTimer); hoverTimer = setTimeout(() => playRowWithFX(i), 320); }
+function onRowLeave(){ clearTimeout(hoverTimer); }
+
+/* EXPORT */
+function exportSRT(){ if (!subtitles.length) return; const sorted = subtitles.slice().sort((a,b) => a.startSec - b.startSec); let out = ''; sorted.forEach((s, i) => { out += (i+1) + '\n' + s.start + ' --> ' + s.end + '\n' + s.text + '\n\n'; }); downloadBlob(out, 'dubify.srt', 'text/plain;charset=utf-8'); }
+function downloadBlob(content, name, mime){ const b = new Blob([content], { type: mime }); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = name; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(() => URL.revokeObjectURL(u), 500); }
+
+/* PROJECT */
+function saveProject(){
+  try {
+    localStorage.setItem('dubify_project', JSON.stringify({
+      subtitles, overlays, videoFx, showSubtitleOnVideo, autoGapFill, skipIntroDelay, srtVolume,
+      translateFrom, translateTo, gtLangCode, gtVoiceStyle,
+      ducking: { enabled: document.getElementById('duckingEnabled').checked, depth: document.getElementById('duckingDepth').value, pre: document.getElementById('preDuck').value, post: document.getElementById('postDuck').value, sync: document.getElementById('ttsSyncEnabled').checked },
+      resolution: document.getElementById('resolutionSelect').value, fillMode: document.getElementById('fillModeSelect').value,
+      savedAt: Date.now()
+    }));
+    showNotification('រក្សាទុក ✓');
+  } catch(e){ showNotification('បរាជ័យ'); }
+}
+function loadProject(){
+  try {
+    const raw = localStorage.getItem('dubify_project'); if (!raw){ showNotification('គ្មានគម្រោង'); return; }
+    const d = JSON.parse(raw);
+    if (d.subtitles) subtitles = d.subtitles.map((s, i) => ({ fitMode:'natural', speed:1, reverb:0, echo:0, echoCount:0, ...s, id:i+1 }));
+    if (d.overlays) overlays = d.overlays;
+    if (d.videoFx) videoFx = Object.assign(videoFx, d.videoFx);
+    if (typeof d.showSubtitleOnVideo === 'boolean') showSubtitleOnVideo = d.showSubtitleOnVideo;
+    if (typeof d.autoGapFill === 'boolean'){ autoGapFill = d.autoGapFill; const btn = document.getElementById('autoGapBtn'), icon = document.getElementById('autoGapIcon'), text = document.getElementById('autoGapText'); if (autoGapFill){ btn.className = 'flex items-center space-x-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition shadow cursor-pointer'; icon.setAttribute('data-lucide', 'timer'); text.textContent = 'Auto-Gap: ON'; } else { btn.className = 'flex items-center space-x-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/60 px-3 py-1.5 rounded-lg text-xs font-semibold transition shadow cursor-pointer'; icon.setAttribute('data-lucide', 'timer-off'); text.textContent = 'Auto-Gap: OFF'; } }
+    if (typeof d.skipIntroDelay === 'boolean'){ skipIntroDelay = d.skipIntroDelay; const btn = document.getElementById('skipIntroBtn'), icon = document.getElementById('skipIntroIcon'), text = document.getElementById('skipIntroText'); if (skipIntroDelay){ btn.className = 'flex items-center space-x-1 bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition shadow cursor-pointer'; icon.setAttribute('data-lucide', 'skip-forward'); text.textContent = 'Skip Intro: ON'; } }
+    if (typeof d.srtVolume === 'number'){ srtVolume = d.srtVolume; updateSrtVolumeUI(); }
+    if (d.translateFrom) translateFrom = d.translateFrom;
+    if (d.translateTo) translateTo = d.translateTo;
+    if (d.gtLangCode){ gtLangCode = d.gtLangCode; const lang = LANGUAGES.find(l => l.code === gtLangCode); if (lang){ document.getElementById('gtLang').value = gtLangCode; document.getElementById('gtLangDisplay').value = lang.km + ' (' + lang.en + ')'; } }
+    if (d.gtVoiceStyle){ setGtVoiceStyle(d.gtVoiceStyle); }
+    if (d.resolution){ document.getElementById('resolutionSelect').value = d.resolution; applyResolution(); }
+    if (d.fillMode){ document.getElementById('fillModeSelect').value = d.fillMode; applyFillMode(); }
+    if (d.ducking){ document.getElementById('duckingEnabled').checked = d.ducking.enabled !== false; document.getElementById('duckingDepth').value = d.ducking.depth || 70; document.getElementById('duckingDepthVal').textContent = (d.ducking.depth || 70) + '%'; document.getElementById('preDuck').value = d.ducking.pre || 0.3; document.getElementById('postDuck').value = d.ducking.post || 0.5; document.getElementById('ttsSyncEnabled').checked = d.ducking.sync !== false; }
+    if (videoFx.flipH){ document.getElementById('videoContainer').classList.add('flip-h'); document.getElementById('flipHBtn').classList.add('active'); }
+    if (videoFx.flipV){ document.getElementById('videoContainer').classList.add('flip-v'); document.getElementById('flipVBtn').classList.add('active'); }
+    document.getElementById('hslHue').value = videoFx.hue || 0; document.getElementById('hslSaturation').value = videoFx.saturation || 100;
+    document.getElementById('hslBrightness').value = videoFx.brightness || 100; document.getElementById('hslContrast').value = videoFx.contrast || 100;
+    document.getElementById('hslBlur').value = videoFx.blur || 0; applyHSL();
+    if (!showSubtitleOnVideo){ toggleSubtitleOverlay(); }
+    renderSubtitles(); renderOverlays(); showNotification('ផ្ទុក ✓');
+  } catch(e){ showNotification('បរាជ័យ'); }
+}
+
+/* MODAL */
+function openModal(id){ document.getElementById(id).classList.remove('hidden'); document.getElementById(id).classList.add('flex'); }
+function closeModal(id){ document.getElementById(id).classList.remove('flex'); document.getElementById(id).classList.add('hidden'); if (id === 'translateModal'){ translateLangOpen = null; } }
+document.addEventListener('click', e => { if (translateLangOpen && !e.target.closest('#langFromDropdown') && !e.target.closest('#langFromSearch') && !e.target.closest('#langToDropdown') && !e.target.closest('#langToSearch')){ toggleLangDropdown(translateLangOpen); } });
+
+/* KEYBOARD */
+document.addEventListener('keydown', e => {
+  const inInput = ['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName);
+  if (e.ctrlKey && e.key === 's'){ e.preventDefault(); saveProject(); return; }
+  if (e.ctrlKey && e.key === 'g'){ e.preventDefault(); generateAllTTS(); return; }
+  if (e.ctrlKey && e.key === 'p'){ e.preventDefault(); toggleSrtPlay(); return; }
+  if (e.ctrlKey && e.key === 't'){ e.preventDefault(); openTranslateModal(); return; }
+  if (e.key === 'Escape'){
+    if (gtLangDropdownOpen){ toggleGtLangDropdown(); return; }
+    if (translateLangOpen){ toggleLangDropdown(translateLangOpen); return; }
+    if (videoExpanded){ toggleVideoExpand(); return; }
+    ['settingsModal','subtitleModal','fxModal','translateModal'].forEach(closeModal);
+    if (!document.getElementById('overlayModal').classList.contains('hidden')) closeOverlayModal();
+    return;
+  }
+  if (inInput) return;
+  if (e.key === ' '){ e.preventDefault(); togglePlay(); }
+  if (e.key === 'Delete'){ deleteSelectedSubtitle(); }
+  if (e.key === 'f' || e.key === 'F'){ e.preventDefault(); toggleVideoExpand(); }
+  if (e.key === 'h' || e.key === 'H'){ e.preventDefault(); toggleFlip('h'); }
+  if (e.key === 'v' || e.key === 'V'){ e.preventDefault(); toggleFlip('v'); }
+  if (e.key === 'a' || e.key === 'A'){ e.preventDefault(); toggleAutoGap(); }
+  if (e.key === 'i' || e.key === 'I'){ e.preventDefault(); toggleSkipIntro(); }
+  if (e.key === '=' || e.key === '+'){ e.preventDefault(); srtVolumeUp(); }
+  if (e.key === '-' || e.key === '_'){ e.preventDefault(); srtVolumeDown(); }
+});
+
+document.getElementById('speechRate').addEventListener('input', e => document.getElementById('speechRateVal').innerText = parseFloat(e.target.value).toFixed(2));
+document.getElementById('duckingDepth').addEventListener('input', e => document.getElementById('duckingDepthVal').innerText = e.target.value + '%');
+document.getElementById('gtSpeed').addEventListener('change', updateGtStyleInfo);
+document.getElementById('fxSpeed').addEventListener('input', e => document.getElementById('fxSpeedVal').innerText = parseFloat(e.target.value).toFixed(2) + 'x');
+document.getElementById('fxReverb').addEventListener('input', e => document.getElementById('fxReverbVal').innerText = e.target.value + '%');
+document.getElementById('fxEcho').addEventListener('input', e => document.getElementById('fxEchoVal').innerText = e.target.value + '%');
+document.getElementById('fxEchoCount').addEventListener('input', e => document.getElementById('fxEchoCountVal').innerText = e.target.value);
+
+/* INIT */
+window.addEventListener('load', () => {
+  buildAgeVoiceGrid(); buildFontDropdown(); renderSubtitles(); renderOverlays();
+  updateApiKeyStatus(); updateRangeInfo(); updateFolderQueueUI();
+  document.getElementById('baseVoicePiseth').classList.add('selected');
+  currentVoice = { type:'base', id:'Piseth' };
+  const savedKey = localStorage.getItem('dubify_gemini_key');
+  if (savedKey){ document.getElementById('apiKeyInput').value = savedKey; apiKey = savedKey; }
+  applyResolution(); applyFillMode(); applyHSL();
+  updateSrtVolumeUI();
+  document.getElementById('translateLangCount').textContent = '~' + (LANGUAGES.length - 1) + ' ភាសា';
+  updateLangInputs();
+  const initLang = LANGUAGES.find(l => l.code === gtLangCode);
+  if (initLang){ document.getElementById('gtLang').value = gtLangCode; document.getElementById('gtLangDisplay').value = initLang.km + ' (' + initLang.en + ')'; }
+  setGtVoiceStyle('default');
+  document.getElementById('ttsModeSelect').value = 'directurl';
+  document.getElementById('activeEngine').textContent = '✓ directurl';
+  logChain('Ready — 🎬 Direct Stream + 🎤 Voice Style + 🌐 Multi-Lang', 'success');
+  document.body.addEventListener('click', function initAudio(){ getAudioCtx(); document.body.removeEventListener('click', initAudio); }, { once: true });
+});
+
+window.addEventListener('beforeunload', () => {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') stopRecording();
+  stopRecordStream();
+});
+
+['dragover','drop'].forEach(ev => { window.addEventListener(ev, e => { if (!e.target.closest('#videoContainer')) e.preventDefault(); }); });
+</script>
+</body>
+</html>
