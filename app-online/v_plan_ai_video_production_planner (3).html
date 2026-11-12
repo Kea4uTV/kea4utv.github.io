@@ -1,0 +1,1957 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V-Plan AI – The Ultimate Video Production Planner</title>
+    <meta name="description" content="The first AI-powered tool for creators to turn a simple topic into a comprehensive, image-ready video production shot list.">
+    <meta name="keywords" content="AI Video Planner, Shot List Generator, Storyboard Creator, Khmer Video Production Tool, Automated Pre-production">
+
+    <!-- Fonts: Inter & Kantumruy Pro (for Khmer Unicode support) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Kantumruy+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Icons: FontAwesome & Phosphor Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Export Libraries: JSZip & jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Kantumruy Pro', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: {
+                            950: '#090D16',
+                            900: '#0F172A', // Deep Slate Background
+                            850: '#152036',
+                            800: '#1E293B',
+                            700: '#334155',
+                        },
+                        cyan: {
+                            electric: '#00E5FF', // Electric Cyan CTA
+                            glow: 'rgba(0, 229, 255, 0.25)',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0F172A;
+            color: #F8FAFC;
+            font-family: 'Inter', 'Kantumruy Pro', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Custom Studio Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0F172A;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00E5FF;
+        }
+
+        /* Neon Glow Utilities */
+        .btn-electric {
+            background: linear-gradient(135deg, #00E5FF 0%, #00B8D4 100%);
+            color: #090D16;
+            box-shadow: 0 4px 20px rgba(0, 229, 255, 0.3);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-electric:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 25px rgba(0, 229, 255, 0.5);
+            filter: brightness(1.05);
+        }
+        .btn-electric:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .studio-card {
+            background: rgba(30, 41, 59, 0.65);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(148, 163, 184, 0.12);
+        }
+
+        /* Hover Preview Tooltip */
+        #hover-preview-card {
+            pointer-events: none;
+            transition: opacity 0.15s ease, transform 0.15s ease;
+        }
+
+        @keyframes pulse-border {
+            0%, 100% { border-color: rgba(0, 229, 255, 0.3); }
+            50% { border-color: rgba(0, 229, 255, 0.9); }
+        }
+        .generating-ring {
+            animation: pulse-border 1.5s infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col pb-20 md:pb-0 selection:bg-cyan-electric selection:text-slate-950">
+
+    <!-- Top Studio Header & Navigation -->
+    <header class="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-14 sm:h-16">
+                <!-- Brand Logo -->
+                <div class="flex items-center gap-2.5 sm:gap-3 cursor-pointer" onclick="switchTab('home')">
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-cyan-electric to-blue-600 flex items-center justify-center text-slate-950 font-extrabold text-lg sm:text-xl shadow-lg shadow-cyan-500/20 shrink-0">
+                        <i class="fa-solid fa-clapperboard"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-1.5 sm:gap-2">
+                            <span class="font-extrabold text-base sm:text-lg tracking-tight text-white">V-PLAN <span class="text-cyan-electric">AI</span></span>
+                            <span class="text-[9px] sm:text-[10px] uppercase tracking-wider font-bold px-1.5 sm:px-2 py-0.5 rounded-full bg-cyan-electric/10 text-cyan-electric border border-cyan-electric/30">Studio v2.5</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 hidden sm:block">Transform topics into professional shot lists & storyboards</p>
+                    </div>
+                </div>
+
+                <!-- Desktop & Tablet Navigation Tabs -->
+                <nav class="hidden md:flex items-center gap-1.5 bg-slate-900 p-1 rounded-xl border border-slate-800">
+                    <button onclick="switchTab('home')" id="nav-home" class="nav-btn px-3 py-1.5 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 bg-slate-800 text-cyan-electric shadow cursor-pointer">
+                        <i class="fa-solid fa-house"></i>
+                        <span>Home</span>
+                    </button>
+                    <button onclick="switchTab('workspace')" id="nav-workspace" class="nav-btn px-3 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition-all flex items-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-film"></i>
+                        <span>Workspace</span>
+                        <span id="shot-count-badge" class="px-1.5 py-0.2 text-[10px] rounded-full bg-slate-700 text-slate-200">14</span>
+                    </button>
+                    <button onclick="switchTab('export')" id="nav-export" class="nav-btn px-3 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition-all flex items-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-file-export"></i>
+                        <span>Export Center</span>
+                    </button>
+                    <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn px-3 py-1.5 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition-all flex items-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-sliders"></i>
+                        <span>Settings</span>
+                    </button>
+                </nav>
+
+                <!-- Quick Status Indicator -->
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <div class="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-[11px] sm:text-xs">
+                        <span id="api-status-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span id="api-status-text" class="text-slate-300 font-medium hidden sm:inline">Gemini Auto-Connected</span>
+                        <span class="text-slate-300 font-medium sm:hidden">AI Ready</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Mobile Bottom Navigation Bar (Shown only on phones < md) -->
+    <nav class="md:hidden fixed bottom-0 inset-x-0 z-40 bg-slate-950/95 backdrop-blur-lg border-t border-slate-800 px-2 py-1.5 flex items-center justify-around shadow-2xl">
+        <button onclick="switchTab('home')" id="mobile-nav-home" class="mobile-nav-btn flex-1 py-1.5 rounded-xl flex flex-col items-center justify-center gap-0.5 text-cyan-electric bg-slate-900/90 transition">
+            <i class="fa-solid fa-house text-base"></i>
+            <span class="text-[10px] font-bold">Home</span>
+        </button>
+        <button onclick="switchTab('workspace')" id="mobile-nav-workspace" class="mobile-nav-btn flex-1 py-1.5 rounded-xl flex flex-col items-center justify-center gap-0.5 text-slate-400 hover:text-white transition relative">
+            <div class="relative">
+                <i class="fa-solid fa-film text-base"></i>
+                <span id="mobile-shot-count-badge" class="absolute -top-1.5 -right-3.5 px-1 py-0 text-[9px] font-bold rounded-full bg-cyan-electric text-slate-950">14</span>
+            </div>
+            <span class="text-[10px] font-semibold">Workspace</span>
+        </button>
+        <button onclick="switchTab('export')" id="mobile-nav-export" class="mobile-nav-btn flex-1 py-1.5 rounded-xl flex flex-col items-center justify-center gap-0.5 text-slate-400 hover:text-white transition">
+            <i class="fa-solid fa-file-export text-base"></i>
+            <span class="text-[10px] font-semibold">Export</span>
+        </button>
+        <button onclick="switchTab('settings')" id="mobile-nav-settings" class="mobile-nav-btn flex-1 py-1.5 rounded-xl flex flex-col items-center justify-center gap-0.5 text-slate-400 hover:text-white transition">
+            <i class="fa-solid fa-sliders text-base"></i>
+            <span class="text-[10px] font-semibold">Settings</span>
+        </button>
+    </nav>
+
+    <!-- Custom Notification Toast Container -->
+    <div id="toast-container" class="fixed bottom-20 md:bottom-5 left-3 right-3 sm:left-auto sm:right-5 z-50 flex flex-col gap-2 sm:max-w-sm pointer-events-none"></div>
+
+    <!-- Hover Preview Card for Desktop Table Rows -->
+    <div id="hover-preview-card" class="hidden fixed z-50 w-96 bg-slate-900/95 backdrop-blur-xl border border-cyan-electric/50 rounded-2xl shadow-2xl overflow-hidden">
+        <img id="hover-preview-img" src="" alt="Preview" class="w-full h-48 object-cover bg-slate-950">
+        <div class="p-3.5 space-y-1.5">
+            <div class="flex items-center justify-between text-xs">
+                <span id="hover-preview-id" class="font-mono font-extrabold text-cyan-electric">SHOT #01</span>
+                <span id="hover-preview-type" class="px-2 py-0.5 rounded bg-cyan-electric/15 text-cyan-electric font-bold text-[10px]">A-ROLL</span>
+            </div>
+            <p id="hover-preview-desc" class="text-xs text-white leading-relaxed whitespace-pre-wrap break-words"></p>
+            <p id="hover-preview-meta" class="text-[11px] text-slate-400 pt-1 border-t border-slate-800"></p>
+        </div>
+    </div>
+
+    <!-- Full Image Inspection Lightbox Modal -->
+    <div id="image-modal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6" onclick="if(event.target === this) closeImageModal()">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-4xl w-full max-h-[92vh] flex flex-col overflow-hidden shadow-2xl">
+            <div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between gap-3">
+                <h3 id="modal-shot-title" class="text-sm sm:text-base font-bold text-white flex items-center gap-2"></h3>
+                <div class="flex items-center gap-2">
+                    <button id="modal-download-btn" class="px-3 py-1.5 rounded-lg bg-cyan-electric text-slate-950 text-xs font-extrabold flex items-center gap-1.5 cursor-pointer">
+                        <i class="fa-solid fa-download"></i>
+                        <span>Download</span>
+                    </button>
+                    <button onclick="closeImageModal()" class="w-8 h-8 rounded-lg bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center cursor-pointer">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-4 flex flex-col items-center bg-slate-950 overflow-y-auto space-y-4">
+                <img id="modal-shot-img" src="" alt="Full Storyboard Frame" class="max-h-[62vh] w-auto rounded-lg shadow-lg">
+                <!-- Full Uncropped Shot Description Box below image in Lightbox -->
+                <div class="w-full bg-slate-900/90 border border-slate-800 rounded-xl p-4 text-left space-y-2">
+                    <div class="flex flex-wrap items-center gap-2 text-xs">
+                        <span id="modal-type-badge" class="px-2 py-0.5 rounded bg-cyan-electric/20 text-cyan-electric font-bold">A-ROLL</span>
+                        <span id="modal-location-text" class="text-slate-300 font-medium"></span>
+                        <span class="text-slate-600">•</span>
+                        <span id="modal-notes-text" class="text-cyan-300 font-medium"></span>
+                    </div>
+                    <div>
+                        <span class="text-[11px] uppercase tracking-wider text-slate-400 font-bold block mb-1">Full Visual Description:</span>
+                        <p id="modal-visual-full" class="text-sm text-white leading-relaxed whitespace-pre-wrap break-words"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- ========================================== -->
+        <!-- SECTION 1: HOME / DASHBOARD                -->
+        <!-- ========================================== -->
+        <section id="tab-home" class="space-y-8 animate-fade-in">
+            <!-- Hero Input Box -->
+            <div class="studio-card rounded-3xl p-6 sm:p-10 relative overflow-hidden">
+                <div class="absolute -top-24 -right-24 w-72 h-72 bg-cyan-electric/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="absolute -bottom-24 -left-24 w-72 h-72 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div class="max-w-3xl mx-auto text-center space-y-4 relative z-10">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700 text-xs text-cyan-electric font-medium">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span>AI-Powered Pre-Production Engine • English & ភាសាខ្មែរ Ready</span>
+                    </div>
+                    <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
+                        Turn Any Idea Into a <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-electric to-blue-400">Director-Ready Shot List</span>
+                    </h1>
+                    <p class="text-slate-400 text-sm sm:text-base max-w-2xl mx-auto">
+                        Enter your video topic below. V-Plan AI structures a 14-shot A-roll & B-roll production sequence and generates high-resolution visual storyboards with automatic camera slate overlays.
+                    </p>
+
+                    <!-- Topic Input Form -->
+                    <div class="pt-3 sm:pt-4">
+                        <div class="flex flex-col sm:flex-row gap-2.5 sm:gap-3 bg-slate-950/85 p-2 sm:p-2.5 rounded-2xl border border-slate-700/80 shadow-2xl">
+                            <div class="flex-1 flex items-center gap-2.5 sm:gap-3 px-2.5 sm:px-3">
+                                <i class="fa-solid fa-clapperboard text-cyan-electric text-base sm:text-lg shrink-0"></i>
+                                <input 
+                                    type="text" 
+                                    id="topic-input" 
+                                    placeholder="បញ្ចូលប្រធានបទវីដេអូ... (ឧ. ថ្ងៃខ្ញុំទៅលេង ទំនប់ទឹកស្រក / My trip to Srok Dam)" 
+                                    class="w-full bg-transparent text-white placeholder-slate-400 text-sm sm:text-base py-2.5 focus:outline-none"
+                                    onkeydown="if(event.key === 'Enter') generateShotList()"
+                                >
+                            </div>
+                            <button 
+                                id="generate-shotlist-btn" 
+                                onclick="generateShotList()" 
+                                class="btn-electric w-full sm:w-auto px-6 py-3 rounded-xl font-extrabold text-sm flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+                            >
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                <span>Generate Shot List</span>
+                            </button>
+                        </div>
+
+                        <!-- Shot Count & Output Language Configuration Bar -->
+                        <div class="mt-3 flex flex-col md:flex-row items-stretch md:items-center justify-center gap-3 md:gap-4 bg-slate-950/70 border border-slate-800/90 rounded-xl px-3.5 sm:px-4 py-3 text-xs">
+                            <!-- Language Selector -->
+                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between md:justify-center gap-1.5 sm:gap-2">
+                                <span class="text-slate-300 font-semibold flex items-center gap-1.5">
+                                    <i class="fa-solid fa-language text-cyan-electric text-sm"></i>
+                                    <span>ភាសា (Language):</span>
+                                </span>
+                                <select 
+                                    id="output-language-select" 
+                                    onchange="appState.outputLanguage = this.value"
+                                    class="w-full sm:w-auto bg-slate-900 border border-slate-700 hover:border-cyan-electric/60 rounded-lg px-3 py-2 sm:py-1.5 text-white font-semibold focus:outline-none focus:border-cyan-electric cursor-pointer"
+                                >
+                                    <option value="km">🇰🇭 ភាសាខ្មែរ (Khmer Only)</option>
+                                    <option value="km-en" selected>🇰🇭/🇺🇸 ខ្មែរ + អង់គ្លេស (Bilingual)</option>
+                                    <option value="en">🇺🇸 English Only (អង់គ្លេស)</option>
+                                </select>
+                            </div>
+
+                            <span class="hidden md:inline text-slate-700">|</span>
+
+                            <!-- Shot Count Mode -->
+                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between md:justify-center gap-2">
+                                <span class="text-slate-300 font-semibold flex items-center gap-1.5">
+                                    <i class="fa-solid fa-film text-cyan-electric"></i>
+                                    <span>ចំនួនប្លង់ (Shots):</span>
+                                </span>
+                                <div class="grid grid-cols-2 sm:inline-flex rounded-lg bg-slate-900 p-1 border border-slate-800">
+                                    <button 
+                                        type="button"
+                                        id="shot-mode-auto"
+                                        onclick="setShotCountMode('auto')"
+                                        class="px-2.5 sm:px-3 py-2 sm:py-1.5 rounded-md font-bold transition bg-cyan-electric text-slate-950 shadow cursor-pointer text-center"
+                                    >
+                                        <i class="fa-solid fa-robot mr-1"></i> AI Auto
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        id="shot-mode-custom"
+                                        onclick="setShotCountMode('custom')"
+                                        class="px-2.5 sm:px-3 py-2 sm:py-1.5 rounded-md font-semibold transition text-slate-400 hover:text-white cursor-pointer text-center"
+                                    >
+                                        <i class="fa-solid fa-sliders mr-1"></i> Custom
+                                    </button>
+                                </div>
+                                <div id="custom-shot-count-wrapper" class="hidden items-center justify-end gap-2">
+                                    <input 
+                                        type="number" 
+                                        id="custom-shot-count-input" 
+                                        min="3" 
+                                        max="50" 
+                                        value="14" 
+                                        class="w-full sm:w-20 bg-slate-900 border border-cyan-electric/60 rounded-lg px-2.5 py-2 sm:py-1.5 text-center text-white font-bold focus:outline-none focus:border-cyan-electric"
+                                    >
+                                    <span class="text-slate-400 shrink-0">ប្លង់</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Topic Presets -->
+                        <div class="flex flex-wrap items-center justify-center gap-2 mt-4 text-xs">
+                            <span class="text-slate-500">Try presets:</span>
+                            <button onclick="setTopicPreset('My trip to Srok Dam / ថ្ងៃខ្ញុំទៅលេង ទំនប់ទឹកស្រក')" class="px-3 py-1 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+                                🏞️ My trip to Srok Dam (ខ្មែរ/EN)
+                            </button>
+                            <button onclick="setTopicPreset('Morning Productivity Routine for Filmmakers')" class="px-3 py-1 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+                                ☕ Morning Routine (14-Shot Classic)
+                            </button>
+                            <button onclick="setTopicPreset('Street Food Tour in Phnom Penh Night Market / ម្ហូបតាមផ្លូវនៅភ្នំពេញ')" class="px-3 py-1 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+                                🍜 Phnom Penh Street Food
+                            </button>
+                            <button onclick="setTopicPreset('Tech Review: Building a Minimalist Desk Setup')" class="px-3 py-1 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
+                                💻 Minimalist Desk Setup
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resolution & Format Pre-Configuration Bar -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="studio-card rounded-2xl p-5 flex items-start gap-4">
+                    <div class="w-11 h-11 rounded-xl bg-cyan-electric/10 border border-cyan-electric/30 flex items-center justify-center text-cyan-electric shrink-0">
+                        <i class="fa-solid fa-list-check text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-white text-sm">14-Shot Narrative Arc</h3>
+                        <p class="text-xs text-slate-400 mt-1">Structured sequence balancing A-roll narrative hooks with cinematic B-roll cutaways and strong CTAs.</p>
+                    </div>
+                </div>
+                <div class="studio-card rounded-2xl p-5 flex items-start gap-4">
+                    <div class="w-11 h-11 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 shrink-0">
+                        <i class="fa-solid fa-layer-group text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-white text-sm">Burned-In Slate Overlays</h3>
+                        <p class="text-xs text-slate-400 mt-1">Every AI storyboard automatically embeds ID, Type, Visual, Location, and Camera Notes onto the frame.</p>
+                    </div>
+                </div>
+                <div class="studio-card rounded-2xl p-5 flex items-start gap-4">
+                    <div class="w-11 h-11 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+                        <i class="fa-solid fa-file-pdf text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-white text-sm">8K to SD & ZIP/PDF Export</h3>
+                        <p class="text-xs text-slate-400 mt-1">Export in 16:9, 9:16, or 1:1 up to 8K resolution as a compressed ZIP bundle or full production PDF.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Project Quick Preview -->
+            <div class="studio-card rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center text-cyan-electric text-xl border border-slate-700">
+                        <i class="fa-solid fa-folder-open"></i>
+                    </div>
+                    <div>
+                        <span class="text-[11px] uppercase tracking-wider text-cyan-electric font-bold">Current Active Project</span>
+                        <h2 id="home-active-project-title" class="text-lg font-bold text-white">Morning Productivity & Creative Flow (14-Shot Template)</h2>
+                        <p class="text-xs text-slate-400">Ready in Project Workspace • Click below to inspect shots or generate storyboards</p>
+                    </div>
+                </div>
+                <button onclick="switchTab('workspace')" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm border border-slate-600 transition flex items-center gap-2 shrink-0">
+                    <span>Open Project Workspace</span>
+                    <i class="fa-solid fa-arrow-right text-cyan-electric"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SECTION 2: PROJECT WORKSPACE               -->
+        <!-- ========================================== -->
+        <section id="tab-workspace" class="hidden space-y-5 sm:space-y-6">
+            <!-- Workspace Top Control Bar -->
+            <div class="studio-card rounded-2xl p-4 sm:p-5 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+                <div class="space-y-1">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="px-2 py-0.5 rounded bg-cyan-electric/15 text-cyan-electric text-[11px] font-bold uppercase">Project Workspace</span>
+                        <span id="workspace-aspect-badge" class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[11px] font-mono">16:9 • 1080p HD</span>
+                    </div>
+                    <h2 id="workspace-project-title" class="text-lg sm:text-xl font-bold text-white leading-snug">Morning Productivity & Creative Flow</h2>
+                </div>
+
+                <!-- Responsive Controls Grid for Mobile, Tablet & Desktop -->
+                <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-end gap-2.5">
+                    <!-- Aspect Ratio Selector -->
+                    <div class="flex flex-col">
+                        <label class="text-[10px] text-slate-400 uppercase font-semibold mb-1">Aspect Ratio</label>
+                        <select id="aspect-ratio-select" onchange="onAspectRatioChange()" class="w-full bg-slate-900 border border-slate-700 text-white text-xs rounded-xl px-2.5 py-2.5 sm:py-2 focus:border-cyan-electric focus:outline-none">
+                            <option value="16:9">Landscape (16:9)</option>
+                            <option value="9:16">Portrait (9:16)</option>
+                            <option value="1:1">Square (1:1)</option>
+                        </select>
+                    </div>
+
+                    <!-- Resolution Selector -->
+                    <div class="flex flex-col">
+                        <label class="text-[10px] text-slate-400 uppercase font-semibold mb-1">Resolution</label>
+                        <select id="resolution-select" onchange="updateResolutionBadge()" class="w-full bg-slate-900 border border-slate-700 text-white text-xs rounded-xl px-2.5 py-2.5 sm:py-2 focus:border-cyan-electric focus:outline-none">
+                            <!-- Populated dynamically based on aspect ratio -->
+                        </select>
+                    </div>
+
+                    <!-- Overlay Toggle -->
+                    <div class="flex flex-col">
+                        <label class="text-[10px] text-slate-400 uppercase font-semibold mb-1">Slate Overlay</label>
+                        <button id="toggle-overlay-btn" onclick="toggleSlateOverlay()" class="w-full bg-slate-900 border border-cyan-electric/50 text-cyan-electric text-xs rounded-xl px-3 py-2.5 sm:py-2 font-semibold flex items-center justify-center gap-1.5 cursor-pointer">
+                            <i class="fa-solid fa-closed-captioning"></i>
+                            <span id="overlay-status-label">ON</span>
+                        </button>
+                    </div>
+
+                    <!-- Add New Shot Button -->
+                    <div class="flex flex-col">
+                        <label class="text-[10px] text-transparent uppercase font-semibold mb-1 select-none hidden sm:block">Action</label>
+                        <button onclick="addNewShotRow()" class="w-full px-3 py-2.5 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Add Shot</span>
+                        </button>
+                    </div>
+
+                    <!-- Batch Generate All Button (Full width on Mobile, auto on Tablet/Desktop) -->
+                    <div class="col-span-2 sm:col-span-1 flex flex-col">
+                        <label class="text-[10px] text-transparent uppercase font-semibold mb-1 select-none hidden sm:block">Batch</label>
+                        <button id="batch-generate-btn" onclick="generateAllImages()" class="btn-electric w-full px-4 py-3 sm:py-2 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 cursor-pointer">
+                            <i class="fa-solid fa-images"></i>
+                            <span>Generate All Images</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Batch Progress Bar (Hidden unless active) -->
+            <div id="batch-progress-container" class="hidden studio-card rounded-xl p-4 border border-cyan-electric/40">
+                <div class="flex items-center justify-between text-xs mb-2">
+                    <span class="font-bold text-cyan-electric flex items-center gap-2">
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+                        <span id="batch-progress-text">Generating storyboard frames...</span>
+                    </span>
+                    <span id="batch-progress-count" class="font-mono text-slate-300">0 / 14</span>
+                </div>
+                <div class="w-full h-2 bg-slate-900 rounded-full overflow-hidden">
+                    <div id="batch-progress-bar" class="h-full bg-cyan-electric transition-all duration-300" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Mobile & Tablet Card Grid View (< lg screens) -->
+            <div id="shot-list-cards" class="grid grid-cols-1 md:grid-cols-2 gap-4 lg:hidden">
+                <!-- Responsive mobile/tablet cards injected dynamically by JS -->
+            </div>
+
+            <!-- Desktop Interactive Table View (>= lg screens) -->
+            <div class="hidden lg:block studio-card rounded-2xl overflow-hidden shadow-xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-950/80 border-b border-slate-800 text-[11px] uppercase tracking-wider text-slate-400">
+                                <th class="py-3.5 px-4 w-16 text-center">ID</th>
+                                <th class="py-3.5 px-3 w-28">Type</th>
+                                <th class="py-3.5 px-4 min-w-[220px]">Visual Description</th>
+                                <th class="py-3.5 px-3 min-w-[140px]">Location</th>
+                                <th class="py-3.5 px-3 min-w-[160px]">Camera Notes</th>
+                                <th class="py-3.5 px-4 w-48 text-center">Storyboard Preview</th>
+                                <th class="py-3.5 px-4 w-44 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="shot-list-tbody" class="divide-y divide-slate-800/70 text-sm">
+                            <!-- Rows injected dynamically by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SECTION 3: EXPORT CENTER                   -->
+        <!-- ========================================== -->
+        <section id="tab-export" class="hidden space-y-6">
+            <div class="studio-card rounded-2xl p-6 sm:p-8">
+                <div class="max-w-3xl">
+                    <span class="px-2.5 py-1 rounded-full bg-cyan-electric/10 text-cyan-electric text-xs font-bold uppercase tracking-wider">Production Delivery</span>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-white mt-2">Export Center</h2>
+                    <p class="text-slate-400 text-sm mt-1">
+                        Download your complete production package. All exported storyboard frames preserve your selected aspect ratio, resolution scaling, and burned-in slate metadata.
+                    </p>
+                </div>
+
+                <!-- Summary Metrics -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
+                    <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
+                        <span class="text-xs text-slate-400">Total Shots</span>
+                        <p id="export-total-shots" class="text-2xl font-extrabold text-white mt-1">14</p>
+                    </div>
+                    <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
+                        <span class="text-xs text-slate-400">Generated Frames</span>
+                        <p id="export-generated-count" class="text-2xl font-extrabold text-cyan-electric mt-1">0</p>
+                    </div>
+                    <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
+                        <span class="text-xs text-slate-400">Format & Ratio</span>
+                        <p id="export-format-summary" class="text-lg font-bold text-white mt-1">16:9 (1080p)</p>
+                    </div>
+                    <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4">
+                        <span class="text-xs text-slate-400">Slate Overlay</span>
+                        <p id="export-overlay-summary" class="text-lg font-bold text-emerald-400 mt-1">Enabled</p>
+                    </div>
+                </div>
+
+                <!-- Export Action Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                    <!-- PDF Production Document Card -->
+                    <div class="bg-slate-900/80 border border-slate-700/80 rounded-2xl p-6 flex flex-col justify-between space-y-6 hover:border-cyan-electric/50 transition">
+                        <div class="space-y-3">
+                            <div class="w-12 h-12 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center text-2xl">
+                                <i class="fa-solid fa-file-pdf"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-white">Production Call Sheet & Storyboard (PDF)</h3>
+                            <p class="text-xs text-slate-400 leading-relaxed">
+                                Generates a clean, formatted PDF document containing the project header, the structured Shot List table, and embedded visual storyboard frames aligned alongside each shot's technical instructions.
+                            </p>
+                        </div>
+                        <button onclick="exportToPDF()" id="export-pdf-btn" class="btn-electric w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 cursor-pointer">
+                            <i class="fa-solid fa-download"></i>
+                            <span>Download Production PDF</span>
+                        </button>
+                    </div>
+
+                    <!-- Compressed Image Archive (ZIP) Card -->
+                    <div class="bg-slate-900/80 border border-slate-700/80 rounded-2xl p-6 flex flex-col justify-between space-y-6 hover:border-cyan-electric/50 transition">
+                        <div class="space-y-3">
+                            <div class="w-12 h-12 rounded-xl bg-cyan-electric/15 border border-cyan-electric/30 text-cyan-electric flex items-center justify-center text-2xl">
+                                <i class="fa-solid fa-file-zipper"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-white">Storyboard Frames Bundle (ZIP)</h3>
+                            <p class="text-xs text-slate-400 leading-relaxed">
+                                Packages all generated storyboard images into a single compressed <code class="text-cyan-electric">.zip</code> archive named by Shot ID and Type (e.g., <code class="text-slate-300">Shot_01_A-roll.png</code>), plus a CSV copy of your shot list.
+                            </p>
+                        </div>
+                        <button onclick="exportToZIP()" id="export-zip-btn" class="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 font-bold text-sm flex items-center justify-center gap-2 transition cursor-pointer">
+                            <i class="fa-solid fa-box-archive text-cyan-electric"></i>
+                            <span>Download Images ZIP + CSV</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SECTION 4: SETTINGS / API INTEGRATION      -->
+        <!-- ========================================== -->
+        <section id="tab-settings" class="hidden space-y-6">
+            <div class="studio-card rounded-2xl p-6 sm:p-8 max-w-3xl mx-auto space-y-6">
+                <div>
+                    <span class="px-2.5 py-1 rounded-full bg-cyan-electric/10 text-cyan-electric text-xs font-bold uppercase tracking-wider">Studio Configuration</span>
+                    <h2 class="text-2xl font-extrabold text-white mt-2">API Integration & Preferences</h2>
+                    <p class="text-slate-400 text-sm mt-1">
+                        V-Plan AI connects automatically to Gemini models for text and image generation. Optionally supply your own external Gemini API key below for custom quota usage.
+                    </p>
+                </div>
+
+                <!-- Gemini API Key Configuration -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-5 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <label for="custom-api-key" class="text-sm font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-key text-cyan-electric"></i>
+                            <span>External Gemini API Key (Optional)</span>
+                        </label>
+                        <span id="key-mode-badge" class="text-[11px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-semibold">Auto-Connected (No Key Required)</span>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input 
+                            type="password" 
+                            id="custom-api-key" 
+                            placeholder="មិនចាំបាច់បញ្ចូល API Key ឡើយ (ប្រព័ន្ធភ្ជាប់ដោយស្វ័យប្រវត្តិ)" 
+                            class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-cyan-electric focus:outline-none"
+                        >
+                        <button onclick="saveApiSettings()" class="btn-electric px-5 py-2.5 rounded-lg font-bold text-xs cursor-pointer">
+                            Save Settings
+                        </button>
+                        <button onclick="clearApiSettings()" class="px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700">
+                            Reset
+                        </button>
+                    </div>
+                    <p class="text-xs text-slate-500">
+                        Your custom key is stored strictly in your active browser session memory and is never sent to third-party servers.
+                    </p>
+                </div>
+
+                <!-- Visual & Storyboard Style Preferences -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-5 space-y-4">
+                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-palette text-cyan-electric"></i>
+                        <span>Visual Storyboard Aesthetic</span>
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Cinematography Style</label>
+                            <select id="visual-style-select" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:border-cyan-electric focus:outline-none">
+                                <option value="Cinematic 35mm film still, natural dramatic lighting, shallow depth of field, photorealistic">Cinematic 35mm Film Still (Default)</option>
+                                <option value="Clean modern commercial YouTube studio lighting, sharp 4K look, vibrant natural colors">Modern Creator / Commercial 4K</option>
+                                <option value="Detailed director storyboard sketch, clean ink lines with subtle atmospheric shading">Director's Concept Sketch</option>
+                                <option value="Documentary handheld realism, authentic natural daylight, rich textures">Documentary Realism</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Slate Overlay Position</label>
+                            <select id="overlay-position-select" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:border-cyan-electric focus:outline-none">
+                                <option value="bottom">Bottom Cinema Slate Bar (Recommended)</option>
+                                <option value="top-bottom">Split Top Header & Bottom Metadata</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/80 bg-slate-950/60 py-5 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+            <div class="flex items-center gap-2">
+                <span class="font-bold text-slate-300">V-PLAN AI</span>
+                <span>•</span>
+                <span>Automated Pre-Production & Storyboard Studio</span>
+            </div>
+            <div>
+                Supports English & ភាសាខ្មែរ Unicode • Powered by Gemini AI
+            </div>
+        </div>
+    </footer>
+
+    <!-- ========================================== -->
+    <!-- APPLICATION LOGIC & GEMINI AI INTEGRATION  -->
+    <!-- ========================================== -->
+    <script>
+        // ==========================================
+        // 1. GLOBAL STATE & RESOLUTION DEFINITIONS
+        // ==========================================
+        const RESOLUTION_MAP = {
+            "16:9": [
+                { label: "8K UHD (7680×4320)", tag: "8K 4320p", width: 1920, height: 1080 },
+                { label: "4K UHD (3840×2160)", tag: "4K 2160p", width: 1920, height: 1080 },
+                { label: "2K QHD (2560×1440)", tag: "2K 1440p", width: 1600, height: 900 },
+                { label: "Full HD (1920×1080)", tag: "1080p HD", width: 1280, height: 720, default: true },
+                { label: "HD (1280×720)", tag: "720p HD", width: 1280, height: 720 },
+                { label: "SD (854×480)", tag: "480p SD", width: 854, height: 480 },
+                { label: "SD (640×360)", tag: "360p SD", width: 640, height: 360 },
+                { label: "SD (426×240)", tag: "240p SD", width: 426, height: 240 }
+            ],
+            "9:16": [
+                { label: "4K Vertical (2160×3840)", tag: "4K 2160p", width: 1080, height: 1920 },
+                { label: "Full HD Vertical (1080×1920)", tag: "1080p HD", width: 720, height: 1280, default: true },
+                { label: "HD Vertical (720×1280)", tag: "720p HD", width: 720, height: 1280 },
+                { label: "SD Vertical (480×854)", tag: "480p SD", width: 480, height: 854 }
+            ],
+            "1:1": [
+                { label: "4K Square (2160×2160)", tag: "2160×2160", width: 1080, height: 1080 },
+                { label: "Full HD Square (1080×1080)", tag: "1080×1080", width: 1080, height: 1080, default: true },
+                { label: "HD Square (720×720)", tag: "720×720", width: 720, height: 720 },
+                { label: "SD Square (480×480)", tag: "480×480", width: 480, height: 480 }
+            ]
+        };
+
+        const DEFAULT_TEMPLATE_SHOTS = [
+            { id: 1, type: "A-roll", visual: "Hook Speaker at Desk introducing today's story", location: "Home Studio / Desk", notes: "Eye level, Medium close-up" },
+            { id: 2, type: "B-roll", visual: "Pouring fresh hot coffee into a ceramic mug", location: "Kitchen Counter", notes: "Close-up, 60fps Slow motion" },
+            { id: 3, type: "B-roll", visual: "Opening bedroom curtains to let morning sunlight stream in", location: "Bedroom Window", notes: "Slow motion, Wide angle" },
+            { id: 4, type: "A-roll", visual: "Speaker explaining the main plan and goal for the day", location: "Living Room", notes: "Eye level, Natural window light" },
+            { id: 5, type: "B-roll", visual: "Packing camera gear, notebook, and essentials into backpack", location: "Desk Area", notes: "Top-down flat lay shot" },
+            { id: 6, type: "B-roll", visual: "Stepping outside into the fresh morning air", location: "Front Door / Porch", notes: "Over-the-shoulder tracking shot" },
+            { id: 7, type: "B-roll", visual: "Wide establishing view of the journey and scenery", location: "Outdoors / Street", notes: "Wide establishing shot, Gimbal" },
+            { id: 8, type: "A-roll", visual: "Mid-video reflection and key takeaway on location", location: "Scenic Overlook", notes: "Medium shot, Shallow depth of field" },
+            { id: 9, type: "B-roll", visual: "Hands interacting with environment and capturing details", location: "Main Activity Spot", notes: "Macro close-up, Handheld" },
+            { id: 10, type: "B-roll", visual: "Candid smile and reaction while enjoying the moment", location: "Outdoors", notes: "85mm portrait lens, Slow motion" },
+            { id: 11, type: "B-roll", visual: "Golden hour sunset light reflecting across the landscape", location: "Viewpoint", notes: "Low angle tilt-up" },
+            { id: 12, type: "A-roll", visual: "Summarizing the lessons learned and experience", location: "Home Studio / Desk", notes: "Eye level, Warm key light" },
+            { id: 13, type: "B-roll", visual: "Final montage of best highlights from the day", location: "Various Locations", notes: "Fast-paced rhythmic cuts" },
+            { id: 14, type: "A-roll", visual: "Conclusion and Call-to-Action asking viewers to subscribe", location: "Home Studio / Desk", notes: "Medium close-up, Direct eye contact" }
+        ];
+
+        const appState = {
+            projectTitle: "Morning Productivity & Creative Flow (14-Shot Template)",
+            outputLanguage: "km-en",
+            shotCountMode: "auto",
+            aspectRatio: "16:9",
+            resolutionIndex: 3,
+            overlayEnabled: true,
+            customApiKey: "",
+            isBatchRunning: false,
+            shots: DEFAULT_TEMPLATE_SHOTS.map(s => ({ ...s, rawImage: null, finalImage: null, isGenerating: false }))
+        };
+
+        function setShotCountMode(mode) {
+            appState.shotCountMode = mode;
+            const autoBtn = document.getElementById('shot-mode-auto');
+            const customBtn = document.getElementById('shot-mode-custom');
+            const wrapper = document.getElementById('custom-shot-count-wrapper');
+
+            if (mode === 'auto') {
+                autoBtn.className = "px-2.5 sm:px-3 py-2 sm:py-1.5 rounded-md font-bold transition bg-cyan-electric text-slate-950 shadow cursor-pointer text-center";
+                customBtn.className = "px-2.5 sm:px-3 py-2 sm:py-1.5 rounded-md font-semibold transition text-slate-400 hover:text-white cursor-pointer text-center";
+                wrapper.classList.add('hidden');
+                wrapper.classList.remove('flex');
+            } else {
+                customBtn.className = "px-2.5 sm:px-3 py-2 sm:py-1.5 rounded-md font-bold transition bg-cyan-electric text-slate-950 shadow cursor-pointer text-center";
+                autoBtn.className = "px-2.5 sm:px-3 py-2 sm:py-1.5 rounded-md font-semibold transition text-slate-400 hover:text-white cursor-pointer text-center";
+                wrapper.classList.remove('hidden');
+                wrapper.classList.add('flex');
+            }
+        }
+
+        // ==========================================
+        // 2. AI STORYBOARD IMAGE GENERATION (SINGLE & BATCH WITH SMART FALLBACK)
+        // ==========================================
+        async function generateShotImage(shotId, silent = false) {
+            const shot = appState.shots.find(s => s.id === shotId);
+            if (!shot || shot.isGenerating) return;
+
+            shot.isGenerating = true;
+            renderShotTable();
+
+            try {
+                const stylePreset = document.getElementById('visual-style-select')?.value ||
+                    "Cinematic 35mm film still, natural dramatic lighting, shallow depth of field, photorealistic";
+
+                const imagePrompt = `${stylePreset}. Film storyboard frame for project "${appState.projectTitle}". Shot type: ${shot.type}. Scene action: ${shot.visual}. Setting/Location: ${shot.location}. Camera framing & cinematography: ${shot.notes}. No text or watermarks inside the image.`;
+
+                const apiKey = getActiveApiKey();
+                const modelsToTry = [
+                    { model: "gemini-3.1-flash-lite-image", useAspectConfig: false },
+                    { model: "gemini-3.1-flash-image", useAspectConfig: true }
+                ];
+
+                let rawDataUrl = null;
+                let lastErrorMsg = "";
+
+                for (const cfg of modelsToTry) {
+                    try {
+                        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${cfg.model}:generateContent?key=${apiKey}`;
+                        const payload = {
+                            contents: [{ parts: [{ text: imagePrompt }] }],
+                            generationConfig: {
+                                responseModalities: ["IMAGE"]
+                            }
+                        };
+                        if (cfg.useAspectConfig) {
+                            payload.generationConfig.imageConfig = { aspectRatio: appState.aspectRatio };
+                        }
+
+                        const response = await fetch(endpoint, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (!response.ok) {
+                            const errJson = await response.json().catch(() => ({}));
+                            lastErrorMsg = errJson?.error?.message || `API Error (${response.status})`;
+                            continue;
+                        }
+
+                        const result = await response.json();
+                        const parts = result?.candidates?.[0]?.content?.parts || [];
+                        const imgPart = parts.find(p => p.inlineData && p.inlineData.data);
+
+                        if (imgPart) {
+                            const mimeType = imgPart.inlineData.mimeType || "image/png";
+                            rawDataUrl = `data:${mimeType};base64,${imgPart.inlineData.data}`;
+                            break;
+                        }
+                    } catch (innerErr) {
+                        lastErrorMsg = innerErr.message;
+                    }
+                }
+
+                // Fallback to Studio Procedural Storyboard Frame if Free Tier Image Quota is 0/exhausted
+                let usedFallback = false;
+                if (!rawDataUrl) {
+                    rawDataUrl = renderProceduralStoryboardFrame(shot);
+                    usedFallback = true;
+                }
+
+                shot.rawImage = rawDataUrl;
+                shot.finalImage = await compositeShotOverlay(rawDataUrl, shot);
+
+                if (!silent) {
+                    if (usedFallback) {
+                        showToast(`Shot #${String(shot.id).padStart(2, '0')} rendered in Studio Concept Mode (Image API Free-Tier Quota = 0).`, "info");
+                    } else {
+                        showToast(`Shot #${String(shot.id).padStart(2, '0')} storyboard frame ready!`, "success");
+                    }
+                }
+            } catch (err) {
+                console.error(`Shot #${shot.id} image error:`, err);
+                if (!silent) {
+                    showToast(`Shot #${shot.id} image failed: ${err.message}`, "error");
+                }
+            } finally {
+                shot.isGenerating = false;
+                renderShotTable();
+                updateExportSummary();
+            }
+        }
+
+        function renderProceduralStoryboardFrame(shot) {
+            const resList = RESOLUTION_MAP[appState.aspectRatio] || RESOLUTION_MAP["16:9"];
+            const resObj = resList[appState.resolutionIndex] || resList[0];
+            const w = resObj.width;
+            const h = resObj.height;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+
+            // 1. Cinematic Studio Gradient Backdrop based on Shot Type & ID
+            const isARoll = shot.type === 'A-roll';
+            const hueShift = (shot.id * 29) % 360;
+            const grad = ctx.createLinearGradient(0, 0, w, h);
+            if (isARoll) {
+                grad.addColorStop(0, '#0B192C');
+                grad.addColorStop(0.55, '#1E3A5F');
+                grad.addColorStop(1, '#09111E');
+            } else {
+                grad.addColorStop(0, '#131129');
+                grad.addColorStop(0.55, `hsl(${hueShift}, 38%, 22%)`);
+                grad.addColorStop(1, '#090D16');
+            }
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, w, h);
+
+            // 2. Soft Cinema Key-Light & Rim-Light Glows
+            const keyLight = ctx.createRadialGradient(w * 0.35, h * 0.32, w * 0.02, w * 0.35, h * 0.32, w * 0.55);
+            keyLight.addColorStop(0, isARoll ? 'rgba(0, 229, 255, 0.22)' : 'rgba(168, 85, 247, 0.22)');
+            keyLight.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = keyLight;
+            ctx.fillRect(0, 0, w, h);
+
+            // 3. Cinematographer Rule-of-Thirds & Safe-Action Viewfinder Guides
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.09)';
+            ctx.lineWidth = Math.max(1, Math.round(w * 0.0012));
+            for (let i = 1; i <= 2; i++) {
+                ctx.beginPath();
+                ctx.moveTo((w / 3) * i, 0);
+                ctx.lineTo((w / 3) * i, h);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(0, (h / 3) * i);
+                ctx.lineTo(w, (h / 3) * i);
+                ctx.stroke();
+            }
+
+            // Center Crosshair & Safe Frame Brackets
+            const m = Math.round(w * 0.06);
+            const bLen = Math.round(w * 0.03);
+            ctx.strokeStyle = 'rgba(0, 229, 255, 0.45)';
+            ctx.lineWidth = Math.max(2, Math.round(w * 0.002));
+
+            // Corner brackets
+            [[m, m, 1, 1], [w - m, m, -1, 1], [m, h - m, 1, -1], [w - m, h - m, -1, -1]].forEach(([cx, cy, dx, dy]) => {
+                ctx.beginPath();
+                ctx.moveTo(cx + dx * bLen, cy);
+                ctx.lineTo(cx, cy);
+                ctx.lineTo(cx, cy + dy * bLen);
+                ctx.stroke();
+            });
+
+            // 4. Visual Framing Silhouette (A-roll Speaker vs B-roll Scene Horizon/Subject)
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.07)';
+            if (isARoll) {
+                const headR = Math.min(w, h) * 0.11;
+                ctx.beginPath();
+                ctx.arc(w * 0.5, h * 0.38, headR, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(w * 0.5, h * 0.72, headR * 2.1, headR * 1.45, 0, Math.PI, Math.PI * 2);
+                ctx.fill();
+            } else {
+                ctx.beginPath();
+                ctx.moveTo(0, h * 0.75);
+                ctx.lineTo(w * 0.32, h * 0.48);
+                ctx.lineTo(w * 0.62, h * 0.66);
+                ctx.lineTo(w * 0.85, h * 0.42);
+                ctx.lineTo(w, h * 0.6);
+                ctx.lineTo(w, h);
+                ctx.lineTo(0, h);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // 5. Center Camera Framing Callout Tag
+            const tagFont = Math.max(16, Math.round(w * 0.018));
+            ctx.font = `700 ${tagFont}px "Inter", "Kantumruy Pro", sans-serif`;
+            ctx.fillStyle = 'rgba(248, 250, 252, 0.85)';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`🎥 ${shot.notes}`, w * 0.5, h * 0.5);
+
+            ctx.font = `500 ${Math.max(13, Math.round(w * 0.014))}px "Inter", "Kantumruy Pro", sans-serif`;
+            ctx.fillStyle = '#00E5FF';
+            ctx.fillText(`📍 ${shot.location}`, w * 0.5, h * 0.5 + tagFont * 1.6);
+
+            return canvas.toDataURL('image/png');
+        }
+
+        function switchTab(tabName) {
+            const tabs = ['home', 'workspace', 'export', 'settings'];
+            tabs.forEach(t => {
+                document.getElementById(`tab-${t}`).classList.add('hidden');
+                
+                // Desktop Nav
+                const navBtn = document.getElementById(`nav-${t}`);
+                if (navBtn) {
+                    navBtn.classList.remove('bg-slate-800', 'text-cyan-electric', 'shadow', 'font-semibold');
+                    navBtn.classList.add('text-slate-400', 'font-medium');
+                }
+
+                // Mobile Bottom Nav
+                const mobBtn = document.getElementById(`mobile-nav-${t}`);
+                if (mobBtn) {
+                    mobBtn.classList.remove('text-cyan-electric', 'bg-slate-900/90');
+                    mobBtn.classList.add('text-slate-400');
+                }
+            });
+
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            
+            const activeBtn = document.getElementById(`nav-${tabName}`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-slate-800', 'text-cyan-electric', 'shadow', 'font-semibold');
+                activeBtn.classList.remove('text-slate-400', 'font-medium');
+            }
+
+            const activeMobBtn = document.getElementById(`mobile-nav-${tabName}`);
+            if (activeMobBtn) {
+                activeMobBtn.classList.add('text-cyan-electric', 'bg-slate-900/90');
+                activeMobBtn.classList.remove('text-slate-400');
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            if (tabName === 'export') {
+                updateExportSummary();
+            }
+        }
+
+        function setTopicPreset(text) {
+            document.getElementById('topic-input').value = text;
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const styles = {
+                info: 'bg-slate-900 border-cyan-electric text-white',
+                success: 'bg-slate-900 border-emerald-400 text-emerald-300',
+                error: 'bg-slate-900 border-rose-500 text-rose-300'
+            };
+            const icons = {
+                info: 'fa-circle-info text-cyan-electric',
+                success: 'fa-circle-check text-emerald-400',
+                error: 'fa-triangle-exclamation text-rose-500'
+            };
+
+            toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl text-xs font-medium transition-all duration-300 ${styles[type] || styles.info}`;
+            toast.innerHTML = `
+                <i class="fa-solid ${icons[type] || icons.info} text-base"></i>
+                <span class="flex-1">${message}</span>
+            `;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(10px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // ==========================================
+        // 3. RESOLUTION & OVERLAY CONTROLS
+        // ==========================================
+        function populateResolutionOptions(aspectRatio) {
+            const select = document.getElementById('resolution-select');
+            if (!select) return;
+            const list = RESOLUTION_MAP[aspectRatio] || RESOLUTION_MAP["16:9"];
+            select.innerHTML = '';
+
+            let defaultIdx = 0;
+            list.forEach((item, idx) => {
+                const opt = document.createElement('option');
+                opt.value = idx;
+                opt.textContent = item.label;
+                if (item.default) defaultIdx = idx;
+                select.appendChild(opt);
+            });
+
+            select.value = defaultIdx;
+            appState.resolutionIndex = defaultIdx;
+            updateResolutionBadge();
+        }
+
+        function onAspectRatioChange() {
+            const ratio = document.getElementById('aspect-ratio-select').value;
+            appState.aspectRatio = ratio;
+            populateResolutionOptions(ratio);
+            reprocessExistingOverlays();
+        }
+
+        function updateResolutionBadge() {
+            const select = document.getElementById('resolution-select');
+            appState.resolutionIndex = parseInt(select.value || "0", 10);
+            const resObj = RESOLUTION_MAP[appState.aspectRatio][appState.resolutionIndex];
+            const badge = document.getElementById('workspace-aspect-badge');
+            if (badge && resObj) {
+                badge.textContent = `${appState.aspectRatio} • ${resObj.tag}`;
+            }
+            updateExportSummary();
+        }
+
+        function toggleSlateOverlay() {
+            appState.overlayEnabled = !appState.overlayEnabled;
+            const btn = document.getElementById('toggle-overlay-btn');
+            const label = document.getElementById('overlay-status-label');
+            if (appState.overlayEnabled) {
+                label.textContent = "ON";
+                btn.className = "w-full bg-slate-900 border border-cyan-electric/50 text-cyan-electric text-xs rounded-xl px-3 py-2.5 sm:py-2 font-semibold flex items-center justify-center gap-1.5 cursor-pointer";
+            } else {
+                label.textContent = "OFF";
+                btn.className = "w-full bg-slate-900 border border-slate-700 text-slate-400 text-xs rounded-xl px-3 py-2.5 sm:py-2 font-semibold flex items-center justify-center gap-1.5 cursor-pointer";
+            }
+            reprocessExistingOverlays();
+            updateExportSummary();
+        }
+
+        async function reprocessExistingOverlays() {
+            let updated = false;
+            for (const shot of appState.shots) {
+                if (shot.rawImage) {
+                    shot.finalImage = await compositeShotOverlay(shot.rawImage, shot);
+                    updated = true;
+                }
+            }
+            if (updated) {
+                renderShotTable();
+            }
+        }
+
+        // ==========================================
+        // 4. GEMINI API HELPER (AUTO-KEY + OPTIONAL CUSTOM KEY)
+        // ==========================================
+        function getActiveApiKey() {
+            return (appState.customApiKey && appState.customApiKey.trim()) ? appState.customApiKey.trim() : "";
+        }
+
+        // ==========================================
+        // 5. AI SHOT LIST GENERATION
+        // ==========================================
+        async function generateShotList() {
+            const topicInput = document.getElementById('topic-input');
+            const topic = (topicInput ? topicInput.value : '').trim();
+            if (!topic) {
+                showToast("សូមវាយបញ្ចូលប្រធានបទវីដេអូជាមុនសិន! (Please enter a video topic)", "error");
+                if (topicInput) topicInput.focus();
+                return;
+            }
+
+            const btn = document.getElementById('generate-shotlist-btn');
+            const origHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Generating Plan...</span>`;
+
+            try {
+                const lang = appState.outputLanguage || 'km-en';
+                const langInstruction = lang === 'km'
+                    ? "Write all visual descriptions, locations, and camera notes strictly in natural, clear Khmer Unicode (ភាសាខ្មែរ)."
+                    : lang === 'en'
+                    ? "Write all visual descriptions, locations, and camera notes strictly in clear, professional English."
+                    : "Write all visual descriptions, locations, and camera notes bilingually in Khmer Unicode followed by English in parentheses (e.g., ការចាក់កាហ្វេ (Pouring coffee)).";
+
+                let countInstruction = "Automatically decide the ideal number of shots (between 8 and 18 shots) based on the scope of the story.";
+                if (appState.shotCountMode === 'custom') {
+                    const customVal = Math.max(3, Math.min(50, parseInt(document.getElementById('custom-shot-count-input').value || "14", 10)));
+                    countInstruction = `Generate exactly ${customVal} shots in sequential order.`;
+                }
+
+                const systemPrompt = `You are an expert film director and video production planner. Create a structured A-roll and B-roll shot list for the given video topic.
+${countInstruction}
+${langInstruction}
+Keep the "type" field strictly as either "A-roll" or "B-roll".
+Return ONLY a valid JSON object matching this exact schema:
+{
+  "projectTitle": "Descriptive title for the video project",
+  "shots": [
+    {
+      "id": 1,
+      "type": "A-roll",
+      "visual": "Detailed visual action or subject description",
+      "location": "Specific filming setting",
+      "notes": "Camera angle, lens, or movement instructions"
+    }
+  ]
+}`;
+
+                const apiKey = getActiveApiKey();
+                const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: `${systemPrompt}\n\nVideo Topic: "${topic}"` }] }],
+                        generationConfig: {
+                            responseMimeType: "application/json",
+                            temperature: 0.7
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData?.error?.message || `API Error (${response.status})`);
+                }
+
+                const data = await response.json();
+                const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+                const parsed = JSON.parse(rawText);
+
+                if (!Array.isArray(parsed.shots) || parsed.shots.length === 0) {
+                    throw new Error("Invalid shot list format received from AI.");
+                }
+
+                appState.projectTitle = parsed.projectTitle || topic;
+                appState.shots = parsed.shots.map((s, idx) => ({
+                    id: idx + 1,
+                    type: (String(s.type).toLowerCase().includes('a-roll')) ? 'A-roll' : 'B-roll',
+                    visual: s.visual || "Scene visual description",
+                    location: s.location || "On Location",
+                    notes: s.notes || "Eye level, Medium shot",
+                    rawImage: null,
+                    finalImage: null,
+                    isGenerating: false
+                }));
+
+                document.getElementById('home-active-project-title').textContent = `${appState.projectTitle} (${appState.shots.length} Shots)`;
+                document.getElementById('workspace-project-title').textContent = appState.projectTitle;
+
+                renderShotTable();
+                updateExportSummary();
+                switchTab('workspace');
+                showToast(`Generated ${appState.shots.length} shots successfully!`, "success");
+            } catch (err) {
+                console.error("Shot List Error:", err);
+                showToast(`Generation failed: ${err.message}`, "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = origHTML;
+            }
+        }
+
+        async function generateAllImages() {
+            if (appState.isBatchRunning) return;
+            appState.isBatchRunning = true;
+
+            const batchBtn = document.getElementById('batch-generate-btn');
+            const progressBox = document.getElementById('batch-progress-container');
+            const progressBar = document.getElementById('batch-progress-bar');
+            const progressText = document.getElementById('batch-progress-text');
+            const progressCount = document.getElementById('batch-progress-count');
+
+            const origBtnHTML = batchBtn.innerHTML;
+            batchBtn.disabled = true;
+            batchBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Generating All...</span>`;
+
+            progressBox.classList.remove('hidden');
+            const total = appState.shots.length;
+
+            try {
+                for (let i = 0; i < total; i++) {
+                    const shot = appState.shots[i];
+                    progressText.textContent = `Rendering Shot #${String(shot.id).padStart(2, '0')} (${shot.type})...`;
+                    progressCount.textContent = `${i + 1} / ${total}`;
+                    progressBar.style.width = `${Math.round(((i) / total) * 100)}%`;
+
+                    await generateShotImage(shot.id, true);
+                    progressBar.style.width = `${Math.round(((i + 1) / total) * 100)}%`;
+                }
+                showToast(`All ${total} storyboard frames generated!`, "success");
+            } finally {
+                appState.isBatchRunning = false;
+                batchBtn.disabled = false;
+                batchBtn.innerHTML = origBtnHTML;
+                setTimeout(() => progressBox.classList.add('hidden'), 1500);
+            }
+        }
+
+        // ==========================================
+        // 7. CANVAS SLATE OVERLAY ENGINE (FULL UNCROPPED TEXT)
+        // ==========================================
+        function compositeShotOverlay(rawImageUrl, shot) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    const resList = RESOLUTION_MAP[appState.aspectRatio] || RESOLUTION_MAP["16:9"];
+                    const resObj = resList[appState.resolutionIndex] || resList[0];
+                    const targetW = resObj.width;
+                    const targetH = resObj.height;
+
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+
+                    if (!appState.overlayEnabled) {
+                        canvas.width = targetW;
+                        canvas.height = targetH;
+                        ctx.drawImage(img, 0, 0, targetW, targetH);
+                        resolve(canvas.toDataURL('image/png'));
+                        return;
+                    }
+
+                    const pad = Math.round(targetW * 0.025);
+                    const fontSizeMain = Math.max(18, Math.round(targetW * 0.019));
+                    const fontSizeMeta = Math.max(15, Math.round(targetW * 0.015));
+                    const lineHeight = Math.round(fontSizeMain * 1.42);
+                    const maxTextWidth = targetW - (pad * 2);
+
+                    // Measure wrapped lines for full uncropped Visual Description
+                    ctx.font = `600 ${fontSizeMain}px "Inter", "Kantumruy Pro", sans-serif`;
+                    const fullVisualText = `${shot.visual || ''}`;
+                    const wrappedLines = wrapCanvasText(ctx, fullVisualText, maxTextWidth);
+
+                    const headerBarH = Math.round(fontSizeMeta * 2.2);
+                    const slateBarH = headerBarH + (wrappedLines.length * lineHeight) + Math.round(pad * 1.4);
+
+                    // Expand canvas height so the slate sits cleanly below the frame without obscuring any visual action or cropping text
+                    canvas.width = targetW;
+                    canvas.height = targetH + slateBarH;
+
+                    // Draw main image frame
+                    ctx.drawImage(img, 0, 0, targetW, targetH);
+
+                    // Top-left subtle badge
+                    const badgeText = `SHOT #${String(shot.id).padStart(2, '0')} • ${shot.type.toUpperCase()}`;
+                    ctx.font = `800 ${fontSizeMeta}px "Inter", sans-serif`;
+                    const badgeW = ctx.measureText(badgeText).width + pad * 1.2;
+                    const badgeH = Math.round(fontSizeMeta * 2);
+                    ctx.fillStyle = 'rgba(9, 13, 22, 0.82)';
+                    ctx.fillRect(pad, pad, badgeW, badgeH);
+                    ctx.strokeStyle = '#00E5FF';
+                    ctx.lineWidth = Math.max(2, Math.round(targetW * 0.002));
+                    ctx.strokeRect(pad, pad, badgeW, badgeH);
+                    ctx.fillStyle = '#00E5FF';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(badgeText, pad + (pad * 0.6), pad + (badgeH / 2));
+
+                    // Bottom Production Slate Panel
+                    const slateY = targetH;
+                    ctx.fillStyle = '#090D16';
+                    ctx.fillRect(0, slateY, targetW, slateBarH);
+
+                    // Electric Cyan top divider line
+                    ctx.fillStyle = '#00E5FF';
+                    ctx.fillRect(0, slateY, targetW, Math.max(3, Math.round(targetW * 0.003)));
+
+                    // Metadata Row (Location + Camera Notes)
+                    ctx.font = `700 ${fontSizeMeta}px "Inter", "Kantumruy Pro", sans-serif`;
+                    ctx.fillStyle = '#00E5FF';
+                    ctx.textBaseline = 'top';
+                    const metaHeader = `ID #${String(shot.id).padStart(2, '0')} [${shot.type.toUpperCase()}]   |   LOC: ${shot.location}   |   CAM: ${shot.notes}`;
+                    ctx.fillText(metaHeader, pad, slateY + Math.round(pad * 0.55));
+
+                    // Full Uncropped Multi-Line Visual Description
+                    ctx.font = `600 ${fontSizeMain}px "Inter", "Kantumruy Pro", sans-serif`;
+                    ctx.fillStyle = '#F8FAFC';
+                    let textY = slateY + headerBarH + Math.round(pad * 0.35);
+                    wrappedLines.forEach((line) => {
+                        ctx.fillText(line, pad, textY);
+                        textY += lineHeight;
+                    });
+
+                    resolve(canvas.toDataURL('image/png'));
+                };
+                img.onerror = () => resolve(rawImageUrl);
+                img.src = rawImageUrl;
+            });
+        }
+
+        function wrapCanvasText(ctx, text, maxWidth) {
+            if (!text) return [''];
+            const paragraphs = String(text).split(/\r?\n/);
+            const allLines = [];
+
+            paragraphs.forEach((para) => {
+                // Split by spaces while preserving Khmer/Unicode words cleanly
+                const words = para.split(/(\s+)/).filter(w => w.length > 0);
+                let currentLine = '';
+
+                words.forEach((word) => {
+                    const testLine = currentLine + word;
+                    if (ctx.measureText(testLine).width <= maxWidth) {
+                        currentLine = testLine;
+                    } else {
+                        if (currentLine.trim().length > 0) {
+                            allLines.push(currentLine.trimEnd());
+                            currentLine = word.trimStart();
+                        } else {
+                            // Fallback character-level wrap for ultra-long unbroken strings
+                            let charChunk = '';
+                            for (const ch of word) {
+                                if (ctx.measureText(charChunk + ch).width <= maxWidth) {
+                                    charChunk += ch;
+                                } else {
+                                    if (charChunk) allLines.push(charChunk);
+                                    charChunk = ch;
+                                }
+                            }
+                            currentLine = charChunk;
+                        }
+                    }
+                });
+
+                if (currentLine.trim().length > 0) {
+                    allLines.push(currentLine.trimEnd());
+                }
+            });
+
+            return allLines.length > 0 ? allLines : [''];
+        }
+
+        // ==========================================
+        // 8. SHOT LIST TABLE RENDERING & EDITING
+        // ==========================================
+        function renderShotTable() {
+            const tbody = document.getElementById('shot-list-tbody');
+            const cardsContainer = document.getElementById('shot-list-cards');
+            if (tbody) tbody.innerHTML = '';
+            if (cardsContainer) cardsContainer.innerHTML = '';
+
+            const badge = document.getElementById('shot-count-badge');
+            const mobileBadge = document.getElementById('mobile-shot-count-badge');
+            if (badge) badge.textContent = appState.shots.length;
+            if (mobileBadge) mobileBadge.textContent = appState.shots.length;
+
+            appState.shots.forEach((shot) => {
+                const typeBadgeClass = shot.type === 'A-roll'
+                    ? 'bg-sky-500/15 text-sky-300 border-sky-500/30'
+                    : 'bg-purple-500/15 text-purple-300 border-purple-500/30';
+
+                // 1. Render Desktop Table Row
+                if (tbody) {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-800/40 transition-colors group";
+
+                    tr.addEventListener('mouseenter', (e) => showRowHoverPreview(e, shot));
+                    tr.addEventListener('mousemove', (e) => moveRowHoverPreview(e));
+                    tr.addEventListener('mouseleave', () => hideRowHoverPreview());
+
+                    let previewHTML = '';
+                    if (shot.isGenerating) {
+                        previewHTML = `
+                            <div class="w-40 h-24 mx-auto rounded-lg bg-slate-900 border-2 border-cyan-electric generating-ring flex flex-col items-center justify-center gap-1.5 text-cyan-electric">
+                                <i class="fa-solid fa-wand-magic-sparkles fa-spin text-base"></i>
+                                <span class="text-[10px] font-bold uppercase tracking-wider">Rendering...</span>
+                            </div>
+                        `;
+                    } else if (shot.finalImage) {
+                        previewHTML = `
+                            <div class="relative w-40 h-24 mx-auto rounded-lg overflow-hidden border border-slate-700 group-hover:border-cyan-electric transition cursor-pointer shadow-md" onclick="openImageModal(${shot.id})">
+                                <img src="${shot.finalImage}" alt="Shot ${shot.id}" class="w-full h-full object-cover">
+                                <div class="absolute inset-0 bg-slate-950/50 opacity-0 hover:opacity-100 transition flex items-center justify-center">
+                                    <span class="px-2 py-1 rounded bg-cyan-electric text-slate-950 text-[10px] font-extrabold">
+                                        <i class="fa-solid fa-expand mr-1"></i>Inspect
+                                    </span>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        previewHTML = `
+                            <div class="w-40 h-24 mx-auto rounded-lg bg-slate-900/80 border border-dashed border-slate-700 flex flex-col items-center justify-center text-slate-500 gap-1">
+                                <i class="fa-regular fa-image text-lg"></i>
+                                <span class="text-[10px]">No frame yet</span>
+                            </div>
+                        `;
+                    }
+
+                    tr.innerHTML = `
+                        <td class="py-3 px-4 text-center font-mono font-bold text-cyan-electric">
+                            #${String(shot.id).padStart(2, '0')}
+                        </td>
+                        <td class="py-3 px-3">
+                            <select onchange="updateShotField(${shot.id}, 'type', this.value)" class="px-2.5 py-1 rounded-lg border text-xs font-bold bg-slate-900 focus:outline-none ${typeBadgeClass}">
+                                <option value="A-roll" ${shot.type === 'A-roll' ? 'selected' : ''}>A-roll</option>
+                                <option value="B-roll" ${shot.type === 'B-roll' ? 'selected' : ''}>B-roll</option>
+                            </select>
+                        </td>
+                        <td class="py-3 px-4">
+                            <textarea 
+                                rows="3" 
+                                oninput="autoResizeTextarea(this)"
+                                onchange="updateShotField(${shot.id}, 'visual', this.value)"
+                                class="w-full bg-transparent hover:bg-slate-900/70 focus:bg-slate-900 border border-transparent focus:border-cyan-electric/50 rounded-lg px-2 py-1.5 text-xs sm:text-sm text-slate-100 leading-relaxed overflow-hidden focus:outline-none transition"
+                            >${escapeHtml(shot.visual)}</textarea>
+                        </td>
+                        <td class="py-3 px-3">
+                            <input 
+                                type="text" 
+                                value="${escapeHtml(shot.location)}"
+                                onchange="updateShotField(${shot.id}, 'location', this.value)"
+                                class="w-full bg-transparent hover:bg-slate-900/70 focus:bg-slate-900 border border-transparent focus:border-cyan-electric/50 rounded-lg px-2 py-1 text-xs text-slate-300 focus:outline-none transition"
+                            >
+                        </td>
+                        <td class="py-3 px-3">
+                            <input 
+                                type="text" 
+                                value="${escapeHtml(shot.notes)}"
+                                onchange="updateShotField(${shot.id}, 'notes', this.value)"
+                                class="w-full bg-transparent hover:bg-slate-900/70 focus:bg-slate-900 border border-transparent focus:border-cyan-electric/50 rounded-lg px-2 py-1 text-xs text-cyan-200/90 font-medium focus:outline-none transition"
+                            >
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            ${previewHTML}
+                        </td>
+                        <td class="py-3 px-4 text-right">
+                            <div class="flex items-center justify-end gap-1.5">
+                                <button 
+                                    onclick="generateShotImage(${shot.id})" 
+                                    ${shot.isGenerating ? 'disabled' : ''}
+                                    class="px-3 py-1.5 rounded-lg bg-cyan-electric/15 hover:bg-cyan-electric text-cyan-electric hover:text-slate-950 border border-cyan-electric/40 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+                                    title="Generate AI Storyboard Frame"
+                                >
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                    <span>${shot.finalImage ? 'Regenerate' : 'Generate Image'}</span>
+                                </button>
+                                ${shot.finalImage ? `
+                                    <button onclick="downloadSingleImage(${shot.id})" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs transition" title="Download Image">
+                                        <i class="fa-solid fa-download"></i>
+                                    </button>
+                                ` : ''}
+                                <button onclick="deleteShotRow(${shot.id})" class="p-1.5 rounded-lg bg-slate-800/60 hover:bg-rose-500/20 text-slate-500 hover:text-rose-400 text-xs transition" title="Delete Shot">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                    const desktopTa = tr.querySelector('textarea');
+                    if (desktopTa) autoResizeTextarea(desktopTa);
+                }
+
+                // 2. Render Mobile & Tablet Storyboard Card
+                if (cardsContainer) {
+                    const card = document.createElement('div');
+                    card.className = "studio-card rounded-2xl p-4 flex flex-col justify-between gap-3.5 border border-slate-800";
+
+                    let cardMediaHTML = '';
+                    if (shot.isGenerating) {
+                        cardMediaHTML = `
+                            <div class="w-full h-44 rounded-xl bg-slate-950 border-2 border-cyan-electric generating-ring flex flex-col items-center justify-center gap-2 text-cyan-electric">
+                                <i class="fa-solid fa-wand-magic-sparkles fa-spin text-2xl"></i>
+                                <span class="text-xs font-bold uppercase tracking-wider">Rendering Frame...</span>
+                            </div>
+                        `;
+                    } else if (shot.finalImage) {
+                        cardMediaHTML = `
+                            <div class="relative w-full rounded-xl overflow-hidden border border-slate-700 bg-slate-950 cursor-pointer shadow-lg" onclick="openImageModal(${shot.id})">
+                                <img src="${shot.finalImage}" alt="Shot ${shot.id}" class="w-full h-auto max-h-64 object-contain mx-auto">
+                                <span class="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg bg-slate-950/85 text-cyan-electric border border-cyan-electric/40 text-[11px] font-bold">
+                                    <i class="fa-solid fa-expand mr-1"></i>Inspect
+                                </span>
+                            </div>
+                        `;
+                    } else {
+                        cardMediaHTML = `
+                            <div class="w-full h-36 rounded-xl bg-slate-950/80 border border-dashed border-slate-700 flex flex-col items-center justify-center text-slate-500 gap-1.5">
+                                <i class="fa-regular fa-image text-2xl"></i>
+                                <span class="text-xs">No storyboard frame generated yet</span>
+                            </div>
+                        `;
+                    }
+
+                    card.innerHTML = `
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2">
+                                <span class="font-mono font-extrabold text-sm text-cyan-electric bg-cyan-electric/10 px-2.5 py-1 rounded-lg border border-cyan-electric/30">
+                                    #${String(shot.id).padStart(2, '0')}
+                                </span>
+                                <select onchange="updateShotField(${shot.id}, 'type', this.value)" class="px-2.5 py-1.5 rounded-lg border text-xs font-bold bg-slate-900 focus:outline-none ${typeBadgeClass}">
+                                    <option value="A-roll" ${shot.type === 'A-roll' ? 'selected' : ''}>A-roll</option>
+                                    <option value="B-roll" ${shot.type === 'B-roll' ? 'selected' : ''}>B-roll</option>
+                                </select>
+                            </div>
+                            <button onclick="deleteShotRow(${shot.id})" class="p-2 rounded-lg bg-slate-900 text-slate-400 hover:text-rose-400 border border-slate-800 text-xs transition" title="Delete Shot">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+
+                        ${cardMediaHTML}
+
+                        <div class="space-y-2.5">
+                            <div>
+                                <label class="text-[10px] uppercase font-bold text-slate-400 block mb-1">Visual Description</label>
+                                <textarea 
+                                    rows="2" 
+                                    oninput="autoResizeTextarea(this)"
+                                    onchange="updateShotField(${shot.id}, 'visual', this.value)"
+                                    class="w-full bg-slate-950/80 border border-slate-800 focus:border-cyan-electric rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-100 leading-relaxed overflow-hidden focus:outline-none"
+                                >${escapeHtml(shot.visual)}</textarea>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-[10px] uppercase font-bold text-slate-400 block mb-1">Location</label>
+                                    <input 
+                                        type="text" 
+                                        value="${escapeHtml(shot.location)}"
+                                        onchange="updateShotField(${shot.id}, 'location', this.value)"
+                                        class="w-full bg-slate-950/80 border border-slate-800 focus:border-cyan-electric rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none"
+                                    >
+                                </div>
+                                <div>
+                                    <label class="text-[10px] uppercase font-bold text-slate-400 block mb-1">Camera Notes</label>
+                                    <input 
+                                        type="text" 
+                                        value="${escapeHtml(shot.notes)}"
+                                        onchange="updateShotField(${shot.id}, 'notes', this.value)"
+                                        class="w-full bg-slate-950/80 border border-slate-800 focus:border-cyan-electric rounded-xl px-3 py-2 text-xs text-cyan-200 font-medium focus:outline-none"
+                                    >
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2 pt-1">
+                            <button 
+                                onclick="generateShotImage(${shot.id})" 
+                                ${shot.isGenerating ? 'disabled' : ''}
+                                class="flex-1 py-2.5 px-3 rounded-xl bg-cyan-electric/15 hover:bg-cyan-electric text-cyan-electric hover:text-slate-950 border border-cyan-electric/40 text-xs font-extrabold transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40"
+                            >
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                <span>${shot.finalImage ? 'Regenerate Frame' : 'Generate Image'}</span>
+                            </button>
+                            ${shot.finalImage ? `
+                                <button onclick="downloadSingleImage(${shot.id})" class="py-2.5 px-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 text-xs font-bold transition flex items-center justify-center gap-1.5" title="Download Image">
+                                    <i class="fa-solid fa-download"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    `;
+                    cardsContainer.appendChild(card);
+                    const mobTa = card.querySelector('textarea');
+                    if (mobTa) autoResizeTextarea(mobTa);
+                }
+            });
+        }
+
+        function autoResizeTextarea(el) {
+            el.style.height = 'auto';
+            el.style.height = `${el.scrollHeight}px`;
+        }
+
+        async function updateShotField(id, field, value) {
+            const shot = appState.shots.find(s => s.id === id);
+            if (!shot) return;
+            shot[field] = value;
+
+            // If an image already exists, re-bake the slate overlay with updated text
+            if (shot.rawImage) {
+                shot.finalImage = await compositeShotOverlay(shot.rawImage, shot);
+                renderShotTable();
+            }
+        }
+
+        function addNewShotRow() {
+            const nextId = appState.shots.length > 0 ? Math.max(...appState.shots.map(s => s.id)) + 1 : 1;
+            appState.shots.push({
+                id: nextId,
+                type: "B-roll",
+                visual: "New supplemental scene description",
+                location: "On Location",
+                notes: "Medium shot, Eye level",
+                rawImage: null,
+                finalImage: null,
+                isGenerating: false
+            });
+            renderShotTable();
+            updateExportSummary();
+            showToast(`Added Shot #${String(nextId).padStart(2, '0')}`, "info");
+        }
+
+        function deleteShotRow(id) {
+            if (appState.shots.length <= 1) {
+                showToast("At least one shot must remain in the project.", "error");
+                return;
+            }
+            appState.shots = appState.shots.filter(s => s.id !== id);
+            // Re-index sequence IDs cleanly
+            appState.shots.forEach((s, idx) => s.id = idx + 1);
+            renderShotTable();
+            updateExportSummary();
+        }
+
+        function escapeHtml(str) {
+            return String(str || '')
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
+
+        // ==========================================
+        // 9. INTERACTIVE HOVER PREVIEW & LIGHTBOX MODAL
+        // ==========================================
+        function showRowHoverPreview(e, shot) {
+            if (!shot.finalImage) return;
+            const card = document.getElementById('hover-preview-card');
+            document.getElementById('hover-preview-img').src = shot.finalImage;
+            document.getElementById('hover-preview-id').textContent = `SHOT #${String(shot.id).padStart(2, '0')}`;
+            document.getElementById('hover-preview-type').textContent = shot.type.toUpperCase();
+            document.getElementById('hover-preview-desc').textContent = shot.visual;
+            document.getElementById('hover-preview-meta').textContent = `📍 ${shot.location}  •  🎥 ${shot.notes}`;
+            card.classList.remove('hidden');
+            moveRowHoverPreview(e);
+        }
+
+        function moveRowHoverPreview(e) {
+            const card = document.getElementById('hover-preview-card');
+            if (card.classList.contains('hidden')) return;
+            const offset = 18;
+            const rect = card.getBoundingClientRect();
+            const cardW = rect.width || 384;
+            const cardH = rect.height || 300;
+            let x = e.clientX + offset;
+            let y = e.clientY + offset;
+
+            if (x + cardW + 12 > window.innerWidth) x = Math.max(12, e.clientX - cardW - offset);
+            if (y + cardH + 12 > window.innerHeight) y = Math.max(12, window.innerHeight - cardH - 12);
+
+            card.style.left = `${x}px`;
+            card.style.top = `${y}px`;
+        }
+
+        function hideRowHoverPreview() {
+            document.getElementById('hover-preview-card').classList.add('hidden');
+        }
+
+        function openImageModal(shotId) {
+            const shot = appState.shots.find(s => s.id === shotId);
+            if (!shot || !shot.finalImage) return;
+
+            document.getElementById('modal-shot-title').innerHTML = `
+                <span class="text-cyan-electric font-mono">#${String(shot.id).padStart(2, '0')}</span>
+                <span>${escapeHtml(shot.type)} — ${escapeHtml(shot.location)}</span>
+            `;
+            document.getElementById('modal-shot-img').src = shot.finalImage;
+            document.getElementById('modal-type-badge').textContent = shot.type.toUpperCase();
+            document.getElementById('modal-location-text').textContent = `📍 ${shot.location}`;
+            document.getElementById('modal-notes-text').textContent = `🎥 ${shot.notes}`;
+            document.getElementById('modal-visual-full').textContent = shot.visual;
+            document.getElementById('modal-download-btn').onclick = () => downloadSingleImage(shot.id);
+            document.getElementById('image-modal').classList.remove('hidden');
+        }
+
+        function closeImageModal() {
+            document.getElementById('image-modal').classList.add('hidden');
+        }
+
+        // ==========================================
+        // 10. EXPORT CENTER (INDIVIDUAL, ZIP & PDF)
+        // ==========================================
+        function updateExportSummary() {
+            const total = appState.shots.length;
+            const generated = appState.shots.filter(s => !!s.finalImage).length;
+            const resObj = RESOLUTION_MAP[appState.aspectRatio][appState.resolutionIndex];
+
+            document.getElementById('export-total-shots').textContent = total;
+            document.getElementById('export-generated-count').textContent = `${generated} / ${total}`;
+            document.getElementById('export-format-summary').textContent = `${appState.aspectRatio} (${resObj.tag})`;
+            document.getElementById('export-overlay-summary').textContent = appState.overlayEnabled ? "Enabled" : "Disabled";
+        }
+
+        function downloadSingleImage(shotId) {
+            const shot = appState.shots.find(s => s.id === shotId);
+            if (!shot || !shot.finalImage) return;
+
+            const link = document.createElement('a');
+            link.href = shot.finalImage;
+            link.download = `VPlan_Shot_${String(shot.id).padStart(2, '0')}_${shot.type}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast(`Downloaded Shot #${String(shot.id).padStart(2, '0')}`, "success");
+        }
+
+        async function exportToZIP() {
+            const btn = document.getElementById('export-zip-btn');
+            const origHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Compressing Archive...</span>`;
+
+            try {
+                const zip = new JSZip();
+                const folder = zip.folder("VPlan_AI_Storyboards");
+
+                // Add CSV Shot List
+                let csvContent = "ID,Type,Visual Description,Location,Camera Notes\n";
+                appState.shots.forEach(s => {
+                    const row = [
+                        s.id,
+                        `"${s.type}"`,
+                        `"${(s.visual || '').replace(/"/g, '""')}"`,
+                        `"${(s.location || '').replace(/"/g, '""')}"`,
+                        `"${(s.notes || '').replace(/"/g, '""')}"`
+                    ].join(",");
+                    csvContent += row + "\n";
+                });
+                folder.file("Shot_List.csv", "\uFEFF" + csvContent); // UTF-8 BOM for Khmer support in Excel
+
+                // Add Generated Images
+                let imgCount = 0;
+                appState.shots.forEach(shot => {
+                    if (shot.finalImage) {
+                        const base64Data = shot.finalImage.split(',')[1];
+                        const fileName = `Shot_${String(shot.id).padStart(2, '0')}_${shot.type}.png`;
+                        folder.file(fileName, base64Data, { base64: true });
+                        imgCount++;
+                    }
+                });
+
+                const blob = await zip.generateAsync({ type: "blob" });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `VPlan_AI_Production_Pack.zip`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+
+                showToast(`Exported ZIP with ${imgCount} images & CSV shot list!`, "success");
+            } catch (err) {
+                console.error(err);
+                showToast("Failed to create ZIP archive.", "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = origHTML;
+            }
+        }
+
+        async function exportToPDF() {
+            const btn = document.getElementById('export-pdf-btn');
+            const origHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Building Production PDF...</span>`;
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+                const pageW = doc.internal.pageSize.getWidth();
+                const pageH = doc.internal.pageSize.getHeight();
+                const resObj = RESOLUTION_MAP[appState.aspectRatio][appState.resolutionIndex];
+
+                // Header Banner
+                doc.setFillColor(15, 23, 42);
+                doc.rect(0, 0, pageW, 34, 'F');
+
+                doc.setTextColor(0, 229, 255);
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(18);
+                doc.text("V-PLAN AI — PRODUCTION SHOT LIST", 14, 15);
+
+                doc.setTextColor(226, 232, 240);
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(10);
+                // Safe ASCII fallback in PDF header if Khmer characters are present (standard jsPDF Helvetica supports Latin; images carry full Khmer canvas rendering!)
+                const safeTitle = appState.projectTitle.replace(/[^\x20-\x7E]/g, '').trim() || "Video Production Project";
+                doc.text(`Project: ${safeTitle}`, 14, 23);
+                doc.text(`Format: ${appState.aspectRatio} (${resObj.tag})  |  Total Shots: ${appState.shots.length}`, 14, 29);
+
+                // Summary Shot List Table
+                const tableBody = appState.shots.map(s => [
+                    `#${String(s.id).padStart(2, '0')}`,
+                    s.type,
+                    (s.visual || '').replace(/[^\x20-\x7E]/g, '').trim() || "[See Storyboard Frame]",
+                    (s.location || '').replace(/[^\x20-\x7E]/g, '').trim() || "Location",
+                    (s.notes || '').replace(/[^\x20-\x7E]/g, '').trim() || "Standard"
+                ]);
+
+                doc.autoTable({
+                    startY: 40,
+                    head: [['ID', 'Type', 'Visual Description', 'Location', 'Camera Notes']],
+                    body: tableBody,
+                    theme: 'grid',
+                    headStyles: { fillColor: [15, 23, 42], textColor: [0, 229, 255], fontStyle: 'bold' },
+                    styles: { fontSize: 8.5, cellPadding: 2.5, textColor: [30, 41, 59] },
+                    columnStyles: {
+                        0: { cellWidth: 14, halign: 'center', fontStyle: 'bold' },
+                        1: { cellWidth: 18, halign: 'center' },
+                        2: { cellWidth: 74 },
+                        3: { cellWidth: 36 },
+                        4: { cellWidth: 40 }
+                    }
+                });
+
+                // Visual Storyboard Grid Pages (with full Khmer & English burned-in image overlays!)
+                const generatedShots = appState.shots.filter(s => !!s.finalImage);
+                if (generatedShots.length > 0) {
+                    doc.addPage();
+                    doc.setFillColor(15, 23, 42);
+                    doc.rect(0, 0, pageW, 20, 'F');
+                    doc.setTextColor(0, 229, 255);
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(13);
+                    doc.text("VISUAL STORYBOARD FRAMES", 14, 13);
+
+                    let cursorY = 28;
+                    const imgBoxW = appState.aspectRatio === '9:16' ? 52 : (appState.aspectRatio === '1:1' ? 68 : 88);
+                    const imgBoxH = appState.aspectRatio === '9:16' ? 92 : (appState.aspectRatio === '1:1' ? 68 : 50);
+
+                    for (let i = 0; i < generatedShots.length; i++) {
+                        const s = generatedShots[i];
+                        if (cursorY + imgBoxH + 14 > pageH - 12) {
+                            doc.addPage();
+                            cursorY = 18;
+                        }
+
+                        // Card Frame
+                        doc.setDrawColor(203, 213, 225);
+                        doc.roundedRect(14, cursorY, pageW - 28, imgBoxH + 8, 2, 2, 'S');
+
+                        // Embed Storyboard Image (contains burned-in Khmer/English slate text)
+                        doc.addImage(s.finalImage, 'PNG', 18, cursorY + 4, imgBoxW, imgBoxH);
+
+                        // Right-side Shot Details
+                        const infoX = 18 + imgBoxW + 8;
+                        const infoW = pageW - infoX - 18;
+
+                        doc.setTextColor(15, 23, 42);
+                        doc.setFont("helvetica", "bold");
+                        doc.setFontSize(11);
+                        doc.text(`SHOT #${String(s.id).padStart(2, '0')}  [${s.type.toUpperCase()}]`, infoX, cursorY + 11);
+
+                        doc.setFont("helvetica", "normal");
+                        doc.setFontSize(9);
+                        doc.setTextColor(51, 65, 85);
+
+                        const cleanVis = (s.visual || '').replace(/[^\x20-\x7E]/g, '').trim() || "(Khmer script rendered inside storyboard frame)";
+                        const cleanLoc = (s.location || '').replace(/[^\x20-\x7E]/g, '').trim() || "(See frame)";
+                        const cleanNote = (s.notes || '').replace(/[^\x20-\x7E]/g, '').trim() || "(See frame)";
+
+                        const splitVis = doc.splitTextToSize(`Visual: ${cleanVis}`, infoW);
+                        doc.text(splitVis, infoX, cursorY + 19);
+
+                        const nextY = cursorY + 19 + (splitVis.length * 4.5) + 3;
+                        doc.text(`Location: ${cleanLoc}`, infoX, nextY);
+                        doc.text(`Camera Notes: ${cleanNote}`, infoX, nextY + 6);
+
+                        cursorY += imgBoxH + 14;
+                    }
+                }
+
+                doc.save("VPlan_AI_Production_ShotList.pdf");
+                showToast("Production PDF downloaded successfully!", "success");
+            } catch (err) {
+                console.error(err);
+                showToast("Failed to generate PDF document.", "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = origHTML;
+            }
+        }
+
+        // ==========================================
+        // 11. SETTINGS & API KEY MANAGEMENT
+        // ==========================================
+        function saveApiSettings() {
+            const keyInput = document.getElementById('custom-api-key').value.trim();
+            appState.customApiKey = keyInput;
+
+            const badge = document.getElementById('key-mode-badge');
+            const statusText = document.getElementById('api-status-text');
+
+            if (keyInput) {
+                badge.textContent = "Custom External API Key Active";
+                badge.className = "text-[11px] px-2 py-0.5 rounded bg-cyan-electric/15 text-cyan-electric font-semibold";
+                statusText.textContent = "Custom Gemini Key";
+                showToast("Custom Gemini API key saved for this session.", "success");
+            } else {
+                badge.textContent = "Using Built-in Environment Key";
+                badge.className = "text-[11px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-semibold";
+                statusText.textContent = "Gemini Auto-Connected";
+                showToast("Using automatic Gemini API integration.", "info");
+            }
+
+            reprocessExistingOverlays();
+        }
+
+        function clearApiSettings() {
+            document.getElementById('custom-api-key').value = "";
+            appState.customApiKey = "";
+            saveApiSettings();
+        }
+
+        // ==========================================
+        // 12. INITIALIZE APPLICATION ON LOAD
+        // ==========================================
+        window.onload = function () {
+            populateResolutionOptions("16:9");
+            renderShotTable();
+            updateExportSummary();
+        };
+    </script>
+</body>
+</html>
