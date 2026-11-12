@@ -213,24 +213,24 @@
                         <i class="fa-solid fa-download"></i>
                         <span>Download</span>
                     </button>
-                    <button onclick="closeImageModal()" class="w-8 h-8 rounded-lg bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center cursor-pointer">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="p-4 flex flex-col items-center bg-slate-950 overflow-y-auto space-y-4">
-                <img id="modal-shot-img" src="" alt="Full Storyboard Frame" class="max-h-[62vh] w-auto rounded-lg shadow-lg">
-                <!-- Full Uncropped Shot Description Box below image in Lightbox -->
-                <div class="w-full bg-slate-900/90 border border-slate-800 rounded-xl p-4 text-left space-y-2">
-                    <div class="flex flex-wrap items-center gap-2 text-xs">
-                        <span id="modal-type-badge" class="px-2 py-0.5 rounded bg-cyan-electric/20 text-cyan-electric font-bold">A-ROLL</span>
-                        <span id="modal-location-text" class="text-slate-300 font-medium"></span>
-                        <span class="text-slate-600">•</span>
-                        <span id="modal-notes-text" class="text-cyan-300 font-medium"></span>
-                    </div>
+                    <!-- Inspect Modal Description & Acting Guide -->
                     <div>
                         <span class="text-[11px] uppercase tracking-wider text-slate-400 font-bold block mb-1">Full Visual Description:</span>
                         <p id="modal-visual-full" class="text-sm text-white leading-relaxed whitespace-pre-wrap break-words"></p>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-800">
+                        <div class="bg-emerald-950/35 border border-emerald-500/30 rounded-lg p-3">
+                            <span class="text-[11px] font-bold text-emerald-400 flex items-center gap-1.5 mb-1">
+                                <i class="fa-solid fa-circle-check"></i> សូមធ្វើយ៉ាងនេះ (DO):
+                            </span>
+                            <p id="modal-do-text" class="text-xs text-emerald-100 leading-relaxed whitespace-pre-wrap break-words"></p>
+                        </div>
+                        <div class="bg-rose-950/35 border border-rose-500/30 rounded-lg p-3">
+                            <span class="text-[11px] font-bold text-rose-400 flex items-center gap-1.5 mb-1">
+                                <i class="fa-solid fa-circle-xmark"></i> កុំធ្វើយ៉ាងនោះអី (DON'T):
+                            </span>
+                            <p id="modal-dont-text" class="text-xs text-rose-100 leading-relaxed whitespace-pre-wrap break-words"></p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -501,13 +501,14 @@
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="bg-slate-950/80 border-b border-slate-800 text-[11px] uppercase tracking-wider text-slate-400">
-                                <th class="py-3.5 px-4 w-16 text-center">ID</th>
-                                <th class="py-3.5 px-3 w-28">Type</th>
-                                <th class="py-3.5 px-4 min-w-[220px]">Visual Description</th>
-                                <th class="py-3.5 px-3 min-w-[140px]">Location</th>
-                                <th class="py-3.5 px-3 min-w-[160px]">Camera Notes</th>
-                                <th class="py-3.5 px-4 w-48 text-center">Storyboard Preview</th>
-                                <th class="py-3.5 px-4 w-44 text-right">Actions</th>
+                                <th class="py-3.5 px-3 w-14 text-center">ID</th>
+                                <th class="py-3.5 px-2.5 w-24">Type</th>
+                                <th class="py-3.5 px-3 min-w-[200px]">Visual Description</th>
+                                <th class="py-3.5 px-3 min-w-[230px]">Director's Note (✅ សូមធ្វើ / ❌ កុំធ្វើ)</th>
+                                <th class="py-3.5 px-2.5 min-w-[125px]">Location</th>
+                                <th class="py-3.5 px-2.5 min-w-[140px]">Camera Notes</th>
+                                <th class="py-3.5 px-3 w-40 text-center">Storyboard Preview</th>
+                                <th class="py-3.5 px-3 w-40 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="shot-list-tbody" class="divide-y divide-slate-800/70 text-sm">
@@ -708,20 +709,20 @@
         };
 
         const DEFAULT_TEMPLATE_SHOTS = [
-            { id: 1, type: "A-roll", visual: "Hook Speaker at Desk introducing today's story", location: "Home Studio / Desk", notes: "Eye level, Medium close-up" },
-            { id: 2, type: "B-roll", visual: "Pouring fresh hot coffee into a ceramic mug", location: "Kitchen Counter", notes: "Close-up, 60fps Slow motion" },
-            { id: 3, type: "B-roll", visual: "Opening bedroom curtains to let morning sunlight stream in", location: "Bedroom Window", notes: "Slow motion, Wide angle" },
-            { id: 4, type: "A-roll", visual: "Speaker explaining the main plan and goal for the day", location: "Living Room", notes: "Eye level, Natural window light" },
-            { id: 5, type: "B-roll", visual: "Packing camera gear, notebook, and essentials into backpack", location: "Desk Area", notes: "Top-down flat lay shot" },
-            { id: 6, type: "B-roll", visual: "Stepping outside into the fresh morning air", location: "Front Door / Porch", notes: "Over-the-shoulder tracking shot" },
-            { id: 7, type: "B-roll", visual: "Wide establishing view of the journey and scenery", location: "Outdoors / Street", notes: "Wide establishing shot, Gimbal" },
-            { id: 8, type: "A-roll", visual: "Mid-video reflection and key takeaway on location", location: "Scenic Overlook", notes: "Medium shot, Shallow depth of field" },
-            { id: 9, type: "B-roll", visual: "Hands interacting with environment and capturing details", location: "Main Activity Spot", notes: "Macro close-up, Handheld" },
-            { id: 10, type: "B-roll", visual: "Candid smile and reaction while enjoying the moment", location: "Outdoors", notes: "85mm portrait lens, Slow motion" },
-            { id: 11, type: "B-roll", visual: "Golden hour sunset light reflecting across the landscape", location: "Viewpoint", notes: "Low angle tilt-up" },
-            { id: 12, type: "A-roll", visual: "Summarizing the lessons learned and experience", location: "Home Studio / Desk", notes: "Eye level, Warm key light" },
-            { id: 13, type: "B-roll", visual: "Final montage of best highlights from the day", location: "Various Locations", notes: "Fast-paced rhythmic cuts" },
-            { id: 14, type: "A-roll", visual: "Conclusion and Call-to-Action asking viewers to subscribe", location: "Home Studio / Desk", notes: "Medium close-up, Direct eye contact" }
+            { id: 1, type: "A-roll", visual: "Hook Speaker at Desk introducing today's story", doTip: "សូមសម្លឹងមើលទៅកាមេរ៉ាឱ្យចំ ញញឹមរាក់ទាក់ និងនិយាយដោយទឹកដមរស់រវើក (Look directly at the lens with energy)", dontTip: "កុំងាកមុខចេញពីកាមេរ៉ា ឬធ្វើមុខស្ងួតអឹមអៀន (Don't look away or look hesitant)", location: "Home Studio / Desk", notes: "Eye level, Medium close-up" },
+            { id: 2, type: "B-roll", visual: "Pouring fresh hot coffee into a ceramic mug", doTip: "សូមកាន់កំសៀវចាក់យឺតៗ នឹងនរ ដើម្បីឱ្យឃើញផ្សែងកាហ្វេហុយឡើងស្អាត (Pour slowly and steadily)", dontTip: "កុំធ្វើចលនាដៃញាប់ពេក ឬបាំងមុំកាមេរ៉ា (Don't rush or block the camera angle)", location: "Kitchen Counter", notes: "Close-up, 60fps Slow motion" },
+            { id: 3, type: "B-roll", visual: "Opening bedroom curtains to let morning sunlight stream in", doTip: "សូមបើកវាំងននដោយធម្មជាតិ ហើយងើយមុខទទួលពន្លឺថ្ងៃបន្តិច (Open smoothly and pause naturally)", dontTip: "កុំសម្លឹងមើលមកកាមេរ៉ាក្នុងប្លង់ B-roll នេះអី (Don't look at the camera during B-roll)", location: "Bedroom Window", notes: "Slow motion, Wide angle" },
+            { id: 4, type: "A-roll", visual: "Speaker explaining the main plan and goal for the day", doTip: "សូមប្រើកាយវិការដៃបង្ហាញតាមពាក្យសម្តី និងសម្លឹងភ្នែកអ្នកមើល (Use natural hand gestures)", dontTip: "កុំអង្គុយគាំងរឹងខ្លួន ឬអានអត្ថបទភ្លឹកភ្នែក (Don't sit stiffly or stare like reading)", location: "Living Room", notes: "Eye level, Natural window light" },
+            { id: 5, type: "B-roll", visual: "Packing camera gear, notebook, and essentials into backpack", doTip: "សូមរៀបចំដាក់សម្ភារៈចូលកាបូបម្តងមួយៗយ៉ាងមានរបៀប (Place items neatly one by one)", dontTip: "កុំបោះសម្ភារៈចូលកាបូបលឿនៗគ្មានសណ្តាប់ធ្នាប់ (Don't toss items hastily)", location: "Desk Area", notes: "Top-down flat lay shot" },
+            { id: 6, type: "B-roll", visual: "Stepping outside into the fresh morning air", doTip: "សូមដើរចេញទៅមុខដោយជំហានស្វាហាប់ និងជឿជាក់ (Walk forward with confident posture)", dontTip: "កុំដើរឱនមុខចុះ ឬងាកក្រោយមើលកាមេរ៉ា (Don't slouch or look back at the camera)", location: "Front Door / Porch", notes: "Over-the-shoulder tracking shot" },
+            { id: 7, type: "B-roll", visual: "Wide establishing view of the journey and scenery", doTip: "សូមដើរ ឬឈរគយគន់ទេសភាពឱ្យស៊ីជាមួយបរិយាកាស (Blend naturally into the wide scenery)", dontTip: "កុំឈរកាច់រាងឆ្គងៗកណ្តាលផ្លូវ (Don't pose awkwardly in the middle of the frame)", location: "Outdoors / Street", notes: "Wide establishing shot, Gimbal" },
+            { id: 8, type: "A-roll", visual: "Mid-video reflection and key takeaway on location", doTip: "សូមនិយាយចែករំលែកអារម្មណ៍ពិតៗទៅកាន់អ្នកមើល ដោយសម្លឹងចំកែវកាមេរ៉ា (Speak authentically to viewers)", dontTip: "កុំអឹមអៀននឹងមនុស្សជុំវិញ ឬនិយាយខ្សឹបៗ (Don't feel shy around passersby or mumble)", location: "Scenic Overlook", notes: "Medium shot, Shallow depth of field" },
+            { id: 9, type: "B-roll", visual: "Hands interacting with environment and capturing details", doTip: "សូមបង្ហាញសកម្មភាពដៃឱ្យច្បាស់ និងទន់ភ្លន់ (Keep hand movements smooth and intentional)", dontTip: "កុំញ័រដៃ ឬរំកិលវត្ថុចេញពីចំណុច Focus (Don't shake or move out of focus)", location: "Main Activity Spot", notes: "Macro close-up, Handheld" },
+            { id: 10, type: "B-roll", visual: "Candid smile and reaction while enjoying the moment", doTip: "សូមសើច និងបង្ហាញអារម្មណ៍រីករាយតាមបែបធម្មជាតិពិតៗ (Show genuine joy and candid reaction)", dontTip: "កុំសើចបង្ខំ ឬធ្វើមុខតានតឹង (Don't force a fake smile)", location: "Outdoors", notes: "85mm portrait lens, Slow motion" },
+            { id: 11, type: "B-roll", visual: "Golden hour sunset light reflecting across the landscape", doTip: "សូមឈរស្ងៀមបន្តិចឱ្យពន្លឺថ្ងៃលិចចាំងប៉ះផ្ទៃមុខ និងទេសភាព (Hold still to catch the golden rim light)", dontTip: "កុំដើរទៅមកញាប់ពេកនាំឱ្យខូចបរិយាកាសស្ងប់ស្ងាត់ (Don't pace around nervously)", location: "Viewpoint", notes: "Low angle tilt-up" },
+            { id: 12, type: "A-roll", visual: "Summarizing the lessons learned and experience", doTip: "សូមសម្លឹងមើលកាមេរ៉ាដោយភាពជឿជាក់ និងសង្កត់ធ្ងន់លើចំណុចសំខាន់ (Maintain steady eye contact)", dontTip: "កុំងាកភ្នែកចុះឡើង ឬនិយាយបង្អូសវែងពេក (Don't let your eyes wander or ramble)", location: "Home Studio / Desk", notes: "Eye level, Warm key light" },
+            { id: 13, type: "B-roll", visual: "Final montage of best highlights from the day", doTip: "សូមជ្រើសរើសកាយវិការដែលស្វាហាប់ និងរស់រវើកបំផុត (Keep energy high and expressive)", dontTip: "កុំប្រើប្លង់ដែលមានទឹកមុខនឿយហត់ ឬធុញទ្រាន់ (Don't include tired or low-energy expressions)", location: "Various Locations", notes: "Fast-paced rhythmic cuts" },
+            { id: 14, type: "A-roll", visual: "Conclusion and Call-to-Action asking viewers to subscribe", doTip: "សូមសម្លឹងចំកាមេរ៉ា ញញឹមលាអ្នកមើល និងលើកដៃលា ឬចង្អុលប៊ូតុង Subscribe (Smile warmly at lens with CTA gesture)", dontTip: "កុំប្រញាប់ងាកមុខចេញមុនពេលចប់ប្រយោគចុងក្រោយ (Don't look away before finishing your last word)", location: "Home Studio / Desk", notes: "Medium close-up, Direct eye contact" }
         ];
 
         const appState = {
@@ -1120,21 +1121,26 @@
             try {
                 const lang = appState.outputLanguage || 'km-en';
                 const langInstruction = lang === 'km'
-                    ? "Write all visual descriptions, locations, and camera notes strictly in natural, clear Khmer Unicode (ភាសាខ្មែរ)."
+                    ? "Write all visual descriptions, acting coaching tips (doTip, dontTip), locations, and camera notes strictly in natural, clear Khmer Unicode (ភាសាខ្មែរ)."
                     : lang === 'en'
-                    ? "Write all visual descriptions, locations, and camera notes strictly in clear, professional English."
-                    : "Write all visual descriptions, locations, and camera notes bilingually in Khmer Unicode followed by English in parentheses (e.g., ការចាក់កាហ្វេ (Pouring coffee)).";
+                    ? "Write all visual descriptions, acting coaching tips (doTip, dontTip), locations, and camera notes strictly in clear, professional English."
+                    : "Write all visual descriptions, acting coaching tips (doTip, dontTip), locations, and camera notes bilingually in Khmer Unicode followed by English in parentheses (e.g., ការចាក់កាហ្វេ (Pouring coffee)).";
 
-                let countInstruction = "Automatically decide the ideal number of shots (between 8 and 18 shots) based on the scope of the story.";
+                let countInstruction = "Decide the optimal number of shots automatically (between 8 and 18 shots) based on the complexity and pacing of the video topic, starting with a strong A-roll hook and ending with a clear A-roll Call-to-Action.";
                 if (appState.shotCountMode === 'custom') {
-                    const customVal = Math.max(3, Math.min(50, parseInt(document.getElementById('custom-shot-count-input').value || "14", 10)));
-                    countInstruction = `Generate exactly ${customVal} shots in sequential order.`;
+                    const customVal = parseInt(document.getElementById('custom-shot-count-input')?.value || "14", 10);
+                    const safeCount = Math.min(50, Math.max(3, isNaN(customVal) ? 14 : customVal));
+                    countInstruction = `Generate a shot list with EXACTLY ${safeCount} shots in total, starting with a strong A-roll hook and ending with a clear A-roll Call-to-Action.`;
                 }
 
-                const systemPrompt = `You are an expert film director and video production planner. Create a structured A-roll and B-roll shot list for the given video topic.
+                const systemPrompt = `You are an expert film director and acting coach for video creators. Create a structured A-roll and B-roll shot list for the given video topic.
 ${countInstruction}
 ${langInstruction}
 Keep the "type" field strictly as either "A-roll" or "B-roll".
+For EVERY shot, provide practical, encouraging Director's Acting Coaching tips:
+- "doTip": What the creator MUST DO in this shot (e.g., eye contact with camera lens, natural smile, confident posture, relaxed hand gestures, where to look).
+- "dontTip": What the creator MUST AVOID in this shot (e.g., don't feel shy or hesitant, don't look away from camera, don't look stiff, don't rush movements).
+
 Return ONLY a valid JSON object matching this exact schema:
 {
   "projectTitle": "Descriptive title for the video project",
@@ -1143,6 +1149,8 @@ Return ONLY a valid JSON object matching this exact schema:
       "id": 1,
       "type": "A-roll",
       "visual": "Detailed visual action or subject description",
+      "doTip": "សូមធ្វើយ៉ាងនេះ (What to do in this shot)",
+      "dontTip": "កុំធ្វើយ៉ាងនោះអី (What to avoid in this shot)",
       "location": "Specific filming setting",
       "notes": "Camera angle, lens, or movement instructions"
     }
@@ -1182,6 +1190,8 @@ Return ONLY a valid JSON object matching this exact schema:
                     id: idx + 1,
                     type: (String(s.type).toLowerCase().includes('a-roll')) ? 'A-roll' : 'B-roll',
                     visual: s.visual || "Scene visual description",
+                    doTip: s.doTip || "សូមសម្លឹងមើលកាមេរ៉ាឱ្យចំ ដោយទឹកមុខជឿជាក់ និងធម្មជាតិ",
+                    dontTip: s.dontTip || "កុំអឹមអៀន ឬងាកមុខចេញពីកាមេរ៉ា",
                     location: s.location || "On Location",
                     notes: s.notes || "Eye level, Medium shot",
                     rawImage: null,
@@ -1430,16 +1440,16 @@ Return ONLY a valid JSON object matching this exact schema:
                     }
 
                     tr.innerHTML = `
-                        <td class="py-3 px-4 text-center font-mono font-bold text-cyan-electric">
+                        <td class="py-3 px-3 text-center font-mono font-bold text-cyan-electric">
                             #${String(shot.id).padStart(2, '0')}
                         </td>
-                        <td class="py-3 px-3">
-                            <select onchange="updateShotField(${shot.id}, 'type', this.value)" class="px-2.5 py-1 rounded-lg border text-xs font-bold bg-slate-900 focus:outline-none ${typeBadgeClass}">
+                        <td class="py-3 px-2.5">
+                            <select onchange="updateShotField(${shot.id}, 'type', this.value)" class="px-2 py-1 rounded-lg border text-xs font-bold bg-slate-900 focus:outline-none ${typeBadgeClass}">
                                 <option value="A-roll" ${shot.type === 'A-roll' ? 'selected' : ''}>A-roll</option>
                                 <option value="B-roll" ${shot.type === 'B-roll' ? 'selected' : ''}>B-roll</option>
                             </select>
                         </td>
-                        <td class="py-3 px-4">
+                        <td class="py-3 px-3">
                             <textarea 
                                 rows="3" 
                                 oninput="autoResizeTextarea(this)"
@@ -1447,7 +1457,27 @@ Return ONLY a valid JSON object matching this exact schema:
                                 class="w-full bg-transparent hover:bg-slate-900/70 focus:bg-slate-900 border border-transparent focus:border-cyan-electric/50 rounded-lg px-2 py-1.5 text-xs sm:text-sm text-slate-100 leading-relaxed overflow-hidden focus:outline-none transition"
                             >${escapeHtml(shot.visual)}</textarea>
                         </td>
-                        <td class="py-3 px-3">
+                        <td class="py-3 px-3 space-y-1.5">
+                            <div class="bg-emerald-950/35 border border-emerald-500/25 rounded-lg p-1.5">
+                                <span class="text-[10px] font-bold text-emerald-400 block mb-0.5"><i class="fa-solid fa-circle-check mr-1"></i>សូមធ្វើយ៉ាងនេះ:</span>
+                                <textarea 
+                                    rows="2" 
+                                    oninput="autoResizeTextarea(this)"
+                                    onchange="updateShotField(${shot.id}, 'doTip', this.value)"
+                                    class="w-full bg-transparent text-xs text-emerald-100 leading-snug overflow-hidden focus:outline-none"
+                                >${escapeHtml(shot.doTip)}</textarea>
+                            </div>
+                            <div class="bg-rose-950/35 border border-rose-500/25 rounded-lg p-1.5">
+                                <span class="text-[10px] font-bold text-rose-400 block mb-0.5"><i class="fa-solid fa-circle-xmark mr-1"></i>កុំធ្វើយ៉ាងនោះអី:</span>
+                                <textarea 
+                                    rows="2" 
+                                    oninput="autoResizeTextarea(this)"
+                                    onchange="updateShotField(${shot.id}, 'dontTip', this.value)"
+                                    class="w-full bg-transparent text-xs text-rose-100 leading-snug overflow-hidden focus:outline-none"
+                                >${escapeHtml(shot.dontTip)}</textarea>
+                            </div>
+                        </td>
+                        <td class="py-3 px-2.5">
                             <input 
                                 type="text" 
                                 value="${escapeHtml(shot.location)}"
@@ -1455,7 +1485,7 @@ Return ONLY a valid JSON object matching this exact schema:
                                 class="w-full bg-transparent hover:bg-slate-900/70 focus:bg-slate-900 border border-transparent focus:border-cyan-electric/50 rounded-lg px-2 py-1 text-xs text-slate-300 focus:outline-none transition"
                             >
                         </td>
-                        <td class="py-3 px-3">
+                        <td class="py-3 px-2.5">
                             <input 
                                 type="text" 
                                 value="${escapeHtml(shot.notes)}"
@@ -1463,19 +1493,19 @@ Return ONLY a valid JSON object matching this exact schema:
                                 class="w-full bg-transparent hover:bg-slate-900/70 focus:bg-slate-900 border border-transparent focus:border-cyan-electric/50 rounded-lg px-2 py-1 text-xs text-cyan-200/90 font-medium focus:outline-none transition"
                             >
                         </td>
-                        <td class="py-3 px-4 text-center">
+                        <td class="py-3 px-3 text-center">
                             ${previewHTML}
                         </td>
-                        <td class="py-3 px-4 text-right">
+                        <td class="py-3 px-3 text-right">
                             <div class="flex items-center justify-end gap-1.5">
                                 <button 
                                     onclick="generateShotImage(${shot.id})" 
                                     ${shot.isGenerating ? 'disabled' : ''}
-                                    class="px-3 py-1.5 rounded-lg bg-cyan-electric/15 hover:bg-cyan-electric text-cyan-electric hover:text-slate-950 border border-cyan-electric/40 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+                                    class="px-2.5 py-1.5 rounded-lg bg-cyan-electric/15 hover:bg-cyan-electric text-cyan-electric hover:text-slate-950 border border-cyan-electric/40 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
                                     title="Generate AI Storyboard Frame"
                                 >
                                     <i class="fa-solid fa-wand-magic-sparkles"></i>
-                                    <span>${shot.finalImage ? 'Regenerate' : 'Generate Image'}</span>
+                                    <span>${shot.finalImage ? 'Regen' : 'Generate'}</span>
                                 </button>
                                 ${shot.finalImage ? `
                                     <button onclick="downloadSingleImage(${shot.id})" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs transition" title="Download Image">
@@ -1489,8 +1519,7 @@ Return ONLY a valid JSON object matching this exact schema:
                         </td>
                     `;
                     tbody.appendChild(tr);
-                    const desktopTa = tr.querySelector('textarea');
-                    if (desktopTa) autoResizeTextarea(desktopTa);
+                    tr.querySelectorAll('textarea').forEach(ta => autoResizeTextarea(ta));
                 }
 
                 // 2. Render Mobile & Tablet Storyboard Card
@@ -1552,6 +1581,33 @@ Return ONLY a valid JSON object matching this exact schema:
                                     class="w-full bg-slate-950/80 border border-slate-800 focus:border-cyan-electric rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-100 leading-relaxed overflow-hidden focus:outline-none"
                                 >${escapeHtml(shot.visual)}</textarea>
                             </div>
+
+                            <!-- Director's Acting Coaching Notes (Do & Don't) -->
+                            <div class="grid grid-cols-1 gap-2">
+                                <div class="bg-emerald-950/35 border border-emerald-500/30 rounded-xl p-2.5">
+                                    <label class="text-[10px] font-bold text-emerald-400 flex items-center gap-1 mb-1">
+                                        <i class="fa-solid fa-circle-check"></i> សូមធ្វើយ៉ាងនេះ (DO):
+                                    </label>
+                                    <textarea 
+                                        rows="2" 
+                                        oninput="autoResizeTextarea(this)"
+                                        onchange="updateShotField(${shot.id}, 'doTip', this.value)"
+                                        class="w-full bg-transparent text-xs text-emerald-100 leading-relaxed overflow-hidden focus:outline-none"
+                                    >${escapeHtml(shot.doTip)}</textarea>
+                                </div>
+                                <div class="bg-rose-950/35 border border-rose-500/30 rounded-xl p-2.5">
+                                    <label class="text-[10px] font-bold text-rose-400 flex items-center gap-1 mb-1">
+                                        <i class="fa-solid fa-circle-xmark"></i> កុំធ្វើយ៉ាងនោះអី (DON'T):
+                                    </label>
+                                    <textarea 
+                                        rows="2" 
+                                        oninput="autoResizeTextarea(this)"
+                                        onchange="updateShotField(${shot.id}, 'dontTip', this.value)"
+                                        class="w-full bg-transparent text-xs text-rose-100 leading-relaxed overflow-hidden focus:outline-none"
+                                    >${escapeHtml(shot.dontTip)}</textarea>
+                                </div>
+                            </div>
+
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 <div>
                                     <label class="text-[10px] uppercase font-bold text-slate-400 block mb-1">Location</label>
@@ -1591,8 +1647,7 @@ Return ONLY a valid JSON object matching this exact schema:
                         </div>
                     `;
                     cardsContainer.appendChild(card);
-                    const mobTa = card.querySelector('textarea');
-                    if (mobTa) autoResizeTextarea(mobTa);
+                    card.querySelectorAll('textarea').forEach(ta => autoResizeTextarea(ta));
                 }
             });
         }
@@ -1620,6 +1675,8 @@ Return ONLY a valid JSON object matching this exact schema:
                 id: nextId,
                 type: "B-roll",
                 visual: "New supplemental scene description",
+                doTip: "សូមសម្លឹងមើលកាមេរ៉ាឱ្យចំ ឬធ្វើចលនាដោយទំនុកចិត្ត និងធម្មជាតិ",
+                dontTip: "កុំអឹមអៀន ឬងាកមុខចេញពីកាមេរ៉ា",
                 location: "On Location",
                 notes: "Medium shot, Eye level",
                 rawImage: null,
@@ -1700,6 +1757,8 @@ Return ONLY a valid JSON object matching this exact schema:
             document.getElementById('modal-location-text').textContent = `📍 ${shot.location}`;
             document.getElementById('modal-notes-text').textContent = `🎥 ${shot.notes}`;
             document.getElementById('modal-visual-full').textContent = shot.visual;
+            document.getElementById('modal-do-text').textContent = shot.doTip || "សូមសម្លឹងមើលកាមេរ៉ាឱ្យចំ ដោយទឹកមុខជឿជាក់";
+            document.getElementById('modal-dont-text').textContent = shot.dontTip || "កុំអឹមអៀន ឬងាកមុខចេញពីកាមេរ៉ា";
             document.getElementById('modal-download-btn').onclick = () => downloadSingleImage(shot.id);
             document.getElementById('image-modal').classList.remove('hidden');
         }
@@ -1746,12 +1805,14 @@ Return ONLY a valid JSON object matching this exact schema:
                 const folder = zip.folder("VPlan_AI_Storyboards");
 
                 // Add CSV Shot List
-                let csvContent = "ID,Type,Visual Description,Location,Camera Notes\n";
+                let csvContent = "ID,Type,Visual Description,Do (សូមធ្វើយ៉ាងនេះ),Don't (កុំធ្វើយ៉ាងនោះអី),Location,Camera Notes\n";
                 appState.shots.forEach(s => {
                     const row = [
                         s.id,
                         `"${s.type}"`,
                         `"${(s.visual || '').replace(/"/g, '""')}"`,
+                        `"${(s.doTip || '').replace(/"/g, '""')}"`,
+                        `"${(s.dontTip || '').replace(/"/g, '""')}"`,
                         `"${(s.location || '').replace(/"/g, '""')}"`,
                         `"${(s.notes || '').replace(/"/g, '""')}"`
                     ].join(",");
