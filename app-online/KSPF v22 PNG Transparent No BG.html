@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Karaoke Studio Pro - v5.2</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com/"></script>
+    <script src="https://unpkg.com/wavesurfer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/webm-muxer@5.1.4/build/webm-muxer.min.js"></script>
+    <style>
+        :root { --custom-font: 'Kantumruy Pro', sans-serif; }
+        body { font-family: 'Kantumruy Pro', sans-serif; background-color: #020617; color: #f8fafc; overflow: hidden; }
+        #canvasContainer { position: relative; background-color: #000000; box-shadow: 0 0 50px rgba(0,0,0,0.9); overflow: hidden; z-index: 10; display: flex; align-items: center; justify-content: center; cursor: default; filter: brightness(var(--adj-brightness, 1)) contrast(var(--adj-contrast, 1)) saturate(var(--adj-saturate, 1)) hue-rotate(var(--adj-hue, 0deg)) blur(var(--adj-blur, 0px)) sepia(var(--adj-sepia, 0)); }
+        #bgMediaContainer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; background-repeat: var(--bg-repeat, no-repeat); background-position: var(--bg-position, center); background-size: var(--bg-size, cover); }
+        #bgImageElement, #bgVideoElement { width: 100%; height: 100%; object-fit: var(--bg-object-fit, cover); object-position: var(--bg-position, center); display: none; animation: var(--bg-animation, none); }
+        .bg-tile-mode #bgImageElement { width: auto; height: auto; object-fit: none; }
+        @keyframes bgZoomInOut { 0% { transform: scale(1); } 50% { transform: scale(var(--bg-zoom-max, 1.2)); } 100% { transform: scale(1); } }
+        #vignette { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 12; background: radial-gradient(circle, transparent 50%, rgba(0,0,0,var(--vignette-opacity, 0)) 100%); }
+        #logoContainer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 35; pointer-events: none; }
+        .logo-item { position: absolute; pointer-events: none; object-fit: contain; }
+        .dynamic-overlay { position: absolute; z-index: 40; cursor: move; user-select: none; transition: outline 0.1s ease; pointer-events: auto; }
+        .dynamic-overlay.selected { outline: 2px solid #3b82f6; outline-offset: 2px; }
+        #previewTextContainer { position: absolute; top: 0; left: 0; width: var(--preview-native-w, 1920px); height: var(--preview-native-h, 1080px); transform: scale(var(--preview-scale, 1)); transform-origin: top left; z-index: 999; pointer-events: none; }
+        .preview-text-element { position: absolute; left: 50%; top: 50%; width: 90%; display: flex; flex-direction: column; pointer-events: auto; cursor: grab; }
+        .preview-text-element:active { cursor: grabbing; }
+        .preview-text-element[data-align="left"] { align-items: flex-start; text-align: left; }
+        .preview-text-element[data-align="center"] { align-items: center; text-align: center; }
+        .preview-text-element[data-align="right"] { align-items: flex-end; text-align: right; }
+        .line-block { display: block; width: 100%; text-align: inherit; }
+        .syllable-item { display: inline-block; position: relative; color: var(--individual-color, var(--primary-color, #ffffff)); font-size: var(--individual-size, var(--font-size, 60px)); font-weight: var(--font-bold, 700); font-style: var(--font-style, normal); text-decoration: var(--font-decoration, none); font-family: var(--individual-font, var(--active-font-family, 'Kantumruy Pro', sans-serif)); margin: 0 var(--char-spacing, 0px); line-height: var(--line-height, 1.2); transform: scale(var(--scale-x, 1), var(--scale-y, 1)); -webkit-text-stroke: var(--stroke-width, 2px) var(--stroke-color, #000000); paint-order: var(--stroke-order, stroke fill); stroke-linejoin: var(--stroke-join, round); -webkit-text-stroke-linejoin: var(--stroke-join, round); filter: drop-shadow(var(--shadow-dist-x, 2px) var(--shadow-dist-y, 2px) var(--shadow-blur, 4px) var(--shadow-color, rgba(0,0,0,0.8))); transition: color 0.1s linear, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), font-size 0.2s ease; white-space: pre; }
+        .active-syllable { color: var(--secondary-color, #fbbf24) !important; z-index: 10; }
+        .active-syllable.effect-default { transform: scale(calc(var(--scale-x, 1) * 1.15), calc(var(--scale-y, 1) * 1.15)); }
+        .active-syllable.effect-glow { transform: scale(calc(var(--scale-x, 1) * 1.15), calc(var(--scale-y, 1) * 1.15)); text-shadow: 0 0 15px var(--secondary-color, #fbbf24), 0 0 30px var(--secondary-color, #fbbf24); }
+        .active-syllable.effect-bounce { animation: syllableBounce 0.3s ease-out; transform: scale(calc(var(--scale-x, 1) * 1.15), calc(var(--scale-y, 1) * 1.15)); }
+        @keyframes syllableBounce { 0% { transform: scale(calc(var(--scale-x, 1) * 1.15), calc(var(--scale-y, 1) * 1.15)) translateY(0); } 40% { transform: scale(calc(var(--scale-x, 1) * 1.15), calc(var(--scale-y, 1) * 1.15)) translateY(-10px); } 100% { transform: scale(calc(var(--scale-x, 1) * 1.15), calc(var(--scale-y, 1) * 1.15)) translateY(0); } }
+        .active-syllable.effect-rotate { transform: scale(calc(var(--scale-x, 1) * 1.15), calc(var(--scale-y, 1) * 1.15)) rotate(5deg); }
+        .active-syllable.effect-underline { transform: scale(calc(var(--scale-x, 1) * 1.15), calc(var(--scale-y, 1) * 1.15)); text-decoration: underline; text-decoration-color: var(--secondary-color, #fbbf24); }
+        .active-syllable.effect-bold { transform: scale(calc(var(--scale-x, 1) * 1.15), calc(var(--scale-y, 1) * 1.15)); font-weight: 900 !important; }
+        .opaque-box { background-color: var(--box-bg-color, transparent); border-radius: var(--box-rounded, 0px); padding: var(--box-padding-y, 10px) var(--box-padding-x, 20px); display: flex; flex-direction: column; width: var(--box-width, auto); height: var(--box-height, auto); opacity: var(--box-show, 1); transform: translate(var(--box-offset-x, 0px), var(--box-offset-y, 0px)); }
+        .control-tab { display: none; height: calc(100vh - 160px); overflow-y: auto; padding: 12px; }
+        .control-tab.active { display: block; }
+        .tab-btn { font-size: 8px; font-weight: 900; transition: all 0.2s; border-bottom: 2px solid transparent; }
+        .tab-btn.active { border-bottom-color: #3b82f6; color: #3b82f6; background: rgba(59, 130, 246, 0.05); }
+        .inspector-label { font-size: 8px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; display: block; margin-top: 8px; }
+        .input-group { background: rgba(30, 41, 59, 0.3); padding: 8px; border-radius: 6px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.05); }
+        select, input[type="text"], input[type="password"], textarea { background: #0f172a; border: 1px solid #334155; color: white; font-size: 10px; padding: 6px; border-radius: 4px; width: 100%; }
+        input[type="range"] { accent-color: #3b82f6; height: 3px; width: 100%; cursor: pointer; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .switch { position: relative; display: inline-block; width: 28px; height: 16px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #334155; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #3b82f6; }
+        input:checked + .slider:before { transform: translateX(12px); }
+        #audio-timeline { position: relative; width: 100%; height: 12px; background: #1e293b; border-radius: 6px; margin-top: 4px; cursor: pointer; overflow: hidden; }
+        #timeline-progress { position: absolute; height: 100%; background: #3b82f6; width: 0%; pointer-events: none; }
+        .sync-input-color { width: 18px; height: 18px; padding: 0; border: none; background: none; cursor: pointer; }
+        .sync-input-size { width: 32px !important; text-align: center; font-size: 8px !important; }
+        .sync-input-font { width: 50px !important; font-size: 8px !important; height: 20px; }
+        .upload-font-btn { background: #1e293b; color: #3b82f6; font-size: 7px; padding: 2px 4px; border: 1px dashed #3b82f6; border-radius: 2px; cursor: pointer; }
+        .upload-font-btn:hover { background: #3b82f6; color: white; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        .sync-batch-row { background: rgba(59, 130, 246, 0.1); border-top: 2px solid #3b82f6; }
+        .sync-row-selected { background: rgba(34, 197, 94, 0.15) !important; border-left: 3px solid #22c55e; }
+        .sync-row-selected:hover { background: rgba(34, 197, 94, 0.25) !important; }
+        .sync-checkbox { width: 14px; height: 14px; accent-color: #22c55e; cursor: pointer; }
+        .list-item { background: rgba(30, 41, 59, 0.6); border: 1px solid #334155; border-radius: 6px; padding: 8px; margin-bottom: 6px; transition: all 0.2s; }
+        .list-item.active-bg { border-color: #22c55e; background: rgba(34, 197, 94, 0.15); }
+        .list-item .item-header { display: flex; justify-content: space-between; align-items: center; }
+        .list-item .item-index { font-weight: bold; color: #3b82f6; margin-right: 8px; }
+        .list-item .item-filename { font-size: 9px; color: #cbd5e1; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .list-item .item-actions button { background: #1e293b; border: none; color: #94a3b8; padding: 2px 6px; border-radius: 4px; font-size: 7px; cursor: pointer; transition: 0.2s; }
+        .list-item .item-actions button:hover { background: #334155; color: white; }
+        .list-item .item-actions .del-btn:hover { background: #b91c1c; color: white; }
+        .list-item .item-time-controls { display: flex; gap: 4px; margin-top: 4px; align-items: center; flex-wrap: wrap; }
+        .list-item .item-time-controls input[type="number"] { width: 60px; background: #0f172a; border: 1px solid #334155; color: white; font-size: 8px; padding: 2px 4px; border-radius: 4px; }
+        .list-item .item-time-controls .time-label { font-size: 7px; color: #94a3b8; }
+        .list-item .item-time-controls .set-btn { background: #2563eb; color: white; border: none; padding: 2px 6px; border-radius: 4px; font-size: 7px; cursor: pointer; }
+        .list-item .item-time-controls .set-btn:hover { background: #1d4ed8; }
+        .list-item .active-indicator { font-size: 7px; color: #22c55e; font-weight: bold; margin-left: 8px; }
+        .logo-prop-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 4px; background: rgba(0,0,0,0.3); padding: 4px; border-radius: 4px; }
+        .logo-prop-controls label { font-size: 7px; color: #94a3b8; }
+        .logo-prop-controls input[type="range"] { width: 100%; height: 2px; }
+        .rewind-btn { width: 36px; height: 36px; background: #1e293b; border: none; border-radius: 50%; color: white; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .rewind-btn:hover { background: #334155; }
+        .speed-btn { background: #1e293b; border: 1px solid #334155; color: #94a3b8; padding: 4px 8px; border-radius: 4px; font-size: 9px; font-weight: 700; cursor: pointer; transition: 0.2s; min-width: 36px; text-align: center; white-space: nowrap; }
+        .speed-btn:hover { background: #334155; color: white; }
+        .speed-btn.active { background: #2563eb; border-color: #3b82f6; color: white; }
+        .speed-btn.slow { color: #60a5fa; }
+        .speed-btn.normal { color: #4ade80; }
+        .speed-btn.fast { color: #f87171; }
+        .speed-btn.active.slow { background: #1e40af; border-color: #3b82f6; color: white; }
+        .speed-btn.active.normal { background: #15803d; border-color: #22c55e; color: white; }
+        .speed-btn.active.fast { background: #b91c1c; border-color: #ef4444; color: white; }
+        .speed-btn.custom { color: #a78bfa; }
+        .speed-btn.active.custom { background: #5b21b6; border-color: #8b5cf6; color: white; }
+        .speed-input-group { display: flex; align-items: center; gap: 4px; background: rgba(30, 41, 59, 0.5); padding: 2px 6px; border-radius: 4px; border: 1px solid #334155; }
+        .speed-input-group input[type="number"] { width: 48px; background: transparent; border: none; color: white; font-size: 9px; font-weight: 700; padding: 2px 0; outline: none; }
+        .speed-input-group .speed-label { font-size: 7px; color: #94a3b8; font-weight: 700; }
+        .control-group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .speed-group { display: flex; align-items: center; gap: 3px; flex-wrap: wrap; }
+        #stopMotionDisplay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
+        #stopMotionDisplay img { width: 100%; height: 100%; object-fit: var(--bg-object-fit, cover); object-position: var(--bg-position, center); display: block; animation: var(--bg-animation, none); transform-origin: center center; }
+        kbd { background: #1e293b; color: white; padding: 0 4px; border-radius: 2px; border: 1px solid #475569; font-size: 8px; }
+        .master-badge { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; font-size: 7px; font-weight: 900; padding: 1px 4px; border-radius: 3px; margin-left: 4px; }
+        .line-item-all-selected { border-color: #3b82f6 !important; background: rgba(59, 130, 246, 0.15) !important; }
+        .all-lines-mode-banner { background: linear-gradient(135deg, rgba(59,130,246,0.3), rgba(139,92,246,0.3)); border: 1px solid #3b82f6; border-radius: 6px; padding: 4px 8px; text-align: center; font-size: 8px; font-weight: 900; color: #93c5fd; margin-bottom: 6px; animation: pulseBlue 2s ease-in-out infinite; }
+        @keyframes pulseBlue { 0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); } 50% { box-shadow: 0 0 0 4px rgba(59, 130, 246, 0); } }
+        .follow-btn-linked { background: rgba(34, 197, 94, 0.3); color: #86efac; }
+        .follow-btn-unlinked { background: rgba(249, 115, 22, 0.3); color: #fdba74; }
+        #exportModal { position: fixed; inset: 0; z-index: 99999; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; }
+        #exportModal.show { display: flex; }
+        #imageExportModal { position: fixed; inset: 0; z-index: 99999; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; }
+        #imageExportModal.show { display: flex; }
+        .export-panel { background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 20px; width: 440px; max-width: 92vw; box-shadow: 0 25px 80px rgba(0,0,0,0.9); }
+        .export-panel h2 { font-size: 13px; font-weight: 900; color: #fff; margin-bottom: 4px; letter-spacing: 0.05em; }
+        .export-panel .subtitle { font-size: 9px; color: #64748b; margin-bottom: 16px; }
+        .export-row { display: grid; grid-template-columns: 110px 1fr; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .export-row label { font-size: 10px; color: #94a3b8; font-weight: 700; }
+        .export-row select, .export-row input { background: #020617; border: 1px solid #334155; color: #fff; padding: 7px 10px; border-radius: 6px; font-size: 11px; }
+        .export-actions { display: flex; gap: 8px; margin-top: 16px; }
+        .export-actions button { flex: 1; padding: 10px; border-radius: 6px; font-size: 11px; font-weight: 900; cursor: pointer; border: none; transition: 0.2s; }
+        .export-actions .primary { background: linear-gradient(135deg, #dc2626, #b91c1c); color: #fff; }
+        .export-actions .primary:hover { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .export-actions .primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .export-actions .cancel { background: #1e293b; color: #cbd5e1; }
+        .export-actions .cancel:hover { background: #334155; }
+        #exportProgress { position: fixed; inset: 0; z-index: 100000; background: rgba(0,0,0,0.92); backdrop-filter: blur(10px); display: none; flex-direction: column; align-items: center; justify-content: center; }
+        #exportProgress.show { display: flex; }
+        #exportProgress .progress-box { width: 440px; max-width: 90vw; text-align: center; }
+        #exportProgress .progress-title { font-size: 14px; font-weight: 900; color: #fff; margin-bottom: 4px; }
+        #exportProgress .progress-sub { font-size: 9px; color: #64748b; margin-bottom: 16px; }
+        #exportProgress .progress-bar { width: 100%; height: 8px; background: #1e293b; border-radius: 4px; overflow: hidden; margin-bottom: 10px; }
+        #exportProgress .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #3b82f6, #8b5cf6); transition: width 0.15s ease; border-radius: 4px; }
+        #exportProgress .progress-pct { font-size: 24px; font-weight: 900; color: #3b82f6; font-family: monospace; }
+        #exportProgress .progress-info { font-size: 9px; color: #94a3b8; margin-top: 8px; font-family: monospace; }
+        #exportProgress .progress-cancel { margin-top: 20px; background: #1e293b; color: #cbd5e1; border: 1px solid #334155; padding: 8px 24px; border-radius: 6px; font-size: 10px; font-weight: 700; cursor: pointer; }
+        #exportProgress .progress-cancel:hover { background: #334155; }
+        .bg-color-btn { width: 24px; height: 24px; border-radius: 6px; border: 2px solid #334155; cursor: pointer; transition: 0.2s; padding: 0; }
+        .bg-color-btn:hover { transform: scale(1.1); border-color: #3b82f6; }
+        .bg-color-btn.active { border-color: #22c55e; box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.4); }
+        .ai-section { border: 1px solid rgba(139,92,246,0.35); background: rgba(139,92,246,0.06); border-radius: 8px; padding: 10px; margin-bottom: 8px; }
+        .ai-section-title { font-size: 9px; font-weight: 900; color: #c4b5fd; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 4px; }
+        .ai-tag { background: rgba(139,92,246,0.25); color: #d8b4fe; font-size: 7px; padding: 1px 5px; border-radius: 3px; font-weight: 700; }
+        /* ⭐ NEW: smooth transition for panel toggle */
+        #rightPanel { transition: opacity 0.2s ease; }
+        #previewSection { transition: all 0.25s ease; }
+    </style>
+</head>
+<body class="h-screen flex flex-col bg-slate-950">
+
+    <header class="p-3 bg-slate-900 border-b border-slate-800 flex justify-between items-center z-[1000] shadow-xl">
+        <div class="flex items-center gap-3">
+            <div class="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg shadow-lg text-white font-black">KS</div>
+            <div>
+                <h1 class="text-[11px] font-black text-white uppercase tracking-widest leading-none">Karaoke Studio</h1>
+                <span class="text-[8px] text-blue-400 font-bold uppercase tracking-widest leading-none">Ultimate Studio v5.2</span>
+            </div>
+        </div>
+        <div class="flex gap-2 flex-wrap justify-end">
+            <button onclick="document.getElementById('audioInput').click()" class="bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded text-[9px] text-white border border-slate-700">AUDIO</button>
+            <button onclick="document.getElementById('bgInput').click()" class="bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded text-[9px] text-white border border-slate-700">ADD BG</button>
+            <button onclick="document.getElementById('logoInput').click()" class="bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded text-[9px] text-white border border-slate-700">ADD LOGO</button>
+            <button onclick="document.getElementById('overlayInput').click()" class="bg-blue-800/50 hover:bg-blue-700 px-3 py-1.5 rounded text-[9px] text-white border border-blue-700">OVERLAY</button>
+            <button onclick="document.getElementById('fontInput').click()" class="bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded text-[9px] text-white border border-slate-700">UPLOAD FONT</button>
+
+            <!-- ⭐ NEW: Toggle Right Panel Button -->
+            <button onclick="toggleRightPanel()" id="togglePanelBtn" class="bg-indigo-700 hover:bg-indigo-600 px-3 py-1.5 rounded text-[9px] text-white border border-indigo-500 font-bold transition-colors" title="លាក់/បង្ហាញ Panel (H)">◀ HIDE PANEL</button>
+
+            <div class="flex gap-1 border-l border-slate-700 pl-2">
+                <button onclick="exportData()" class="bg-blue-600 hover:bg-blue-500 px-3 py-1.5 rounded text-[9px] font-black text-white shadow-lg">EXPORT JSON</button>
+                <button onclick="document.getElementById('importJsonInput').click()" class="bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded text-[9px] text-white border border-slate-700">IMPORT JSON</button>
+                <button onclick="exportSRT()" class="bg-indigo-600 hover:bg-indigo-500 px-3 py-1.5 rounded text-[9px] font-black text-white shadow-lg">EXPORT SRT</button>
+            </div>
+            <div class="flex gap-1 border-l border-slate-700 pl-2">
+                <button onclick="openVideoExportModal()" class="bg-red-600 hover:bg-red-500 px-3 py-1.5 rounded text-[9px] font-black text-white shadow-lg">🎬 EXPORT VIDEO</button>
+                <button onclick="openImageExportModal('png')" class="bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 rounded text-[9px] font-black text-white shadow-lg">PNG</button>
+                <button onclick="openImageExportModal('jpg')" class="bg-amber-600 hover:bg-amber-500 px-3 py-1.5 rounded text-[9px] font-black text-white shadow-lg">JPG</button>
+            </div>
+            <input type="file" id="audioInput" accept="audio/*" class="hidden">
+            <input type="file" id="bgInput" accept="image/*,video/*" class="hidden" multiple onchange="handleBgUpload(this)">
+            <input type="file" id="logoInput" accept="image/*" class="hidden" multiple onchange="handleLogoUpload(this)">
+            <input type="file" id="overlayInput" accept="image/png" class="hidden" multiple onchange="handleOverlayUpload(this)">
+            <input type="file" id="fontInput" accept=".ttf,.otf,.woff" class="hidden" multiple onchange="handleGlobalFontUpload(this)">
+            <input type="file" id="importJsonInput" accept=".json" class="hidden" onchange="importData(this)">
+        </div>
+    </header>
+
+    <main class="flex-1 grid grid-cols-12 overflow-hidden">
+        <!-- ═══ LEFT ASIDE ═══ -->
+        <aside class="col-span-2 border-r border-slate-800 flex flex-col bg-slate-900/40 overflow-hidden">
+            <div class="p-3 border-b border-slate-800 shrink-0">
+                <label class="inspector-label" id="textInputLabel">Text Content</label>
+                <textarea id="newLineInput" class="h-24 mb-2" placeholder="វាយអត្ថបទ... Space ១ = ផ្ដាច់ពាក្យ, Space ២ = ដកឃ្លា"></textarea>
+                <div class="grid grid-cols-2 gap-1">
+                    <button id="addOrUpdateBtn" onclick="addLineUnified()" class="bg-blue-600 py-2 rounded text-[9px] font-black">ADD LINE</button>
+                    <button onclick="cancelEdit()" id="cancelEditBtn" class="bg-slate-700 py-2 rounded text-[9px] font-black hidden">CANCEL</button>
+                    <button id="ttsBtn" onclick="generateTTS()" class="bg-indigo-600 py-2 rounded text-[9px] font-black">TTS</button>
+                </div>
+            </div>
+            <div class="px-2 py-2 border-b border-slate-800 bg-blue-900/30 flex items-center gap-2 shrink-0">
+                <input type="checkbox" id="selectAllLinesToggle" class="sync-checkbox" onchange="toggleSelectAllLines()">
+                <label for="selectAllLinesToggle" class="text-[8px] text-blue-300 font-bold cursor-pointer uppercase tracking-wide">★ Select All Lines</label>
+                <span id="selectedLinesCount" class="text-[7px] text-blue-400 font-bold ml-auto"></span>
+                <button onclick="clearLineSelection()" id="clearLineSelectionBtn" class="hidden text-[7px] bg-slate-700 hover:bg-slate-600 px-2 py-0.5 rounded text-white font-bold">CLEAR</button>
+            </div>
+            <div id="allLinesModeBanner" class="mx-2 mt-2 hidden"></div>
+            <div id="lineList" class="flex-1 overflow-y-auto p-2 space-y-2 min-h-0"></div>
+        </aside>
+
+        <!-- ═══ CENTER: PREVIEW (⭐ added id) ═══ -->
+        <section id="previewSection" class="col-span-7 flex flex-col bg-black relative border-r border-slate-800">
+            <div class="relative flex-1 overflow-hidden bg-slate-950">
+                <div id="previewArea" class="w-full h-full overflow-auto relative" onclick="deselectAll(event)">
+                    <div id="canvasWrapper" class="flex items-center justify-center p-8 box-border" style="min-width: 100%; min-height: 100%; width: fit-content; height: fit-content;">
+                        <div id="canvasContainer" onclick="handleCanvasClick(event)">
+                            <div id="bgMediaContainer">
+                                <img id="bgImageElement" src="">
+                                <video id="bgVideoElement" loop muted playsinline></video>
+                            </div>
+                            <div id="stopMotionDisplay" class="absolute inset-0 pointer-events-none z-[5]"></div>
+                            <div id="dynamicOverlaysContainer" class="absolute inset-0 pointer-events-none"></div>
+                            <div id="logoContainer" class="absolute inset-0 pointer-events-none"></div>
+                            <div id="vignette"></div>
+                            <div id="previewTextContainer"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-3 bg-slate-900 border-t border-slate-800 shrink-0">
+                <div id="waveform-container" class="relative">
+                    <div id="waveform"></div>
+                    <div id="audio-timeline" onclick="seekAudio(event)"><div id="timeline-progress"></div></div>
+                </div>
+                <div class="flex items-center justify-between mt-3">
+                    <div class="flex items-center gap-2">
+                        <button onclick="rewindDown()" class="rewind-btn">⏪</button>
+                        <button onclick="togglePlayPause()" id="playBtn" class="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg transform active:scale-95">▶</button>
+                        <button onclick="rewindUp()" class="rewind-btn">⏩</button>
+                        <div class="speed-group">
+                            <button onclick="setPlaySpeed(0.25)" id="speed025" class="speed-btn slow">0.25x</button>
+                            <button onclick="setPlaySpeed(0.5)" id="speed05" class="speed-btn slow">0.5x</button>
+                            <button onclick="setPlaySpeed(0.75)" id="speed075" class="speed-btn slow">0.75x</button>
+                            <button onclick="setPlaySpeed(1.0)" id="speed1" class="speed-btn normal active">1.0x</button>
+                            <button onclick="setPlaySpeed(1.25)" id="speed125" class="speed-btn fast">1.25x</button>
+                            <button onclick="setPlaySpeed(1.5)" id="speed15" class="speed-btn fast">1.5x</button>
+                            <button onclick="setPlaySpeed(2.0)" id="speed2" class="speed-btn fast">2.0x</button>
+                        </div>
+                        <div class="speed-input-group">
+                            <input type="number" id="customSpeedInput" min="0.1" max="4.0" step="0.05" value="1.0" onchange="applyCustomSpeed()">
+                            <span class="speed-label">x</span>
+                            <button onclick="applyCustomSpeed()" class="speed-btn custom" style="padding:2px 6px;font-size:8px;min-width:auto;">SET</button>
+                        </div>
+                        <div class="flex flex-col ml-2">
+                            <span id="currentTimeDisp" class="text-xs font-mono text-white tracking-tighter">00:00.00</span>
+                            <span id="durationDisp" class="text-[9px] font-mono text-slate-500">00:00.00</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-2 text-slate-400 text-[8px]">
+                            <span class="font-mono" id="zoomLevelDisplay">50</span>
+                            <button onclick="zoomOut()" class="bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded text-[9px] text-white border border-slate-700">−</button>
+                            <button onclick="zoomIn()" class="bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded text-[9px] text-white border border-slate-700">+</button>
+                        </div>
+                        <input type="range" min="10" max="1000" value="50" oninput="updateZoom(this.value)" class="w-24" id="zoomSlider">
+                        <input type="range" min="0" max="1" step="0.1" value="1" oninput="wavesurfer.setVolume(this.value)" class="w-16">
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- ═══ RIGHT ASIDE (⭐ added id="rightPanel") ═══ -->
+        <aside id="rightPanel" class="col-span-3 bg-slate-950 overflow-hidden flex flex-col">
+            <div class="flex overflow-x-auto border-b border-slate-800 bg-slate-900 no-scrollbar">
+                <button onclick="showTab('font')" class="tab-btn shrink-0 px-4 py-3 active">TEXT</button>
+                <button onclick="showTab('style')" class="tab-btn shrink-0 px-4 py-3">LOOK</button>
+                <button onclick="showTab('layout')" class="tab-btn shrink-0 px-4 py-3">POS</button>
+                <button onclick="showTab('box')" class="tab-btn shrink-0 px-4 py-3">BOX</button>
+                <button onclick="showTab('adj')" class="tab-btn shrink-0 px-4 py-3">IMAGE</button>
+                <button onclick="showTab('ai')" class="tab-btn shrink-0 px-4 py-3">AI BG</button>
+                <button onclick="showTab('bglist')" class="tab-btn shrink-0 px-4 py-3">BG LIST</button>
+                <button onclick="showTab('stopmotion')" class="tab-btn shrink-0 px-4 py-3">STOP</button>
+                <button onclick="showTab('logolist')" class="tab-btn shrink-0 px-4 py-3">LOGO LIST</button>
+                <button onclick="showTab('overlay')" class="tab-btn shrink-0 px-4 py-3">OVERLAY</button>
+                <button onclick="showTab('sync')" class="tab-btn shrink-0 px-4 py-3">SYNC</button>
+            </div>
+
+            <div id="tab-font" class="control-tab active">
+                <div class="input-group">
+                    <label class="inspector-label">Font Family</label>
+                    <select id="fontFamilySelect" onchange="updateStyles()"><option value="'Kantumruy Pro', sans-serif">Kantumruy Pro</option></select>
+                    <label class="inspector-label mt-2">Format</label>
+                    <div class="grid grid-cols-4 gap-1">
+                        <button onclick="toggleFont('bold')" class="bg-slate-800 p-1 text-[8px] rounded font-bold">B</button>
+                        <button onclick="toggleFont('italic')" class="bg-slate-800 p-1 text-[8px] rounded italic">I</button>
+                        <button onclick="toggleFont('underline')" class="bg-slate-800 p-1 text-[8px] rounded underline">U</button>
+                        <button onclick="toggleFont('line-through')" class="bg-slate-800 p-1 text-[8px] rounded line-through">S</button>
+                    </div>
+                    <label class="inspector-label mt-2">Size: <span id="v-fontSize">60</span>px</label>
+                    <input type="range" id="fontSize" min="10" max="400" value="60" oninput="updateStyles()">
+                    <label class="inspector-label mt-2">Spacing</label>
+                    <div class="grid-2">
+                        <div><span class="text-[7px]">Character</span><input type="range" id="charSpacing" min="-10" max="50" value="0" oninput="updateStyles()"></div>
+                        <div><span class="text-[7px]">Line</span><input type="range" id="lineHeight" min="0.5" max="3" step="0.1" value="1.2" oninput="updateStyles()"></div>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label class="inspector-label">Alignment</label>
+                    <div class="grid grid-cols-3 gap-1">
+                        <button onclick="setTextAlign('left')" class="bg-slate-800 p-1 text-[8px] rounded">LEFT</button>
+                        <button onclick="setTextAlign('center')" class="bg-slate-800 p-1 text-[8px] rounded">CENTER</button>
+                        <button onclick="setTextAlign('right')" class="bg-slate-800 p-1 text-[8px] rounded">RIGHT</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-style" class="control-tab">
+                <div class="input-group">
+                    <label class="inspector-label">Resolution / Aspect Ratio</label>
+                    <select id="resSelect" onchange="updateCanvasSize(); updateStyles();">
+                        <optgroup label="Landscape (16:9)">
+                            <option value="7680x4320">4320p (8K)</option>
+                            <option value="3840x2160">2160p (4K)</option>
+                            <option value="2560x1440">1440p (2K)</option>
+                            <option value="1920x1080" selected>1080p (HD)</option>
+                            <option value="1280x720">720p (HD)</option>
+                        </optgroup>
+                        <optgroup label="Portrait (9:16)">
+                            <option value="1080x1920">1080x1920 (TikTok)</option>
+                            <option value="720x1280">720x1280 (Shorts)</option>
+                        </optgroup>
+                        <optgroup label="Square (1:1)"><option value="1080x1080">1080x1080 (Insta)</option></optgroup>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label class="inspector-label">Background Scale (Fit)</label>
+                    <select id="bgFitSelect" onchange="updateBgScale()">
+                        <option value="cover" selected>Fill (Cover)</option>
+                        <option value="contain">Fit (Contain)</option>
+                        <option value="fill">Stretch</option>
+                        <option value="tile">Tile</option>
+                        <option value="center">Center</option>
+                        <option value="span">Span</option>
+                    </select>
+                </div>
+                <div class="input-group" style="border-color: rgba(59,130,246,0.4); background: rgba(59,130,246,0.08);">
+                    <label class="inspector-label" style="color:#93c5fd;">🎨 Background Color (Empty)</label>
+                    <p class="text-[7px] text-slate-400 italic mb-2">ប្រើនៅពេលគ្មាន BG រូបភាព/វីដេអូ</p>
+                    <div class="flex items-center gap-2 mb-2">
+                        <input type="color" id="bgColorPicker" value="#000000" oninput="setBgColor(this.value)" style="width:40px;height:32px;padding:0;border:1px solid #334155;border-radius:6px;cursor:pointer;">
+                        <input type="text" id="bgColorHex" value="#000000" onchange="setBgColor(this.value)" style="flex:1;font-family:monospace;font-size:10px;">
+                    </div>
+                    <div class="flex gap-1 flex-wrap">
+                        <button class="bg-color-btn" onclick="setBgColor('#000000')" data-color="#000000" style="background:#000000;"></button>
+                        <button class="bg-color-btn" onclick="setBgColor('#0a0e27')" data-color="#0a0e27" style="background:#0a0e27;"></button>
+                        <button class="bg-color-btn" onclick="setBgColor('#1a0033')" data-color="#1a0033" style="background:#1a0033;"></button>
+                        <button class="bg-color-btn" onclick="setBgColor('#001a0a')" data-color="#001a0a" style="background:#001a0a;"></button>
+                        <button class="bg-color-btn" onclick="setBgColor('#1a0000')" data-color="#1a0000" style="background:#1a0000;"></button>
+                        <button class="bg-color-btn" onclick="setBgColor('#0f172a')" data-color="#0f172a" style="background:#0f172a;"></button>
+                        <button class="bg-color-btn" onclick="setBgColor('#f8fafc')" data-color="#f8fafc" style="background:#f8fafc;"></button>
+                        <button class="bg-color-btn" onclick="setBgColor('#fbbf24')" data-color="#fbbf24" style="background:#fbbf24;"></button>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label class="inspector-label">Colors</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div><label class="text-[7px]">Primary</label><input type="color" id="primaryColor" value="#ffffff" oninput="updateStyles()"></div>
+                        <div><label class="text-[7px]">Active</label><input type="color" id="secondaryColor" value="#fbbf24" oninput="inputAdjust()"></div>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label class="inspector-label">Stroke (Outline)</label>
+                    <div class="grid grid-cols-2 gap-2 mb-2">
+                        <input type="color" id="strokeColor" value="#000000" oninput="updateStyles()">
+                        <input type="range" id="strokeWidth" min="0" max="40" value="2" oninput="updateStyles()">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 mb-2">
+                        <div><label class="text-[7px] block">Stroke Order</label>
+                            <select id="strokeOrder" onchange="updateStyles()" class="mt-1">
+                                <option value="stroke fill">Behind Text (Safe)</option>
+                                <option value="fill stroke">Front of Text</option>
+                            </select>
+                        </div>
+                        <div><label class="text-[7px] block">Stroke Join</label>
+                            <select id="strokeJoin" onchange="updateStyles()" class="mt-1">
+                                <option value="round">Round</option>
+                                <option value="miter">Miter</option>
+                                <option value="bevel">Bevel</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label class="inspector-label">Shadow</label>
+                    <div><label class="text-[7px]">Color</label><input type="color" id="shadowColor" value="#000000" oninput="updateStyles()"></div>
+                    <div class="grid-2">
+                        <div><label class="text-[7px]">X</label><input type="range" id="shadowX" min="-50" max="50" value="2" oninput="updateStyles()"></div>
+                        <div><label class="text-[7px]">Y</label><input type="range" id="shadowY" min="-50" max="50" value="2" oninput="updateStyles()"></div>
+                    </div>
+                    <div><label class="text-[7px]">Blur</label><input type="range" id="shadowBlur" min="0" max="50" value="4" oninput="updateStyles()"></div>
+                </div>
+            </div>
+
+            <div id="tab-layout" class="control-tab">
+                <div class="input-group">
+                    <label class="inspector-label">Position X-Y</label>
+                    <div class="grid-2">
+                        <input type="range" id="posX" min="-2000" max="2000" value="0" oninput="updateLinePos()">
+                        <input type="range" id="posY" min="-2000" max="2000" value="200" oninput="updateLinePos()">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label class="inspector-label">Scale & Rotation</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div><label class="text-[7px]">Scale X</label><input type="range" id="scaleX" min="0.1" max="5" step="0.1" value="1" oninput="updateStyles()"></div>
+                        <div><label class="text-[7px]">Scale Y</label><input type="range" id="scaleY" min="0.1" max="5" step="0.1" value="1" oninput="updateStyles()"></div>
+                    </div>
+                    <label class="text-[7px] mt-2 block">Rotation</label>
+                    <input type="range" id="rotation" min="-180" max="180" value="0" oninput="updateStyles()">
+                </div>
+            </div>
+
+            <div id="tab-box" class="control-tab">
+                <div class="input-group">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="inspector-label m-0">Box Background</label>
+                        <label class="switch"><input type="checkbox" id="showBox" checked onchange="updateStyles()"><span class="slider"></span></label>
+                    </div>
+                    <div class="grid-2">
+                        <input type="color" id="boxBgColor" value="#000000" oninput="updateStyles()">
+                        <div><label class="text-[7px] block">Opacity</label><input type="range" id="boxOpacity" min="0" max="1" step="0.01" value="0.5" oninput="updateStyles()"></div>
+                    </div>
+                    <div class="grid-2 mt-2">
+                        <div><label class="text-[7px]">Rounded</label><input type="range" id="boxRounded" min="0" max="100" value="0" oninput="updateStyles()"></div>
+                        <div><label class="text-[7px]">Width</label><input type="range" id="boxWidth" min="0" max="4000" value="0" oninput="updateStyles()"></div>
+                    </div>
+                    <div class="grid-2 mt-2">
+                        <div><label class="text-[7px]">Offset X</label><input type="range" id="boxOffsetX" min="-1000" max="1000" value="0" oninput="updateStyles()"></div>
+                        <div><label class="text-[7px]">Offset Y</label><input type="range" id="boxOffsetY" min="-1000" max="1000" value="0" oninput="updateStyles()"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-adj" class="control-tab">
+                <div class="input-group">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="inspector-label m-0">Zoom Transition</label>
+                        <label class="switch"><input type="checkbox" id="enableBgZoom" onchange="updateStyles()"><span class="slider"></span></label>
+                    </div>
+                    <div class="grid-2">
+                        <div><label class="text-[7px]">Duration (s)</label><input type="range" id="bgZoomDuration" min="1" max="60" step="1" value="20" oninput="updateStyles()"></div>
+                        <div><label class="text-[7px]">Scale Max</label><input type="range" id="bgZoomMax" min="1" max="2" step="0.05" value="1.2" oninput="updateStyles()"></div>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label class="inspector-label">Basic Color</label>
+                    <div><label class="text-[7px]">Brightness</label><input type="range" id="adjBrightness" min="0" max="3" step="0.05" value="1" oninput="inputAdjust()"></div>
+                    <div><label class="text-[7px]">Contrast</label><input type="range" id="adjContrast" min="0" max="3" step="0.05" value="1" oninput="inputAdjust()"></div>
+                    <div><label class="text-[7px]">Saturation</label><input type="range" id="adjSaturate" min="0" max="3" step="0.05" value="1" oninput="inputAdjust()"></div>
+                </div>
+                <div class="input-group">
+                    <label class="inspector-label">Advanced</label>
+                    <div><label class="text-[7px]">Hue Rotate</label><input type="range" id="adjHue" min="0" max="360" value="0" oninput="inputAdjust()"></div>
+                    <div><label class="text-[7px]">Blur</label><input type="range" id="adjBlur" min="0" max="50" value="0" oninput="inputAdjust()"></div>
+                    <div><label class="text-[7px]">Vignette</label><input type="range" id="vignetteOpacity" min="0" max="1" step="0.05" value="0.5" oninput="inputAdjust()"></div>
+                </div>
+            </div>
+
+            <div id="tab-ai" class="control-tab">
+                <div class="ai-section">
+                    <div class="ai-section-title">🔑 Gemini API Keys <span class="ai-tag">MULTI</span></div>
+                    <p class="text-[7px] text-slate-400 mb-1">បញ្ចូល Keys ច្រើន (១ បន្ទាត់ = ១ Key)</p>
+                    <textarea id="geminiApiKey" class="h-20 mb-1" style="font-family:monospace;font-size:8px;" placeholder="AIzaSy...&#10;AIzaSy..."></textarea>
+                    <div class="flex gap-1 mb-1">
+                        <button onclick="saveGeminiKeys()" class="flex-1 bg-purple-600 hover:bg-purple-500 px-2 py-1 rounded text-[8px] font-bold text-white">💾 SAVE ALL</button>
+                        <button onclick="clearGeminiKeys()" class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-[8px] font-bold text-white">×</button>
+                    </div>
+                    <label class="flex items-center gap-2 text-[8px] cursor-pointer mb-1 bg-amber-900/30 px-2 py-1 rounded border border-amber-700">
+                        <input type="checkbox" id="retryOnlyMode" onchange="toggleRetryOnly()" class="sync-checkbox">
+                        <span class="text-amber-300 font-bold">⚠️ ប្រើ Gemini តែម្តង (មិនប្ដូរទៅ Pollinations)</span>
+                    </label>
+                    <p id="geminiKeyStatus" class="text-[7px] text-amber-400">⚠️ គ្មាន Key → ប្រើ Pollinations (Free)</p>
+                    <p class="text-[7px] text-slate-500 mt-1 italic">យក Key ឥតគិតថ្លៃ៖ aistudio.google.com/apikey</p>
+                </div>
+                <div class="input-group">
+                    <label class="inspector-label">📝 AI Prompt</label>
+                    <textarea id="aiPromptInput" class="h-24 mb-2" placeholder="ឧ. ទេសភាពភ្នំពេលព្រឹក មានអ័ព្ទ, cinematic..."></textarea>
+                </div>
+                <div class="ai-section" style="border-color: rgba(59,130,246,0.4); background: rgba(59,130,246,0.06);">
+                    <div class="ai-section-title" style="color:#93c5fd;">🖼️ Analyze Image → Prompt</div>
+                    <input type="file" id="aiImageAnalyzeInput" accept="image/*" style="display:none" onchange="handleAiAnalyzeImage(this)">
+                    <div class="flex gap-1 mb-2">
+                        <button onclick="document.getElementById('aiImageAnalyzeInput').click()" class="flex-1 bg-slate-800 hover:bg-slate-700 py-1.5 rounded text-[8px] font-bold text-white border border-slate-700">📁 UPLOAD</button>
+                        <button onclick="analyzeImageForPrompt()" id="analyzeImageBtn" class="bg-blue-600 hover:bg-blue-500 px-3 py-1.5 rounded text-[8px] font-bold text-white disabled:opacity-40 disabled:cursor-not-allowed" disabled>🔍 ANALYZE</button>
+                    </div>
+                    <div id="aiImagePreview" class="hidden mb-1">
+                        <img id="aiImageThumb" style="max-height:110px;border-radius:4px;border:1px solid #475569;display:block;margin:auto;" />
+                    </div>
+                </div>
+                <div class="input-group">
+                    <button id="generateAiBgBtn" onclick="generateAIBG()" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 py-2 rounded text-[9px] font-black text-white shadow-lg transition-all">🎨 GENERATE BACKGROUND</button>
+                    <div id="aiLoadingStatus" class="mt-2 text-[8px] text-blue-400 hidden text-center animate-pulse"></div>
+                </div>
+            </div>
+
+            <div id="tab-bglist" class="control-tab">
+                <div class="input-group">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="inspector-label m-0">Backgrounds List</label>
+                        <button onclick="document.getElementById('bgInput').click()" class="bg-blue-600 px-2 py-1 rounded text-[7px] font-bold text-white">+ ADD BG</button>
+                    </div>
+                    <div id="bgListContainer" class="max-h-64 overflow-y-auto space-y-2"></div>
+                </div>
+            </div>
+
+            <div id="tab-stopmotion" class="control-tab">
+                <div class="input-group">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="inspector-label m-0">Image Stop Motion</label>
+                        <div class="flex gap-1">
+                            <button onclick="addStopMotionFrame(wavesurfer.getCurrentTime())" class="bg-blue-600 px-2 py-1 rounded text-[7px] font-bold text-white">+ ADD</button>
+                            <button onclick="document.getElementById('stopMotionFolderInput').click()" class="bg-green-600 px-2 py-1 rounded text-[7px] font-bold text-white">FOLDER</button>
+                            <button onclick="clearAllStopMotionFrames()" class="bg-red-600 px-2 py-1 rounded text-[7px] font-bold text-white">លុប</button>
+                        </div>
+                    </div>
+                    <input type="file" id="stopMotionFolderInput" accept="image/*" multiple style="display:none" onchange="handleStopMotionFolderUpload(this)" />
+                    <div id="stopMotionContainer" class="max-h-48 overflow-y-auto space-y-2"></div>
+                    <div class="flex gap-2 mt-3">
+                        <button onclick="applyStopMotionTimesToLine()" class="bg-green-600 hover:bg-green-500 px-3 py-1.5 rounded text-[9px] font-bold text-white">Apply to Line</button>
+                        <button onclick="exportStopMotionTimes()" class="bg-blue-600 hover:bg-blue-500 px-3 py-1.5 rounded text-[9px] font-bold text-white">Export CSV</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-logolist" class="control-tab">
+                <div class="input-group">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="inspector-label m-0">Logo List</label>
+                        <button onclick="document.getElementById('logoInput').click()" class="bg-blue-600 px-2 py-1 rounded text-[7px] font-bold text-white">+ ADD LOGO</button>
+                    </div>
+                    <div id="logoListContainer" class="max-h-64 overflow-y-auto space-y-2"></div>
+                </div>
+            </div>
+
+            <div id="tab-overlay" class="control-tab">
+                <div class="input-group">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="inspector-label m-0">Overlay Inspector</label>
+                        <div class="flex gap-1">
+                            <button onclick="deselectAll()" class="text-[7px] bg-slate-700 px-2 py-0.5 rounded text-white font-bold">DESELECT</button>
+                            <button onclick="removeSelectedOverlay()" class="text-[7px] bg-red-600 px-2 py-0.5 rounded text-white font-bold">DELETE</button>
+                        </div>
+                    </div>
+                    <p id="overlaySelectHint" class="text-[7px] text-slate-500 italic mb-2">ចុចលើរូបភាពក្នុង Canvas</p>
+                    <div id="overlaySettingsControls" class="opacity-30 pointer-events-none">
+                        <div><label class="text-[7px] block">Width (%)</label><input type="range" id="ovWidth" min="1" max="100" value="20" oninput="updateOverlayStyle()"></div>
+                        <div class="grid-2 mt-2">
+                            <div><label class="text-[7px]">X (%)</label><input type="range" id="ovX" min="0" max="100" value="10" oninput="updateOverlayStyle()"></div>
+                            <div><label class="text-[7px]">Y (%)</label><input type="range" id="ovY" min="0" max="100" value="10" oninput="updateOverlayStyle()"></div>
+                        </div>
+                        <div class="mt-2 mb-3"><label class="text-[7px] block">Opacity</label><input type="range" id="ovOpacity" min="0" max="1" step="0.1" value="1" oninput="updateOverlayStyle()"></div>
+                        <div class="mt-3 pt-3 border-t border-slate-800">
+                            <div class="flex justify-between mt-1 text-[7px] text-slate-300">
+                                <span id="ovInDisp">IN: 00:00.00</span>
+                                <span id="ovOutDisp">OUT: --:--.--</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-1 mt-1">
+                                <button onclick="setOverlayTime('start')" class="bg-black/30 py-1.5 rounded hover:bg-blue-600 text-[7px] font-bold text-white">SET IN</button>
+                                <button onclick="setOverlayTime('end')" class="bg-black/30 py-1.5 rounded hover:bg-blue-600 text-[7px] font-bold text-white">SET OUT</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-sync" class="control-tab">
+                <div class="p-2 border-b border-slate-800 mb-2">
+                   <h3 class="text-[10px] font-bold text-blue-400 uppercase">Syllable Styling & Sync</h3>
+                </div>
+                <div class="input-group mb-2">
+                    <div class="flex justify-between items-center">
+                        <label class="inspector-label m-0">Shift Mode</label>
+                        <label class="switch"><input type="checkbox" id="rotateModeToggle"><span class="slider"></span></label>
+                    </div>
+                </div>
+                <div class="input-group mb-2">
+                    <label class="inspector-label">Highlight Effect</label>
+                    <select id="highlightEffectSelect" onchange="updateHighlightEffect()">
+                        <option value="default" selected>ពណ៌ + ធំ</option>
+                        <option value="glow">ពន្លឺ</option>
+                        <option value="bounce">លោត</option>
+                        <option value="rotate">បង្វិល</option>
+                        <option value="underline">គូសបន្ទាត់</option>
+                        <option value="bold">ដិត</option>
+                    </select>
+                </div>
+                <div class="input-group mb-2" style="background: rgba(34, 197, 94, 0.1); border-color: rgba(34, 197, 94, 0.3);">
+                    <div class="flex items-center gap-2 mb-2">
+                        <input type="checkbox" id="selectAllSync" class="sync-checkbox" onchange="toggleSelectAllSync()">
+                        <label for="selectAllSync" class="text-[8px] text-green-300 font-bold cursor-pointer">SELECT ALL</label>
+                        <span id="selectedCount" class="text-[8px] text-green-400 font-bold ml-auto">0 selected</span>
+                        <button onclick="clearSyncSelection()" class="text-[7px] bg-slate-700 hover:bg-slate-600 px-2 py-0.5 rounded text-white font-bold">CLEAR</button>
+                    </div>
+                    <div id="batchApplyBar" class="opacity-30 pointer-events-none transition-opacity">
+                        <label class="text-[7px] text-green-300 block mb-1 font-bold">⚡ APPLY:</label>
+                        <div class="flex gap-1 items-center mb-1">
+                            <select id="batchApplyFont" class="flex-1 sync-input-font bg-slate-900 border border-green-500 text-white rounded" style="width:auto !important; height: 22px;"><option value="">-- Font --</option></select>
+                            <button onclick="applyFontToSelected()" class="bg-green-600 hover:bg-green-500 px-2 py-1 rounded text-[7px] font-bold text-white">FONT</button>
+                        </div>
+                        <div class="flex gap-1 items-center mb-1">
+                            <input type="color" id="batchApplyColor" class="sync-input-color border border-green-500 rounded" value="#ffffff" style="width:26px;height:22px;">
+                            <button onclick="applyColorToSelected()" class="bg-green-600 hover:bg-green-500 px-2 py-1 rounded text-[7px] font-bold text-white flex-1">COLOR</button>
+                        </div>
+                        <div class="flex gap-1 items-center">
+                            <input type="number" id="batchApplySize" class="sync-input-size text-white bg-slate-900 border border-green-500 rounded" value="60" style="width:50px !important;">
+                            <button onclick="applySizeToSelected()" class="bg-green-600 hover:bg-green-500 px-2 py-1 rounded text-[7px] font-bold text-white flex-1">SIZE</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-[9px]">
+                        <thead><tr class="text-left text-slate-400 border-b border-slate-800">
+                            <th class="p-1" style="width:20px;"></th>
+                            <th class="p-1">WORD</th>
+                            <th class="p-1">FONT</th>
+                            <th class="p-1">CLR</th>
+                            <th class="p-1">SIZE</th>
+                            <th class="p-1 text-right">TIME</th>
+                        </tr></thead>
+                        <tbody id="syncTableBody"></tbody>
+                        <tfoot id="syncTableFooter" class="hidden">
+                             <tr class="sync-batch-row">
+                                <td class="p-2 font-black text-blue-400 uppercase text-[8px]" colspan="2">កំណត់រួម</td>
+                                <td class="p-1"><select id="batchFont" class="sync-input-font bg-slate-900 border border-blue-500 text-white rounded" onchange="batchUpdateSyllable('font', this.value)"></select></td>
+                                <td class="p-1"><input type="color" id="batchColor" class="sync-input-color border border-blue-500" oninput="batchUpdateSyllable('color', this.value)"></td>
+                                <td class="p-1"><input type="number" id="batchSize" class="sync-input-size text-white bg-slate-900 border border-blue-500 rounded" oninput="batchUpdateSyllable('size', this.value)"></td>
+                                <td class="p-1"></td>
+                             </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <input type="file" id="syllableFontInput" accept=".ttf,.otf,.woff" class="hidden">
+            </div>
+        </aside>
+    </main>
+
+    <!-- ⭐ NEW: Zoom Controls (moved outside aside — always visible) -->
+    <div id="previewZoomControls" class="fixed bottom-4 right-4 z-[500] flex items-center gap-1 bg-slate-900/90 p-1.5 rounded-lg shadow-xl backdrop-blur border border-slate-700">
+        <button onclick="changePreviewZoom(-0.1)" class="w-6 h-6 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-white rounded text-xs">-</button>
+        <span id="zoomDisp" class="text-[9px] font-bold text-blue-400 flex items-center w-10 justify-center">FIT</span>
+        <button onclick="changePreviewZoom(0.1)" class="w-6 h-6 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-white rounded text-xs">+</button>
+        <div class="w-px h-4 bg-slate-700 mx-1"></div>
+        <button onclick="resetPreviewZoom()" class="px-2 h-6 bg-blue-600 hover:bg-blue-500 text-white rounded text-[8px] font-bold">FIT</button>
+    </div>
+
+    <!-- VIDEO Export Modal -->
+    <div id="exportModal">
+      <div class="export-panel">
+        <h2>🎬 EXPORT VIDEO</h2>
+        <p class="subtitle">Render → Canvas 2D → WebCodecs → WebM (VP9 + Opus)</p>
+        <div class="export-row"><label>Resolution</label><select id="expRes" onchange="updateExportInfo()"></select></div>
+        <div class="export-row"><label>Frame Rate</label><select id="expFps" onchange="updateExportInfo()"><option value="24">24 fps</option><option value="30" selected>30 fps</option><option value="60">60 fps</option></select></div>
+        <div class="export-row"><label>Quality</label><select id="expQuality" onchange="updateExportInfo()"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select></div>
+        <div class="export-row"><label>Est. Frames</label><div style="font-size:11px;color:#3b82f6;font-weight:700;font-family:monospace" id="expFrameInfo">—</div></div>
+        <div class="export-actions">
+          <button class="cancel" onclick="closeVideoExportModal()">CANCEL</button>
+          <button class="primary" id="startExportBtn" onclick="startVideoExport()">START EXPORT</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Image Export Modal -->
+    <div id="imageExportModal">
+      <div class="export-panel">
+        <h2>🖼️ EXPORT IMAGE</h2>
+        <p class="subtitle">ជ្រើសរើសរបៀប Export រូបភាព</p>
+        <div class="export-row">
+          <label>Format</label>
+          <select id="imgExpFormat" onchange="updateImageExportPreview()">
+            <option value="png">PNG (Transparent)</option>
+            <option value="jpg">JPG (Solid Only)</option>
+          </select>
+        </div>
+        <div class="export-row">
+          <label>Background</label>
+          <select id="imgExpBgMode" onchange="updateImageExportPreview()">
+            <option value="full">✅ Full (BG + Text + Logo + Overlay)</option>
+            <option value="color">🎨 Text + Solid Color</option>
+            <option value="transparent">🔲 Text Only (Transparent)</option>
+          </select>
+        </div>
+        <p id="imgExpModeDesc" class="text-[9px] text-slate-400 italic mb-2" style="line-height:1.4;"></p>
+        <div id="imgExpWarning" class="text-[9px] text-amber-300 p-2 rounded mb-2" style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.4);display:none;">
+          ⚠️ JPG មិនគាំទ្រ Transparent ទេ — នឹងប្រើ Solid Color ជំនួស
+        </div>
+        <div class="export-actions">
+          <button class="cancel" onclick="closeImageExportModal()">CANCEL</button>
+          <button class="primary" onclick="startImageExport()">EXPORT</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="exportProgress">
+      <div class="progress-box">
+        <div class="progress-title" id="expProgTitle">កំពុង Export...</div>
+        <div class="progress-sub" id="expProgSub">សូមរង់ចាំ</div>
+        <div class="progress-bar"><div class="progress-fill" id="expProgFill"></div></div>
+        <div class="progress-pct" id="expProgPct">0%</div>
+        <div class="progress-info" id="expProgInfo">—</div>
+        <button class="progress-cancel" onclick="cancelExport()">CANCEL EXPORT</button>
+      </div>
+    </div>
+    <script>
+        const apiKey = "";
+        let allLines = [];
+        let editingLineId = null;
+        let editingTextId = null;
+        let wavesurfer;
+        let textAlign = 'center';
+        let fontStyle = 'normal';
+        let fontBold = '700';
+        let fontDecoration = 'none';
+        let globalInputState = {};
+        let globalTextState = { align: 'center', bold: '700', style: 'normal', decoration: 'none' };
+        let bgColor = '#000000';
+        let geminiApiKeys = [];
+        let currentKeyIndex = 0;
+        let retryOnlyMode = false;
+        let aiAnalyzeImageFile = null;
+
+        const lineStyleInputIds = ['fontFamilySelect', 'fontSize', 'charSpacing', 'lineHeight', 'primaryColor', 'strokeColor', 'strokeWidth', 'strokeOrder', 'strokeJoin', 'shadowColor', 'shadowX', 'shadowY', 'shadowBlur', 'scaleX', 'scaleY', 'rotation', 'showBox', 'boxBgColor', 'boxOpacity', 'boxRounded', 'boxWidth', 'boxOffsetX', 'boxOffsetY'];
+
+        let currentRenderedLineIds = null;
+        let isDragging = false;
+        let dragStartX, dragStartY, initialPosX, initialPosY, draggingLine = null;
+        let customFonts = [];
+        let overlays = [], selectedOverlayId = null;
+        let backgrounds = [], logoItems = [], stopMotionFrames = [];
+        let previewZoom = 1, isFitMode = true;
+        let videoPlayPromise = Promise.resolve();
+        let currentZoom = 50, currentAudioUrl = null;
+        const KHMER_COENG = '\u17D2';
+        let selectedSyllables = new Set();
+        let selectAllLines = false;
+        let selectedLineIds = new Set();
+
+        /* ════════════════════════════════════════════
+           ⭐ NEW: RIGHT PANEL TOGGLE FUNCTIONS
+           ════════════════════════════════════════════ */
+        function toggleRightPanel() {
+            const panel = document.getElementById('rightPanel');
+            const preview = document.getElementById('previewSection');
+            const btn = document.getElementById('togglePanelBtn');
+            if (!panel || !preview || !btn) return;
+
+            const isHidden = panel.classList.contains('hidden');
+
+            if (isHidden) {
+                // ── SHOW Panel ──
+                panel.classList.remove('hidden');
+                preview.classList.remove('col-span-10');
+                preview.classList.add('col-span-7');
+                btn.innerHTML = '◀ HIDE PANEL';
+                btn.classList.remove('bg-emerald-700', 'hover:bg-emerald-600', 'border-emerald-500');
+                btn.classList.add('bg-indigo-700', 'hover:bg-indigo-600', 'border-indigo-500');
+                btn.title = 'លាក់ Panel (H)';
+                localStorage.setItem('rightPanelHidden', 'false');
+            } else {
+                // ── HIDE Panel ──
+                panel.classList.add('hidden');
+                preview.classList.remove('col-span-7');
+                preview.classList.add('col-span-10');
+                btn.innerHTML = '▶ SHOW PANEL';
+                btn.classList.remove('bg-indigo-700', 'hover:bg-indigo-600', 'border-indigo-500');
+                btn.classList.add('bg-emerald-700', 'hover:bg-emerald-600', 'border-emerald-500');
+                btn.title = 'បង្ហាញ Panel (H)';
+                localStorage.setItem('rightPanelHidden', 'true');
+            }
+
+            // Recalculate canvas fit after layout settles
+            setTimeout(() => {
+                if (typeof updateCanvasSize === 'function') updateCanvasSize();
+                if (typeof updateUI === 'function') updateUI();
+            }, 80);
+        }
+
+        function initRightPanelState() {
+            if (localStorage.getItem('rightPanelHidden') === 'true') {
+                toggleRightPanel();
+            }
+        }
+
+        /* ════════════════════════════════════════════
+           GEMINI KEYS
+           ════════════════════════════════════════════ */
+        function loadGeminiKeys() {
+            const savedKeys = localStorage.getItem('geminiApiKeys');
+            const savedRetry = localStorage.getItem('retryOnlyMode');
+            if (savedKeys) {
+                try { geminiApiKeys = JSON.parse(savedKeys); } catch(e) { geminiApiKeys = []; }
+                const input = document.getElementById('geminiApiKey');
+                if (input) input.value = geminiApiKeys.join('\n');
+            }
+            if (savedRetry === 'true') {
+                retryOnlyMode = true;
+                const cb = document.getElementById('retryOnlyMode');
+                if (cb) cb.checked = true;
+            }
+            updateGeminiKeyStatus();
+        }
+        function saveGeminiKeys() {
+            const input = document.getElementById('geminiApiKey');
+            geminiApiKeys = input.value.split('\n').map(l => l.trim()).filter(l => l.length > 10);
+            if (geminiApiKeys.length > 0) localStorage.setItem('geminiApiKeys', JSON.stringify(geminiApiKeys));
+            else localStorage.removeItem('geminiApiKeys');
+            currentKeyIndex = 0;
+            updateGeminiKeyStatus();
+        }
+        function clearGeminiKeys() {
+            geminiApiKeys = []; currentKeyIndex = 0;
+            localStorage.removeItem('geminiApiKeys');
+            document.getElementById('geminiApiKey').value = '';
+            updateGeminiKeyStatus();
+        }
+        function toggleRetryOnly() {
+            retryOnlyMode = document.getElementById('retryOnlyMode').checked;
+            localStorage.setItem('retryOnlyMode', retryOnlyMode ? 'true' : 'false');
+        }
+        function updateGeminiKeyStatus() {
+            const s = document.getElementById('geminiKeyStatus');
+            if (!s) return;
+            if (geminiApiKeys.length === 0) { s.innerHTML = '⚠️ គ្មាន Key → ប្រើ Pollinations (Free)'; s.className = 'text-[7px] text-amber-400'; }
+            else { s.innerHTML = `✅ មាន ${geminiApiKeys.length} Key${retryOnlyMode ? ' (Retry-only)' : ''}`; s.className = 'text-[7px] text-green-400'; }
+        }
+
+        async function tryGeminiWithKeys(makeRequest) {
+            if (geminiApiKeys.length === 0) return { ok: false, reason: 'NO_KEYS' };
+            const startIdx = currentKeyIndex;
+            for (let attempt = 0; attempt < geminiApiKeys.length; attempt++) {
+                const keyIdx = (startIdx + attempt) % geminiApiKeys.length;
+                const key = geminiApiKeys[keyIdx];
+                try {
+                    const result = await makeRequest(key);
+                    if (result.success) { currentKeyIndex = keyIdx; return { ok: true, data: result.data, keyIdx: keyIdx + 1 }; }
+                } catch (e) { console.warn(`Key #${keyIdx + 1} failed:`, e.message); continue; }
+            }
+            return { ok: false, reason: 'ALL_KEYS_FAILED' };
+        }
+
+        function handleAiAnalyzeImage(input) {
+            const file = input.files[0]; if (!file) return;
+            aiAnalyzeImageFile = file;
+            document.getElementById('aiImageThumb').src = URL.createObjectURL(file);
+            document.getElementById('aiImagePreview').classList.remove('hidden');
+            document.getElementById('analyzeImageBtn').disabled = false;
+        }
+
+        async function analyzeImageForPrompt() {
+            if (!aiAnalyzeImageFile) { alert("សូម upload រូបភាព"); return; }
+            if (geminiApiKeys.length === 0) { alert("សូមបញ្ចូល Key"); return; }
+            const btn = document.getElementById('analyzeImageBtn');
+            const status = document.getElementById('aiLoadingStatus');
+            btn.disabled = true; btn.innerText = '⏳';
+            status.classList.remove('hidden'); status.className = 'mt-2 text-[8px] text-blue-400 text-center animate-pulse';
+            try {
+                const base64 = await new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(r.result.split(',')[1]); r.onerror = reject; r.readAsDataURL(aiAnalyzeImageFile); });
+                const mimeType = aiAnalyzeImageFile.type || 'image/jpeg';
+                const models = ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-flash-latest'];
+                const result = await tryGeminiWithKeys(async (key) => {
+                    for (const model of models) {
+                        try {
+                            status.innerText = `វិភាគ (${model})...`;
+                            const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+                                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ contents: [{ parts: [{ text: "Analyze this image and write a detailed image generation prompt. Focus on subject, colors, lighting, mood, style. Only output prompt text, under 200 words." }, { inlineData: { mimeType, data: base64 } }] }] })
+                            });
+                            if (resp.status === 429) return { success: false };
+                            if (resp.status === 404) continue;
+                            if (!resp.ok) continue;
+                            const data = await resp.json();
+                            const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                            if (text) return { success: true, data: text.trim() };
+                        } catch (e) { continue; }
+                    }
+                    return { success: false };
+                });
+                if (!result.ok) throw new Error("Keys ទាំងអស់អស់ Quota");
+                document.getElementById('aiPromptInput').value = result.data;
+                status.innerText = `✅ Prompt! (Key #${result.keyIdx})`;
+                status.className = 'mt-2 text-[8px] text-green-400 text-center font-bold';
+                setTimeout(() => status.classList.add('hidden'), 3000);
+            } catch (err) {
+                status.innerText = '❌ ' + err.message; status.className = 'mt-2 text-[8px] text-red-400 text-center font-bold';
+            } finally { btn.disabled = false; btn.innerText = '🔍 ANALYZE'; }
+        }
+
+        async function generateAIBG() {
+            const prompt = document.getElementById('aiPromptInput').value.trim();
+            if (!prompt) { alert("សូមបញ្ចូល Prompt"); return; }
+            const btn = document.getElementById('generateAiBgBtn');
+            const status = document.getElementById('aiLoadingStatus');
+            btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed');
+            status.classList.remove('hidden'); status.className = 'mt-2 text-[8px] text-blue-400 text-center animate-pulse';
+            try {
+                const res = document.getElementById('resSelect').value.split('x');
+                const W = parseInt(res[0]), H = parseInt(res[1]);
+                let imageUrl = null, fileName = null;
+                if (geminiApiKeys.length > 0) {
+                    status.innerText = `Gemini (${geminiApiKeys.length} Keys)...`;
+                    const aspectRatio = W > H ? '16:9' : (W < H ? '9:16' : '1:1');
+                    const imgModels = ['gemini-3.1-flash-image', 'gemini-2.5-flash-image'];
+                    const result = await tryGeminiWithKeys(async (key) => {
+                        for (const model of imgModels) {
+                            try {
+                                status.innerText = `បង្កើត (${model})...`;
+                                const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+                                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseModalities: ["IMAGE"], imageConfig: { aspectRatio } } })
+                                });
+                                if (resp.status === 429) return { success: false };
+                                if (resp.status === 404) continue;
+                                if (!resp.ok) continue;
+                                const data = await resp.json();
+                                const parts = data.candidates?.[0]?.content?.parts || [];
+                                const imgPart = parts.find(p => p.inlineData && p.inlineData.mimeType?.startsWith('image/'));
+                                if (!imgPart) continue;
+                                const base64 = imgPart.inlineData.data;
+                                const mime = imgPart.inlineData.mimeType || 'image/png';
+                                const blob = await (await fetch(`data:${mime};base64,${base64}`)).blob();
+                                return { success: true, data: URL.createObjectURL(blob) };
+                            } catch (e) { continue; }
+                        }
+                        return { success: false };
+                    });
+                    if (result.ok) { imageUrl = result.data; fileName = `Gemini (Key #${result.keyIdx})`; }
+                    else if (retryOnlyMode) throw new Error("Keys ទាំងអស់អស់ Quota");
+                    else {
+                        status.innerText = '⚠️ ប្ដូរទៅ Pollinations...';
+                        status.className = 'mt-2 text-[8px] text-amber-400 text-center animate-pulse';
+                        const seed = Math.floor(Math.random() * 1000000);
+                        imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt + ", high quality, realistic, masterpiece")}?width=${W}&height=${H}&seed=${seed}&nologo=true`;
+                        fileName = 'Pollinations AI';
+                    }
+                } else {
+                    status.innerText = 'Pollinations...';
+                    const seed = Math.floor(Math.random() * 1000000);
+                    imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt + ", high quality, realistic, masterpiece")}?width=${W}&height=${H}&seed=${seed}&nologo=true`;
+                    fileName = 'Pollinations AI';
+                }
+                if (!imageUrl) throw new Error("មិនអាចបង្កើត");
+                backgrounds.push({ id: 'bg-ai-' + Date.now(), fileUrl: imageUrl, type: 'image', fileName, startTime: 0, endTime: 999999 });
+                renderBgList(); updateUI();
+                status.innerText = `✅ ${fileName} → BG LIST`;
+                status.className = 'mt-2 text-[8px] text-green-400 text-center font-bold';
+                setTimeout(() => status.classList.add('hidden'), 3500);
+            } catch (err) {
+                status.innerText = '❌ ' + err.message; status.className = 'mt-2 text-[8px] text-red-400 text-center font-bold';
+            } finally { btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed'); }
+        }
+
+        function setBgColor(hex) {
+            if (!hex) hex = '#000000';
+            const hexClean = hex.trim();
+            if (!/^#[0-9a-fA-F]{6}$/.test(hexClean) && !/^#[0-9a-fA-F]{3}$/.test(hexClean)) {
+                if (/^[0-9a-fA-F]{6}$/.test(hexClean)) hex = '#' + hexClean;
+                else { alert("Format មិនត្រឹមត្រូវ"); return; }
+            } else hex = hexClean;
+            bgColor = hex;
+            document.getElementById('bgColorPicker').value = hex;
+            document.getElementById('bgColorHex').value = hex;
+            document.querySelectorAll('.bg-color-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.color.toLowerCase() === hex.toLowerCase()));
+            updateActiveBackground();
+        }
+
+        window.onload = () => {
+            wavesurfer = WaveSurfer.create({ container: '#waveform', waveColor: '#1e293b', progressColor: '#3b82f6', cursorColor: '#ffffff', height: 100, barWidth: 2, normalize: true });
+            wavesurfer.on('audioprocess', updateUI);
+            wavesurfer.on('seek', () => { syncVideoPlayback(); updateUI(); });
+            wavesurfer.on('play', () => { syncVideoPlayback(); });
+            wavesurfer.on('pause', () => { const vid = document.getElementById('bgVideoElement'); if (vid.src) videoPlayPromise.then(() => { vid.pause(); }); });
+            wavesurfer.on('ready', () => { document.getElementById('durationDisp').innerText = formatTime(wavesurfer.getDuration()); updateUI(); updateZoom(currentZoom); setPlaySpeed(1.0); });
+            document.getElementById('audioInput').onchange = function(e) { const file = e.target.files[0]; if (file) { const url = URL.createObjectURL(file); currentAudioUrl = url; wavesurfer.load(url); } };
+            globalInputState['highlightEffect'] = 'default';
+            saveGlobalState(); updateCanvasSize(); updateStyles(); updateBgScale();
+            renderBgList(); renderLogoList(); renderStopMotionList();
+            setBgColor('#000000'); loadGeminiKeys(); updateUI();
+
+            // ⭐ NEW: restore saved panel state on startup
+            initRightPanelState();
+        };
+
+        function toggleFollowMaster(e, id) { e.stopPropagation(); const line = allLines.find(l => l.id === id); if (!line) return; line.followMaster = line.followMaster === false ? true : false; renderLineList(); }
+
+        function toggleSelectAllLines() {
+            selectAllLines = document.getElementById('selectAllLinesToggle').checked;
+            if (selectAllLines) { selectedLineIds = new Set(allLines.map(l => l.id)); }
+            else { selectedLineIds.clear(); }
+            updateSelectedLinesBanner(); renderLineList();
+            if (selectedLineIds.size > 0) applyCurrentStylesToAllLines();
+        }
+
+        function toggleLineSelection(e, id) {
+            e.stopPropagation();
+            if (selectedLineIds.has(id)) selectedLineIds.delete(id);
+            else selectedLineIds.add(id);
+            selectAllLines = (selectedLineIds.size > 0 && selectedLineIds.size === allLines.length);
+            const topCb = document.getElementById('selectAllLinesToggle');
+            if (topCb) topCb.checked = selectAllLines;
+            updateSelectedLinesBanner(); renderLineList();
+            if (selectedLineIds.size > 0) applyCurrentStylesToAllLines();
+        }
+
+        function updateSelectedLinesBanner() {
+            const countEl = document.getElementById('selectedLinesCount');
+            const banner = document.getElementById('allLinesModeBanner');
+            const clearBtn = document.getElementById('clearLineSelectionBtn');
+            if (!countEl || !banner) return;
+            const n = selectedLineIds.size;
+            if (n > 0) {
+                countEl.innerText = `(${n})`;
+                banner.classList.remove('hidden');
+                banner.className = 'mx-2 mt-2 all-lines-mode-banner';
+                banner.innerHTML = selectAllLines ? `★ ALL LINES (${allLines.length})` : `★ ${n} LINE${n > 1 ? 'S' : ''} SELECTED`;
+                if (clearBtn) clearBtn.classList.remove('hidden');
+            } else {
+                countEl.innerText = '';
+                banner.classList.add('hidden');
+                if (clearBtn) clearBtn.classList.add('hidden');
+            }
+        }
+
+        function clearLineSelection() {
+            selectedLineIds.clear();
+            selectAllLines = false;
+            const topCb = document.getElementById('selectAllLinesToggle');
+            if (topCb) topCb.checked = false;
+            updateSelectedLinesBanner(); renderLineList();
+        }
+
+        function applyCurrentStylesToAllLines() {
+            if (selectedLineIds.size === 0 || allLines.length === 0) return;
+            const newIS = {};
+            lineStyleInputIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) newIS[id] = el.type === 'checkbox' ? el.checked : el.value;
+            });
+            newIS['secondaryColor'] = document.getElementById('secondaryColor').value;
+            newIS['highlightEffect'] = document.getElementById('highlightEffectSelect').value;
+            const newTS = { align: textAlign, bold: fontBold, style: fontStyle, decoration: fontDecoration };
+            const pX = parseFloat(document.getElementById('posX').value) || 0;
+            const pY = parseFloat(document.getElementById('posY').value) || 0;
+            allLines.forEach(line => {
+                if (!selectedLineIds.has(line.id)) return;
+                line.customInputState = { ...newIS };
+                line.customTextState = { ...newTS };
+                line.posX = pX;
+                line.posY = pY;
+            });
+            currentRenderedLineIds = null;
+            updateUI();
+        }
+
+        function setPlaySpeed(rate) {
+            if (!wavesurfer) return;
+            wavesurfer.setPlaybackRate(rate);
+            document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+            const map = { 0.25: 'speed025', 0.5: 'speed05', 0.75: 'speed075', 1.0: 'speed1', 1.25: 'speed125', 1.5: 'speed15', 2.0: 'speed2' };
+            if (map[rate]) document.getElementById(map[rate]).classList.add('active');
+            else document.querySelector('.speed-btn.custom')?.classList.add('active');
+            document.getElementById('customSpeedInput').value = rate.toFixed(2);
+        }
+        function applyCustomSpeed() { const i = document.getElementById('customSpeedInput'); let r = parseFloat(i.value); if (isNaN(r) || r < 0.1 || r > 4.0) { r = 1.0; i.value = '1.00'; } setPlaySpeed(r); }
+        function rewindDown() { if (!wavesurfer) return; const t = Math.max(0, wavesurfer.getCurrentTime() - 5); wavesurfer.seekTo(t / wavesurfer.getDuration()); updateUI(); }
+        function rewindUp() { if (!wavesurfer) return; const t = Math.min(wavesurfer.getDuration(), wavesurfer.getCurrentTime() + 5); wavesurfer.seekTo(t / wavesurfer.getDuration()); updateUI(); }
+        function updateZoom(v) { currentZoom = parseFloat(v); document.getElementById('zoomSlider').value = currentZoom; document.getElementById('zoomLevelDisplay').innerText = Math.round(currentZoom); if (wavesurfer) wavesurfer.zoom(currentZoom); }
+        function zoomIn() { updateZoom(Math.min(1000, currentZoom + 20)); }
+        function zoomOut() { updateZoom(Math.max(10, currentZoom - 20)); }
+
+        function toggleSyllableSelect(idx) { if (selectedSyllables.has(idx)) selectedSyllables.delete(idx); else selectedSyllables.add(idx); updateSelectionUI(); const row = document.querySelector(`tr[data-syllable-idx="${idx}"]`); if (row) row.classList.toggle('sync-row-selected', selectedSyllables.has(idx)); updateSelectAllCheckbox(); }
+        function toggleSelectAllSync() { const line = allLines.find(l => l.id === editingLineId); if (!line) return; if (document.getElementById('selectAllSync').checked) line.syllables.forEach((s, idx) => { if (!s.isSpace) selectedSyllables.add(idx); }); else selectedSyllables.clear(); renderTable(); }
+        function clearSyncSelection() { selectedSyllables.clear(); renderTable(); }
+        function updateSelectionUI() { const c = selectedSyllables.size; document.getElementById('selectedCount').innerText = c + ' selected'; const bar = document.getElementById('batchApplyBar'); if (c > 0) bar.classList.remove('opacity-30', 'pointer-events-none'); else bar.classList.add('opacity-30', 'pointer-events-none'); }
+        function updateSelectAllCheckbox() { const line = allLines.find(l => l.id === editingLineId); if (!line) return; const n = line.syllables.filter(s => !s.isSpace).length; const cb = document.getElementById('selectAllSync'); if (cb) cb.checked = (selectedSyllables.size === n && n > 0); }
+        function applyFontToSelected() { const line = allLines.find(l => l.id === editingLineId); if (!line || selectedSyllables.size === 0) { alert("ជ្រើសពាក្យ"); return; } const f = document.getElementById('batchApplyFont').value; if (!f) { alert("ជ្រើស Font"); return; } selectedSyllables.forEach(i => { if (line.syllables[i] && !line.syllables[i].isSpace) line.syllables[i].font = f; }); renderTable(); forceReRender(); }
+        function applyColorToSelected() { const line = allLines.find(l => l.id === editingLineId); if (!line || selectedSyllables.size === 0) { alert("ជ្រើសពាក្យ"); return; } const c = document.getElementById('batchApplyColor').value; selectedSyllables.forEach(i => { if (line.syllables[i] && !line.syllables[i].isSpace) line.syllables[i].color = c; }); renderTable(); forceReRender(); }
+        function applySizeToSelected() { const line = allLines.find(l => l.id === editingLineId); if (!line || selectedSyllables.size === 0) { alert("ជ្រើសពាក្យ"); return; } const s = document.getElementById('batchApplySize').value; if (!s) return; selectedSyllables.forEach(i => { if (line.syllables[i] && !line.syllables[i].isSpace) line.syllables[i].fontSize = s; }); renderTable(); forceReRender(); }
+
+        function handleBgUpload(input) { Array.from(input.files).forEach(file => { const url = URL.createObjectURL(file); backgrounds.push({ id: 'bg-' + Date.now() + Math.random().toString(36).substr(2, 5), fileUrl: url, type: file.type.startsWith('video/') ? 'video' : 'image', fileName: file.name, startTime: 0, endTime: 999999 }); }); renderBgList(); updateUI(); input.value = ''; }
+        function removeBackground(id) { backgrounds = backgrounds.filter(b => b.id !== id); renderBgList(); updateUI(); }
+        function setBgTime(id, type) { const bg = backgrounds.find(b => b.id === id); if (!bg) return; const t = wavesurfer.getCurrentTime(); if (type === 'start') bg.startTime = t; else bg.endTime = t; renderBgList(); updateUI(); }
+        function updateBgTimeManually(id, type, e) { const bg = backgrounds.find(b => b.id === id); if (!bg) return; let v = parseFloat(e.target.value); if (isNaN(v)) v = 0; if (type === 'start') bg.startTime = v; else bg.endTime = v; renderBgList(); updateUI(); }
+        function renderBgList() { const c = document.getElementById('bgListContainer'); if (!c) return; c.innerHTML = ''; if (backgrounds.length === 0) { c.innerHTML = '<p class="text-[8px] text-slate-500 italic">មិនទាន់មាន BG</p>'; return; } const ct = wavesurfer.getCurrentTime(); backgrounds.forEach((bg, i) => { const active = ct >= bg.startTime && ct <= bg.endTime; const div = document.createElement('div'); div.className = `list-item ${active ? 'active-bg' : ''}`; div.innerHTML = `<div class="item-header"><span class="item-index">#${i+1}</span><span class="item-filename" title="${bg.fileName}">${bg.fileName}</span><div class="item-actions">${active ? '<span class="active-indicator">▶</span>' : ''}<button onclick="removeBackground('${bg.id}')" class="del-btn">✕</button></div></div><div class="item-time-controls"><span class="time-label">IN</span><input type="number" step="0.01" value="${bg.startTime.toFixed(2)}" onchange="updateBgTimeManually('${bg.id}','start',event)" /><button class="set-btn" onclick="setBgTime('${bg.id}','start')">Set In</button><span class="time-label" style="margin-left:8px;">OUT</span><input type="number" step="0.01" value="${bg.endTime < 999999 ? bg.endTime.toFixed(2) : ''}" onchange="updateBgTimeManually('${bg.id}','end',event)" /><button class="set-btn" onclick="setBgTime('${bg.id}','end')">Set Out</button></div>`; c.appendChild(div); }); }
+
+        function handleLogoUpload(input) { Array.from(input.files).forEach(file => { logoItems.push({ id: 'logo-' + Date.now() + Math.random().toString(36).substr(2, 5), fileUrl: URL.createObjectURL(file), fileName: file.name, startTime: 0, endTime: 999999, width: 150, x: 50, y: 50, opacity: 1 }); }); renderLogoList(); updateUI(); input.value = ''; }
+        function removeLogo(id) { logoItems = logoItems.filter(l => l.id !== id); renderLogoList(); updateUI(); }
+        function setLogoTime(id, type) { const logo = logoItems.find(l => l.id === id); if (!logo) return; const t = wavesurfer.getCurrentTime(); if (type === 'start') logo.startTime = t; else logo.endTime = t; renderLogoList(); updateUI(); }
+        function updateLogoTimeManually(id, type, e) { const logo = logoItems.find(l => l.id === id); if (!logo) return; let v = parseFloat(e.target.value); if (isNaN(v)) v = 0; if (type === 'start') logo.startTime = v; else logo.endTime = v; renderLogoList(); updateUI(); }
+        function updateLogoProp(id, prop, e) { const logo = logoItems.find(l => l.id === id); if (!logo) return; let v = parseFloat(e.target.value); if (isNaN(v)) v = 0; logo[prop] = v; renderLogoList(); updateUI(); }
+        function renderLogoList() { const c = document.getElementById('logoListContainer'); if (!c) return; c.innerHTML = ''; if (logoItems.length === 0) { c.innerHTML = '<p class="text-[8px] text-slate-500 italic">មិនទាន់មាន LOGO</p>'; return; } logoItems.forEach((logo, i) => { const div = document.createElement('div'); div.className = 'list-item'; div.innerHTML = `<div class="item-header"><span class="item-index">#${i+1}</span><span class="item-filename" title="${logo.fileName}">${logo.fileName}</span><div class="item-actions"><button onclick="removeLogo('${logo.id}')" class="del-btn">✕</button></div></div><div class="item-time-controls"><span class="time-label">IN</span><input type="number" step="0.01" value="${logo.startTime.toFixed(2)}" onchange="updateLogoTimeManually('${logo.id}','start',event)" /><button class="set-btn" onclick="setLogoTime('${logo.id}','start')">Set In</button><span class="time-label">OUT</span><input type="number" step="0.01" value="${logo.endTime < 999999 ? logo.endTime.toFixed(2) : ''}" onchange="updateLogoTimeManually('${logo.id}','end',event)" /><button class="set-btn" onclick="setLogoTime('${logo.id}','end')">Set Out</button></div><div class="logo-prop-controls"><label>Width <input type="range" min="10" max="800" value="${logo.width}" oninput="updateLogoProp('${logo.id}','width',event)"></label><label>Opacity <input type="range" min="0" max="1" step="0.05" value="${logo.opacity}" oninput="updateLogoProp('${logo.id}','opacity',event)"></label><label>X (%) <input type="range" min="0" max="100" value="${logo.x}" oninput="updateLogoProp('${logo.id}','x',event)"></label><label>Y (%) <input type="range" min="0" max="100" value="${logo.y}" oninput="updateLogoProp('${logo.id}','y',event)"></label></div>`; c.appendChild(div); }); }
+
+        function addStopMotionFrame(time) { if (!wavesurfer) return; stopMotionFrames.push({ id: 'stp-' + Date.now() + Math.random().toString(36).substr(2, 5), startTime: time, imageUrl: null, fileName: null }); stopMotionFrames.sort((a, b) => a.startTime - b.startTime); renderStopMotionList(); updateUI(); }
+        function removeStopMotionFrame(id) { stopMotionFrames = stopMotionFrames.filter(f => f.id !== id); renderStopMotionList(); updateUI(); }
+        function clearAllStopMotionFrames() { if (stopMotionFrames.length === 0) { alert("មិនមាន"); return; } if (confirm("លុបទាំងអស់?")) { stopMotionFrames = []; renderStopMotionList(); updateUI(); const c = document.getElementById('stopMotionDisplay'); if (c) { c.style.display = 'none'; const img = c.querySelector('img'); if (img) img.src = ''; } } }
+        function handleStopMotionImageUpload(id, file) { const f = stopMotionFrames.find(x => x.id === id); if (!f || !file) return; f.imageUrl = URL.createObjectURL(file); f.fileName = file.name; renderStopMotionList(); updateUI(); }
+        function handleStopMotionFolderUpload(input) { const files = Array.from(input.files); if (files.length === 0) return; files.sort((a, b) => a.name.localeCompare(b.name)); let frames = stopMotionFrames; if (frames.length === 0) { for (let i = 0; i < files.length; i++) frames.push({ id: 'stp-' + Date.now() + Math.random().toString(36).substr(2, 5), startTime: i * 0.5, imageUrl: null, fileName: null }); frames.sort((a, b) => a.startTime - b.startTime); } let idx = 0; for (let i = 0; i < frames.length; i++) { frames[i].imageUrl = URL.createObjectURL(files[idx % files.length]); frames[i].fileName = files[idx % files.length].name; idx++; } stopMotionFrames = frames; renderStopMotionList(); updateUI(); input.value = ''; }
+        function renderStopMotionList() { const c = document.getElementById('stopMotionContainer'); if (!c) return; c.innerHTML = ''; if (stopMotionFrames.length === 0) { c.innerHTML = '<p class="text-[8px] text-slate-500 italic">ចុច Key <kbd>C</kbd></p>'; return; } const ct = wavesurfer.getCurrentTime(); stopMotionFrames.forEach((f, i) => { const next = i + 1 < stopMotionFrames.length ? stopMotionFrames[i+1].startTime : 999999; const active = ct >= f.startTime && ct <= next; const div = document.createElement('div'); div.className = `list-item ${active ? 'active-bg' : ''}`; div.innerHTML = `<div class="item-header"><span class="item-index">#${i+1}</span><span class="item-filename">${f.fileName || 'No Image'}</span><div class="item-actions">${active ? '<span class="active-indicator">▶</span>' : ''}<button onclick="removeStopMotionFrame('${f.id}')" class="del-btn">✕</button></div></div><div class="flex justify-between text-[8px] text-slate-300"><span>IN: ${formatTime(f.startTime)}</span><span>OUT: ${formatTime(next)}</span></div><div class="mt-1"><input type="file" accept="image/*" style="display:none" id="stpInput_${f.id}" onchange="handleStopMotionImageUpload('${f.id}', this.files[0])" /><button onclick="document.getElementById('stpInput_${f.id}').click()" class="upload-btn">UPLOAD IMAGE</button></div>`; c.appendChild(div); }); }
+        function applyStopMotionTimesToLine() { if (editingLineId === null) { alert("ជ្រើសបន្ទាត់"); return; } const line = allLines.find(l => l.id === editingLineId); if (!line) return; const frames = [...stopMotionFrames].sort((a, b) => a.startTime - b.startTime); if (frames.length === 0) { alert("មិនមាន Frames"); return; } const times = frames.map(f => f.startTime); const syls = line.syllables.filter(s => !s.isSpace); const count = Math.min(times.length, syls.length); for (let i = 0; i < count; i++) { const oi = line.syllables.indexOf(syls[i]); if (oi !== -1) line.syllables[oi].time = times[i]; } for (let i = count; i < syls.length; i++) { const oi = line.syllables.indexOf(syls[i]); if (oi !== -1) line.syllables[oi].time = null; } renderTable(); forceReRender(); }
+        function exportStopMotionTimes() { if (stopMotionFrames.length === 0) { alert("មិនមាន"); return; } const frames = [...stopMotionFrames].sort((a, b) => a.startTime - b.startTime); let csv = "Frame,Time (s),Time (mm:ss.ss)\n"; frames.forEach((f, i) => csv += `${i+1},${f.startTime.toFixed(3)},${formatTime(f.startTime)}\n`); const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'stopmotion_times.csv'; a.click(); }
+
+        function updateActiveStopMotion() { const c = document.getElementById('stopMotionDisplay'); if (!c) return; const ct = wavesurfer.getCurrentTime(); let active = null; for (let i = stopMotionFrames.length - 1; i >= 0; i--) if (stopMotionFrames[i].startTime <= ct) { active = stopMotionFrames[i]; break; } let img = c.querySelector('img'); if (!img) { img = document.createElement('img'); img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'cover'; img.style.display = 'block'; c.appendChild(img); } if (active && active.imageUrl) { if (img.src !== active.imageUrl) img.src = active.imageUrl; c.style.display = 'block'; } else { img.src = ''; c.style.display = 'none'; } }
+        function updateActiveBackground() { const ct = wavesurfer.getCurrentTime(); const active = backgrounds.filter(b => ct >= b.startTime && ct <= b.endTime); const bg = active.length > 0 ? active[active.length - 1] : null; const img = document.getElementById('bgImageElement'); const vid = document.getElementById('bgVideoElement'); const container = document.getElementById('bgMediaContainer'); if (bg) { if (bg.type === 'video') { img.style.display = 'none'; vid.style.display = 'block'; if (vid.src !== bg.fileUrl) { vid.src = bg.fileUrl; vid.load(); if (wavesurfer.isPlaying()) videoPlayPromise = vid.play().catch(e => console.warn(e)); } if (vid.duration) { const exp = ct % vid.duration; if (Math.abs(vid.currentTime - exp) > 0.3) vid.currentTime = exp; } container.style.backgroundImage = 'none'; } else { vid.style.display = 'none'; vid.src = ''; img.style.display = 'block'; if (img.src !== bg.fileUrl) img.src = bg.fileUrl; container.style.backgroundImage = `url(${bg.fileUrl})`; } } else { img.style.display = 'none'; vid.style.display = 'none'; vid.src = ''; container.style.backgroundImage = 'none'; document.getElementById('canvasContainer').style.backgroundColor = bgColor; } }
+        function updateActiveLogos() { const ct = wavesurfer.getCurrentTime(); const active = logoItems.filter(l => ct >= l.startTime && ct <= l.endTime); const c = document.getElementById('logoContainer'); c.innerHTML = ''; const canvas = document.getElementById('canvasContainer'); const rect = canvas.getBoundingClientRect(); const res = document.getElementById('resSelect').value.split('x'); const sX = rect.width / parseInt(res[0]); active.forEach(logo => { const img = document.createElement('img'); img.src = logo.fileUrl; img.className = 'logo-item'; img.style.left = ((logo.x / 100) * rect.width) + 'px'; img.style.top = ((logo.y / 100) * rect.height) + 'px'; img.style.width = (logo.width * sX) + 'px'; img.style.opacity = logo.opacity; img.style.transform = 'translate(-50%, -50%)'; c.appendChild(img); }); }
+
+        function updateUI() {
+            const ct = wavesurfer.getCurrentTime();
+            document.getElementById('currentTimeDisp').innerText = formatTime(ct);
+            if (wavesurfer.getDuration()) document.getElementById('timeline-progress').style.width = (ct / wavesurfer.getDuration() * 100) + '%';
+            updateActiveBackground(); updateActiveLogos(); updateActiveStopMotion();
+            renderBgList(); renderStopMotionList();
+            overlays.forEach(ov => { const el = document.getElementById('ov-el-' + ov.id); if (el) { const active = ct >= (ov.startTime || 0) && ct <= (ov.endTime || 999999); el.style.display = (active || ov.id === selectedOverlayId) ? 'block' : 'none'; } });
+            let activeLines = allLines.filter(l => ct >= l.startTime && ct <= l.endTime);
+            let activeIds = activeLines.map(l => l.id).join(',');
+            const c = document.getElementById('previewTextContainer');
+            if (currentRenderedLineIds !== activeIds) {
+                c.innerHTML = '';
+                activeLines.forEach(activeLine => {
+                    const pt = document.createElement('div');
+                    pt.className = 'preview-text-element'; pt.id = 'line-el-' + activeLine.id;
+                    if (activeLine.customInputState) { applyLineStylesToElement(pt, activeLine); pt.style.transform = `translate(calc(-50% + ${activeLine.posX}px), calc(-50% + ${activeLine.posY}px)) rotate(${activeLine.customInputState.rotation}deg)`; }
+                    else { pt.dataset.align = textAlign; pt.style.transform = `translate(calc(-50% + ${activeLine.posX}px), calc(-50% + ${activeLine.posY}px)) rotate(${document.getElementById('rotation').value}deg)`; }
+                    const box = document.createElement('div'); box.className = 'opaque-box';
+                    for (let i = 0; i < activeLine.maxLines; i++) {
+                        const lineDiv = document.createElement('div'); lineDiv.className = 'line-block';
+                        const syls = activeLine.syllables.map((s, idx) => ({s, idx})).filter(it => it.s.lineIdx === i);
+                        let cur = null, indices = [], first = null;
+                        const flush = () => { if (!cur) return; cur.dataset.syllableIndices = indices.join(','); if (first) { if (first.color) cur.style.setProperty('--individual-color', first.color); if (first.fontSize) cur.style.setProperty('--individual-size', first.fontSize + 'px'); if (first.font) cur.style.setProperty('--individual-font', first.font); } cur = null; indices = []; first = null; };
+                        syls.forEach(item => { const s = item.s; if (s.isSpace) { flush(); const sp = document.createElement('span'); sp.innerText = " "; sp.className = "syllable-item"; lineDiv.appendChild(sp); return; } const isCont = s.text.startsWith(KHMER_COENG) && cur !== null; if (isCont) { cur.innerText += s.text; indices.push(item.idx); } else { flush(); const span = document.createElement('span'); span.className = "syllable-item"; span.innerText = s.text; lineDiv.appendChild(span); cur = span; indices = [item.idx]; first = s; } });
+                        flush(); box.appendChild(lineDiv);
+                    }
+                    pt.appendChild(box); makeDraggable(pt, activeLine); c.appendChild(pt);
+                });
+                currentRenderedLineIds = activeIds;
+            }
+            activeLines.forEach(activeLine => {
+                const effect = getCurrentHighlightEffect(activeLine);
+                const lineEl = document.getElementById('line-el-' + activeLine.id);
+                if (lineEl) { lineEl.querySelectorAll('.syllable-item[data-syllable-indices]').forEach(span => { const idxs = span.dataset.syllableIndices.split(',').map(Number); const anyActive = idxs.some(idx => { const syl = activeLine.syllables[idx]; return syl && !syl.isSpace && syl.time !== null && syl.time !== undefined && ct >= syl.time; }); span.classList.toggle('active-syllable', anyActive); span.classList.toggle('effect-' + effect, anyActive); }); }
+                if (!isDragging) { const el = document.getElementById('line-el-' + activeLine.id); if (el) { const rot = activeLine.customInputState ? activeLine.customInputState.rotation : document.getElementById('rotation').value; el.style.transform = `translate(calc(-50% + ${activeLine.posX}px), calc(-50% + ${activeLine.posY}px)) rotate(${rot}deg)`; } }
+            });
+            document.getElementById('playBtn').innerText = wavesurfer.isPlaying() ? '⏸' : '▶';
+        }
+
+        function syncVideoPlayback() { const vid = document.getElementById('bgVideoElement'); if (!vid.src) return; const t = wavesurfer.getCurrentTime(); if (vid.duration > 0) vid.currentTime = t % vid.duration; if (wavesurfer.isPlaying()) videoPlayPromise = vid.play().catch(e => { if (e.name !== 'AbortError') console.error(e); }); else videoPlayPromise.then(() => vid.pause()); }
+        function changePreviewZoom(d) { if (isFitMode) { isFitMode = false; previewZoom = 1; } previewZoom = Math.max(0.1, Math.min(5, previewZoom + d)); document.getElementById('zoomDisp').innerText = Math.round(previewZoom * 100) + '%'; updateCanvasSize(); }
+        function resetPreviewZoom() { isFitMode = true; previewZoom = 1; document.getElementById('zoomDisp').innerText = 'FIT'; updateCanvasSize(); }
+        function updateBgScale() { const fit = document.getElementById('bgFitSelect').value; const r = document.documentElement; const c = document.getElementById('bgMediaContainer'); c.classList.remove('bg-tile-mode'); switch(fit) { case 'cover': r.style.setProperty('--bg-object-fit', 'cover'); r.style.setProperty('--bg-size', 'cover'); r.style.setProperty('--bg-repeat', 'no-repeat'); r.style.setProperty('--bg-position', 'center'); break; case 'contain': r.style.setProperty('--bg-object-fit', 'contain'); r.style.setProperty('--bg-size', 'contain'); r.style.setProperty('--bg-repeat', 'no-repeat'); r.style.setProperty('--bg-position', 'center'); break; case 'fill': r.style.setProperty('--bg-object-fit', 'fill'); r.style.setProperty('--bg-size', '100% 100%'); r.style.setProperty('--bg-repeat', 'no-repeat'); break; case 'tile': c.classList.add('bg-tile-mode'); r.style.setProperty('--bg-object-fit', 'none'); r.style.setProperty('--bg-size', 'auto'); r.style.setProperty('--bg-repeat', 'repeat'); r.style.setProperty('--bg-position', 'top left'); break; case 'center': r.style.setProperty('--bg-object-fit', 'none'); r.style.setProperty('--bg-size', 'auto'); r.style.setProperty('--bg-repeat', 'no-repeat'); r.style.setProperty('--bg-position', 'center'); break; case 'span': r.style.setProperty('--bg-object-fit', 'contain'); r.style.setProperty('--bg-size', '100% auto'); r.style.setProperty('--bg-repeat', 'no-repeat'); r.style.setProperty('--bg-position', 'center'); break; } }
+        function togglePlayPause() { wavesurfer.playPause(); }
+        function saveGlobalState() { lineStyleInputIds.forEach(id => { const el = document.getElementById(id); globalInputState[id] = el.type === 'checkbox' ? el.checked : el.value; }); globalInputState['secondaryColor'] = document.getElementById('secondaryColor').value; globalInputState['highlightEffect'] = document.getElementById('highlightEffectSelect').value; globalTextState = { align: textAlign, bold: fontBold, style: fontStyle, decoration: fontDecoration }; }
+        function restoreInputState(state, textState) { lineStyleInputIds.forEach(id => { const el = document.getElementById(id); if (state[id] !== undefined) { if (el.type === 'checkbox') el.checked = state[id]; else el.value = state[id]; } }); if (state['secondaryColor'] !== undefined) document.getElementById('secondaryColor').value = state['secondaryColor']; if (state['highlightEffect'] !== undefined) document.getElementById('highlightEffectSelect').value = state['highlightEffect']; if (textState) { textAlign = textState.align; fontBold = textState.bold; fontStyle = textState.style; fontDecoration = textState.decoration; } }
+        function deselectAll(e) { if (e && e.target.classList.contains('dynamic-overlay')) return; selectedOverlayId = null; document.getElementById('overlaySelectHint').innerText = "ចុចលើរូបភាព"; document.getElementById('overlaySettingsControls').classList.add('opacity-30', 'pointer-events-none'); renderOverlays(); updateUI(); }
+        function handleCanvasClick(e) { if (e.target.id === 'canvasContainer' || e.target.closest('#bgMediaContainer') || e.target.id === 'canvasWrapper' || e.target.id === 'previewArea') { deselectAll(); if (editingLineId !== null && selectedLineIds.size === 0) selectEditingLine(editingLineId); } }
+        function handleOverlayUpload(input) { Array.from(input.files).forEach(file => { const id = 'ov-' + Date.now() + Math.random().toString(36).substr(2, 5); overlays.push({ id, url: URL.createObjectURL(file), x: 10, y: 10, width: 20, opacity: 1, startTime: 0, endTime: 999999 }); renderOverlays(); selectOverlay(id); showTab('overlay'); }); input.value = ''; }
+        function renderOverlays() { const c = document.getElementById('dynamicOverlaysContainer'); c.innerHTML = ''; c.style.pointerEvents = 'none'; overlays.forEach(ov => { const img = document.createElement('img'); img.id = 'ov-el-' + ov.id; img.src = ov.url; img.className = `dynamic-overlay ${ov.id === selectedOverlayId ? 'selected' : ''}`; img.style.left = ov.x + '%'; img.style.top = ov.y + '%'; img.style.width = ov.width + '%'; img.style.opacity = ov.opacity; img.style.pointerEvents = 'auto'; const ct = wavesurfer.getCurrentTime(); const active = ct >= (ov.startTime || 0) && ct <= (ov.endTime || 999999); img.style.display = (active || ov.id === selectedOverlayId) ? 'block' : 'none'; img.onmousedown = (e) => { selectOverlay(ov.id); startDraggingOverlay(e, ov); e.stopPropagation(); }; c.appendChild(img); }); }
+        function selectOverlay(id) { selectedOverlayId = id; const ov = overlays.find(o => o.id === id); if (ov) { document.getElementById('ovX').value = ov.x; document.getElementById('ovY').value = ov.y; document.getElementById('ovWidth').value = ov.width; document.getElementById('ovOpacity').value = ov.opacity; document.getElementById('ovInDisp').innerText = 'IN: ' + formatTime(ov.startTime); document.getElementById('ovOutDisp').innerText = 'OUT: ' + (ov.endTime > 900000 ? '--:--.--' : formatTime(ov.endTime)); document.getElementById('overlaySelectHint').innerText = "កំណត់ Overlay"; document.getElementById('overlaySettingsControls').classList.remove('opacity-30', 'pointer-events-none'); } renderOverlays(); updateUI(); }
+        function setOverlayTime(type) { if (!selectedOverlayId) return; const ov = overlays.find(o => o.id === selectedOverlayId); if (ov) { if (type === 'start') ov.startTime = wavesurfer.getCurrentTime(); else ov.endTime = wavesurfer.getCurrentTime(); document.getElementById('ovInDisp').innerText = 'IN: ' + formatTime(ov.startTime); document.getElementById('ovOutDisp').innerText = 'OUT: ' + (ov.endTime > 900000 ? '--:--.--' : formatTime(ov.endTime)); updateUI(); } }
+        function startDraggingOverlay(e, ov) { isDragging = true; const sx = e.clientX, sy = e.clientY, sox = ov.x, soy = ov.y; const rect = document.getElementById('canvasContainer').getBoundingClientRect(); function move(ev) { ov.x = Math.max(0, Math.min(100, sox + ((ev.clientX - sx) / rect.width) * 100)); ov.y = Math.max(0, Math.min(100, soy + ((ev.clientY - sy) / rect.height) * 100)); document.getElementById('ovX').value = ov.x.toFixed(2); document.getElementById('ovY').value = ov.y.toFixed(2); renderOverlays(); } function up() { isDragging = false; window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); } window.addEventListener('mousemove', move); window.addEventListener('mouseup', up); }
+        function updateOverlayStyle() { if (!selectedOverlayId) return; const ov = overlays.find(o => o.id === selectedOverlayId); if (ov) { ov.x = parseFloat(document.getElementById('ovX').value); ov.y = parseFloat(document.getElementById('ovY').value); ov.width = parseFloat(document.getElementById('ovWidth').value); ov.opacity = parseFloat(document.getElementById('ovOpacity').value); renderOverlays(); } }
+        function removeSelectedOverlay() { if (!selectedOverlayId) return; overlays = overlays.filter(o => o.id !== selectedOverlayId); selectedOverlayId = null; document.getElementById('overlaySelectHint').innerText = "ចុចលើរូបភាព"; document.getElementById('overlaySettingsControls').classList.add('opacity-30', 'pointer-events-none'); renderOverlays(); }
+        function handleGlobalFontUpload(input) { Array.from(input.files).forEach(file => loadFontFile(file)); }
+        function loadFontFile(file, callback = null) { const fontName = 'Font_' + file.name.split('.')[0].replace(/[^a-zA-Z0-9]/g, '_'); const reader = new FileReader(); reader.onload = async (e) => { const font = new FontFace(fontName, e.target.result); try { await font.load(); document.fonts.add(font); if (!customFonts.includes(fontName)) { customFonts.push(fontName); const sel = document.getElementById('fontFamilySelect'); const opt = document.createElement('option'); opt.value = fontName; opt.textContent = file.name.substring(0, 15); sel.appendChild(opt); const bSel = document.getElementById('batchFont'); const bOpt = document.createElement('option'); bOpt.value = fontName; bOpt.textContent = file.name.substring(0, 10); bSel.appendChild(bOpt); const aSel = document.getElementById('batchApplyFont'); const aOpt = document.createElement('option'); aOpt.value = fontName; aOpt.textContent = file.name.substring(0, 20); aSel.appendChild(aOpt); } if (callback) callback(fontName); updateStyles(); renderTable(); } catch (err) { console.error(err); } }; reader.readAsArrayBuffer(file); }
+        function setTextAlign(val) { textAlign = val; updateStyles(); if (selectedLineIds.size > 0) applyCurrentStylesToAllLines(); }
+        function toggleFont(type) { if (type === 'bold') fontBold = fontBold === '700' ? '400' : '700'; if (type === 'italic') fontStyle = fontStyle === 'italic' ? 'normal' : 'italic'; if (type === 'underline') fontDecoration = fontDecoration === 'underline' ? 'none' : 'underline'; if (type === 'line-through') fontDecoration = fontDecoration === 'line-through' ? 'none' : 'line-through'; updateStyles(); if (selectedLineIds.size > 0) applyCurrentStylesToAllLines(); }
+
+        function addLineUnified() {
+            const ta = document.getElementById('newLineInput');
+            const raw = ta.value.trim();
+            if (!raw) return;
+            const lines = raw.split(/\n/);
+            const syllables = [];
+            lines.forEach((lText, lineIdx) => {
+                const parts = lText.split(' ');
+                for (let i = 0; i < parts.length; i++) {
+                    if (parts[i] === "") syllables.push({ text: " ", time: null, lineIdx, isSpace: true });
+                    else syllables.push({ text: parts[i], time: null, lineIdx, color: null, fontSize: null, font: null });
+                }
+            });
+            let title = raw.replace(/\n/g, ' | ').substring(0, 30);
+            if (raw.length > 30) title += "...";
+
+            let newLineId = null;
+            if (editingTextId !== null) {
+                const line = allLines.find(l => l.id === editingTextId);
+                if (line) { line.title = title; line.syllables = syllables; line.maxLines = lines.length; }
+                cancelEdit();
+            } else {
+                newLineId = Date.now();
+                let initX = 0, initY = 200, initIS = null, initTS = null;
+                if (allLines.length > 0) {
+                    initX = allLines[0].posX || 0;
+                    initY = allLines[0].posY || 200;
+                    if (selectedLineIds.size > 0) {
+                        initIS = allLines[0].customInputState ? {...allLines[0].customInputState} : null;
+                        initTS = allLines[0].customTextState ? {...allLines[0].customTextState} : null;
+                    }
+                }
+                const audioDur = (wavesurfer && wavesurfer.getDuration()) || 0;
+                const initStart = 0;
+                const initEnd = audioDur > 0 ? audioDur : 999999;
+                allLines.push({
+                    id: newLineId, title, syllables,
+                    startTime: initStart, endTime: initEnd, maxLines: lines.length,
+                    posX: initX, posY: initY,
+                    customInputState: initIS, customTextState: initTS,
+                    followMaster: true
+                });
+                selectEditingLine(newLineId, selectedLineIds.size > 0);
+            }
+            ta.value = '';
+            if (newLineId !== null && selectedLineIds.size > 0) {
+                selectedLineIds.add(newLineId);
+                if (selectedLineIds.size === allLines.length) selectAllLines = true;
+                document.getElementById('selectAllLinesToggle').checked = selectAllLines;
+                updateSelectedLinesBanner();
+                applyCurrentStylesToAllLines();
+            }
+            renderLineList(); forceReRender();
+        }
+
+        function startEditLine(e, id) { e.stopPropagation(); const line = allLines.find(l => l.id === id); if (!line) return; editingTextId = id; const ta = document.getElementById('newLineInput'); const rec = []; for (let i = 0; i < line.maxLines; i++) rec.push(line.syllables.filter(s => s.lineIdx === i).map(s => s.text).join('')); ta.value = rec.join('\n'); document.getElementById('textInputLabel').innerText = "Editing..."; document.getElementById('addOrUpdateBtn').innerText = "UPDATE"; document.getElementById('addOrUpdateBtn').classList.replace('bg-blue-600', 'bg-green-600'); document.getElementById('cancelEditBtn').classList.remove('hidden'); document.getElementById('ttsBtn').classList.add('hidden'); }
+        function cancelEdit() { editingTextId = null; document.getElementById('newLineInput').value = ''; document.getElementById('textInputLabel').innerText = "Text Content"; document.getElementById('addOrUpdateBtn').innerText = "ADD LINE"; document.getElementById('addOrUpdateBtn').classList.replace('bg-green-600', 'bg-blue-600'); document.getElementById('cancelEditBtn').classList.add('hidden'); document.getElementById('ttsBtn').classList.remove('hidden'); }
+
+        function renderLineList() {
+            const c = document.getElementById('lineList');
+            c.innerHTML = '';
+            allLines.forEach((line, i) => {
+                const isActive = line.id === editingLineId;
+                const isMaster = i === 0;
+                const follow = line.followMaster !== false;
+                const fIcon = follow ? '🔗' : '🔓';
+                const fClass = follow ? 'follow-btn-linked' : 'follow-btn-unlinked';
+                const isChecked = selectedLineIds.has(line.id) || selectAllLines;
+                const div = document.createElement('div');
+                div.className = `p-2 rounded border border-slate-800 cursor-pointer text-[9px] transition-all ${
+                    (isActive && selectedLineIds.size === 0) ? 'bg-blue-600 ring-2 ring-blue-400 ring-inset' : 'bg-slate-800'
+                } ${isChecked ? 'line-item-all-selected' : ''}`;
+                const outDisplay = line.endTime >= 999999 ? '⏭ END' : formatTime(line.endTime);
+                div.innerHTML = `<div class="flex justify-between font-bold items-center">
+                    <div class="flex items-center gap-1 truncate pr-2">
+                        <input type="checkbox" class="sync-checkbox line-select-checkbox" ${isChecked ? 'checked' : ''}
+                            onclick="event.stopPropagation()"
+                            onchange="toggleLineSelection(event, ${line.id})"
+                            title="ជ្រើស Line នេះ">
+                        <span class="truncate">${line.title}</span>
+                        ${isMaster ? '<span class="master-badge">★ MASTER</span>' : ''}
+                    </div>
+                    <div class="flex gap-1 shrink-0">${!isMaster ? `<button onclick="toggleFollowMaster(event, ${line.id})" class="${fClass} p-1 rounded text-[9px] w-6 h-6 flex items-center justify-center">${fIcon}</button>` : ''}<button onclick="startEditLine(event, ${line.id})" class="bg-blue-400/20 hover:bg-blue-400/40 p-1 rounded text-[7px]">EDIT</button><button onclick="removeLine(event, ${line.id})" class="bg-red-500/20 hover:bg-red-500/40 px-2 py-1 rounded text-[7px]">×</button></div>
+                </div>
+                <div class="flex justify-between mt-1 text-[7px] text-slate-300"><span>IN: ${formatTime(line.startTime)}</span><span>OUT: ${outDisplay}</span></div>
+                <div class="grid grid-cols-3 gap-1 mt-1">
+                    <button onclick="setLineTime(event, ${line.id}, 'start')" class="bg-black/30 py-1 rounded hover:bg-black/50 text-[7px]">SET IN</button>
+                    <button onclick="setLineTime(event, ${line.id}, 'end')" class="bg-black/30 py-1 rounded hover:bg-black/50 text-[7px]">SET OUT</button>
+                    <button onclick="setFullLineTime(event, ${line.id})" class="bg-emerald-600/40 hover:bg-emerald-500/60 py-1 rounded text-[7px]" title="កំណត់ 0 → END">⏭ FULL</button>
+                </div>`;
+                div.onclick = (e) => { if (e.target.closest('.line-select-checkbox')) return; e.stopPropagation(); selectEditingLine(line.id); };
+                c.appendChild(div);
+            });
+            updateSelectedLinesBanner();
+        }
+
+        function setFullLineTime(e, id) { e.stopPropagation(); const line = allLines.find(l => l.id === id); if (!line) return; const audioDur = (wavesurfer && wavesurfer.getDuration()) || 0; line.startTime = 0; line.endTime = audioDur > 0 ? audioDur : 999999; renderLineList(); forceReRender(); }
+        function setLineTime(e, id, type) { e.stopPropagation(); const line = allLines.find(l => l.id === id); if (line) { if (type === 'start') line.startTime = wavesurfer.getCurrentTime(); else line.endTime = wavesurfer.getCurrentTime(); renderLineList(); forceReRender(); } }
+
+        function selectEditingLine(id, keepSelection = false) {
+            if (!keepSelection && selectedLineIds.size > 0) {
+                selectedLineIds.clear();
+                selectAllLines = false;
+                const topCb = document.getElementById('selectAllLinesToggle');
+                if (topCb) topCb.checked = false;
+                updateSelectedLinesBanner();
+            }
+            selectedSyllables.clear();
+            if (editingLineId === id && selectedLineIds.size === 0) {
+                editingLineId = null;
+                restoreInputState(globalInputState, globalTextState);
+                updateStyles();
+            } else {
+                editingLineId = id;
+                const line = allLines.find(l => l.id === id);
+                if (line) {
+                    if (!line.customInputState) restoreInputState(globalInputState, globalTextState);
+                    else restoreInputState(line.customInputState, line.customTextState);
+                    document.getElementById('posX').value = line.posX || 0;
+                    document.getElementById('posY').value = line.posY || 0;
+                }
+            }
+            renderLineList(); renderTable(); forceReRender();
+        }
+
+        function removeLine(e, id) {
+            e.stopPropagation();
+            allLines = allLines.filter(l => l.id !== id);
+            selectedLineIds.delete(id);
+            if (editingLineId === id) { editingLineId = null; restoreInputState(globalInputState, globalTextState); }
+            if (editingTextId === id) cancelEdit();
+            renderLineList(); forceReRender(); updateSelectedLinesBanner();
+        }
+        function renderTable() { const body = document.getElementById('syncTableBody'); const footer = document.getElementById('syncTableFooter'); body.innerHTML = ''; const line = allLines.find(l => l.id === editingLineId); if (!line) { footer.classList.add('hidden'); updateSelectionUI(); return; } footer.classList.remove('hidden'); const bf = document.getElementById('batchFont'); bf.innerHTML = '<option value="">Default Font</option>'; customFonts.forEach(f => { const o = document.createElement('option'); o.value = f; o.textContent = f.substring(0, 10); bf.appendChild(o); }); const af = document.getElementById('batchApplyFont'); const cur = af.value; af.innerHTML = '<option value="">-- Font --</option>'; customFonts.forEach(f => { const o = document.createElement('option'); o.value = f; o.textContent = f.substring(0, 20); af.appendChild(o); }); if (cur) af.value = cur; line.syllables.forEach((s, idx) => { if (s.isSpace) return; const row = document.createElement('tr'); const sel = selectedSyllables.has(idx); row.className = `border-b border-slate-900 hover:bg-slate-800/50 ${sel ? 'sync-row-selected' : ''}`; row.dataset.syllableIdx = idx; let opts = `<option value="">Default</option>`; customFonts.forEach(f => opts += `<option value="${f}" ${s.font === f ? 'selected' : ''}>${f.substring(0, 10)}</option>`); row.innerHTML = `<td class="p-1 text-center"><input type="checkbox" class="sync-checkbox" ${sel ? 'checked' : ''} onchange="toggleSyllableSelect(${idx})"></td><td class="p-1"><div class="font-bold text-white cursor-pointer" onclick="syncSyllable(${idx})">${s.text}</div></td><td class="p-1"><div class="flex flex-col gap-1"><select class="sync-input-font bg-slate-900 border border-slate-700 text-white rounded" onchange="updateSyllableStyle(${idx}, 'font', this.value)">${opts}</select><button class="upload-font-btn" onclick="triggerSyllableFontUpload(${idx})">UPLOAD</button></div></td><td class="p-1"><input type="color" class="sync-input-color" value="${s.color || document.getElementById('primaryColor').value}" oninput="updateSyllableStyle(${idx}, 'color', this.value)"></td><td class="p-1"><input type="number" class="sync-input-size text-white bg-slate-900 border border-slate-700 rounded" value="${s.fontSize || document.getElementById('fontSize').value}" oninput="updateSyllableStyle(${idx}, 'size', this.value)"></td><td class="p-1 text-right font-mono text-blue-400 cursor-pointer" onclick="syncSyllable(${idx})">${s.time ? s.time.toFixed(2) : '--'}</td>`; body.appendChild(row); }); updateSelectionUI(); updateSelectAllCheckbox(); }
+        function triggerSyllableFontUpload(idx) { const input = document.getElementById('syllableFontInput'); input.onchange = (e) => { const file = e.target.files[0]; if (file) loadFontFile(file, (fn) => updateSyllableStyle(idx, 'font', fn)); }; input.click(); }
+        function syncSyllable(idx) { const line = allLines.find(l => l.id === editingLineId); if (!line) return; const s = line.syllables[idx]; if (s.isSpace) return; if (document.getElementById('rotateModeToggle').checked) { const ns = line.syllables.filter(x => !x.isSpace); const ti = ns.indexOf(s); if (ti === -1) return; if (ns[ti].time === null || ns[ti].time === undefined) { ns[ti].time = wavesurfer.getCurrentTime(); renderTable(); forceReRender(); return; } for (let i = ns.length - 1; i > ti; i--) ns[i].time = ns[i-1].time; ns[ti].time = null; renderTable(); forceReRender(); return; } if (s.time !== null && s.time !== undefined) s.time = null; else s.time = wavesurfer.getCurrentTime(); renderTable(); updateUI(); }
+        function updateSyllableStyle(idx, type, value) { const line = allLines.find(l => l.id === editingLineId); if (!line) return; if (type === 'color') line.syllables[idx].color = value; if (type === 'size') line.syllables[idx].fontSize = value; if (type === 'font') line.syllables[idx].font = value; forceReRender(); }
+        function batchUpdateSyllable(type, value) { const line = allLines.find(l => l.id === editingLineId); if (!line) return; line.syllables.forEach(s => { if (s.isSpace) return; if (type === 'color') s.color = value; if (type === 'size') s.fontSize = value; if (type === 'font') s.font = value; }); renderTable(); forceReRender(); }
+        function seekAudio(event) { const rect = event.currentTarget.getBoundingClientRect(); wavesurfer.seekTo((event.clientX - rect.left) / rect.width); }
+        function forceReRender() { currentRenderedLineIds = null; updateUI(); }
+
+        function updateLinePos() {
+            const px = parseFloat(document.getElementById('posX').value) || 0;
+            const py = parseFloat(document.getElementById('posY').value) || 0;
+            if (selectedLineIds.size > 0) {
+                allLines.forEach(l => {
+                    if (!selectedLineIds.has(l.id)) return;
+                    l.posX = px; l.posY = py;
+                    const el = document.getElementById('line-el-' + l.id);
+                    if (el) { const rot = l.customInputState ? l.customInputState.rotation : document.getElementById('rotation').value; el.style.transform = `translate(calc(-50% + ${px}px), calc(-50% + ${py}px)) rotate(${rot}deg)`; }
+                });
+                return;
+            }
+            if (editingLineId) {
+                const line = allLines.find(l => l.id === editingLineId);
+                if (line) {
+                    line.posX = px; line.posY = py;
+                    const el = document.getElementById('line-el-' + line.id);
+                    if (el) { const rot = line.customInputState ? line.customInputState.rotation : document.getElementById('rotation').value; el.style.transform = `translate(calc(-50% + ${line.posX}px), calc(-50% + ${line.posY}px)) rotate(${rot}deg)`; }
+                    if (allLines.length > 0 && allLines[0].id === line.id) {
+                        allLines.forEach(o => {
+                            if (o.id === line.id || o.followMaster === false) return;
+                            o.posX = line.posX; o.posY = line.posY;
+                            const oEl = document.getElementById('line-el-' + o.id);
+                            if (oEl) { const oRot = o.customInputState ? o.customInputState.rotation : document.getElementById('rotation').value; oEl.style.transform = `translate(calc(-50% + ${o.posX}px), calc(-50% + ${o.posY}px)) rotate(${oRot}deg)`; }
+                        });
+                    }
+                }
+            }
+        }
+
+        function makeDraggable(el, line) {
+            el.onmousedown = function(e) {
+                if (e.button !== 0) return;
+                if (selectedLineIds.size > 0 && !selectedLineIds.has(line.id)) { clearLineSelection(); }
+                if (editingLineId !== line.id) { selectEditingLine(line.id, true); }
+                isDragging = true; draggingLine = line;
+                const rect = document.getElementById('canvasContainer').getBoundingClientRect();
+                const res = document.getElementById('resSelect').value.split('x');
+                const sx = parseInt(res[0]) / rect.width;
+                const sy = parseInt(res[1]) / rect.height;
+                dragStartX = e.clientX; dragStartY = e.clientY;
+                initialPosX = line.posX || 0; initialPosY = line.posY || 0;
+                const isM = (allLines.length > 0 && allLines[0].id === line.id);
+                const isLineSelected = selectedLineIds.has(line.id);
+                const isBatchMode = selectedLineIds.size > 0;
+                const dragAll = isBatchMode ? isLineSelected : isM;
+                function move(ev) {
+                    if (!isDragging) return;
+                    line.posX = initialPosX + (ev.clientX - dragStartX) * sx;
+                    line.posY = initialPosY + (ev.clientY - dragStartY) * sy;
+                    const rot = line.customInputState ? line.customInputState.rotation : document.getElementById('rotation').value;
+                    el.style.transform = `translate(calc(-50% + ${line.posX}px), calc(-50% + ${line.posY}px)) rotate(${rot}deg)`;
+                    if (editingLineId === line.id) { document.getElementById('posX').value = line.posX; document.getElementById('posY').value = line.posY; }
+                    if (dragAll) {
+                        allLines.forEach(o => {
+                            if (o.id === line.id) return;
+                            if (isBatchMode) { if (!selectedLineIds.has(o.id)) return; } else { if (o.followMaster === false) return; }
+                            o.posX = line.posX; o.posY = line.posY;
+                            const oEl = document.getElementById('line-el-' + o.id);
+                            if (oEl) { const oRot = o.customInputState ? o.customInputState.rotation : document.getElementById('rotation').value; oEl.style.transform = `translate(calc(-50% + ${o.posX}px), calc(-50% + ${o.posY}px)) rotate(${oRot}deg)`; }
+                        });
+                    }
+                }
+                function up() { isDragging = false; draggingLine = null; window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); }
+                window.addEventListener('mousemove', move); window.addEventListener('mouseup', up);
+                e.stopPropagation();
+            };
+        }
+        function applyLineStylesToElement(el, line) { const s = line.customInputState, t = line.customTextState; if (!s) return; el.style.setProperty('--active-font-family', s.fontFamilySelect); el.style.setProperty('--font-size', s.fontSize + 'px'); el.style.setProperty('--font-bold', t.bold); el.style.setProperty('--font-style', t.style); el.style.setProperty('--font-decoration', t.decoration); el.style.setProperty('--char-spacing', s.charSpacing + 'px'); el.style.setProperty('--line-height', s.lineHeight); el.style.setProperty('--primary-color', s.primaryColor); el.style.setProperty('--secondary-color', s.secondaryColor); el.style.setProperty('--stroke-width', s.strokeWidth + 'px'); el.style.setProperty('--stroke-color', s.strokeColor); el.style.setProperty('--stroke-order', s.strokeOrder); el.style.setProperty('--stroke-join', s.strokeJoin); el.style.setProperty('--shadow-dist-x', s.shadowX + 'px'); el.style.setProperty('--shadow-dist-y', s.shadowY + 'px'); el.style.setProperty('--shadow-blur', s.shadowBlur + 'px'); el.style.setProperty('--shadow-color', s.shadowColor); el.style.setProperty('--scale-x', s.scaleX); el.style.setProperty('--scale-y', s.scaleY); el.style.setProperty('--box-bg-color', hexToRgba(s.boxBgColor, s.boxOpacity)); el.style.setProperty('--box-show', s.showBox ? '1' : '0'); el.style.setProperty('--box-rounded', s.boxRounded + 'px'); el.style.setProperty('--box-width', s.boxWidth === "0" ? 'auto' : s.boxWidth + 'px'); el.style.setProperty('--box-offset-x', s.boxOffsetX + 'px'); el.style.setProperty('--box-offset-y', s.boxOffsetY + 'px'); el.dataset.align = t.align; }
+        function getCurrentHighlightEffect(line) { if (line && line.customInputState && line.customInputState['highlightEffect']) return line.customInputState['highlightEffect']; return globalInputState['highlightEffect'] || 'default'; }
+        function updateHighlightEffect() {
+            if (selectedLineIds.size > 0) { applyCurrentStylesToAllLines(); return; }
+            if (editingLineId === null) globalInputState['highlightEffect'] = document.getElementById('highlightEffectSelect').value;
+            else { const line = allLines.find(l => l.id === editingLineId); if (line) { if (!line.customInputState) line.customInputState = {...globalInputState}; line.customInputState['highlightEffect'] = document.getElementById('highlightEffectSelect').value; } }
+            forceReRender();
+        }
+        function hexToRgba(hex, opacity) { let r = 0, g = 0, b = 0; if (hex.length == 4) { r = parseInt(hex[1]+hex[1],16); g = parseInt(hex[2]+hex[2],16); b = parseInt(hex[3]+hex[3],16); } else if (hex.length == 7) { r = parseInt(hex.substring(1,3),16); g = parseInt(hex.substring(3,5),16); b = parseInt(hex.substring(5,7),16); } return `rgba(${r}, ${g}, ${b}, ${opacity})`; }
+
+        function inputAdjust() {
+            const r = document.documentElement;
+            const v = (id) => document.getElementById(id).value;
+            r.style.setProperty('--adj-brightness', v('adjBrightness'));
+            r.style.setProperty('--adj-contrast', v('adjContrast'));
+            r.style.setProperty('--adj-saturate', v('adjSaturate'));
+            r.style.setProperty('--adj-hue', v('adjHue') + 'deg');
+            r.style.setProperty('--adj-blur', v('adjBlur') + 'px');
+            r.style.setProperty('--vignette-opacity', v('vignetteOpacity'));
+            if (selectedLineIds.size > 0) {
+                globalInputState['secondaryColor'] = v('secondaryColor');
+                r.style.setProperty('--secondary-color', v('secondaryColor'));
+                allLines.forEach(line => {
+                    if (!selectedLineIds.has(line.id)) return;
+                    if (!line.customInputState) line.customInputState = {};
+                    line.customInputState['secondaryColor'] = v('secondaryColor');
+                });
+                forceReRender(); return;
+            }
+            if (editingLineId === null) {
+                globalInputState['secondaryColor'] = v('secondaryColor');
+                r.style.setProperty('--secondary-color', v('secondaryColor'));
+            } else {
+                const line = allLines.find(l => l.id === editingLineId);
+                if (line) { if (!line.customInputState) line.customInputState = {...globalInputState}; line.customInputState['secondaryColor'] = v('secondaryColor'); forceReRender(); }
+            }
+        }
+
+        function updateStyles() {
+            const r = document.documentElement;
+            const v = (id) => document.getElementById(id).value;
+            const chk = (id) => document.getElementById(id).checked;
+            if (chk('enableBgZoom')) { r.style.setProperty('--bg-animation', `bgZoomInOut ${v('bgZoomDuration')}s ease-in-out infinite`); r.style.setProperty('--bg-zoom-max', v('bgZoomMax')); }
+            else r.style.setProperty('--bg-animation', 'none');
+            document.getElementById('v-fontSize').innerText = v('fontSize');
+            if (selectedLineIds.size > 0 && allLines.length > 0) { saveGlobalState(); applyAllStylesToRoot(); applyCurrentStylesToAllLines(); return; }
+            if (editingLineId === null) {
+                saveGlobalState(); applyAllStylesToRoot();
+                document.querySelectorAll('.preview-text-element').forEach(el => { const lid = parseInt(el.id.replace('line-el-', '')); const line = allLines.find(l => l.id === lid); if (line && !line.customInputState) { el.dataset.align = textAlign; el.style.transform = `translate(calc(-50% + ${line.posX}px), calc(-50% + ${line.posY}px)) rotate(${v('rotation')}deg)`; } });
+                updateUI();
+            } else {
+                const line = allLines.find(l => l.id === editingLineId);
+                if (line) {
+                    if (!line.customInputState) line.customInputState = {...globalInputState};
+                    if (!line.customTextState) line.customTextState = {...globalTextState};
+                    lineStyleInputIds.forEach(id => { const el = document.getElementById(id); line.customInputState[id] = el.type === 'checkbox' ? el.checked : el.value; });
+                    line.customTextState = { align: textAlign, bold: fontBold, style: fontStyle, decoration: fontDecoration };
+                    forceReRender();
+                }
+            }
+        }
+        function applyAllStylesToRoot() { const r = document.documentElement; const v = (id) => document.getElementById(id).value; const chk = (id) => document.getElementById(id).checked; r.style.setProperty('--active-font-family', v('fontFamilySelect')); r.style.setProperty('--font-size', v('fontSize') + 'px'); r.style.setProperty('--font-bold', fontBold); r.style.setProperty('--font-style', fontStyle); r.style.setProperty('--font-decoration', fontDecoration); r.style.setProperty('--char-spacing', v('charSpacing') + 'px'); r.style.setProperty('--line-height', v('lineHeight')); r.style.setProperty('--primary-color', v('primaryColor')); r.style.setProperty('--stroke-width', v('strokeWidth') + 'px'); r.style.setProperty('--stroke-color', v('strokeColor')); r.style.setProperty('--stroke-order', v('strokeOrder')); r.style.setProperty('--stroke-join', v('strokeJoin')); r.style.setProperty('--shadow-dist-x', v('shadowX') + 'px'); r.style.setProperty('--shadow-dist-y', v('shadowY') + 'px'); r.style.setProperty('--shadow-blur', v('shadowBlur') + 'px'); r.style.setProperty('--shadow-color', v('shadowColor')); r.style.setProperty('--scale-x', v('scaleX')); r.style.setProperty('--scale-y', v('scaleY')); r.style.setProperty('--box-bg-color', hexToRgba(v('boxBgColor'), v('boxOpacity'))); r.style.setProperty('--box-show', chk('showBox') ? '1' : '0'); r.style.setProperty('--box-rounded', v('boxRounded') + 'px'); r.style.setProperty('--box-width', v('boxWidth') === "0" ? 'auto' : v('boxWidth') + 'px'); r.style.setProperty('--box-offset-x', v('boxOffsetX') + 'px'); r.style.setProperty('--box-offset-y', v('boxOffsetY') + 'px'); }
+        function showTab(id) { document.querySelectorAll('.control-tab').forEach(t => t.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); const target = document.getElementById('tab-' + id); if (target) target.classList.add('active'); document.querySelectorAll('.tab-btn').forEach(btn => { if (btn.innerText.toLowerCase().trim() === id.toLowerCase()) btn.classList.add('active'); }); }
+        function formatTime(s) { if (isNaN(s) || s === undefined) return "00:00.00"; const m = Math.floor(s / 60); const sec = (s % 60).toFixed(2); return `${m.toString().padStart(2,'0')}:${sec.padStart(5,'0')}`; }
+        function formatSRTTime(seconds) { if (isNaN(seconds) || seconds === null) return "00:00:00,000"; const date = new Date(seconds * 1000); const hh = String(Math.floor(seconds / 3600)).padStart(2, '0'); const mm = String(date.getUTCMinutes()).padStart(2, '0'); const ss = String(date.getUTCSeconds()).padStart(2, '0'); const ms = String(date.getUTCMilliseconds()).padStart(3, '0'); return `${hh}:${mm}:${ss},${ms}`; }
+        function updateCanvasSize() { const res = document.getElementById('resSelect').value.split('x'); const w = parseInt(res[0]), h = parseInt(res[1]); const area = document.getElementById('previewArea'); if (!area) return; const rect = area.getBoundingClientRect(); const fit = Math.min((rect.width - 80) / w, (rect.height - 80) / h); let final = isFitMode ? fit : fit * previewZoom; const canvas = document.getElementById('canvasContainer'); if (!canvas) return; canvas.style.width = (w * final) + 'px'; canvas.style.height = (h * final) + 'px'; const root = document.documentElement; root.style.setProperty('--preview-native-w', w + 'px'); root.style.setProperty('--preview-native-h', h + 'px'); root.style.setProperty('--preview-scale', final); const pX = document.getElementById('posX'); const pY = document.getElementById('posY'); pX.min = -w; pX.max = w; pY.min = -h; pY.max = h; const bX = document.getElementById('boxOffsetX'); const bY = document.getElementById('boxOffsetY'); bX.min = -w/2; bX.max = w/2; bY.min = -h/2; bY.max = h/2; }
+        function exportData() { const data = { version: "5.2", resolution: document.getElementById('resSelect').value, bgFit: document.getElementById('bgFitSelect').value, bgColor: bgColor, globalInputState, globalTextState, overlays, backgrounds: backgrounds.map(b => ({...b})), logoItems: logoItems.map(l => ({...l})), stopMotionFrames: stopMotionFrames.map(f => ({...f})), lines: allLines.map(l => ({ id: l.id, title: l.title, startTime: l.startTime, endTime: l.endTime, maxLines: l.maxLines, posX: l.posX, posY: l.posY, customInputState: l.customInputState, customTextState: l.customTextState, followMaster: l.followMaster !== false, syllables: l.syllables.map(s => ({ text: s.text, time: s.time, lineIdx: s.lineIdx, isSpace: s.isSpace, color: s.color, fontSize: s.fontSize, font: s.font })) })) }; const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'karaoke_project.json'; a.click(); }
+        function importData(input) { const file = input.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (e) => { try { const d = JSON.parse(e.target.result); if (d.resolution) document.getElementById('resSelect').value = d.resolution; if (d.bgFit) { document.getElementById('bgFitSelect').value = d.bgFit; updateBgScale(); } if (d.bgColor) setBgColor(d.bgColor); if (d.globalInputState) globalInputState = d.globalInputState; if (d.globalTextState) globalTextState = d.globalTextState; if (d.overlays) { overlays = d.overlays; renderOverlays(); } if (d.backgrounds) { backgrounds = d.backgrounds; renderBgList(); } if (d.logoItems) { logoItems = d.logoItems; renderLogoList(); } if (d.stopMotionFrames) { stopMotionFrames = d.stopMotionFrames; renderStopMotionList(); } if (d.lines) { allLines = d.lines.map(l => ({...l, followMaster: l.followMaster !== false})); selectedLineIds.clear(); selectAllLines = false; renderLineList(); } resetPreviewZoom(); restoreInputState(globalInputState, globalTextState); updateStyles(); forceReRender(); } catch (err) { alert("Error: " + err.message); } }; reader.readAsText(file); }
+        function exportSRT() { if (allLines.length === 0) return; const sorted = [...allLines].sort((a, b) => a.startTime - b.startTime); let srt = ""; sorted.forEach((line, i) => { const txt = []; for (let j = 0; j < line.maxLines; j++) txt.push(line.syllables.filter(s => s.lineIdx === j).map(s => s.text).join('')); srt += `${i + 1}\n${formatSRTTime(line.startTime)} --> ${formatSRTTime(line.endTime)}\n${txt.join('\n').trim()}\n\n`; }); const blob = new Blob([srt], { type: 'text/plain;charset=utf-8' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'subtitles.srt'; a.click(); }
+        async function generateTTS() { const text = document.getElementById('newLineInput').value.trim(); if (!text) return; try { const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: `Say: ${text}` }] }], generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } } } } }) }); const r = await res.json(); const data = r.candidates[0].content.parts[0].inlineData.data; const url = URL.createObjectURL(pcmToWavBlob(data, 24000)); currentAudioUrl = url; wavesurfer.load(url); addLineUnified(); } catch (e) { console.error(e); } }
+        function pcmToWavBlob(base64, sampleRate) { const buf = Uint8Array.from(atob(base64), c => c.charCodeAt(0)).buffer; const h = new ArrayBuffer(44); const v = new DataView(h); v.setUint32(0, 0x52494646, false); v.setUint32(4, 36 + buf.byteLength, true); v.setUint32(8, 0x57415645, false); v.setUint32(12, 0x666d7420, false); v.setUint16(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, sampleRate, true); v.setUint32(28, sampleRate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); v.setUint32(36, 0x64617461, false); v.setUint32(40, buf.byteLength, true); return new Blob([h, buf], { type: 'audio/wav' }); }
+        window.addEventListener('resize', updateCanvasSize);
+
+        document.addEventListener('keydown', function(e) {
+            const tag = e.target.tagName.toLowerCase();
+            if (tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.closest('button')) return;
+            const k = e.key.toLowerCase();
+            if (e.code === 'Space') { e.preventDefault(); togglePlayPause(); return; }
+            if (k === 'a') { e.preventDefault(); rewindDown(); return; }
+            if (k === 'd') { e.preventDefault(); rewindUp(); return; }
+            if (k === 'w') { e.preventDefault(); zoomOut(); return; }
+            if (k === 's') { e.preventDefault(); zoomIn(); return; }
+            if (k === 'c') { e.preventDefault(); if (wavesurfer) { addStopMotionFrame(wavesurfer.getCurrentTime()); showTab('stopmotion'); } return; }
+            // ⭐ NEW: H key to toggle right panel
+            if (k === 'h') { e.preventDefault(); toggleRightPanel(); return; }
+        }, true);
+
+        /* EXPORT */
+        let _exportCancelled = false;
+        let _isExporting = false;
+        const _exportVideos = new Map();
+
+        function hexToRgb(hex) { let r = 0, g = 0, b = 0; if (!hex) return { r:0, g:0, b:0 }; if (hex.length === 4) { r = parseInt(hex[1]+hex[1],16); g = parseInt(hex[2]+hex[2],16); b = parseInt(hex[3]+hex[3],16); } else if (hex.length === 7) { r = parseInt(hex.substring(1,3),16); g = parseInt(hex.substring(3,5),16); b = parseInt(hex.substring(5,7),16); } return { r, g, b }; }
+        function drawRoundedRect(ctx, x, y, w, h, r) { r = Math.min(r, Math.abs(w)/2, Math.abs(h)/2); ctx.beginPath(); ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r); ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h); ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r); ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath(); }
+        async function getAudioBuffer() { if (wavesurfer) { try { if (wavesurfer.getDecodedData) { const b = wavesurfer.getDecodedData(); if (b) return b; } } catch(e){} try { if (wavesurfer.backend && wavesurfer.backend.buffer) return wavesurfer.backend.buffer; } catch(e){} } if (currentAudioUrl) { try { const r = await fetch(currentAudioUrl); const arr = await r.arrayBuffer(); const ctx = new (window.AudioContext || window.webkitAudioContext)(); return await ctx.decodeAudioData(arr); } catch(e) { console.warn(e); } } return null; }
+        async function preloadExportAssets() { const assets = new Map(); const loadImg = (url) => new Promise((resolve) => { if (assets.has(url)) { resolve(assets.get(url)); return; } const img = new Image(); img.crossOrigin = 'anonymous'; img.onload = () => { assets.set(url, img); resolve(img); }; img.onerror = () => { assets.set(url, null); resolve(null); }; img.src = url; }); const tasks = []; backgrounds.forEach(b => { if (b.type === 'image' && b.fileUrl) tasks.push(loadImg(b.fileUrl)); }); stopMotionFrames.forEach(f => { if (f.imageUrl) tasks.push(loadImg(f.imageUrl)); }); overlays.forEach(o => { if (o.url) tasks.push(loadImg(o.url)); }); logoItems.forEach(l => { if (l.fileUrl) tasks.push(loadImg(l.fileUrl)); }); await Promise.all(tasks); return assets; }
+        function getActiveBackgroundAt(t) { const active = backgrounds.filter(b => t >= b.startTime && t <= b.endTime); return active.length > 0 ? active[active.length - 1] : null; }
+        function getActiveStopMotionAt(t) { for (let i = stopMotionFrames.length - 1; i >= 0; i--) if (stopMotionFrames[i].startTime <= t) return stopMotionFrames[i]; return null; }
+        function getActiveLogosAt(t) { return logoItems.filter(l => t >= l.startTime && t <= l.endTime); }
+        function getActiveOverlaysAt(t) { return overlays.filter(o => t >= (o.startTime || 0) && t <= (o.endTime || 999999)); }
+        function getActiveLinesAt(t) { return allLines.filter(l => t >= l.startTime && t <= l.endTime); }
+        function drawMediaFit(ctx, media, W, H, mw, mh) { const fit = document.getElementById('bgFitSelect').value; if (fit === 'tile') { if (mw && mh) { const pat = ctx.createPattern(media, 'repeat'); if (pat) { ctx.fillStyle = pat; ctx.fillRect(0, 0, W, H); } } return; } let dw = W, dh = H, dx = 0, dy = 0; if (fit === 'cover') { const s = Math.max(W/mw, H/mh); dw = mw*s; dh = mh*s; dx = (W-dw)/2; dy = (H-dh)/2; } else if (fit === 'contain') { const s = Math.min(W/mw, H/mh); dw = mw*s; dh = mh*s; dx = (W-dw)/2; dy = (H-dh)/2; } else if (fit === 'fill') { dw = W; dh = H; } else if (fit === 'center') { dw = mw; dh = mh; dx = (W-dw)/2; dy = (H-dh)/2; } else if (fit === 'span') { const s = W/mw; dw = W; dh = mh*s; dx = 0; dy = (H-dh)/2; } ctx.drawImage(media, dx, dy, dw, dh); }
+
+        async function getExportVideo(bg) {
+            if (_exportVideos.has(bg.id)) {
+                const cached = _exportVideos.get(bg.id);
+                if (cached.readyState >= 2 && cached.videoWidth > 0) return cached;
+                _exportVideos.delete(bg.id);
+            }
+            const vid = document.createElement('video');
+            vid.src = bg.fileUrl; vid.muted = true; vid.playsInline = true; vid.preload = 'auto'; vid.crossOrigin = 'anonymous'; vid.loop = true;
+            await new Promise(resolve => {
+                let done = false;
+                const finish = () => { if (done) return; done = true; vid.removeEventListener('loadeddata', finish); vid.removeEventListener('canplay', finish); vid.removeEventListener('canplaythrough', finish); vid.removeEventListener('error', finish); resolve(); };
+                if (vid.readyState >= 3 && vid.videoWidth > 0) { finish(); } else { vid.addEventListener('loadeddata', finish); vid.addEventListener('canplay', finish); vid.addEventListener('canplaythrough', finish); vid.addEventListener('error', finish); setTimeout(finish, 10000); }
+            });
+            _exportVideos.set(bg.id, vid);
+            return vid;
+        }
+
+        async function seekVideoForExport(vid, targetTime) {
+            if (!vid || !vid.duration || isNaN(vid.duration)) return;
+            const t = ((targetTime % vid.duration) + vid.duration) % vid.duration;
+            if (Math.abs(vid.currentTime - t) < 0.066) return;
+            return new Promise(resolve => {
+                let resolved = false; let rvfcId = null; let rvfcTimeout = null;
+                const finish = () => {
+                    if (resolved) return; resolved = true;
+                    vid.removeEventListener('seeked', onSeeked);
+                    if (rvfcId !== null && typeof vid.cancelVideoFrameCallback === 'function') { try { vid.cancelVideoFrameCallback(rvfcId); } catch(e){} }
+                    clearTimeout(hardTimeout);
+                    if (rvfcTimeout) clearTimeout(rvfcTimeout);
+                    resolve();
+                };
+                const onSeeked = () => {
+                    if ('requestVideoFrameCallback' in vid) {
+                        try { rvfcId = vid.requestVideoFrameCallback(() => finish()); }
+                        catch(e) { finish(); return; }
+                        rvfcTimeout = setTimeout(finish, 1000);
+                    } else { requestAnimationFrame(() => requestAnimationFrame(finish)); }
+                };
+                const hardTimeout = setTimeout(finish, 5000);
+                vid.addEventListener('seeked', onSeeked);
+                try { vid.currentTime = t; } catch (e) { finish(); }
+            });
+        }
+
+        async function renderFrameToCanvas(ctx, time, W, H, assets, opts = {}) {
+            const bgMode = opts.bgMode || 'full';
+            const skipBgMedia = bgMode !== 'full';
+            const skipLogoOv = bgMode !== 'full';
+            const transparent = bgMode === 'transparent';
+            ctx.save(); ctx.clearRect(0, 0, W, H);
+            if (!transparent) { ctx.fillStyle = bgColor || '#000000'; ctx.fillRect(0, 0, W, H); }
+            const nativeW = parseInt(document.getElementById('resSelect').value.split('x')[0]);
+            const pxScale = W / nativeW;
+            const bri = parseFloat(document.getElementById('adjBrightness').value) || 1;
+            const con = parseFloat(document.getElementById('adjContrast').value) || 1;
+            const sat = parseFloat(document.getElementById('adjSaturate').value) || 1;
+            const hue = parseFloat(document.getElementById('adjHue').value) || 0;
+            const blr = parseFloat(document.getElementById('adjBlur').value) || 0;
+            ctx.filter = `brightness(${bri}) contrast(${con}) saturate(${sat}) hue-rotate(${hue}deg) blur(${blr}px)`;
+            if (!skipBgMedia) {
+                const bg = getActiveBackgroundAt(time);
+                if (bg) {
+                    if (bg.type === 'image') { const img = assets.get(bg.fileUrl); if (img && img.complete && img.naturalWidth > 0) drawMediaFit(ctx, img, W, H, img.naturalWidth, img.naturalHeight); }
+                    else if (bg.type === 'video') { const vid = await getExportVideo(bg); if (vid && vid.videoWidth > 0) { await seekVideoForExport(vid, time); drawMediaFit(ctx, vid, W, H, vid.videoWidth, vid.videoHeight); } }
+                }
+                const stp = getActiveStopMotionAt(time);
+                if (stp && stp.imageUrl) { const img = assets.get(stp.imageUrl); if (img && img.complete) drawMediaFit(ctx, img, W, H, img.naturalWidth, img.naturalHeight); }
+            }
+            ctx.filter = 'none';
+            if (!skipBgMedia) {
+                const vig = parseFloat(document.getElementById('vignetteOpacity').value) || 0;
+                if (vig > 0) { const grd = ctx.createRadialGradient(W/2, H/2, Math.min(W,H)/2 * 0.5, W/2, H/2, Math.max(W,H)*0.8); grd.addColorStop(0, 'rgba(0,0,0,0)'); grd.addColorStop(1, `rgba(0,0,0,${vig})`); ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H); }
+            }
+            if (!skipLogoOv) {
+                for (const logo of getActiveLogosAt(time)) {
+                    const img = assets.get(logo.fileUrl);
+                    if (img && img.complete) { const lw = logo.width * pxScale; const lh = (img.naturalHeight / img.naturalWidth) * lw; const lx = (logo.x / 100) * W; const ly = (logo.y / 100) * H; ctx.globalAlpha = logo.opacity; ctx.drawImage(img, lx - lw/2, ly - lh/2, lw, lh); ctx.globalAlpha = 1; }
+                }
+                for (const ov of getActiveOverlaysAt(time)) {
+                    const img = assets.get(ov.url);
+                    if (img && img.complete) { const ow = (ov.width / 100) * W; const oh = (img.naturalHeight / img.naturalWidth) * ow; const ox = (ov.x / 100) * W; const oy = (ov.y / 100) * H; ctx.globalAlpha = ov.opacity; ctx.drawImage(img, ox, oy, ow, oh); ctx.globalAlpha = 1; }
+                }
+            }
+            for (const line of getActiveLinesAt(time)) renderLineToCanvas(ctx, line, time, W, H);
+            ctx.restore();
+        }
+
+        function renderLineToCanvas(ctx, line, time, W, H) { const nativeW = parseInt(document.getElementById('resSelect').value.split('x')[0]); const pxScale = W / nativeW; const state = line.customInputState || globalInputState; const tState = line.customTextState || globalTextState; const fontSize = (parseFloat(state.fontSize) || 60) * pxScale; const charSpacing = (parseFloat(state.charSpacing) || 0) * pxScale; const strokeWidth = (parseFloat(state.strokeWidth) || 0) * pxScale; const shadowX = (parseFloat(state.shadowX) || 0) * pxScale; const shadowY = (parseFloat(state.shadowY) || 0) * pxScale; const shadowBlur = (parseFloat(state.shadowBlur) || 0) * pxScale; const boxRounded = (parseFloat(state.boxRounded) || 0) * pxScale; const boxWidthSetting = (parseFloat(state.boxWidth) || 0) * pxScale; const boxOffsetX = (parseFloat(state.boxOffsetX) || 0) * pxScale; const boxOffsetY = (parseFloat(state.boxOffsetY) || 0) * pxScale; const posXScaled = (line.posX || 0) * pxScale; const posYScaled = (line.posY || 0) * pxScale; const padX = 20 * pxScale, padY = 10 * pxScale; const fontFamily = state.fontFamilySelect || "'Kantumruy Pro', sans-serif"; const fontWeight = tState.bold || '700'; const fontStyleVal = tState.style || 'normal'; const primaryColor = state.primaryColor || '#ffffff'; const secondaryColor = state.secondaryColor || '#fbbf24'; const strokeColor = state.strokeColor || '#000000'; const strokeOrder = state.strokeOrder || 'stroke fill'; const strokeJoin = state.strokeJoin || 'round'; const shadowColor = state.shadowColor || '#000000'; const scaleX = parseFloat(state.scaleX) || 1; const scaleY = parseFloat(state.scaleY) || 1; const rotation = parseFloat(state.rotation) || 0; const lineHeightMultiplier = parseFloat(state.lineHeight) || 1.2; const align = tState.align || 'center'; const showBox = state.showBox !== false && state.showBox !== 'false'; const boxBgColor = state.boxBgColor || '#000000'; const boxOpacity = parseFloat(state.boxOpacity); const centerX = W / 2 + posXScaled; const centerY = H / 2 + posYScaled; const effect = getCurrentHighlightEffect(line); const linesData = []; for (let i = 0; i < line.maxLines; i++) { const ls = line.syllables.map((s, idx) => ({s, idx})).filter(it => it.s.lineIdx === i); const groups = []; let cur = null; for (const item of ls) { const s = item.s; if (s.isSpace) { if (cur) { groups.push(cur); cur = null; } groups.push({ type: 'space', text: ' ', indices: [] }); } else if (s.text.startsWith(KHMER_COENG) && cur) { cur.text += s.text; cur.indices.push(item.idx); } else { if (cur) groups.push(cur); cur = { type: 'syl', text: s.text, indices: [item.idx], syl: s }; } } if (cur) groups.push(cur); let tw = 0; for (const g of groups) { if (g.type === 'space') { ctx.font = `${fontStyleVal} ${fontWeight} ${fontSize}px ${fontFamily}`; g.measuredWidth = ctx.measureText(' ').width + charSpacing * 2; } else { const sz = ((parseFloat(g.syl.fontSize) || parseFloat(state.fontSize) || 60)) * pxScale; const fam = g.syl.font || fontFamily; ctx.font = `${fontStyleVal} ${fontWeight} ${sz}px ${fam}`; g.measuredWidth = ctx.measureText(g.text).width + charSpacing * 2; } tw += g.measuredWidth; } linesData.push({ groups, totalWidth: tw }); } const maxW = Math.max(...linesData.map(d => d.totalWidth), 10); const lineH = fontSize * lineHeightMultiplier; const totalH = linesData.length * lineH; const autoBoxW = maxW + padX * 2, autoBoxH = totalH + padY * 2; const boxW = boxWidthSetting > 0 ? boxWidthSetting : autoBoxW; const boxH = autoBoxH; let boxLeftLocal; if (align === 'left') boxLeftLocal = -0.45 * W; else if (align === 'right') boxLeftLocal = 0.45 * W - boxW; else boxLeftLocal = -boxW / 2; if (showBox && boxOpacity > 0.001) { const rgb = hexToRgb(boxBgColor); ctx.save(); ctx.translate(centerX, centerY); ctx.rotate(rotation * Math.PI / 180); ctx.translate(boxOffsetX, boxOffsetY); ctx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},${boxOpacity})`; const bx = boxLeftLocal, by = -boxH / 2; if (boxRounded > 0) drawRoundedRect(ctx, bx, by, boxW, boxH, boxRounded); else ctx.rect(bx, by, boxW, boxH); ctx.fill(); ctx.restore(); } ctx.save(); ctx.translate(centerX, centerY); ctx.rotate(rotation * Math.PI / 180); ctx.translate(boxOffsetX, boxOffsetY); for (let i = 0; i < linesData.length; i++) { const ld = linesData[i]; let startX; if (align === 'center') startX = boxLeftLocal + (boxW - ld.totalWidth) / 2; else if (align === 'left') startX = boxLeftLocal + padX; else startX = boxLeftLocal + boxW - padX - ld.totalWidth; const lineTopY = -boxH / 2 + padY + i * lineH; const baselineY = lineTopY + lineH * 0.72; let cx = startX; for (const g of ld.groups) { if (g.type === 'space') { cx += g.measuredWidth; continue; } const sylFont = g.syl.font || fontFamily; const sylSize = ((parseFloat(g.syl.fontSize) || parseFloat(state.fontSize) || 60)) * pxScale; const baseColor = g.syl.color || primaryColor; const isActive = g.indices.some(idx => { const s = line.syllables[idx]; return s && !s.isSpace && s.time !== null && s.time !== undefined && time >= s.time; }); const drawColor = isActive ? secondaryColor : baseColor; let aS = 1, aR = 0, aY = 0, aU = false, aB = false, aG = false; if (isActive) { if (effect === 'default') aS = 1.15; else if (effect === 'glow') { aS = 1.15; aG = true; } else if (effect === 'bounce') { aS = 1.15; aY = -sylSize * 0.15; } else if (effect === 'rotate') { aS = 1.15; aR = 5; } else if (effect === 'underline') { aS = 1.15; aU = true; } else if (effect === 'bold') { aS = 1.15; aB = true; } } const effW = aB ? '900' : fontWeight; ctx.save(); ctx.font = `${fontStyleVal} ${effW} ${sylSize}px ${sylFont}`; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left'; if (aG) { ctx.shadowColor = secondaryColor; ctx.shadowBlur = 15; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0; } else { ctx.shadowColor = shadowColor; ctx.shadowBlur = shadowBlur; ctx.shadowOffsetX = shadowX; ctx.shadowOffsetY = shadowY; } const sCX = cx + g.measuredWidth / 2; const sCY = baselineY - sylSize * 0.35 + aY; if (scaleX !== 1 || scaleY !== 1 || aS !== 1 || aR !== 0) { ctx.translate(sCX, sCY); if (aR !== 0) ctx.rotate(aR * Math.PI / 180); ctx.scale(scaleX * aS, scaleY * aS); ctx.translate(-sCX, -sCY); } if (strokeWidth > 0 && strokeOrder === 'stroke fill') { ctx.lineWidth = strokeWidth * 2; ctx.strokeStyle = strokeColor; ctx.lineJoin = strokeJoin; ctx.lineCap = 'round'; ctx.strokeText(g.text, cx, baselineY + aY); } ctx.fillStyle = drawColor; ctx.fillText(g.text, cx, baselineY + aY); if (strokeWidth > 0 && strokeOrder === 'fill stroke') { ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.lineWidth = strokeWidth * 2; ctx.strokeStyle = strokeColor; ctx.lineJoin = strokeJoin; ctx.strokeText(g.text, cx, baselineY + aY); } if (aU) { ctx.shadowBlur = 0; ctx.shadowColor = 'transparent'; ctx.fillStyle = secondaryColor; ctx.fillRect(cx, baselineY + sylSize * 0.15, g.measuredWidth, Math.max(2, sylSize * 0.08)); } ctx.restore(); cx += g.measuredWidth; } } ctx.restore(); }
+
+        function openImageExportModal(format) {
+            if (_isExporting) { alert("កំពុង Export"); return; }
+            if (allLines.length === 0 && backgrounds.length === 0) { alert("មិនមានអ្វី"); return; }
+            document.getElementById('imgExpFormat').value = format || 'png';
+            document.getElementById('imgExpBgMode').value = 'full';
+            updateImageExportPreview();
+            document.getElementById('imageExportModal').classList.add('show');
+        }
+        function closeImageExportModal() { document.getElementById('imageExportModal').classList.remove('show'); }
+        function updateImageExportPreview() {
+            const format = document.getElementById('imgExpFormat').value;
+            const mode = document.getElementById('imgExpBgMode').value;
+            const warn = document.getElementById('imgExpWarning');
+            const desc = document.getElementById('imgExpModeDesc');
+            if (format === 'jpg' && mode === 'transparent') { warn.style.display = 'block'; } else { warn.style.display = 'none'; }
+            if (mode === 'full') { desc.innerText = '→ រួមបញ្ចូល៖ Background + Stop Motion + Logo + Overlay + Text'; }
+            else if (mode === 'color') { desc.innerText = '→ តែ Text លើពណ៌ BG ដែលអ្នកបានកំណត់ (មិនមាន Background/Logo/Overlay)'; }
+            else { desc.innerText = '→ តែ Text ប៉ុណ្ណោះ · ផ្ទៃថ្លា (Transparent) — សម្រាប់ PNG តែប៉ុណ្ណោះ'; }
+        }
+        async function startImageExport() {
+            if (_isExporting) { alert("កំពុង Export"); return; }
+            const format = document.getElementById('imgExpFormat').value;
+            let bgMode = document.getElementById('imgExpBgMode').value;
+            closeImageExportModal();
+            if (format === 'jpg' && bgMode === 'transparent') bgMode = 'color';
+            _isExporting = true;
+            showExportProgress("កំពុងបង្កើតរូបភាព...", `${format.toUpperCase()} · ${bgMode}`);
+            _exportCancelled = false;
+            try {
+                const res = document.getElementById('resSelect').value.split('x');
+                const W = parseInt(res[0]), H = parseInt(res[1]);
+                const canvas = document.createElement('canvas');
+                canvas.width = W; canvas.height = H;
+                const ctx = canvas.getContext('2d');
+                setExportProgress(10, `Loading (${W}×${H})...`);
+                const assets = await preloadExportAssets();
+                setExportProgress(40, "Rendering...");
+                await renderFrameToCanvas(ctx, wavesurfer.getCurrentTime(), W, H, assets, { bgMode });
+                setExportProgress(80, "Encoding...");
+                const mime = format === 'png' ? 'image/png' : 'image/jpeg';
+                const quality = format === 'jpg' ? 0.95 : undefined;
+                const blob = await new Promise(r => canvas.toBlob(r, mime, quality));
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `karaoke_${bgMode}_${formatTime(wavesurfer.getCurrentTime()).replace(/[:.]/g, '-')}.${format}`;
+                a.click();
+                setExportProgress(100, "✅ រួចរាល់!");
+                setTimeout(hideExportProgress, 800);
+            } catch (err) {
+                console.error(err); alert("Export failed: " + err.message); hideExportProgress();
+            } finally { _isExporting = false; }
+        }
+
+        function openVideoExportModal() { if (!window.VideoEncoder || !window.AudioEncoder) { alert("Browser មិនគាំទ្រ WebCodecs"); return; } if (!window.WebMMuxer) { alert("webm-muxer មិនត្រូវបាន load"); return; } if (!wavesurfer || !wavesurfer.getDuration()) { alert("សូម upload audio មុន"); return; } const sel = document.getElementById('expRes'); sel.innerHTML = ''; const cur = document.getElementById('resSelect').value; const opts = [['1280x720','1280×720 (720p)'],['1920x1080','1920×1080 (1080p)'],['2560x1440','2560×1440 (2K)'],['3840x2160','3840×2160 (4K)'],['1080x1920','1080×1920 (Portrait)'],['720x1280','720×1280 (Portrait HD)'],['1080x1080','1080×1080 (Square)']]; opts.forEach(([v, l]) => { const o = document.createElement('option'); o.value = v; o.textContent = l; if (v === cur) o.selected = true; sel.appendChild(o); }); document.getElementById('exportModal').classList.add('show'); updateExportInfo(); }
+        function closeVideoExportModal() { document.getElementById('exportModal').classList.remove('show'); }
+        function updateExportInfo() { if (!wavesurfer) return; const dur = wavesurfer.getDuration() || 0; const fps = parseInt(document.getElementById('expFps').value); document.getElementById('expFrameInfo').textContent = `${Math.ceil(dur * fps)} frames (${dur.toFixed(1)}s @ ${fps}fps)`; }
+        function showExportProgress(title, sub) { document.getElementById('expProgTitle').textContent = title || "កំពុង Export..."; document.getElementById('expProgSub').textContent = sub || ""; document.getElementById('expProgFill').style.width = '0%'; document.getElementById('expProgPct').textContent = '0%'; document.getElementById('expProgInfo').textContent = '—'; document.getElementById('exportProgress').classList.add('show'); }
+        function setExportProgress(pct, info) { pct = Math.min(100, Math.max(0, pct)); document.getElementById('expProgFill').style.width = pct + '%'; document.getElementById('expProgPct').textContent = Math.round(pct) + '%'; if (info !== undefined) document.getElementById('expProgInfo').textContent = info; }
+        function hideExportProgress() { document.getElementById('exportProgress').classList.remove('show'); }
+        function cancelExport() { _exportCancelled = true; document.getElementById('expProgInfo').textContent = 'Cancelling...'; }
+        async function encodeAudioToMuxer(audioBuffer, audioEncoder) { const srcCh = audioBuffer.numberOfChannels; const outCh = 2; const total = audioBuffer.length; const srcRate = audioBuffer.sampleRate; const chunk = Math.floor(srcRate * 0.5); for (let start = 0; start < total; start += chunk) { if (_exportCancelled) break; const end = Math.min(start + chunk, total); const frames = end - start; const data = new Float32Array(frames * outCh); for (let i = 0; i < frames; i++) { for (let ch = 0; ch < outCh; ch++) { const src = Math.min(ch, srcCh - 1); data[i * outCh + ch] = audioBuffer.getChannelData(src)[start + i]; } } const ad = new AudioData({ format: 'f32', sampleRate: srcRate, numberOfFrames: frames, numberOfChannels: outCh, timestamp: Math.round(start / srcRate * 1e6), data }); audioEncoder.encode(ad); ad.close(); } }
+
+        async function startVideoExport() {
+            if (_isExporting) { alert("កំពុង Export ស្រាប់"); return; }
+            _isExporting = true; _exportCancelled = false;
+            let _vErr = null, _aErr = null;
+            const res = document.getElementById('expRes').value.split('x');
+            const W = parseInt(res[0]), H = parseInt(res[1]);
+            const fps = parseInt(document.getElementById('expFps').value);
+            const quality = document.getElementById('expQuality').value;
+            const bitrate = ({ low: 3000000, medium: 6000000, high: 10000000 })[quality];
+            const duration = wavesurfer.getDuration();
+            const totalFrames = Math.ceil(duration * fps);
+            closeVideoExportModal();
+            showExportProgress("កំពុង Export Video...", `${W}×${H} @ ${fps}fps · ${totalFrames} frames`);
+            let videoEncoder = null, audioEncoder = null, muxer = null;
+            try {
+                const vCodec = 'vp09.00.10.08';
+                const vSup = await VideoEncoder.isConfigSupported({ codec: vCodec, width: W, height: H, bitrate, framerate: fps });
+                if (!vSup.supported) throw new Error("VP9 not supported at this resolution");
+                setExportProgress(2, "Loading assets...");
+                const assets = await preloadExportAssets();
+                const videoBgs = backgrounds.filter(b => b.type === 'video');
+                if (videoBgs.length > 0) {
+                    setExportProgress(3, `Preloading ${videoBgs.length} video(s)...`);
+                    for (let i = 0; i < videoBgs.length; i++) {
+                        setExportProgress(3 + (i / videoBgs.length) * 2, `Preloading video ${i+1}/${videoBgs.length}...`);
+                        const vid = await getExportVideo(videoBgs[i]);
+                        try { vid.currentTime = videoBgs[i].startTime % (vid.duration || 1); await new Promise(r => { let done = false; const fin = () => { if (done) return; done = true; r(); }; vid.addEventListener('seeked', fin, { once: true }); setTimeout(fin, 2000); }); } catch(e) { console.warn('Warm-up seek failed:', e); }
+                    }
+                }
+                muxer = new WebMMuxer.Muxer({ target: new WebMMuxer.ArrayBufferTarget(), video: { codec: 'V_VP9', width: W, height: H, frameRate: fps }, audio: { codec: 'A_OPUS', sampleRate: 48000, numberOfChannels: 2 }, firstTimestampBehavior: 'offset' });
+                videoEncoder = new VideoEncoder({ output: (chunk, meta) => { try { muxer.addVideoChunk(chunk, meta); } catch(e) { console.error('muxer video err', e); } }, error: (e) => { console.error('VideoEncoder error:', e); _vErr = e; _exportCancelled = true; } });
+                videoEncoder.configure({ codec: vCodec, width: W, height: H, bitrate, framerate: fps });
+                audioEncoder = new AudioEncoder({ output: (chunk, meta) => { try { muxer.addAudioChunk(chunk, meta); } catch(e) { console.error('muxer audio err', e); } }, error: (e) => { console.error('AudioEncoder error:', e); _aErr = e; _exportCancelled = true; } });
+                const audioBuffer = await getAudioBuffer();
+                if (!audioBuffer) throw new Error("Cannot decode audio.");
+                audioEncoder.configure({ codec: 'opus', sampleRate: audioBuffer.sampleRate, numberOfChannels: 2, bitrate: 128000 });
+                setExportProgress(5, "Encoding audio...");
+                await encodeAudioToMuxer(audioBuffer, audioEncoder);
+                if (_aErr) throw new Error("AudioEncoder: " + _aErr.message);
+                const canvas = document.createElement('canvas');
+                canvas.width = W; canvas.height = H;
+                const ctx = canvas.getContext('2d');
+                const kfEvery = Math.max(1, Math.floor(fps * 2));
+                const t0 = performance.now();
+                for (let i = 0; i < totalFrames; i++) {
+                    if (_exportCancelled) break;
+                    const time = i / fps;
+                    try { await renderFrameToCanvas(ctx, time, W, H, assets); }
+                    catch (rfErr) { console.error('render error', i, rfErr); _exportCancelled = true; break; }
+                    const frame = new VideoFrame(canvas, { timestamp: Math.round(i * 1e6 / fps), duration: Math.round(1e6 / fps) });
+                    try { videoEncoder.encode(frame, { keyFrame: (i % kfEvery) === 0 }); }
+                    catch (encErr) { console.error('encode error', encErr); _exportCancelled = true; frame.close(); break; }
+                    frame.close();
+                    if (_vErr) { _exportCancelled = true; break; }
+                    if (i % 3 === 0 || i === totalFrames - 1) {
+                        const pct = 5 + (i / totalFrames) * 90;
+                        const el = (performance.now() - t0) / 1000;
+                        const spd = (i / Math.max(0.001, el)).toFixed(1);
+                        const eta = ((totalFrames - i) / Math.max(0.1, i / Math.max(0.001, el))).toFixed(0);
+                        setExportProgress(pct, `Frame ${i+1}/${totalFrames} · ${spd} fps · ETA ${eta}s`);
+                    }
+                    if (videoEncoder.encodeQueueSize > 10) await new Promise(r => setTimeout(r, 10));
+                    if (i % 10 === 0) await new Promise(r => setTimeout(r, 0));
+                }
+                if (_exportCancelled) {
+                    if (_vErr) throw new Error("VideoEncoder: " + _vErr.message);
+                    if (_aErr) throw new Error("AudioEncoder: " + _aErr.message);
+                    try { videoEncoder.close(); } catch(e){}
+                    try { audioEncoder.close(); } catch(e){}
+                    hideExportProgress(); _isExporting = false; return;
+                }
+                setExportProgress(96, "Flushing encoders...");
+                const flushWT = (enc, name, ms = 20000) => new Promise((resolve, reject) => {
+                    let done = false;
+                    const tm = setTimeout(() => { if (!done) { done = true; reject(new Error(name + " flush TIMEOUT")); } }, ms);
+                    enc.flush().then(() => { if (!done) { done = true; clearTimeout(tm); resolve(); } }).catch(err => { if (!done) { done = true; clearTimeout(tm); reject(err); } });
+                });
+                await flushWT(videoEncoder, "Video", 20000);
+                await flushWT(audioEncoder, "Audio", 20000);
+                try { videoEncoder.close(); } catch(e){}
+                try { audioEncoder.close(); } catch(e){}
+                setExportProgress(98, "Finalizing...");
+                muxer.finalize();
+                const blob = new Blob([muxer.target.buffer], { type: 'video/webm' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `karaoke_${W}x${H}_${fps}fps_${new Date().toISOString().replace(/[:.]/g,'-').slice(0,19)}.webm`;
+                a.click();
+                setExportProgress(100, `✅ ${(blob.size/1048576).toFixed(1)} MB`);
+                setTimeout(hideExportProgress, 1500);
+            } catch (err) {
+                console.error("Export error:", err);
+                try { if (videoEncoder) videoEncoder.close(); } catch(e){}
+                try { if (audioEncoder) audioEncoder.close(); } catch(e){}
+                hideExportProgress();
+                alert("❌ Export failed:\n" + err.message + "\n\nសាកល្បង៖\n• បន្ថយ Resolution/Bitrate\n• ប្រើ Chrome/Edge ថ្មី");
+            } finally {
+                _isExporting = false;
+                _exportVideos.forEach(vid => { try { vid.src = ''; vid.load(); } catch(e){} });
+                _exportVideos.clear();
+            }
+        }
+    </script>
+</body>
+</html>
